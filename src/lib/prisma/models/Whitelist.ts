@@ -25,27 +25,33 @@ export type AggregateWhitelist = {
 
 export type WhitelistMinAggregateOutputType = {
 	id: string | null;
+	created_at: Date | null;
 };
 
 export type WhitelistMaxAggregateOutputType = {
 	id: string | null;
+	created_at: Date | null;
 };
 
 export type WhitelistCountAggregateOutputType = {
 	id: number;
+	created_at: number;
 	_all: number;
 };
 
 export type WhitelistMinAggregateInputType = {
 	id?: true;
+	created_at?: true;
 };
 
 export type WhitelistMaxAggregateInputType = {
 	id?: true;
+	created_at?: true;
 };
 
 export type WhitelistCountAggregateInputType = {
 	id?: true;
+	created_at?: true;
 	_all?: true;
 };
 
@@ -124,6 +130,7 @@ export type WhitelistGroupByArgs<
 
 export type WhitelistGroupByOutputType = {
 	id: string;
+	created_at: Date;
 	_count: WhitelistCountAggregateOutputType | null;
 	_min: WhitelistMinAggregateOutputType | null;
 	_max: WhitelistMaxAggregateOutputType | null;
@@ -146,10 +153,12 @@ export type WhitelistWhereInput = {
 	OR?: Prisma.WhitelistWhereInput[];
 	NOT?: Prisma.WhitelistWhereInput | Prisma.WhitelistWhereInput[];
 	id?: Prisma.StringFilter<"Whitelist"> | string;
+	created_at?: Prisma.DateTimeFilter<"Whitelist"> | Date | string;
 };
 
 export type WhitelistOrderByWithRelationInput = {
 	id?: Prisma.SortOrder;
+	created_at?: Prisma.SortOrder;
 };
 
 export type WhitelistWhereUniqueInput = Prisma.AtLeast<
@@ -158,12 +167,14 @@ export type WhitelistWhereUniqueInput = Prisma.AtLeast<
 		AND?: Prisma.WhitelistWhereInput | Prisma.WhitelistWhereInput[];
 		OR?: Prisma.WhitelistWhereInput[];
 		NOT?: Prisma.WhitelistWhereInput | Prisma.WhitelistWhereInput[];
+		created_at?: Prisma.DateTimeFilter<"Whitelist"> | Date | string;
 	},
 	"id"
 >;
 
 export type WhitelistOrderByWithAggregationInput = {
 	id?: Prisma.SortOrder;
+	created_at?: Prisma.SortOrder;
 	_count?: Prisma.WhitelistCountOrderByAggregateInput;
 	_max?: Prisma.WhitelistMaxOrderByAggregateInput;
 	_min?: Prisma.WhitelistMinOrderByAggregateInput;
@@ -174,50 +185,61 @@ export type WhitelistScalarWhereWithAggregatesInput = {
 	OR?: Prisma.WhitelistScalarWhereWithAggregatesInput[];
 	NOT?: Prisma.WhitelistScalarWhereWithAggregatesInput | Prisma.WhitelistScalarWhereWithAggregatesInput[];
 	id?: Prisma.StringWithAggregatesFilter<"Whitelist"> | string;
+	created_at?: Prisma.DateTimeWithAggregatesFilter<"Whitelist"> | Date | string;
 };
 
 export type WhitelistCreateInput = {
 	id: string;
+	created_at?: Date | string;
 };
 
 export type WhitelistUncheckedCreateInput = {
 	id: string;
+	created_at?: Date | string;
 };
 
 export type WhitelistUpdateInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type WhitelistUncheckedUpdateInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type WhitelistCreateManyInput = {
 	id: string;
+	created_at?: Date | string;
 };
 
 export type WhitelistUpdateManyMutationInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type WhitelistUncheckedUpdateManyInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type WhitelistCountOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
+	created_at?: Prisma.SortOrder;
 };
 
 export type WhitelistMaxOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
+	created_at?: Prisma.SortOrder;
 };
 
 export type WhitelistMinOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
+	created_at?: Prisma.SortOrder;
 };
 
-export type StringFieldUpdateOperationsInput = {
-	set?: string;
+export type DateTimeFieldUpdateOperationsInput = {
+	set?: Date | string;
 };
 
 export type WhitelistSelect<
@@ -225,6 +247,7 @@ export type WhitelistSelect<
 > = runtime.Types.Extensions.GetSelect<
 	{
 		id?: boolean;
+		created_at?: boolean;
 	},
 	ExtArgs["result"]["whitelist"]
 >;
@@ -234,6 +257,7 @@ export type WhitelistSelectCreateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
 	{
 		id?: boolean;
+		created_at?: boolean;
 	},
 	ExtArgs["result"]["whitelist"]
 >;
@@ -243,17 +267,19 @@ export type WhitelistSelectUpdateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
 	{
 		id?: boolean;
+		created_at?: boolean;
 	},
 	ExtArgs["result"]["whitelist"]
 >;
 
 export type WhitelistSelectScalar = {
 	id?: boolean;
+	created_at?: boolean;
 };
 
 export type WhitelistOmit<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
-> = runtime.Types.Extensions.GetOmit<"id", ExtArgs["result"]["whitelist"]>;
+> = runtime.Types.Extensions.GetOmit<"id" | "created_at", ExtArgs["result"]["whitelist"]>;
 
 export type $WhitelistPayload<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
@@ -263,6 +289,7 @@ export type $WhitelistPayload<
 	scalars: runtime.Types.Extensions.GetPayloadResult<
 		{
 			id: string;
+			created_at: Date;
 		},
 		ExtArgs["result"]["whitelist"]
 	>;
@@ -773,6 +800,7 @@ export interface Prisma__WhitelistClient<
  */
 export interface WhitelistFieldRefs {
 	readonly id: Prisma.FieldRef<"Whitelist", "String">;
+	readonly created_at: Prisma.FieldRef<"Whitelist", "DateTime">;
 }
 
 // Custom InputTypes

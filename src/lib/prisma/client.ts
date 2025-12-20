@@ -28,8 +28,8 @@ export * from "./enums.js";
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Whitelists
- * const whitelists = await prisma.whitelist.findMany()
+ * // Fetch zero or more Guilds
+ * const guilds = await prisma.guild.findMany()
  * ```
  *
  * Read more in our [docs](https://pris.ly/d/client).
@@ -43,7 +43,22 @@ export type PrismaClient<
 export { Prisma };
 
 /**
+ * Model Guild
+ *
+ */
+export type Guild = Prisma.GuildModel;
+/**
  * Model Whitelist
  *
  */
 export type Whitelist = Prisma.WhitelistModel;
+/**
+ * Model MessageReportConfig
+ *
+ */
+export type MessageReportConfig = Prisma.MessageReportConfigModel;
+/**
+ * Model BanRequestConfig
+ *
+ */
+export type BanRequestConfig = Prisma.BanRequestConfigModel;

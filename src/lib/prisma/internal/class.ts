@@ -19,7 +19,7 @@ const config: runtime.GetPrismaClientConfig = {
 	engineVersion: "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
 	activeProvider: "postgresql",
 	inlineSchema:
-		'generator client {\n  provider = "prisma-client"\n  output   = "../src/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n}\n\nmodel Whitelist {\n  id String @id\n}\n',
+		'generator client {\n  provider = "prisma-client"\n  output   = "../src/lib/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n}\n\nmodel Guild {\n  id String @id\n\n  message_report_config MessageReportConfig?\n  ban_request_config    BanRequestConfig?\n}\n\nmodel Whitelist {\n  // ID of the whitelisted guild.\n  id         String   @id\n  created_at DateTime @default(now())\n}\n\nmodel MessageReportConfig {\n  // ID of the guild.\n  id                   String  @id\n  // Whether message reporting is enabled.\n  enabled              Boolean @default(false)\n  webhook_url          String?\n  auto_disregard_after BigInt  @default(0)\n\n  immune_roles      String[] @default([])\n  notify_roles      String[] @default([])\n  blacklisted_users String[] @default([])\n\n  enforce_accept_reason   Boolean @default(true)\n  enforce_deny_reason     Boolean @default(true)\n  enforce_member_in_guild Boolean @default(true)\n\n  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)\n}\n\nmodel BanRequestConfig {\n  // ID of the guild.\n  id      String  @id\n  // Whether ban request handling is enabled.\n  enabled Boolean @default(false)\n\n  webhook_url           String?\n  decision_webhook_url  String?\n  automatically_timeout Boolean @default(false)\n\n  immune_roles String[] @default([])\n  notify_roles String[] @default([])\n\n  enforce_submission_reason Boolean @default(true)\n  enforce_accept_reason     Boolean @default(true)\n  enforce_deny_reason       Boolean @default(true)\n\n  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)\n}\n',
 	runtimeDataModel: {
 		models: {},
 		enums: {},
@@ -28,7 +28,7 @@ const config: runtime.GetPrismaClientConfig = {
 };
 
 config.runtimeDataModel = JSON.parse(
-	'{"models":{"Whitelist":{"fields":[{"name":"id","kind":"scalar","type":"String"}],"dbName":null}},"enums":{},"types":{}}'
+	'{"models":{"Guild":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"message_report_config","kind":"object","type":"MessageReportConfig","relationName":"GuildToMessageReportConfig"},{"name":"ban_request_config","kind":"object","type":"BanRequestConfig","relationName":"BanRequestConfigToGuild"}],"dbName":null},"Whitelist":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"created_at","kind":"scalar","type":"DateTime"}],"dbName":null},"MessageReportConfig":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"enabled","kind":"scalar","type":"Boolean"},{"name":"webhook_url","kind":"scalar","type":"String"},{"name":"auto_disregard_after","kind":"scalar","type":"BigInt"},{"name":"immune_roles","kind":"scalar","type":"String"},{"name":"notify_roles","kind":"scalar","type":"String"},{"name":"blacklisted_users","kind":"scalar","type":"String"},{"name":"enforce_accept_reason","kind":"scalar","type":"Boolean"},{"name":"enforce_deny_reason","kind":"scalar","type":"Boolean"},{"name":"enforce_member_in_guild","kind":"scalar","type":"Boolean"},{"name":"guild","kind":"object","type":"Guild","relationName":"GuildToMessageReportConfig"}],"dbName":null},"BanRequestConfig":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"enabled","kind":"scalar","type":"Boolean"},{"name":"webhook_url","kind":"scalar","type":"String"},{"name":"decision_webhook_url","kind":"scalar","type":"String"},{"name":"automatically_timeout","kind":"scalar","type":"Boolean"},{"name":"immune_roles","kind":"scalar","type":"String"},{"name":"notify_roles","kind":"scalar","type":"String"},{"name":"enforce_submission_reason","kind":"scalar","type":"Boolean"},{"name":"enforce_accept_reason","kind":"scalar","type":"Boolean"},{"name":"enforce_deny_reason","kind":"scalar","type":"Boolean"},{"name":"guild","kind":"object","type":"Guild","relationName":"BanRequestConfigToGuild"}],"dbName":null}},"enums":{},"types":{}}'
 );
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
@@ -60,8 +60,8 @@ export interface PrismaClientConstructor {
 	 * @example
 	 * ```
 	 * const prisma = new PrismaClient()
-	 * // Fetch zero or more Whitelists
-	 * const whitelists = await prisma.whitelist.findMany()
+	 * // Fetch zero or more Guilds
+	 * const guilds = await prisma.guild.findMany()
 	 * ```
 	 *
 	 * Read more in our [docs](https://pris.ly/d/client).
@@ -86,8 +86,8 @@ export interface PrismaClientConstructor {
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Whitelists
- * const whitelists = await prisma.whitelist.findMany()
+ * // Fetch zero or more Guilds
+ * const guilds = await prisma.guild.findMany()
  * ```
  *
  * Read more in our [docs](https://pris.ly/d/client).
@@ -197,6 +197,16 @@ export interface PrismaClient<
 	>;
 
 	/**
+	 * `prisma.guild`: Exposes CRUD operations for the **Guild** model.
+	 * Example usage:
+	 * ```ts
+	 * // Fetch zero or more Guilds
+	 * const guilds = await prisma.guild.findMany()
+	 * ```
+	 */
+	get guild(): Prisma.GuildDelegate<ExtArgs, { omit: OmitOpts }>;
+
+	/**
 	 * `prisma.whitelist`: Exposes CRUD operations for the **Whitelist** model.
 	 * Example usage:
 	 * ```ts
@@ -205,6 +215,26 @@ export interface PrismaClient<
 	 * ```
 	 */
 	get whitelist(): Prisma.WhitelistDelegate<ExtArgs, { omit: OmitOpts }>;
+
+	/**
+	 * `prisma.messageReportConfig`: Exposes CRUD operations for the **MessageReportConfig** model.
+	 * Example usage:
+	 * ```ts
+	 * // Fetch zero or more MessageReportConfigs
+	 * const messageReportConfigs = await prisma.messageReportConfig.findMany()
+	 * ```
+	 */
+	get messageReportConfig(): Prisma.MessageReportConfigDelegate<ExtArgs, { omit: OmitOpts }>;
+
+	/**
+	 * `prisma.banRequestConfig`: Exposes CRUD operations for the **BanRequestConfig** model.
+	 * Example usage:
+	 * ```ts
+	 * // Fetch zero or more BanRequestConfigs
+	 * const banRequestConfigs = await prisma.banRequestConfig.findMany()
+	 * ```
+	 */
+	get banRequestConfig(): Prisma.BanRequestConfigDelegate<ExtArgs, { omit: OmitOpts }>;
 }
 
 export function getPrismaClientClass(): PrismaClientConstructor {

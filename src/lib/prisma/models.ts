@@ -7,5 +7,8 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from "./models/Guild.js";
 export type * from "./models/Whitelist.js";
+export type * from "./models/MessageReportConfig.js";
+export type * from "./models/BanRequestConfig.js";
 export type * from "./commonInputTypes.js";

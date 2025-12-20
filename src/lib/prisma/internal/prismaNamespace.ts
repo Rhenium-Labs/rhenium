@@ -363,7 +363,10 @@ export type FieldRef<Model, FieldType> = runtime.FieldRef<Model, FieldType>;
 type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRef<Model, FieldType>;
 
 export const ModelName = {
-	Whitelist: "Whitelist"
+	Guild: "Guild",
+	Whitelist: "Whitelist",
+	MessageReportConfig: "MessageReportConfig",
+	BanRequestConfig: "BanRequestConfig"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -383,10 +386,84 @@ export type TypeMap<
 		omit: GlobalOmitOptions;
 	};
 	meta: {
-		modelProps: "whitelist";
+		modelProps: "guild" | "whitelist" | "messageReportConfig" | "banRequestConfig";
 		txIsolationLevel: TransactionIsolationLevel;
 	};
 	model: {
+		Guild: {
+			payload: Prisma.$GuildPayload<ExtArgs>;
+			fields: Prisma.GuildFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.GuildFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.GuildFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>;
+				};
+				findFirst: {
+					args: Prisma.GuildFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.GuildFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>;
+				};
+				findMany: {
+					args: Prisma.GuildFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>[];
+				};
+				create: {
+					args: Prisma.GuildCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>;
+				};
+				createMany: {
+					args: Prisma.GuildCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.GuildCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>[];
+				};
+				delete: {
+					args: Prisma.GuildDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>;
+				};
+				update: {
+					args: Prisma.GuildUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>;
+				};
+				deleteMany: {
+					args: Prisma.GuildDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.GuildUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.GuildUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>[];
+				};
+				upsert: {
+					args: Prisma.GuildUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$GuildPayload>;
+				};
+				aggregate: {
+					args: Prisma.GuildAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateGuild>;
+				};
+				groupBy: {
+					args: Prisma.GuildGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.GuildGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.GuildCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.GuildCountAggregateOutputType> | number;
+				};
+			};
+		};
 		Whitelist: {
 			payload: Prisma.$WhitelistPayload<ExtArgs>;
 			fields: Prisma.WhitelistFieldRefs;
@@ -461,6 +538,156 @@ export type TypeMap<
 				};
 			};
 		};
+		MessageReportConfig: {
+			payload: Prisma.$MessageReportConfigPayload<ExtArgs>;
+			fields: Prisma.MessageReportConfigFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.MessageReportConfigFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.MessageReportConfigFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>;
+				};
+				findFirst: {
+					args: Prisma.MessageReportConfigFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.MessageReportConfigFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>;
+				};
+				findMany: {
+					args: Prisma.MessageReportConfigFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>[];
+				};
+				create: {
+					args: Prisma.MessageReportConfigCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>;
+				};
+				createMany: {
+					args: Prisma.MessageReportConfigCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.MessageReportConfigCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>[];
+				};
+				delete: {
+					args: Prisma.MessageReportConfigDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>;
+				};
+				update: {
+					args: Prisma.MessageReportConfigUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>;
+				};
+				deleteMany: {
+					args: Prisma.MessageReportConfigDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.MessageReportConfigUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.MessageReportConfigUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>[];
+				};
+				upsert: {
+					args: Prisma.MessageReportConfigUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportConfigPayload>;
+				};
+				aggregate: {
+					args: Prisma.MessageReportConfigAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateMessageReportConfig>;
+				};
+				groupBy: {
+					args: Prisma.MessageReportConfigGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.MessageReportConfigGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.MessageReportConfigCountArgs<ExtArgs>;
+					result:
+						| runtime.Types.Utils.Optional<Prisma.MessageReportConfigCountAggregateOutputType>
+						| number;
+				};
+			};
+		};
+		BanRequestConfig: {
+			payload: Prisma.$BanRequestConfigPayload<ExtArgs>;
+			fields: Prisma.BanRequestConfigFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.BanRequestConfigFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.BanRequestConfigFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>;
+				};
+				findFirst: {
+					args: Prisma.BanRequestConfigFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.BanRequestConfigFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>;
+				};
+				findMany: {
+					args: Prisma.BanRequestConfigFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>[];
+				};
+				create: {
+					args: Prisma.BanRequestConfigCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>;
+				};
+				createMany: {
+					args: Prisma.BanRequestConfigCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.BanRequestConfigCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>[];
+				};
+				delete: {
+					args: Prisma.BanRequestConfigDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>;
+				};
+				update: {
+					args: Prisma.BanRequestConfigUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>;
+				};
+				deleteMany: {
+					args: Prisma.BanRequestConfigDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.BanRequestConfigUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.BanRequestConfigUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>[];
+				};
+				upsert: {
+					args: Prisma.BanRequestConfigUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$BanRequestConfigPayload>;
+				};
+				aggregate: {
+					args: Prisma.BanRequestConfigAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateBanRequestConfig>;
+				};
+				groupBy: {
+					args: Prisma.BanRequestConfigGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.BanRequestConfigGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.BanRequestConfigCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.BanRequestConfigCountAggregateOutputType> | number;
+				};
+			};
+		};
 	};
 } & {
 	other: {
@@ -499,11 +726,50 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel];
 
-export const WhitelistScalarFieldEnum = {
+export const GuildScalarFieldEnum = {
 	id: "id"
 } as const;
 
+export type GuildScalarFieldEnum = (typeof GuildScalarFieldEnum)[keyof typeof GuildScalarFieldEnum];
+
+export const WhitelistScalarFieldEnum = {
+	id: "id",
+	created_at: "created_at"
+} as const;
+
 export type WhitelistScalarFieldEnum = (typeof WhitelistScalarFieldEnum)[keyof typeof WhitelistScalarFieldEnum];
+
+export const MessageReportConfigScalarFieldEnum = {
+	id: "id",
+	enabled: "enabled",
+	webhook_url: "webhook_url",
+	auto_disregard_after: "auto_disregard_after",
+	immune_roles: "immune_roles",
+	notify_roles: "notify_roles",
+	blacklisted_users: "blacklisted_users",
+	enforce_accept_reason: "enforce_accept_reason",
+	enforce_deny_reason: "enforce_deny_reason",
+	enforce_member_in_guild: "enforce_member_in_guild"
+} as const;
+
+export type MessageReportConfigScalarFieldEnum =
+	(typeof MessageReportConfigScalarFieldEnum)[keyof typeof MessageReportConfigScalarFieldEnum];
+
+export const BanRequestConfigScalarFieldEnum = {
+	id: "id",
+	enabled: "enabled",
+	webhook_url: "webhook_url",
+	decision_webhook_url: "decision_webhook_url",
+	automatically_timeout: "automatically_timeout",
+	immune_roles: "immune_roles",
+	notify_roles: "notify_roles",
+	enforce_submission_reason: "enforce_submission_reason",
+	enforce_accept_reason: "enforce_accept_reason",
+	enforce_deny_reason: "enforce_deny_reason"
+} as const;
+
+export type BanRequestConfigScalarFieldEnum =
+	(typeof BanRequestConfigScalarFieldEnum)[keyof typeof BanRequestConfigScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",
@@ -518,6 +784,13 @@ export const QueryMode = {
 } as const;
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
+
+export const NullsOrder = {
+	first: "first",
+	last: "last"
+} as const;
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
 
 /**
  * Field references
@@ -534,6 +807,31 @@ export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
 export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "String[]">;
 
 /**
+ * Reference to a field of type 'DateTime'
+ */
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "DateTime">;
+
+/**
+ * Reference to a field of type 'DateTime[]'
+ */
+export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "DateTime[]">;
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Boolean">;
+
+/**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "BigInt">;
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "BigInt[]">;
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int">;
@@ -542,6 +840,16 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int[]">;
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float">;
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float[]">;
 
 /**
  * Batch Payload for updateMany & deleteMany & createMany
@@ -645,7 +953,10 @@ export type PrismaClientOptions = (
 	comments?: runtime.SqlCommenterPlugin[];
 };
 export type GlobalOmitConfig = {
+	guild?: Prisma.GuildOmit;
 	whitelist?: Prisma.WhitelistOmit;
+	messageReportConfig?: Prisma.MessageReportConfigOmit;
+	banRequestConfig?: Prisma.BanRequestConfigOmit;
 };
 
 /* Types for Logging */

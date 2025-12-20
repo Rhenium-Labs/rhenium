@@ -17,7 +17,22 @@ export { Prisma };
 export * as $Enums from "./enums.js";
 export * from "./enums.js";
 /**
+ * Model Guild
+ *
+ */
+export type Guild = Prisma.GuildModel;
+/**
  * Model Whitelist
  *
  */
 export type Whitelist = Prisma.WhitelistModel;
+/**
+ * Model MessageReportConfig
+ *
+ */
+export type MessageReportConfig = Prisma.MessageReportConfigModel;
+/**
+ * Model BanRequestConfig
+ *
+ */
+export type BanRequestConfig = Prisma.BanRequestConfigModel;

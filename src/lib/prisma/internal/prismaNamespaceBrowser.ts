@@ -48,7 +48,10 @@ export const JsonNull = runtime.JsonNull;
 export const AnyNull = runtime.AnyNull;
 
 export const ModelName = {
-	Whitelist: "Whitelist"
+	Guild: "Guild",
+	Whitelist: "Whitelist",
+	MessageReportConfig: "MessageReportConfig",
+	BanRequestConfig: "BanRequestConfig"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -66,11 +69,50 @@ export const TransactionIsolationLevel = {
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel];
 
-export const WhitelistScalarFieldEnum = {
+export const GuildScalarFieldEnum = {
 	id: "id"
 } as const;
 
+export type GuildScalarFieldEnum = (typeof GuildScalarFieldEnum)[keyof typeof GuildScalarFieldEnum];
+
+export const WhitelistScalarFieldEnum = {
+	id: "id",
+	created_at: "created_at"
+} as const;
+
 export type WhitelistScalarFieldEnum = (typeof WhitelistScalarFieldEnum)[keyof typeof WhitelistScalarFieldEnum];
+
+export const MessageReportConfigScalarFieldEnum = {
+	id: "id",
+	enabled: "enabled",
+	webhook_url: "webhook_url",
+	auto_disregard_after: "auto_disregard_after",
+	immune_roles: "immune_roles",
+	notify_roles: "notify_roles",
+	blacklisted_users: "blacklisted_users",
+	enforce_accept_reason: "enforce_accept_reason",
+	enforce_deny_reason: "enforce_deny_reason",
+	enforce_member_in_guild: "enforce_member_in_guild"
+} as const;
+
+export type MessageReportConfigScalarFieldEnum =
+	(typeof MessageReportConfigScalarFieldEnum)[keyof typeof MessageReportConfigScalarFieldEnum];
+
+export const BanRequestConfigScalarFieldEnum = {
+	id: "id",
+	enabled: "enabled",
+	webhook_url: "webhook_url",
+	decision_webhook_url: "decision_webhook_url",
+	automatically_timeout: "automatically_timeout",
+	immune_roles: "immune_roles",
+	notify_roles: "notify_roles",
+	enforce_submission_reason: "enforce_submission_reason",
+	enforce_accept_reason: "enforce_accept_reason",
+	enforce_deny_reason: "enforce_deny_reason"
+} as const;
+
+export type BanRequestConfigScalarFieldEnum =
+	(typeof BanRequestConfigScalarFieldEnum)[keyof typeof BanRequestConfigScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",
@@ -85,3 +127,10 @@ export const QueryMode = {
 } as const;
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
+
+export const NullsOrder = {
+	first: "first",
+	last: "last"
+} as const;
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
