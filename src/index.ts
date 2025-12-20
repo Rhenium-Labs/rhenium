@@ -21,7 +21,11 @@ export const client = new StrafeStryker();
  * The Prisma client instance.
  */
 
-export const prisma = new PrismaClient({ adapter: new PrismaPg({}) });
+export const prisma = new PrismaClient({
+	adapter: new PrismaPg({
+		connectionString: process.env.PG_URL
+	})
+});
 
 async function main(): Promise<void> {
 	if (!process.env.BOT_TOKEN) {
