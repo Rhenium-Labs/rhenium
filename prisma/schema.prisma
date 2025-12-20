@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/lib/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Guild {
+  id String @id
+
+  message_report_config MessageReportConfig?
+  ban_request_config    BanRequestConfig?
+}
+
+model Whitelist {
+  // ID of the whitelisted guild.
+  id         String   @id
+  created_at DateTime @default(now())
+}
+
+model MessageReportConfig {
+  // ID of the guild.
+  id                   String  @id
+  // Whether message reporting is enabled.
+  enabled              Boolean @default(false)
+  webhook_url          String?
+  auto_disregard_after BigInt  @default(0)
+
+  immune_roles      String[] @default([])
+  notify_roles      String[] @default([])
+  blacklisted_users String[] @default([])
+
+  enforce_accept_reason   Boolean @default(true)
+  enforce_deny_reason     Boolean @default(true)
+  enforce_member_in_guild Boolean @default(true)
+
+  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model BanRequestConfig {
+  // ID of the guild.
+  id      String  @id
+  // Whether ban request handling is enabled.
+  enabled Boolean @default(false)
+
+  webhook_url           String?
+  decision_webhook_url  String?
+  automatically_timeout Boolean @default(false)
+
+  immune_roles String[] @default([])
+  notify_roles String[] @default([])
+
+  enforce_submission_reason Boolean @default(true)
+  enforce_accept_reason     Boolean @default(true)
+  enforce_deny_reason       Boolean @default(true)
+
+  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}

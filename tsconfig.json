@@ -1,0 +1,41 @@
+{
+	"compilerOptions": {
+		// Strict Type-Checking
+		"strict": true,
+		"alwaysStrict": true,
+
+		// Module And Library Options
+		"lib": ["ES2024"],
+		"types": ["node"],
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+
+		// Output Options
+		"target": "ES2024",
+		"outDir": "dist",
+		"rootDir": "src",
+		"incremental": true,
+		"tsBuildInfoFile": "dist/.tsbuildinfo",
+
+		// Source Map Options
+		"sourceMap": true,
+		"sourceRoot": "/",
+		"inlineSources": true,
+
+		// Advanced Options
+		"skipLibCheck": true,
+		"downlevelIteration": true,
+		"allowSyntheticDefaultImports": true,
+
+		// Decorator Options
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+
+		// Additional Options
+		"pretty": true,
+		"removeComments": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true
+	},
+	"include": ["./src/**/*"]
+}

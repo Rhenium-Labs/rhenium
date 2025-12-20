@@ -1,0 +1,50 @@
+{
+	"name": "strafe-stryker-v3",
+	"version": "1.0.0",
+	"description": "A discord moderation bot powered by AI.",
+	"homepage": "https://github.com/Strafe-Stryker-Development/Strafe-Stryker-v3#readme",
+	"bugs": {
+		"url": "https://github.com/Strafe-Stryker-Development/Strafe-Stryker-v3/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Strafe-Stryker-Development/Strafe-Stryker-v3.git"
+	},
+	"license": "MIT",
+	"contributors": [
+		"Eddy <cobaltorum>",
+		"SpiderMat <SplderMat>"
+	],
+	"type": "module",
+	"main": "dist/index.js",
+	"scripts": {
+		"compile": "tsc",
+		"format": "prettier --write src/**/*.ts"
+	},
+	"dependencies": {
+		"@prisma/adapter-pg": "^7.2.0",
+		"@prisma/client": "^7.2.0",
+		"@sapphire/discord-utilities": "^4.0.0",
+		"@sapphire/lexure": "^1.1.12",
+		"@sapphire/result": "^2.8.0",
+		"@sentry/node": "^10.32.1",
+		"discord.js": "^14.25.1",
+		"dotenv": "^17.2.3",
+		"lodash": "^4.17.21",
+		"pg": "^8.16.3",
+		"prisma": "^7.2.0"
+	},
+	"devDependencies": {
+		"@types/lodash": "^4.17.21",
+		"@types/node": "^25.0.3",
+		"@types/pg": "^8.16.0",
+		"prettier": "^3.7.4",
+		"typescript": "^5.9.3"
+	},
+	"imports": {
+		"#prisma/*": "./dist/lib/prisma/*",
+		"#utils/*": "./dist/lib/utils/*",
+		"#classes/*": "./dist/lib/classes/*",
+		"#root/*": "./dist/*"
+	}
+}
