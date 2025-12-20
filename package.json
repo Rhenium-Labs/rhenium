@@ -10,7 +10,6 @@
 		"type": "git",
 		"url": "git+https://github.com/Strafe-Stryker-Development/Strafe-Stryker-v3.git"
 	},
-	"license": "MIT",
 	"contributors": [
 		"Eddy <cobaltorum>",
 		"SpiderMat <SplderMat>"
