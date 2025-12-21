@@ -26,3 +26,10 @@ export const CLIENT_PARTIALS: readonly Partials[] = [
 	Partials.Reaction,
 	Partials.GuildMember
 ];
+
+/**
+ * Regex to validate duration strings.
+ * Matches strings like "1d", "12h", "30m", "2 days 5 hours", etc.
+ */
+
+export const DURATION_FORMAT = /^(\d+ *(days?|h(ou)?rs?|min(ute)?s?|[mhd]) *)+$/gim;

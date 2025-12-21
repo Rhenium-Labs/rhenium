@@ -2,9 +2,11 @@ import {
 	ActionRowBuilder,
 	ApplicationCommandData,
 	ApplicationCommandType,
+	ApplicationIntegrationType,
 	ButtonBuilder,
 	ButtonStyle,
-	ChatInputCommandInteraction
+	ChatInputCommandInteraction,
+	InteractionContextType
 } from "discord.js";
 
 import { Command } from "#classes/Command.js";
@@ -22,7 +24,9 @@ export default class Ping extends Command {
 		return {
 			name: this.name,
 			description: this.description,
-			type: ApplicationCommandType.ChatInput
+			type: ApplicationCommandType.ChatInput,
+			integrationTypes: [ApplicationIntegrationType.GuildInstall],
+			contexts: [InteractionContextType.Guild]
 		};
 	}
 

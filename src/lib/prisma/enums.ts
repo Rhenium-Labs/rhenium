@@ -8,5 +8,36 @@
  * 🟢 You can import this file directly.
  */
 
-// This file is empty because there are no enums in the schema.
-export {};
+export const RequestStatus = {
+	AutoResolved: "AutoResolved",
+	Pending: "Pending",
+	Disregarded: "Disregarded",
+	Accepted: "Accepted",
+	Denied: "Denied"
+} as const;
+
+export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus];
+
+export const Detector = {
+	NSFW: "NSFW",
+	OCR: "OCR",
+	TEXT: "TEXT"
+} as const;
+
+export type Detector = (typeof Detector)[keyof typeof Detector];
+
+export const DetectorMode = {
+	Lenient: "Lenient",
+	Medium: "Medium",
+	Strict: "Strict"
+} as const;
+
+export type DetectorMode = (typeof DetectorMode)[keyof typeof DetectorMode];
+
+export const ContentFilterVerbosity = {
+	Minimal: "Minimal",
+	Medium: "Medium",
+	Verbose: "Verbose"
+} as const;
+
+export type ContentFilterVerbosity = (typeof ContentFilterVerbosity)[keyof typeof ContentFilterVerbosity];

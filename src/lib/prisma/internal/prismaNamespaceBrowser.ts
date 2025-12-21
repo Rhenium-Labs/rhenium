@@ -51,7 +51,9 @@ export const ModelName = {
 	Guild: "Guild",
 	Whitelist: "Whitelist",
 	MessageReportConfig: "MessageReportConfig",
-	BanRequestConfig: "BanRequestConfig"
+	BanRequestConfig: "BanRequestConfig",
+	ContentFilterConfig: "ContentFilterConfig",
+	BanRequest: "BanRequest"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -113,6 +115,40 @@ export const BanRequestConfigScalarFieldEnum = {
 
 export type BanRequestConfigScalarFieldEnum =
 	(typeof BanRequestConfigScalarFieldEnum)[keyof typeof BanRequestConfigScalarFieldEnum];
+
+export const ContentFilterConfigScalarFieldEnum = {
+	id: "id",
+	enabled: "enabled",
+	use_native_automod: "use_native_automod",
+	webhook_url: "webhook_url",
+	detectors: "detectors",
+	detector_mode: "detector_mode",
+	verbosity: "verbosity",
+	immune_roles: "immune_roles",
+	notify_roles: "notify_roles",
+	included_channels: "included_channels",
+	excluded_channels: "excluded_channels",
+	ocr_filter_keywords: "ocr_filter_keywords",
+	ocr_filter_regex: "ocr_filter_regex"
+} as const;
+
+export type ContentFilterConfigScalarFieldEnum =
+	(typeof ContentFilterConfigScalarFieldEnum)[keyof typeof ContentFilterConfigScalarFieldEnum];
+
+export const BanRequestScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	target_id: "target_id",
+	status: "status",
+	resolved_at: "resolved_at",
+	resolved_by: "resolved_by",
+	requested_at: "requested_at",
+	requested_by: "requested_by",
+	duration: "duration",
+	reason: "reason"
+} as const;
+
+export type BanRequestScalarFieldEnum = (typeof BanRequestScalarFieldEnum)[keyof typeof BanRequestScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",

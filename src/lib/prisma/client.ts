@@ -62,3 +62,13 @@ export type MessageReportConfig = Prisma.MessageReportConfigModel;
  *
  */
 export type BanRequestConfig = Prisma.BanRequestConfigModel;
+/**
+ * Model ContentFilterConfig
+ *
+ */
+export type ContentFilterConfig = Prisma.ContentFilterConfigModel;
+/**
+ * Model BanRequest
+ *
+ */
+export type BanRequest = Prisma.BanRequestModel;

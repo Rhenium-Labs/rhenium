@@ -1,5 +1,6 @@
 import {
 	AutocompleteInteraction,
+	Colors,
 	CommandInteraction,
 	Events,
 	Interaction,
@@ -10,10 +11,10 @@ import { captureException } from "@sentry/node";
 
 import Logger from "#utils/Logger.js";
 
+import { EventListener } from "#classes/EventListener.js";
 import { InteractionReplyData } from "#utils/Types.js";
 import { Command, CommandManager } from "#classes/Command.js";
 import { ComponentInteraction, ComponentManager } from "#classes/Component.js";
-import { EventListener } from "#classes/EventListener.js";
 
 export default class InteractionCreate extends EventListener {
 	public constructor() {
@@ -104,19 +105,30 @@ export default class InteractionCreate extends EventListener {
 		// Manually handled response.
 		if (!response) return;
 
+		const error = response.error;
+		delete response.error;
+
 		const defaultOptions: InteractionReplyOptions = {
 			flags: [MessageFlags.Ephemeral],
 			allowedMentions: { parse: [] }
 		};
 
+		const replyOptions = error
+			? {
+					...defaultOptions,
+					...response,
+					embeds: [{ description: error, color: Colors.NotQuiteBlack }, ...(response.embeds ?? [])]
+				}
+			: {
+					...defaultOptions,
+					...response
+				};
+
 		if (interaction.deferred || interaction.replied) {
-			const { flags, ...options } = response;
+			const { flags, ...options } = replyOptions;
 			await interaction.editReply(options);
 		} else {
-			await interaction.reply({
-				...defaultOptions,
-				...response
-			});
+			await interaction.reply(replyOptions);
 		}
 	}
 }

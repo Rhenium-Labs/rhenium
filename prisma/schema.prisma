@@ -7,11 +7,39 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RequestStatus {
+  AutoResolved
+  Pending
+  Disregarded
+  Accepted
+  Denied
+}
+
+enum Detector {
+  NSFW
+  OCR
+  TEXT
+}
+
+enum DetectorMode {
+  Lenient
+  Medium
+  Strict
+}
+
+enum ContentFilterVerbosity {
+  Minimal
+  Medium
+  Verbose
+}
+
 model Guild {
   id String @id
 
   message_report_config MessageReportConfig?
   ban_request_config    BanRequestConfig?
+  content_filter_config ContentFilterConfig?
+  ban_requests          BanRequest[]
 }
 
 model Whitelist {
@@ -57,4 +85,46 @@ model BanRequestConfig {
   enforce_deny_reason       Boolean @default(true)
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model ContentFilterConfig {
+  // ID of the guild.
+  id                 String  @id
+  enabled            Boolean @default(false)
+  use_native_automod Boolean @default(false)
+  webhook_url        String?
+
+  detectors     Detector[]             @default([])
+  detector_mode DetectorMode           @default(Medium)
+  verbosity     ContentFilterVerbosity @default(Medium)
+
+  immune_roles String[] @default([])
+  notify_roles String[] @default([])
+
+  included_channels String[] @default([])
+  excluded_channels String[] @default([])
+
+  ocr_filter_keywords String[] @default([])
+  ocr_filter_regex    String[] @default([])
+
+  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model BanRequest {
+  id        String @id
+  guild_id  String
+  target_id String
+
+  status RequestStatus @default(Pending)
+
+  resolved_at DateTime?
+  resolved_by String?
+
+  requested_at DateTime @default(now())
+  requested_by String
+
+  duration BigInt?
+  reason   String
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }
