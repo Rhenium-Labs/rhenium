@@ -368,7 +368,8 @@ export const ModelName = {
 	MessageReportConfig: "MessageReportConfig",
 	BanRequestConfig: "BanRequestConfig",
 	ContentFilterConfig: "ContentFilterConfig",
-	BanRequest: "BanRequest"
+	BanRequest: "BanRequest",
+	UnbanJob: "UnbanJob"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -394,7 +395,8 @@ export type TypeMap<
 			| "messageReportConfig"
 			| "banRequestConfig"
 			| "contentFilterConfig"
-			| "banRequest";
+			| "banRequest"
+			| "unbanJob";
 		txIsolationLevel: TransactionIsolationLevel;
 	};
 	model: {
@@ -846,6 +848,80 @@ export type TypeMap<
 				};
 			};
 		};
+		UnbanJob: {
+			payload: Prisma.$UnbanJobPayload<ExtArgs>;
+			fields: Prisma.UnbanJobFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.UnbanJobFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.UnbanJobFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+				};
+				findFirst: {
+					args: Prisma.UnbanJobFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.UnbanJobFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+				};
+				findMany: {
+					args: Prisma.UnbanJobFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>[];
+				};
+				create: {
+					args: Prisma.UnbanJobCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+				};
+				createMany: {
+					args: Prisma.UnbanJobCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.UnbanJobCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>[];
+				};
+				delete: {
+					args: Prisma.UnbanJobDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+				};
+				update: {
+					args: Prisma.UnbanJobUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+				};
+				deleteMany: {
+					args: Prisma.UnbanJobDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.UnbanJobUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.UnbanJobUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>[];
+				};
+				upsert: {
+					args: Prisma.UnbanJobUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+				};
+				aggregate: {
+					args: Prisma.UnbanJobAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateUnbanJob>;
+				};
+				groupBy: {
+					args: Prisma.UnbanJobGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.UnbanJobGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.UnbanJobCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.UnbanJobCountAggregateOutputType> | number;
+				};
+			};
+		};
 	};
 } & {
 	other: {
@@ -962,6 +1038,14 @@ export const BanRequestScalarFieldEnum = {
 } as const;
 
 export type BanRequestScalarFieldEnum = (typeof BanRequestScalarFieldEnum)[keyof typeof BanRequestScalarFieldEnum];
+
+export const UnbanJobScalarFieldEnum = {
+	guild_id: "guild_id",
+	target_id: "target_id",
+	expires_at: "expires_at"
+} as const;
+
+export type UnbanJobScalarFieldEnum = (typeof UnbanJobScalarFieldEnum)[keyof typeof UnbanJobScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",
@@ -1197,6 +1281,7 @@ export type GlobalOmitConfig = {
 	banRequestConfig?: Prisma.BanRequestConfigOmit;
 	contentFilterConfig?: Prisma.ContentFilterConfigOmit;
 	banRequest?: Prisma.BanRequestOmit;
+	unbanJob?: Prisma.UnbanJobOmit;
 };
 
 /* Types for Logging */

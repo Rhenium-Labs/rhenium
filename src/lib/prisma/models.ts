@@ -13,4 +13,5 @@ export type * from "./models/MessageReportConfig.js";
 export type * from "./models/BanRequestConfig.js";
 export type * from "./models/ContentFilterConfig.js";
 export type * from "./models/BanRequest.js";
+export type * from "./models/UnbanJob.js";
 export type * from "./commonInputTypes.js";

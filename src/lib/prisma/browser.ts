@@ -46,3 +46,8 @@ export type ContentFilterConfig = Prisma.ContentFilterConfigModel;
  *
  */
 export type BanRequest = Prisma.BanRequestModel;
+/**
+ * Model UnbanJob
+ *
+ */
+export type UnbanJob = Prisma.UnbanJobModel;

@@ -53,7 +53,8 @@ export const ModelName = {
 	MessageReportConfig: "MessageReportConfig",
 	BanRequestConfig: "BanRequestConfig",
 	ContentFilterConfig: "ContentFilterConfig",
-	BanRequest: "BanRequest"
+	BanRequest: "BanRequest",
+	UnbanJob: "UnbanJob"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -149,6 +150,14 @@ export const BanRequestScalarFieldEnum = {
 } as const;
 
 export type BanRequestScalarFieldEnum = (typeof BanRequestScalarFieldEnum)[keyof typeof BanRequestScalarFieldEnum];
+
+export const UnbanJobScalarFieldEnum = {
+	guild_id: "guild_id",
+	target_id: "target_id",
+	expires_at: "expires_at"
+} as const;
+
+export type UnbanJobScalarFieldEnum = (typeof UnbanJobScalarFieldEnum)[keyof typeof UnbanJobScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",

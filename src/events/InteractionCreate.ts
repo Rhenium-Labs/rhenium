@@ -117,7 +117,7 @@ export default class InteractionCreate extends EventListener {
 			? {
 					...defaultOptions,
 					...response,
-					embeds: [{ description: error, color: Colors.NotQuiteBlack }, ...(response.embeds ?? [])]
+					embeds: [{ description: error, color: Colors.Red }, ...(response.embeds ?? [])]
 				}
 			: {
 					...defaultOptions,

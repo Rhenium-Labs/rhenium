@@ -128,3 +128,11 @@ model BanRequest {
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }
+
+model UnbanJob {
+  guild_id   String
+  target_id  String
+  expires_at DateTime
+
+  @@unique([guild_id, target_id])
+}
