@@ -50,37 +50,62 @@ export default class BanRequestButton extends Component {
 			};
 		}
 
-		if (action === BanRequestAction.Disregard) {
-			return BanRequestUtils.disregard({ interaction, request });
-		}
+		switch (action) {
+			case BanRequestAction.Disregard: {
+				return BanRequestUtils.disregard({ interaction, request });
+			}
+			case BanRequestAction.Accept: {
+				if (config.enforce_accept_reason) {
+					await interaction.showModal(buildModal(request.id, action));
+					return null;
+				}
+				break;
+			}
 
-		if (config.enforce_deny_reason || config.enforce_accept_reason) {
-			const reasonInput = new TextInputBuilder()
-				.setCustomId("reason")
-				.setStyle(TextInputStyle.Paragraph)
-				.setMaxLength(1024)
-				.setMinLength(1)
-				.setRequired(true);
-
-			// prettier-ignore
-			const reasonLabel = new LabelBuilder()
-				.setLabel("Reason")
-				.setTextInputComponent(reasonInput);
-
-			const modal = new ModalBuilder()
-				.setCustomId(`ban-request-${action}-${request.id}`)
-				.setTitle(`${action === BanRequestAction.Deny ? "Deny" : "Accept"} Ban Request`)
-				.addLabelComponents(reasonLabel);
-
-			await interaction.showModal(modal);
-			return null;
+			case BanRequestAction.Deny: {
+				if (config.enforce_deny_reason) {
+					await interaction.showModal(buildModal(request.id, action));
+					return null;
+				}
+				break;
+			}
 		}
 
 		return BanRequestUtils.process({
 			interaction,
+			config,
 			action,
 			request,
-			reason: "No reason provided."
+			reviewReason: null
 		});
 	}
+}
+
+/**
+ * Builds a modal for ban request review.
+ *
+ * @param requestId The ID of the ban request.
+ * @param action The action to be performed ("accept" or "deny").
+ * @returns The constructed modal.
+ */
+
+function buildModal(requestId: string, action: "accept" | "deny"): ModalBuilder {
+	const reasonInput = new TextInputBuilder()
+		.setCustomId("reason")
+		.setStyle(TextInputStyle.Paragraph)
+		.setMaxLength(1024)
+		.setMinLength(1)
+		.setRequired(true);
+
+	// prettier-ignore
+	const reasonLabel = new LabelBuilder()
+		.setLabel("Reason")
+		.setTextInputComponent(reasonInput);
+
+	const modal = new ModalBuilder()
+		.setCustomId(`ban-request-${action}-${requestId}`)
+		.setTitle(`${action === "accept" ? "Accept" : "Deny"} Ban Request`)
+		.addLabelComponents(reasonLabel);
+
+	return modal;
 }

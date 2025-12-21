@@ -39,12 +39,13 @@ export default class BanRequestModal extends Component {
 			};
 		}
 
-		const reason = interaction.fields.getTextInputValue("reason");
+		const reviewReason = interaction.fields.getTextInputValue("reason");
 		return BanRequestUtils.process({
 			interaction,
+			config,
 			action,
 			request,
-			reason
+			reviewReason
 		});
 	}
 }

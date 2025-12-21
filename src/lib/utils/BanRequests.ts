@@ -17,7 +17,7 @@ import {
 import ms from "ms";
 
 import { client, prisma } from "#root/index.js";
-import { InteractionReplyData } from "./Types.js";
+import { InteractionReplyData, SimpleResult } from "./Types.js";
 import { userMentionWithId } from "./index.js";
 import { RequestStatus, type BanRequest, type BanRequestConfig } from "#prisma/client.js";
 
@@ -129,15 +129,15 @@ export default class BanRequestUtils {
 
 	public static async process(data: {
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
+		config: BanRequestConfig;
 		action: Exclude<BanRequestAction, "disregard">;
 		request: BanRequest;
-		reason: string;
+		reviewReason: string | null;
 	}): Promise<InteractionReplyData> {
-		const { interaction, action, request, reason: rawReason } = data;
+		const { interaction, action, request, reviewReason } = data;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		const reason = rawReason.replaceAll("`", "");
 		const target = await client.users.fetch(request.target_id).catch(() => null);
 
 		switch (action) {
@@ -159,7 +159,7 @@ export default class BanRequestUtils {
 
 				const banned = await interaction.guild.bans
 					.create(target, {
-						reason: `[${request.id}] Ban request accepted by ${interaction.user.tag} (${interaction.user.id}) - ${reason}`
+						reason: `[${request.id}] Ban request accepted by ${interaction.user.tag} (${interaction.user.id}) - ${request.reason}`
 					})
 					.catch(() => null);
 
@@ -178,6 +178,13 @@ export default class BanRequestUtils {
 				}
 
 				Promise.all([
+					BanRequestUtils.sendNotification({
+						webhook_url: data.config.webhook_url,
+						target_id: request.target_id,
+						requested_by: request.requested_by,
+						reviewReason,
+						action
+					}),
 					prisma.banRequest.update({
 						where: { id: request.id },
 						data: {
@@ -196,6 +203,13 @@ export default class BanRequestUtils {
 
 			case BanRequestAction.Deny: {
 				Promise.all([
+					BanRequestUtils.sendNotification({
+						webhook_url: data.config.webhook_url,
+						target_id: request.target_id,
+						requested_by: request.requested_by,
+						reviewReason,
+						action
+					}),
 					prisma.banRequest.update({
 						where: { id: request.id },
 						data: {
@@ -241,6 +255,35 @@ export default class BanRequestUtils {
 		return {
 			content: `Successfully disregarded the ban request for ${userMention(request.target_id)} - ID \`${request.id}\``
 		};
+	}
+
+	/**
+	 * Notifies the requester about the outcome of their ban request.
+	 *
+	 * @param data The notification data.
+	 * @return The result of the notification.
+	 */
+
+	public static async sendNotification(data: {
+		webhook_url: string | null;
+		target_id: string;
+		requested_by: string;
+		reviewReason: string | null;
+		action: Exclude<BanRequestAction, "disregard">;
+	}): Promise<SimpleResult> {
+		const { webhook_url, requested_by, reviewReason, action, target_id } = data;
+
+		if (!webhook_url) return { ok: false, message: "No webhook URL provided." };
+
+		const formattedReason = reviewReason ? reviewReason.replaceAll("`", "") : null;
+		const content = `${userMention(requested_by)}, your ban request against ${userMentionWithId(
+			target_id
+		)} has been ${action === BanRequestAction.Accept ? "accepted" : "denied"}${formattedReason ? ` - ${formattedReason}` : "."}`;
+
+		return new WebhookClient({ url: webhook_url })
+			.send({ content, allowedMentions: { parse: ["users"] } })
+			.then(() => ({ ok: true as const }))
+			.catch(() => ({ ok: false, message: `Failed to send notification.` }));
 	}
 }
 

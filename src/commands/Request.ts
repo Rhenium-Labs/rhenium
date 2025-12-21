@@ -9,9 +9,10 @@ import {
 	PermissionFlagsBits
 } from "discord.js";
 
+import ms, { type StringValue } from "ms";
+
 import { prisma } from "#root/index.js";
 import { Command } from "#classes/Command.js";
-import { DURATION_FORMAT } from "#utils/Constants.js";
 import { ModerationUtils } from "#utils/Moderation.js";
 import { parseDurationString, validateDuration } from "#utils/index.js";
 import type { InteractionReplyData, SimpleResult } from "#utils/Types.js";
@@ -114,7 +115,7 @@ export default class Request extends Command {
 			};
 		}
 
-		if (rawDuration && !DURATION_FORMAT.test(rawDuration)) {
+		if (rawDuration && ms(rawDuration as StringValue) === undefined) {
 			return {
 				error: `The provided duration is invalid. Please provide a valid duration string (e.g., 1d, 12h, 30m).`
 			};
