@@ -90,6 +90,16 @@ export default class BanRequestUtils {
 			};
 		}
 
+		if (config.automatically_timeout) {
+			const targetMember = await executor.guild.members.fetch(target.id).catch(() => null);
+
+			if (targetMember) {
+				await targetMember
+					.timeout(ms("28d"), `Automatic timeout for ban request review - ID ${log.id}`)
+					.catch(() => null);
+			}
+		}
+
 		await prisma.banRequest.create({
 			data: {
 				id: log.id,
