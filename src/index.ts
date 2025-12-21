@@ -65,12 +65,3 @@ async function main(): Promise<void> {
 }
 
 void main();
-
-declare global {
-	namespace NodeJS {
-		interface ProcessEnv {
-			BOT_TOKEN: string;
-			PG_URL: string;
-		}
-	}
-}
