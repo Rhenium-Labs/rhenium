@@ -11,7 +11,9 @@ export const envZodSchema = z.object({
 		.regex(/^(postgres(?:ql)?:\/\/)([^:@\/\s]+)(?::([^@\/\s]*))?@([^:\/\s]+)(?::(\d+))?\/([^?\s]+)(\?.*)?$/, {
 			error: "Invalid PostgreSQL connection URL"
 		}),
-	UPSTASH_REDIS_REST_URL: z.string(),
+	UPSTASH_REDIS_REST_URL: z.string().regex(/^https:\/\/[a-zA-Z0-9-]+\.upstash\.io(?::\d+)?(?:\/.*)?$/, {
+		error: "Invalid Upstash Redis REST URL"
+	}),
 	UPSTASH_REDIS_REST_TOKEN: z.string()
 });
 
