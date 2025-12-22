@@ -11,6 +11,7 @@
 				"@sapphire/lexure": "^1.1.12",
 				"@sapphire/result": "^2.8.0",
 				"@sentry/node": "^10.32.1",
+				"@upstash/redis": "^1.35.8",
 				"discord.js": "^14.25.1",
 				"dotenv": "^17.2.3",
 				"lodash": "^4.17.21",
@@ -920,6 +921,13 @@
 			"sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg=="
 		],
 
+		"@upstash/redis": [
+			"@upstash/redis@1.35.8",
+			"",
+			{ "dependencies": { "uncrypto": "^0.1.3" } },
+			"sha512-QqLpVCD9PCPE6hlRzOkz864nfijSdazxtyJLIy9ZeTh6kU2nBIKKfjT5HMHjIRD4BCm6TK1dbUT9pxhFjcvpng=="
+		],
+
 		"@vladfrangu/async_event_emitter": [
 			"@vladfrangu/async_event_emitter@2.4.7",
 			"",
@@ -1729,6 +1737,13 @@
 			"",
 			{ "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } },
 			"sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="
+		],
+
+		"uncrypto": [
+			"uncrypto@0.1.3",
+			"",
+			{},
+			"sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q=="
 		],
 
 		"undici": [

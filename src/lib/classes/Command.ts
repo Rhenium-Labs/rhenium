@@ -101,10 +101,11 @@ export abstract class Command {
 	 * Handles message based command execution.
 	 *
 	 * @param message The message that triggered the command.
+	 * @param args The argument parser instance.
 	 * @return The result of the command execution.
 	 */
 
-	public messageRun?(message: Message<true>): Awaitable<MessageReplyData>;
+	public messageRun?(message: Message<true>, args: Args): Awaitable<MessageReplyData | null>;
 
 	/**
 	 * Parses the flags array passed to the command and returns the flags and options.

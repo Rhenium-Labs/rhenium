@@ -1,6 +1,7 @@
 import "dotenv/config.js";
 
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Redis } from "@upstash/redis";
 
 import { sleep } from "#utils/index.js";
 import { PrismaClient } from "#prisma/client.js";
@@ -26,6 +27,12 @@ export const prisma = new PrismaClient({
 		connectionString: process.env.PG_URL
 	})
 });
+
+/**
+ * Redis client instance, powered by upstash.
+ */
+
+export const kv = Redis.fromEnv();
 
 async function main(): Promise<void> {
 	if (!process.env.BOT_TOKEN) {

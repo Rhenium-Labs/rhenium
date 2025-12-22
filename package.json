@@ -29,6 +29,7 @@
 		"@sapphire/lexure": "^1.1.12",
 		"@sapphire/result": "^2.8.0",
 		"@sentry/node": "^10.32.1",
+		"@upstash/redis": "^1.35.8",
 		"discord.js": "^14.25.1",
 		"dotenv": "^17.2.3",
 		"lodash": "^4.17.21",

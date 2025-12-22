@@ -26,3 +26,12 @@ export const CLIENT_PARTIALS: readonly Partials[] = [
 	Partials.Reaction,
 	Partials.GuildMember
 ];
+
+/**
+ * List of developer IDs.
+ */
+
+export const DEVELOPER_IDS: readonly string[] = [
+	"746055295314165862", // @cobaltorum
+	"389504173714046976" // @spidermat
+];

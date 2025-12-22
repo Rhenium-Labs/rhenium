@@ -9,12 +9,14 @@ import {
 } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import Logger from "#utils/Logger.js";
-
+import { RedisCache } from "#utils/Redis.js";
+import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { EventListener } from "#classes/EventListener.js";
 import { InteractionReplyData } from "#utils/Types.js";
 import { Command, CommandManager } from "#classes/Command.js";
 import { ComponentInteraction, ComponentManager } from "#classes/Component.js";
+
+import Logger from "#utils/Logger.js";
 
 export default class InteractionCreate extends EventListener {
 	public constructor() {
@@ -27,6 +29,8 @@ export default class InteractionCreate extends EventListener {
 		if (interaction.isAutocomplete()) {
 			throw new Error("Autocomplete handling not implemented yet.");
 		}
+
+		if (!(await InteractionCreate._checkWhitelist(interaction))) return;
 
 		try {
 			await InteractionCreate._handle(interaction);
@@ -130,5 +134,24 @@ export default class InteractionCreate extends EventListener {
 		} else {
 			await interaction.reply(replyOptions);
 		}
+	}
+
+	private static async _checkWhitelist(
+		interaction: Exclude<Interaction<"cached">, AutocompleteInteraction>
+	): Promise<boolean> {
+		if (DEVELOPER_IDS.includes(interaction.user.id)) {
+			return true;
+		}
+
+		const whitelisted = await RedisCache.guildIsWhitelisted(interaction.guild.id);
+
+		if (!whitelisted) {
+			await interaction.reply({
+				content: "This guild is not whitelisted to use the bot.",
+				flags: [MessageFlags.Ephemeral]
+			});
+		}
+
+		return whitelisted;
 	}
 }

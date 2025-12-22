@@ -94,3 +94,23 @@ export function hierarchyCheck(executor: GuildMember, target: GuildMember): bool
 export function userMentionWithId(id: Snowflake): `<@${Snowflake}> (\`${Snowflake}\`)` {
 	return `<@${id}> (\`${id}\`)`;
 }
+
+/**
+ * Uploads data to hastebin and returns the URL of the document.
+ *
+ * @param data The data to upload
+ * @param ext The extension of the file (default .js)
+ * @returns The url of the document
+ */
+
+export async function hastebin(data: any, ext: string = "js"): Promise<string | null> {
+	const req = await fetch("https://hst.sh/documents", {
+		method: "POST",
+		body: typeof data === "object" ? JSON.stringify(data, null, 2) : data
+	});
+
+	if (!req.ok) return null;
+
+	const bin = (await req.json()) as { key: string };
+	return `https://hst.sh/${bin.key}.${ext}`;
+}
