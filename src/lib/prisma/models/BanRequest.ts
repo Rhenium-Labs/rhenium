@@ -37,6 +37,7 @@ export type BanRequestMinAggregateOutputType = {
 	id: string | null;
 	guild_id: string | null;
 	target_id: string | null;
+	target_muted_automatically: boolean | null;
 	status: $Enums.RequestStatus | null;
 	resolved_at: Date | null;
 	resolved_by: string | null;
@@ -50,6 +51,7 @@ export type BanRequestMaxAggregateOutputType = {
 	id: string | null;
 	guild_id: string | null;
 	target_id: string | null;
+	target_muted_automatically: boolean | null;
 	status: $Enums.RequestStatus | null;
 	resolved_at: Date | null;
 	resolved_by: string | null;
@@ -63,6 +65,7 @@ export type BanRequestCountAggregateOutputType = {
 	id: number;
 	guild_id: number;
 	target_id: number;
+	target_muted_automatically: number;
 	status: number;
 	resolved_at: number;
 	resolved_by: number;
@@ -85,6 +88,7 @@ export type BanRequestMinAggregateInputType = {
 	id?: true;
 	guild_id?: true;
 	target_id?: true;
+	target_muted_automatically?: true;
 	status?: true;
 	resolved_at?: true;
 	resolved_by?: true;
@@ -98,6 +102,7 @@ export type BanRequestMaxAggregateInputType = {
 	id?: true;
 	guild_id?: true;
 	target_id?: true;
+	target_muted_automatically?: true;
 	status?: true;
 	resolved_at?: true;
 	resolved_by?: true;
@@ -111,6 +116,7 @@ export type BanRequestCountAggregateInputType = {
 	id?: true;
 	guild_id?: true;
 	target_id?: true;
+	target_muted_automatically?: true;
 	status?: true;
 	resolved_at?: true;
 	resolved_by?: true;
@@ -212,6 +218,7 @@ export type BanRequestGroupByOutputType = {
 	id: string;
 	guild_id: string;
 	target_id: string;
+	target_muted_automatically: boolean;
 	status: $Enums.RequestStatus;
 	resolved_at: Date | null;
 	resolved_by: string | null;
@@ -245,6 +252,7 @@ export type BanRequestWhereInput = {
 	id?: Prisma.StringFilter<"BanRequest"> | string;
 	guild_id?: Prisma.StringFilter<"BanRequest"> | string;
 	target_id?: Prisma.StringFilter<"BanRequest"> | string;
+	target_muted_automatically?: Prisma.BoolFilter<"BanRequest"> | boolean;
 	status?: Prisma.EnumRequestStatusFilter<"BanRequest"> | $Enums.RequestStatus;
 	resolved_at?: Prisma.DateTimeNullableFilter<"BanRequest"> | Date | string | null;
 	resolved_by?: Prisma.StringNullableFilter<"BanRequest"> | string | null;
@@ -259,6 +267,7 @@ export type BanRequestOrderByWithRelationInput = {
 	id?: Prisma.SortOrder;
 	guild_id?: Prisma.SortOrder;
 	target_id?: Prisma.SortOrder;
+	target_muted_automatically?: Prisma.SortOrder;
 	status?: Prisma.SortOrder;
 	resolved_at?: Prisma.SortOrderInput | Prisma.SortOrder;
 	resolved_by?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -277,6 +286,7 @@ export type BanRequestWhereUniqueInput = Prisma.AtLeast<
 		NOT?: Prisma.BanRequestWhereInput | Prisma.BanRequestWhereInput[];
 		guild_id?: Prisma.StringFilter<"BanRequest"> | string;
 		target_id?: Prisma.StringFilter<"BanRequest"> | string;
+		target_muted_automatically?: Prisma.BoolFilter<"BanRequest"> | boolean;
 		status?: Prisma.EnumRequestStatusFilter<"BanRequest"> | $Enums.RequestStatus;
 		resolved_at?: Prisma.DateTimeNullableFilter<"BanRequest"> | Date | string | null;
 		resolved_by?: Prisma.StringNullableFilter<"BanRequest"> | string | null;
@@ -293,6 +303,7 @@ export type BanRequestOrderByWithAggregationInput = {
 	id?: Prisma.SortOrder;
 	guild_id?: Prisma.SortOrder;
 	target_id?: Prisma.SortOrder;
+	target_muted_automatically?: Prisma.SortOrder;
 	status?: Prisma.SortOrder;
 	resolved_at?: Prisma.SortOrderInput | Prisma.SortOrder;
 	resolved_by?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -314,6 +325,7 @@ export type BanRequestScalarWhereWithAggregatesInput = {
 	id?: Prisma.StringWithAggregatesFilter<"BanRequest"> | string;
 	guild_id?: Prisma.StringWithAggregatesFilter<"BanRequest"> | string;
 	target_id?: Prisma.StringWithAggregatesFilter<"BanRequest"> | string;
+	target_muted_automatically?: Prisma.BoolWithAggregatesFilter<"BanRequest"> | boolean;
 	status?: Prisma.EnumRequestStatusWithAggregatesFilter<"BanRequest"> | $Enums.RequestStatus;
 	resolved_at?: Prisma.DateTimeNullableWithAggregatesFilter<"BanRequest"> | Date | string | null;
 	resolved_by?: Prisma.StringNullableWithAggregatesFilter<"BanRequest"> | string | null;
@@ -326,6 +338,7 @@ export type BanRequestScalarWhereWithAggregatesInput = {
 export type BanRequestCreateInput = {
 	id: string;
 	target_id: string;
+	target_muted_automatically?: boolean;
 	status?: $Enums.RequestStatus;
 	resolved_at?: Date | string | null;
 	resolved_by?: string | null;
@@ -340,6 +353,7 @@ export type BanRequestUncheckedCreateInput = {
 	id: string;
 	guild_id: string;
 	target_id: string;
+	target_muted_automatically?: boolean;
 	status?: $Enums.RequestStatus;
 	resolved_at?: Date | string | null;
 	resolved_by?: string | null;
@@ -352,6 +366,7 @@ export type BanRequestUncheckedCreateInput = {
 export type BanRequestUpdateInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	target_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	target_muted_automatically?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus;
 	resolved_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 	resolved_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -366,6 +381,7 @@ export type BanRequestUncheckedUpdateInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	guild_id?: Prisma.StringFieldUpdateOperationsInput | string;
 	target_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	target_muted_automatically?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus;
 	resolved_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 	resolved_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -379,6 +395,7 @@ export type BanRequestCreateManyInput = {
 	id: string;
 	guild_id: string;
 	target_id: string;
+	target_muted_automatically?: boolean;
 	status?: $Enums.RequestStatus;
 	resolved_at?: Date | string | null;
 	resolved_by?: string | null;
@@ -391,6 +408,7 @@ export type BanRequestCreateManyInput = {
 export type BanRequestUpdateManyMutationInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	target_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	target_muted_automatically?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus;
 	resolved_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 	resolved_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -404,6 +422,7 @@ export type BanRequestUncheckedUpdateManyInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	guild_id?: Prisma.StringFieldUpdateOperationsInput | string;
 	target_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	target_muted_automatically?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus;
 	resolved_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 	resolved_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -427,6 +446,7 @@ export type BanRequestCountOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	guild_id?: Prisma.SortOrder;
 	target_id?: Prisma.SortOrder;
+	target_muted_automatically?: Prisma.SortOrder;
 	status?: Prisma.SortOrder;
 	resolved_at?: Prisma.SortOrder;
 	resolved_by?: Prisma.SortOrder;
@@ -444,6 +464,7 @@ export type BanRequestMaxOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	guild_id?: Prisma.SortOrder;
 	target_id?: Prisma.SortOrder;
+	target_muted_automatically?: Prisma.SortOrder;
 	status?: Prisma.SortOrder;
 	resolved_at?: Prisma.SortOrder;
 	resolved_by?: Prisma.SortOrder;
@@ -457,6 +478,7 @@ export type BanRequestMinOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	guild_id?: Prisma.SortOrder;
 	target_id?: Prisma.SortOrder;
+	target_muted_automatically?: Prisma.SortOrder;
 	status?: Prisma.SortOrder;
 	resolved_at?: Prisma.SortOrder;
 	resolved_by?: Prisma.SortOrder;
@@ -563,6 +585,7 @@ export type NullableBigIntFieldUpdateOperationsInput = {
 export type BanRequestCreateWithoutGuildInput = {
 	id: string;
 	target_id: string;
+	target_muted_automatically?: boolean;
 	status?: $Enums.RequestStatus;
 	resolved_at?: Date | string | null;
 	resolved_by?: string | null;
@@ -575,6 +598,7 @@ export type BanRequestCreateWithoutGuildInput = {
 export type BanRequestUncheckedCreateWithoutGuildInput = {
 	id: string;
 	target_id: string;
+	target_muted_automatically?: boolean;
 	status?: $Enums.RequestStatus;
 	resolved_at?: Date | string | null;
 	resolved_by?: string | null;
@@ -617,6 +641,7 @@ export type BanRequestScalarWhereInput = {
 	id?: Prisma.StringFilter<"BanRequest"> | string;
 	guild_id?: Prisma.StringFilter<"BanRequest"> | string;
 	target_id?: Prisma.StringFilter<"BanRequest"> | string;
+	target_muted_automatically?: Prisma.BoolFilter<"BanRequest"> | boolean;
 	status?: Prisma.EnumRequestStatusFilter<"BanRequest"> | $Enums.RequestStatus;
 	resolved_at?: Prisma.DateTimeNullableFilter<"BanRequest"> | Date | string | null;
 	resolved_by?: Prisma.StringNullableFilter<"BanRequest"> | string | null;
@@ -629,6 +654,7 @@ export type BanRequestScalarWhereInput = {
 export type BanRequestCreateManyGuildInput = {
 	id: string;
 	target_id: string;
+	target_muted_automatically?: boolean;
 	status?: $Enums.RequestStatus;
 	resolved_at?: Date | string | null;
 	resolved_by?: string | null;
@@ -641,6 +667,7 @@ export type BanRequestCreateManyGuildInput = {
 export type BanRequestUpdateWithoutGuildInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	target_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	target_muted_automatically?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus;
 	resolved_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 	resolved_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -653,6 +680,7 @@ export type BanRequestUpdateWithoutGuildInput = {
 export type BanRequestUncheckedUpdateWithoutGuildInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	target_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	target_muted_automatically?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus;
 	resolved_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 	resolved_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -665,6 +693,7 @@ export type BanRequestUncheckedUpdateWithoutGuildInput = {
 export type BanRequestUncheckedUpdateManyWithoutGuildInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	target_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	target_muted_automatically?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus;
 	resolved_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
 	resolved_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -681,6 +710,7 @@ export type BanRequestSelect<
 		id?: boolean;
 		guild_id?: boolean;
 		target_id?: boolean;
+		target_muted_automatically?: boolean;
 		status?: boolean;
 		resolved_at?: boolean;
 		resolved_by?: boolean;
@@ -700,6 +730,7 @@ export type BanRequestSelectCreateManyAndReturn<
 		id?: boolean;
 		guild_id?: boolean;
 		target_id?: boolean;
+		target_muted_automatically?: boolean;
 		status?: boolean;
 		resolved_at?: boolean;
 		resolved_by?: boolean;
@@ -719,6 +750,7 @@ export type BanRequestSelectUpdateManyAndReturn<
 		id?: boolean;
 		guild_id?: boolean;
 		target_id?: boolean;
+		target_muted_automatically?: boolean;
 		status?: boolean;
 		resolved_at?: boolean;
 		resolved_by?: boolean;
@@ -735,6 +767,7 @@ export type BanRequestSelectScalar = {
 	id?: boolean;
 	guild_id?: boolean;
 	target_id?: boolean;
+	target_muted_automatically?: boolean;
 	status?: boolean;
 	resolved_at?: boolean;
 	resolved_by?: boolean;
@@ -750,6 +783,7 @@ export type BanRequestOmit<
 	| "id"
 	| "guild_id"
 	| "target_id"
+	| "target_muted_automatically"
 	| "status"
 	| "resolved_at"
 	| "resolved_by"
@@ -787,6 +821,7 @@ export type $BanRequestPayload<
 			id: string;
 			guild_id: string;
 			target_id: string;
+			target_muted_automatically: boolean;
 			status: $Enums.RequestStatus;
 			resolved_at: Date | null;
 			resolved_by: string | null;
@@ -1325,6 +1360,7 @@ export interface BanRequestFieldRefs {
 	readonly id: Prisma.FieldRef<"BanRequest", "String">;
 	readonly guild_id: Prisma.FieldRef<"BanRequest", "String">;
 	readonly target_id: Prisma.FieldRef<"BanRequest", "String">;
+	readonly target_muted_automatically: Prisma.FieldRef<"BanRequest", "Boolean">;
 	readonly status: Prisma.FieldRef<"BanRequest", "RequestStatus">;
 	readonly resolved_at: Prisma.FieldRef<"BanRequest", "DateTime">;
 	readonly resolved_by: Prisma.FieldRef<"BanRequest", "String">;

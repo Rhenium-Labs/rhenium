@@ -1,5 +1,5 @@
-import { ArgumentStream, IUnorderedStrategy, Lexer, Parser } from "@sapphire/lexure";
 import { ApplicationCommandData, Awaitable, Collection, CommandInteraction, Message } from "discord.js";
+import { ArgumentStream, IUnorderedStrategy, Lexer, Parser } from "@sapphire/lexure";
 
 import path from "node:path";
 import fs from "node:fs";
@@ -8,9 +8,9 @@ import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";
 import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
-import FlagStrategy from "./FlagStrategy.js";
 import Args from "./Args.js";
 import Logger from "#utils/Logger.js";
+import FlagStrategy from "./FlagStrategy.js";
 
 export abstract class Command {
 	/**

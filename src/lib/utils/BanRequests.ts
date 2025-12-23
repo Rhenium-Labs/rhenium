@@ -17,8 +17,8 @@ import {
 import ms from "ms";
 
 import { client, prisma } from "#root/index.js";
-import { InteractionReplyData, SimpleResult } from "./Types.js";
 import { userMentionWithId } from "./index.js";
+import { InteractionReplyData, SimpleResult } from "./Types.js";
 import { RequestStatus, type BanRequest, type BanRequestConfig } from "#prisma/client.js";
 
 export default class BanRequestUtils {
@@ -94,13 +94,16 @@ export default class BanRequestUtils {
 			};
 		}
 
+		let muted: boolean = false;
+
 		if (config.automatically_timeout) {
 			const targetMember = await executor.guild.members.fetch(target.id).catch(() => null);
 
 			if (targetMember) {
-				await targetMember
+				muted = await targetMember
 					.timeout(ms("28d"), `Automatic timeout for ban request review - ID ${log.id}`)
-					.catch(() => null);
+					.catch(() => false)
+					.then(() => true);
 			}
 		}
 
@@ -109,6 +112,7 @@ export default class BanRequestUtils {
 				id: log.id,
 				guild_id: config.id,
 				target_id: target.id,
+				target_muted_automatically: muted,
 				requested_by: executor.id,
 				duration,
 				reason
@@ -139,6 +143,7 @@ export default class BanRequestUtils {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const target = await client.users.fetch(request.target_id).catch(() => null);
+		const targetMember = await interaction.guild.members.fetch(request.target_id).catch(() => null);
 
 		switch (action) {
 			case BanRequestAction.Accept: {
@@ -202,6 +207,12 @@ export default class BanRequestUtils {
 			}
 
 			case BanRequestAction.Deny: {
+				if (targetMember && request.target_muted_automatically) {
+					await targetMember
+						.timeout(null, `Automatic unmute after ban request denial - ID ${request.id}`)
+						.catch(() => null);
+				}
+
 				Promise.all([
 					BanRequestUtils.sendNotification({
 						webhook_url: data.config.webhook_url,
@@ -240,6 +251,14 @@ export default class BanRequestUtils {
 		request: BanRequest;
 	}): Promise<InteractionReplyData> {
 		const { interaction, request } = data;
+
+		const targetMember = await interaction.guild.members.fetch(request.target_id).catch(() => null);
+
+		if (targetMember && request.target_muted_automatically) {
+			await targetMember
+				.timeout(null, `Automatic unmute after ban request disregard - ID ${request.id}`)
+				.catch(() => null);
+		}
 
 		await prisma.banRequest.update({
 			where: { id: request.id },

@@ -1,5 +1,4 @@
 import { Client, Options } from "discord.js";
-
 import { CLIENT_INTENTS, CLIENT_PARTIALS } from "#utils/Constants.js";
 
 /**

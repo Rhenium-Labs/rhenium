@@ -1,6 +1,7 @@
 import { GuildMember, User } from "discord.js";
-import { SimpleResult } from "./Types.js";
+
 import { client } from "#root/index.js";
+import { SimpleResult } from "./Types.js";
 import { hierarchyCheck } from "./index.js";
 
 export class ModerationUtils {

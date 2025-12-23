@@ -140,6 +140,7 @@ export const BanRequestScalarFieldEnum = {
 	id: "id",
 	guild_id: "guild_id",
 	target_id: "target_id",
+	target_muted_automatically: "target_muted_automatically",
 	status: "status",
 	resolved_at: "resolved_at",
 	resolved_by: "resolved_by",

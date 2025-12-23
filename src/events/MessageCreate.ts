@@ -2,8 +2,8 @@ import { Colors, Events, Message, MessageReplyOptions, PermissionFlagsBits } fro
 
 import { reply } from "#utils/Messages.js";
 import { RedisCache } from "#utils/Redis.js";
-import { EventListener } from "#classes/EventListener.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
+import { EventListener } from "#classes/EventListener.js";
 import { captureException } from "@sentry/node";
 import { MessageReplyData } from "#utils/Types.js";
 import { Command, CommandManager } from "#classes/Command.js";

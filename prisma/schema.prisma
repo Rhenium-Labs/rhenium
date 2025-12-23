@@ -111,9 +111,10 @@ model ContentFilterConfig {
 }
 
 model BanRequest {
-  id        String @id
-  guild_id  String
-  target_id String
+  id                         String  @id
+  guild_id                   String
+  target_id                  String
+  target_muted_automatically Boolean @default(false)
 
   status RequestStatus @default(Pending)
 

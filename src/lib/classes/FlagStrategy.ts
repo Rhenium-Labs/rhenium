@@ -1,5 +1,5 @@
-import { PrefixedStrategy } from "@sapphire/lexure";
 import { Option } from "@sapphire/result";
+import { PrefixedStrategy } from "@sapphire/lexure";
 
 const never = () => Option.none;
 const always = () => true;

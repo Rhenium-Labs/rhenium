@@ -1,13 +1,13 @@
 import { Awaitable, Collection, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
 
-import path from "node:path";
 import fs from "node:fs";
+import path from "node:path";
 
 import { client } from "#root/index.js";
+import { inflect } from "#utils/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Logger from "#utils/Logger.js";
-import { inflect } from "#utils/index.js";
 
 export abstract class Component {
 	/**

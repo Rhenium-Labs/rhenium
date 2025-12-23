@@ -1,10 +1,7 @@
 import {
-	ActionRowBuilder,
 	ApplicationCommandData,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
-	ButtonBuilder,
-	ButtonStyle,
 	ChatInputCommandInteraction,
 	InteractionContextType
 } from "discord.js";
@@ -38,17 +35,8 @@ export default class Ping extends Command {
 		const ws = this.client.ws.ping;
 		const timeTaken = Math.round(end - start);
 
-		const button = new ButtonBuilder()
-			.setLabel("Ping?")
-			.setEmoji("🏓")
-			.setStyle(ButtonStyle.Secondary)
-			.setCustomId("ping");
-
-		const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-
 		return {
-			content: `Pong! Roundtrip took: ${timeTaken}ms. Heartbeat: ${ws}ms.`,
-			components: [row]
+			content: `Pong! Roundtrip took: ${timeTaken}ms. Heartbeat: ${ws}ms.`
 		};
 	}
 }

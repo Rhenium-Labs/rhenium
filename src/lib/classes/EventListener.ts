@@ -3,8 +3,8 @@ import { Awaitable, Events } from "discord.js";
 import fs from "node:fs";
 import path from "node:path";
 
-import { inflect } from "#utils/index.js";
 import { client } from "#root/index.js";
+import { inflect } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
 
