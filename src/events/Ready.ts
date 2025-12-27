@@ -8,7 +8,7 @@ export default class Ready extends EventListener {
 		super(Events.ClientReady, true);
 	}
 
-	public onEmit(): void {
+	public async onEmit(): Promise<void> {
 		return Logger.success(`Logged in as ${this.client.user?.tag}!`);
 	}
 }

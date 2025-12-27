@@ -16,7 +16,7 @@ export default class Stats extends Command {
 		});
 	}
 
-	public override async messageRun(message: Message<true>): Promise<MessageReplyData> {
+	public async messageRun(message: Message<true>): Promise<MessageReplyData> {
 		if (!DEVELOPER_IDS.includes(message.author.id)) {
 			return {
 				error: "You do not have permission to use this command."

@@ -41,7 +41,7 @@ export default class MessageCreate extends EventListener {
 		super(Events.MessageCreate);
 	}
 
-	override async onEmit(message: Message<true>) {
+	public async onEmit(message: Message<true>) {
 		// prettier-ignore
 		return Promise.all([
 			MessageCreate._highlightMessage(message), 
