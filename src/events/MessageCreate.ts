@@ -15,7 +15,7 @@ import { EventListener } from "#classes/EventListener.js";
 import { client, prisma } from "#root/index.js";
 import { captureException } from "@sentry/node";
 import { MessageReplyData } from "#utils/Types.js";
-import { formatMessageContent } from "#utils/index.js";
+import { formatMessageContent } from "#utils/Messages.js";
 import { Command, CommandManager } from "#classes/Command.js";
 
 import Args from "#classes/Args.js";

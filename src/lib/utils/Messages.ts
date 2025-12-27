@@ -1,7 +1,11 @@
 import {
+	codeBlock,
 	DiscordAPIError,
+	escapeCodeBlock,
+	hyperlink,
 	MessagePayload,
 	RESTJSONErrorCodes,
+	StickerFormatType,
 	type Message,
 	type MessageCreateOptions,
 	type MessageEditOptions,
@@ -9,6 +13,9 @@ import {
 	type PartialGroupDMChannel,
 	type ReplyOptions
 } from "discord.js";
+
+import { hastebin, truncate } from "./index.js";
+import { client } from "#root/index.js";
 
 const replies = new WeakMap<Message, Message>();
 
@@ -135,4 +142,53 @@ async function tryEdit(message: Message, response: Message, payload: MessagePayl
 
 async function trySend(message: Message, payload: MessagePayload) {
 	return (message.channel as Exclude<Message["channel"], PartialGroupDMChannel>).send(payload);
+}
+
+/**
+ * Formats message content, including stickers and URLs, for display.
+ *
+ * @param content The message content.
+ * @param stickerId The sticker ID.
+ * @param url The message URL.
+ * @param includeUrl Whether to include the URL in the formatted content.
+ * @returns The formatted message content.
+ */
+
+export async function formatMessageContent(
+	content: string | null,
+	stickerId: string | null,
+	url: string | null,
+	includeUrl: boolean = true
+): Promise<string> {
+	const parts: string[] = [];
+
+	if (url && includeUrl) {
+		parts.push(hyperlink("Jump to message", url));
+	}
+
+	if (stickerId) {
+		const sticker = await client.fetchSticker(stickerId);
+		const stickerText =
+			sticker.format === StickerFormatType.Lottie
+				? `Lottie Sticker: ${sticker.name}`
+				: hyperlink(`Sticker: ${sticker.name}`, sticker.url);
+		parts.push(stickerText);
+	}
+
+	const prefix = parts.length ? parts.join(" `|` ") : "";
+	const separator = prefix ? " `|` " : "";
+
+	if (!content) {
+		return prefix + codeBlock("Unknown content.");
+	}
+
+	const escapedContent = escapeCodeBlock(content);
+
+	if (escapedContent.length > 1024) {
+		const hastebinUrl = await hastebin(escapedContent, "txt");
+		return prefix + separator + hyperlink("View full content", hastebinUrl!);
+	}
+
+	const maxContentLength = Math.max(0, 1000 - prefix.length);
+	return prefix + codeBlock(truncate(escapedContent, maxContentLength));
 }
