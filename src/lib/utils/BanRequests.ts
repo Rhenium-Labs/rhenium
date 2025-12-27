@@ -175,7 +175,7 @@ export default class BanRequestUtils {
 				}
 
 				if (expiresAt) {
-					await prisma.unbanJob.upsert({
+					await prisma.temporaryBan.upsert({
 						where: { guild_id_target_id: { guild_id: interaction.guild.id, target_id: target.id } },
 						create: { guild_id: interaction.guild.id, target_id: target.id, expires_at: expiresAt },
 						update: { expires_at: expiresAt }

@@ -1,7 +1,8 @@
 import ms, { StringValue } from "ms";
 
 import type { SimpleResult } from "./Types.js";
-import { GuildMember, Snowflake } from "discord.js";
+import { codeBlock, escapeCodeBlock, GuildMember, hyperlink, Snowflake, StickerFormatType } from "discord.js";
+import { client } from "#root/index.js";
 
 /**
  * Inflects a word based on the count.
@@ -113,4 +114,70 @@ export async function hastebin(data: any, ext: string = "js"): Promise<string | 
 
 	const bin = (await req.json()) as { key: string };
 	return `https://hst.sh/${bin.key}.${ext}`;
+}
+
+/**
+ * Truncates a string to a maximum length, appending an ellipsis and character count if truncated.
+ *
+ * @param str The string to truncate.
+ * @param maxLength The maximum length of the string.
+ * @returns The truncated string.
+ */
+
+export function truncate(str: string, maxLength: number): string {
+	if (str.length > maxLength) {
+		const croppedStr = str.slice(0, maxLength - 23);
+		return `${croppedStr}…(${str.length - croppedStr.length} more characters)`;
+	}
+
+	return str;
+}
+
+/**
+ * Formats message content, including stickers and URLs, for display.
+ *
+ * @param content The message content.
+ * @param stickerId The sticker ID.
+ * @param url The message URL.
+ * @param includeUrl Whether to include the URL in the formatted content.
+ * @returns The formatted message content.
+ */
+
+export async function formatMessageContent(
+	content: string | null,
+	stickerId: string | null,
+	url: string | null,
+	includeUrl: boolean = true
+): Promise<string> {
+	const parts: string[] = [];
+
+	if (url && includeUrl) {
+		parts.push(hyperlink("Jump to message", url));
+	}
+
+	if (stickerId) {
+		const sticker = await client.fetchSticker(stickerId);
+		const stickerText =
+			sticker.format === StickerFormatType.Lottie
+				? `Lottie Sticker: ${sticker.name}`
+				: hyperlink(`Sticker: ${sticker.name}`, sticker.url);
+		parts.push(stickerText);
+	}
+
+	const prefix = parts.length ? parts.join(" `|` ") : "";
+	const separator = prefix ? " `|` " : "";
+
+	if (!content) {
+		return prefix + codeBlock("Unknown content.");
+	}
+
+	const escapedContent = escapeCodeBlock(content);
+
+	if (escapedContent.length > 1024) {
+		const hastebinUrl = await hastebin(escapedContent, "txt");
+		return prefix + separator + hyperlink("View full content", hastebinUrl!);
+	}
+
+	const maxContentLength = Math.max(0, 1000 - prefix.length);
+	return prefix + codeBlock(truncate(escapedContent, maxContentLength));
 }

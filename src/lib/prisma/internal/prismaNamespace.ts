@@ -369,7 +369,12 @@ export const ModelName = {
 	BanRequestConfig: "BanRequestConfig",
 	ContentFilterConfig: "ContentFilterConfig",
 	BanRequest: "BanRequest",
-	UnbanJob: "UnbanJob"
+	TemporaryBan: "TemporaryBan",
+	HighlightConfig: "HighlightConfig",
+	Highlight: "Highlight",
+	HighlightPattern: "HighlightPattern",
+	HighlightChannelScoping: "HighlightChannelScoping",
+	HighlightUserBlacklist: "HighlightUserBlacklist"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -396,7 +401,12 @@ export type TypeMap<
 			| "banRequestConfig"
 			| "contentFilterConfig"
 			| "banRequest"
-			| "unbanJob";
+			| "temporaryBan"
+			| "highlightConfig"
+			| "highlight"
+			| "highlightPattern"
+			| "highlightChannelScoping"
+			| "highlightUserBlacklist";
 		txIsolationLevel: TransactionIsolationLevel;
 	};
 	model: {
@@ -848,77 +858,451 @@ export type TypeMap<
 				};
 			};
 		};
-		UnbanJob: {
-			payload: Prisma.$UnbanJobPayload<ExtArgs>;
-			fields: Prisma.UnbanJobFieldRefs;
+		TemporaryBan: {
+			payload: Prisma.$TemporaryBanPayload<ExtArgs>;
+			fields: Prisma.TemporaryBanFieldRefs;
 			operations: {
 				findUnique: {
-					args: Prisma.UnbanJobFindUniqueArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload> | null;
+					args: Prisma.TemporaryBanFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload> | null;
 				};
 				findUniqueOrThrow: {
-					args: Prisma.UnbanJobFindUniqueOrThrowArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+					args: Prisma.TemporaryBanFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>;
 				};
 				findFirst: {
-					args: Prisma.UnbanJobFindFirstArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload> | null;
+					args: Prisma.TemporaryBanFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload> | null;
 				};
 				findFirstOrThrow: {
-					args: Prisma.UnbanJobFindFirstOrThrowArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+					args: Prisma.TemporaryBanFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>;
 				};
 				findMany: {
-					args: Prisma.UnbanJobFindManyArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>[];
+					args: Prisma.TemporaryBanFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>[];
 				};
 				create: {
-					args: Prisma.UnbanJobCreateArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+					args: Prisma.TemporaryBanCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>;
 				};
 				createMany: {
-					args: Prisma.UnbanJobCreateManyArgs<ExtArgs>;
+					args: Prisma.TemporaryBanCreateManyArgs<ExtArgs>;
 					result: BatchPayload;
 				};
 				createManyAndReturn: {
-					args: Prisma.UnbanJobCreateManyAndReturnArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>[];
+					args: Prisma.TemporaryBanCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>[];
 				};
 				delete: {
-					args: Prisma.UnbanJobDeleteArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+					args: Prisma.TemporaryBanDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>;
 				};
 				update: {
-					args: Prisma.UnbanJobUpdateArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+					args: Prisma.TemporaryBanUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>;
 				};
 				deleteMany: {
-					args: Prisma.UnbanJobDeleteManyArgs<ExtArgs>;
+					args: Prisma.TemporaryBanDeleteManyArgs<ExtArgs>;
 					result: BatchPayload;
 				};
 				updateMany: {
-					args: Prisma.UnbanJobUpdateManyArgs<ExtArgs>;
+					args: Prisma.TemporaryBanUpdateManyArgs<ExtArgs>;
 					result: BatchPayload;
 				};
 				updateManyAndReturn: {
-					args: Prisma.UnbanJobUpdateManyAndReturnArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>[];
+					args: Prisma.TemporaryBanUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>[];
 				};
 				upsert: {
-					args: Prisma.UnbanJobUpsertArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$UnbanJobPayload>;
+					args: Prisma.TemporaryBanUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$TemporaryBanPayload>;
 				};
 				aggregate: {
-					args: Prisma.UnbanJobAggregateArgs<ExtArgs>;
-					result: runtime.Types.Utils.Optional<Prisma.AggregateUnbanJob>;
+					args: Prisma.TemporaryBanAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateTemporaryBan>;
 				};
 				groupBy: {
-					args: Prisma.UnbanJobGroupByArgs<ExtArgs>;
-					result: runtime.Types.Utils.Optional<Prisma.UnbanJobGroupByOutputType>[];
+					args: Prisma.TemporaryBanGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.TemporaryBanGroupByOutputType>[];
 				};
 				count: {
-					args: Prisma.UnbanJobCountArgs<ExtArgs>;
-					result: runtime.Types.Utils.Optional<Prisma.UnbanJobCountAggregateOutputType> | number;
+					args: Prisma.TemporaryBanCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.TemporaryBanCountAggregateOutputType> | number;
+				};
+			};
+		};
+		HighlightConfig: {
+			payload: Prisma.$HighlightConfigPayload<ExtArgs>;
+			fields: Prisma.HighlightConfigFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.HighlightConfigFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.HighlightConfigFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>;
+				};
+				findFirst: {
+					args: Prisma.HighlightConfigFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.HighlightConfigFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>;
+				};
+				findMany: {
+					args: Prisma.HighlightConfigFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>[];
+				};
+				create: {
+					args: Prisma.HighlightConfigCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>;
+				};
+				createMany: {
+					args: Prisma.HighlightConfigCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.HighlightConfigCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>[];
+				};
+				delete: {
+					args: Prisma.HighlightConfigDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>;
+				};
+				update: {
+					args: Prisma.HighlightConfigUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>;
+				};
+				deleteMany: {
+					args: Prisma.HighlightConfigDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.HighlightConfigUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.HighlightConfigUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>[];
+				};
+				upsert: {
+					args: Prisma.HighlightConfigUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightConfigPayload>;
+				};
+				aggregate: {
+					args: Prisma.HighlightConfigAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateHighlightConfig>;
+				};
+				groupBy: {
+					args: Prisma.HighlightConfigGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.HighlightConfigGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.HighlightConfigCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.HighlightConfigCountAggregateOutputType> | number;
+				};
+			};
+		};
+		Highlight: {
+			payload: Prisma.$HighlightPayload<ExtArgs>;
+			fields: Prisma.HighlightFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.HighlightFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.HighlightFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>;
+				};
+				findFirst: {
+					args: Prisma.HighlightFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.HighlightFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>;
+				};
+				findMany: {
+					args: Prisma.HighlightFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>[];
+				};
+				create: {
+					args: Prisma.HighlightCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>;
+				};
+				createMany: {
+					args: Prisma.HighlightCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.HighlightCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>[];
+				};
+				delete: {
+					args: Prisma.HighlightDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>;
+				};
+				update: {
+					args: Prisma.HighlightUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>;
+				};
+				deleteMany: {
+					args: Prisma.HighlightDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.HighlightUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.HighlightUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>[];
+				};
+				upsert: {
+					args: Prisma.HighlightUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPayload>;
+				};
+				aggregate: {
+					args: Prisma.HighlightAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateHighlight>;
+				};
+				groupBy: {
+					args: Prisma.HighlightGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.HighlightGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.HighlightCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.HighlightCountAggregateOutputType> | number;
+				};
+			};
+		};
+		HighlightPattern: {
+			payload: Prisma.$HighlightPatternPayload<ExtArgs>;
+			fields: Prisma.HighlightPatternFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.HighlightPatternFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.HighlightPatternFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
+				};
+				findFirst: {
+					args: Prisma.HighlightPatternFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.HighlightPatternFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
+				};
+				findMany: {
+					args: Prisma.HighlightPatternFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>[];
+				};
+				create: {
+					args: Prisma.HighlightPatternCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
+				};
+				createMany: {
+					args: Prisma.HighlightPatternCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.HighlightPatternCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>[];
+				};
+				delete: {
+					args: Prisma.HighlightPatternDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
+				};
+				update: {
+					args: Prisma.HighlightPatternUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
+				};
+				deleteMany: {
+					args: Prisma.HighlightPatternDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.HighlightPatternUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.HighlightPatternUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>[];
+				};
+				upsert: {
+					args: Prisma.HighlightPatternUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
+				};
+				aggregate: {
+					args: Prisma.HighlightPatternAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateHighlightPattern>;
+				};
+				groupBy: {
+					args: Prisma.HighlightPatternGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.HighlightPatternGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.HighlightPatternCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.HighlightPatternCountAggregateOutputType> | number;
+				};
+			};
+		};
+		HighlightChannelScoping: {
+			payload: Prisma.$HighlightChannelScopingPayload<ExtArgs>;
+			fields: Prisma.HighlightChannelScopingFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.HighlightChannelScopingFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.HighlightChannelScopingFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>;
+				};
+				findFirst: {
+					args: Prisma.HighlightChannelScopingFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.HighlightChannelScopingFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>;
+				};
+				findMany: {
+					args: Prisma.HighlightChannelScopingFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>[];
+				};
+				create: {
+					args: Prisma.HighlightChannelScopingCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>;
+				};
+				createMany: {
+					args: Prisma.HighlightChannelScopingCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.HighlightChannelScopingCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>[];
+				};
+				delete: {
+					args: Prisma.HighlightChannelScopingDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>;
+				};
+				update: {
+					args: Prisma.HighlightChannelScopingUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>;
+				};
+				deleteMany: {
+					args: Prisma.HighlightChannelScopingDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.HighlightChannelScopingUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.HighlightChannelScopingUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>[];
+				};
+				upsert: {
+					args: Prisma.HighlightChannelScopingUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightChannelScopingPayload>;
+				};
+				aggregate: {
+					args: Prisma.HighlightChannelScopingAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateHighlightChannelScoping>;
+				};
+				groupBy: {
+					args: Prisma.HighlightChannelScopingGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.HighlightChannelScopingGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.HighlightChannelScopingCountArgs<ExtArgs>;
+					result:
+						| runtime.Types.Utils.Optional<Prisma.HighlightChannelScopingCountAggregateOutputType>
+						| number;
+				};
+			};
+		};
+		HighlightUserBlacklist: {
+			payload: Prisma.$HighlightUserBlacklistPayload<ExtArgs>;
+			fields: Prisma.HighlightUserBlacklistFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.HighlightUserBlacklistFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.HighlightUserBlacklistFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
+				};
+				findFirst: {
+					args: Prisma.HighlightUserBlacklistFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.HighlightUserBlacklistFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
+				};
+				findMany: {
+					args: Prisma.HighlightUserBlacklistFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>[];
+				};
+				create: {
+					args: Prisma.HighlightUserBlacklistCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
+				};
+				createMany: {
+					args: Prisma.HighlightUserBlacklistCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.HighlightUserBlacklistCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>[];
+				};
+				delete: {
+					args: Prisma.HighlightUserBlacklistDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
+				};
+				update: {
+					args: Prisma.HighlightUserBlacklistUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
+				};
+				deleteMany: {
+					args: Prisma.HighlightUserBlacklistDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.HighlightUserBlacklistUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.HighlightUserBlacklistUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>[];
+				};
+				upsert: {
+					args: Prisma.HighlightUserBlacklistUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
+				};
+				aggregate: {
+					args: Prisma.HighlightUserBlacklistAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateHighlightUserBlacklist>;
+				};
+				groupBy: {
+					args: Prisma.HighlightUserBlacklistGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.HighlightUserBlacklistGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.HighlightUserBlacklistCountArgs<ExtArgs>;
+					result:
+						| runtime.Types.Utils.Optional<Prisma.HighlightUserBlacklistCountAggregateOutputType>
+						| number;
 				};
 			};
 		};
@@ -1040,13 +1424,57 @@ export const BanRequestScalarFieldEnum = {
 
 export type BanRequestScalarFieldEnum = (typeof BanRequestScalarFieldEnum)[keyof typeof BanRequestScalarFieldEnum];
 
-export const UnbanJobScalarFieldEnum = {
+export const TemporaryBanScalarFieldEnum = {
 	guild_id: "guild_id",
 	target_id: "target_id",
 	expires_at: "expires_at"
 } as const;
 
-export type UnbanJobScalarFieldEnum = (typeof UnbanJobScalarFieldEnum)[keyof typeof UnbanJobScalarFieldEnum];
+export type TemporaryBanScalarFieldEnum =
+	(typeof TemporaryBanScalarFieldEnum)[keyof typeof TemporaryBanScalarFieldEnum];
+
+export const HighlightConfigScalarFieldEnum = {
+	id: "id",
+	max_patterns: "max_patterns"
+} as const;
+
+export type HighlightConfigScalarFieldEnum =
+	(typeof HighlightConfigScalarFieldEnum)[keyof typeof HighlightConfigScalarFieldEnum];
+
+export const HighlightScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id"
+} as const;
+
+export type HighlightScalarFieldEnum = (typeof HighlightScalarFieldEnum)[keyof typeof HighlightScalarFieldEnum];
+
+export const HighlightPatternScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	pattern: "pattern"
+} as const;
+
+export type HighlightPatternScalarFieldEnum =
+	(typeof HighlightPatternScalarFieldEnum)[keyof typeof HighlightPatternScalarFieldEnum];
+
+export const HighlightChannelScopingScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	channel_id: "channel_id",
+	type: "type"
+} as const;
+
+export type HighlightChannelScopingScalarFieldEnum =
+	(typeof HighlightChannelScopingScalarFieldEnum)[keyof typeof HighlightChannelScopingScalarFieldEnum];
+
+export const HighlightUserBlacklistScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	target_id: "target_id"
+} as const;
+
+export type HighlightUserBlacklistScalarFieldEnum =
+	(typeof HighlightUserBlacklistScalarFieldEnum)[keyof typeof HighlightUserBlacklistScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",
@@ -1282,7 +1710,12 @@ export type GlobalOmitConfig = {
 	banRequestConfig?: Prisma.BanRequestConfigOmit;
 	contentFilterConfig?: Prisma.ContentFilterConfigOmit;
 	banRequest?: Prisma.BanRequestOmit;
-	unbanJob?: Prisma.UnbanJobOmit;
+	temporaryBan?: Prisma.TemporaryBanOmit;
+	highlightConfig?: Prisma.HighlightConfigOmit;
+	highlight?: Prisma.HighlightOmit;
+	highlightPattern?: Prisma.HighlightPatternOmit;
+	highlightChannelScoping?: Prisma.HighlightChannelScopingOmit;
+	highlightUserBlacklist?: Prisma.HighlightUserBlacklistOmit;
 };
 
 /* Types for Logging */

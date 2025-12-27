@@ -47,7 +47,32 @@ export type ContentFilterConfig = Prisma.ContentFilterConfigModel;
  */
 export type BanRequest = Prisma.BanRequestModel;
 /**
- * Model UnbanJob
+ * Model TemporaryBan
  *
  */
-export type UnbanJob = Prisma.UnbanJobModel;
+export type TemporaryBan = Prisma.TemporaryBanModel;
+/**
+ * Model HighlightConfig
+ *
+ */
+export type HighlightConfig = Prisma.HighlightConfigModel;
+/**
+ * Model Highlight
+ *
+ */
+export type Highlight = Prisma.HighlightModel;
+/**
+ * Model HighlightPattern
+ *
+ */
+export type HighlightPattern = Prisma.HighlightPatternModel;
+/**
+ * Model HighlightChannelScoping
+ *
+ */
+export type HighlightChannelScoping = Prisma.HighlightChannelScopingModel;
+/**
+ * Model HighlightUserBlacklist
+ *
+ */
+export type HighlightUserBlacklist = Prisma.HighlightUserBlacklistModel;

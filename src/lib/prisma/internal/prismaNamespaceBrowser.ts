@@ -54,7 +54,12 @@ export const ModelName = {
 	BanRequestConfig: "BanRequestConfig",
 	ContentFilterConfig: "ContentFilterConfig",
 	BanRequest: "BanRequest",
-	UnbanJob: "UnbanJob"
+	TemporaryBan: "TemporaryBan",
+	HighlightConfig: "HighlightConfig",
+	Highlight: "Highlight",
+	HighlightPattern: "HighlightPattern",
+	HighlightChannelScoping: "HighlightChannelScoping",
+	HighlightUserBlacklist: "HighlightUserBlacklist"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -152,13 +157,57 @@ export const BanRequestScalarFieldEnum = {
 
 export type BanRequestScalarFieldEnum = (typeof BanRequestScalarFieldEnum)[keyof typeof BanRequestScalarFieldEnum];
 
-export const UnbanJobScalarFieldEnum = {
+export const TemporaryBanScalarFieldEnum = {
 	guild_id: "guild_id",
 	target_id: "target_id",
 	expires_at: "expires_at"
 } as const;
 
-export type UnbanJobScalarFieldEnum = (typeof UnbanJobScalarFieldEnum)[keyof typeof UnbanJobScalarFieldEnum];
+export type TemporaryBanScalarFieldEnum =
+	(typeof TemporaryBanScalarFieldEnum)[keyof typeof TemporaryBanScalarFieldEnum];
+
+export const HighlightConfigScalarFieldEnum = {
+	id: "id",
+	max_patterns: "max_patterns"
+} as const;
+
+export type HighlightConfigScalarFieldEnum =
+	(typeof HighlightConfigScalarFieldEnum)[keyof typeof HighlightConfigScalarFieldEnum];
+
+export const HighlightScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id"
+} as const;
+
+export type HighlightScalarFieldEnum = (typeof HighlightScalarFieldEnum)[keyof typeof HighlightScalarFieldEnum];
+
+export const HighlightPatternScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	pattern: "pattern"
+} as const;
+
+export type HighlightPatternScalarFieldEnum =
+	(typeof HighlightPatternScalarFieldEnum)[keyof typeof HighlightPatternScalarFieldEnum];
+
+export const HighlightChannelScopingScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	channel_id: "channel_id",
+	type: "type"
+} as const;
+
+export type HighlightChannelScopingScalarFieldEnum =
+	(typeof HighlightChannelScopingScalarFieldEnum)[keyof typeof HighlightChannelScopingScalarFieldEnum];
+
+export const HighlightUserBlacklistScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	target_id: "target_id"
+} as const;
+
+export type HighlightUserBlacklistScalarFieldEnum =
+	(typeof HighlightUserBlacklistScalarFieldEnum)[keyof typeof HighlightUserBlacklistScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",

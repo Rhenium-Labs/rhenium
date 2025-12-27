@@ -39,7 +39,9 @@ model Guild {
   message_report_config MessageReportConfig?
   ban_request_config    BanRequestConfig?
   content_filter_config ContentFilterConfig?
+  highlight_config      HighlightConfig?
   ban_requests          BanRequest[]
+  highlights            Highlight[]
 }
 
 model Whitelist {
@@ -130,10 +132,59 @@ model BanRequest {
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }
 
-model UnbanJob {
+model TemporaryBan {
   guild_id   String
   target_id  String
   expires_at DateTime
 
   @@unique([guild_id, target_id])
+}
+
+model HighlightConfig {
+  id String @id
+
+  // Hardcoded limit of 30 highlights per guild.
+  max_patterns Int   @default(15)
+  guild        Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model Highlight {
+  user_id         String
+  guild_id        String
+  patterns        HighlightPattern[]
+  channel_scoping HighlightChannelScoping[]
+  user_blacklist  HighlightUserBlacklist[]
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, guild_id])
+}
+
+model HighlightPattern {
+  user_id   String
+  guild_id  String
+  pattern   String
+  highlight Highlight @relation(fields: [user_id, guild_id], references: [user_id, guild_id], onDelete: Cascade)
+
+  @@id([user_id, guild_id, pattern])
+}
+
+model HighlightChannelScoping {
+  user_id    String
+  guild_id   String
+  channel_id String
+  /// Include [`0`] or Exclude [`1`]
+  type       Int
+  highlight  Highlight @relation(fields: [user_id, guild_id], references: [user_id, guild_id], onDelete: Cascade)
+
+  @@id([user_id, guild_id, channel_id])
+}
+
+model HighlightUserBlacklist {
+  user_id   String
+  guild_id  String
+  target_id String
+  highlight Highlight @relation(fields: [user_id, guild_id], references: [user_id, guild_id], onDelete: Cascade)
+
+  @@id([user_id, guild_id, target_id])
 }
