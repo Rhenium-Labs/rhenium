@@ -1,11 +1,11 @@
-import { EmbedBuilder, Message } from "discord.js";
 import { Command } from "#classes/Command.js";
-
-import type { MessageReplyData } from "#utils/Types.js";
+import { EmbedBuilder, Message } from "discord.js";
 
 import ms from "ms";
+
 import { prisma } from "#root/index.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
+import type { MessageReplyData } from "#utils/Types.js";
 
 export default class Stats extends Command {
 	constructor() {

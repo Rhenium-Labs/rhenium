@@ -1,7 +1,7 @@
-import { SnowflakeRegex, UserOrMemberMentionRegex } from "@sapphire/discord-utilities";
+import { Result } from "@sapphire/result";
 import { ArgumentStream, join, WordParameter } from "@sapphire/lexure";
 import { GuildMember, Message, Snowflake, User } from "discord.js";
-import { Result } from "@sapphire/result";
+import { SnowflakeRegex, UserOrMemberMentionRegex } from "@sapphire/discord-utilities";
 
 export default class Args {
 	/**

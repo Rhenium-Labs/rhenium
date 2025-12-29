@@ -1,5 +1,6 @@
 import { GuildMember, Snowflake } from "discord.js";
-import ms, { StringValue } from "ms";
+
+import ms, { type StringValue } from "ms";
 
 import type { SimpleResult } from "./Types.js";
 

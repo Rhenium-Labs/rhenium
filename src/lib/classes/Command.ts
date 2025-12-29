@@ -1,8 +1,8 @@
-import { ApplicationCommandData, Awaitable, Collection, CommandInteraction, Message } from "discord.js";
 import { ArgumentStream, IUnorderedStrategy, Lexer, Parser } from "@sapphire/lexure";
+import { ApplicationCommandData, Awaitable, Collection, CommandInteraction, Message } from "discord.js";
 
-import path from "node:path";
 import fs from "node:fs";
+import path from "node:path";
 
 import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";

@@ -14,8 +14,8 @@ import {
 	type ReplyOptions
 } from "discord.js";
 
-import { hastebin, truncate } from "./index.js";
 import { client } from "#root/index.js";
+import { hastebin, truncate } from "./index.js";
 
 const replies = new WeakMap<Message, Message>();
 

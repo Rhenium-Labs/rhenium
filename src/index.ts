@@ -1,7 +1,7 @@
 import "dotenv/config.js";
 
-import { PrismaPg } from "@prisma/adapter-pg";
 import { Redis } from "@upstash/redis";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 import { sleep } from "#utils/index.js";
 import { PrismaClient } from "#prisma/client.js";
@@ -9,8 +9,8 @@ import { CommandManager } from "#classes/Command.js";
 import { ComponentManager } from "#classes/Component.js";
 import { EventListenerManager } from "#classes/EventListener.js";
 
-import StrafeStryker from "#classes/Client.js";
 import Logger from "#utils/Logger.js";
+import StrafeStryker from "#classes/Client.js";
 
 /**
  * The Discord client instance.

@@ -37,7 +37,7 @@ const highlightCooldowns = new Map<string, number>();
 const compiledRegexCache = new Map<string, RegExp>();
 
 export default class MessageCreate extends EventListener {
-	constructor() {
+	public constructor() {
 		super(Events.MessageCreate);
 	}
 
