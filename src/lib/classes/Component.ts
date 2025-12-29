@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Logger from "#utils/Logger.js";

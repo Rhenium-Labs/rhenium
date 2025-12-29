@@ -7,7 +7,8 @@ import {
 } from "discord.js";
 
 import { Command } from "#classes/Command.js";
-import { InteractionReplyData } from "#utils/Types.js";
+
+import type { InteractionReplyData } from "#utils/Types.js";
 
 export default class Ping extends Command {
 	public constructor() {

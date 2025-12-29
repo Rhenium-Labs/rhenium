@@ -6,6 +6,7 @@ import path from "node:path";
 
 import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";
+
 import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
 import Args from "./Args.js";

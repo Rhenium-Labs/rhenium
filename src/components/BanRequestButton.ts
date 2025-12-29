@@ -3,7 +3,8 @@ import { ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, TextIn
 import { prisma } from "#root/index.js";
 import { Component } from "#classes/Component.js";
 import { userMentionWithId } from "#utils/index.js";
-import { InteractionReplyData } from "#utils/Types.js";
+
+import type { InteractionReplyData } from "#utils/Types.js";
 
 import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
 

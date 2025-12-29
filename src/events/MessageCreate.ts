@@ -15,9 +15,10 @@ import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { EventListener } from "#classes/EventListener.js";
 import { client, prisma } from "#root/index.js";
 import { captureException } from "@sentry/node";
-import { MessageReplyData } from "#utils/Types.js";
 import { formatMessageContent } from "#utils/Messages.js";
 import { Command, CommandManager } from "#classes/Command.js";
+
+import type { MessageReplyData } from "#utils/Types.js";
 
 import Args from "#classes/Args.js";
 import Logger from "#utils/Logger.js";

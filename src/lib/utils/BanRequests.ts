@@ -18,8 +18,9 @@ import ms from "ms";
 
 import { client, prisma } from "#root/index.js";
 import { userMentionWithId } from "./index.js";
-import { InteractionReplyData, SimpleResult } from "./Types.js";
 import { RequestStatus, type BanRequest, type BanRequestConfig } from "#prisma/client.js";
+
+import type { InteractionReplyData, SimpleResult } from "./Types.js";
 
 export default class BanRequestUtils {
 	/**

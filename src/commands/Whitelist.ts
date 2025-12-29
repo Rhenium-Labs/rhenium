@@ -4,7 +4,8 @@ import { Command } from "#classes/Command.js";
 import { hastebin } from "#utils/index.js";
 import { kv, prisma } from "#root/index.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
-import { MessageReplyData } from "#utils/Types.js";
+
+import type { MessageReplyData } from "#utils/Types.js";
 
 import Args from "#classes/Args.js";
 

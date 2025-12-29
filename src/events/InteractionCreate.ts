@@ -12,9 +12,10 @@ import { captureException } from "@sentry/node";
 import { RedisCache } from "#utils/Redis.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { EventListener } from "#classes/EventListener.js";
-import { InteractionReplyData } from "#utils/Types.js";
 import { Command, CommandManager } from "#classes/Command.js";
 import { ComponentInteraction, ComponentManager } from "#classes/Component.js";
+
+import type { InteractionReplyData } from "#utils/Types.js";
 
 import Logger from "#utils/Logger.js";
 

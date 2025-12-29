@@ -15,7 +15,8 @@ import safe from "safe-regex";
 import { prisma } from "#root/index.js";
 import { inflect } from "#utils/index.js";
 import { Command } from "#classes/Command.js";
-import { InteractionReplyData } from "#utils/Types.js";
+
+import type { InteractionReplyData } from "#utils/Types.js";
 
 export default class Highlights extends Command {
 	public constructor() {
