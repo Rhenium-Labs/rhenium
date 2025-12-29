@@ -10,6 +10,7 @@ import {
 
 import { reply } from "#utils/Messages.js";
 import { RedisCache } from "#utils/Redis.js";
+import { RateLimiter } from "#classes/RateLimiter.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { EventListener } from "#classes/EventListener.js";
 import { client, prisma } from "#root/index.js";
@@ -21,20 +22,17 @@ import { Command, CommandManager } from "#classes/Command.js";
 import Args from "#classes/Args.js";
 import Logger from "#utils/Logger.js";
 
-/** Cooldown duration in milliseconds. */
-const HIGHLIGHT_COOLDOWN_MS = 15_000;
-
-/**
- * Map to track highlight cooldowns.
- * Key format: `${highlightUserId}:${messageAuthorId}`
- */
-const highlightCooldowns = new Map<string, number>();
-
 /**
  * Cache for compiled highlight regex patterns.
  * Key: pattern string
  */
 const compiledRegexCache = new Map<string, RegExp>();
+
+/**
+ * Rate limiter to prevent highlight spam.
+ * Key: `${highlightUserId}:${messageAuthorId}`
+ */
+const ratelimiter = new RateLimiter(1, 15000);
 
 export default class MessageCreate extends EventListener {
 	public constructor() {
@@ -51,7 +49,6 @@ export default class MessageCreate extends EventListener {
 
 	private static async _highlightMessage(message: Message<true>) {
 		const guildId = message.guild.id;
-		const now = Date.now();
 
 		const highlights = await prisma.highlight.findMany({
 			where: { guild_id: guildId },
@@ -71,20 +68,13 @@ export default class MessageCreate extends EventListener {
 
 		for (const highlight of highlights) {
 			// Prevent the same user from triggering the same highlight more than once in 15 seconds.
-			const cooldownKey = `${highlight.user_id}:${messageAuthorId}`;
-			const lastTriggered = highlightCooldowns.get(cooldownKey);
-
-			if (lastTriggered && now - lastTriggered < HIGHLIGHT_COOLDOWN_MS) {
-				continue;
-			}
+			if (!ratelimiter.consume(`${highlight.user_id}:${messageAuthorId}`).success) continue;
 
 			// Ignore messages from the highlight owner.
 			if (highlight.user_id === messageAuthorId) continue;
 
 			// Check if the message author is blacklisted.
-			if (highlight.user_blacklist.some(u => u.target_id === messageAuthorId)) {
-				continue;
-			}
+			if (highlight.user_blacklist.some(u => u.target_id === messageAuthorId)) continue;
 
 			const canViewChannel = message.channel
 				.permissionsFor(highlight.user_id)
@@ -141,11 +131,8 @@ export default class MessageCreate extends EventListener {
 				])
 				.setTimestamp();
 
-			// Set cooldown before sending to prevent race conditions.
-			highlightCooldowns.set(cooldownKey, Date.now());
-
 			// Periodically clean up all caches.
-			cleanupCaches();
+			cleanupRegexCache();
 
 			return user?.send({ embeds: [embed] }).catch(() => null);
 		}
@@ -306,16 +293,7 @@ function getCompiledRegex(pattern: string): RegExp {
 /**
  * Cleans up expired entries in the various caches.
  */
-function cleanupCaches(): void {
-	const now = Date.now();
-
-	// Cleanup cooldowns.
-	for (const [key, timestamp] of highlightCooldowns) {
-		if (now - timestamp >= HIGHLIGHT_COOLDOWN_MS) {
-			highlightCooldowns.delete(key);
-		}
-	}
-
+function cleanupRegexCache(): void {
 	// Limit regex cache size to prevent unbounded growth.
 	if (compiledRegexCache.size > 1000) {
 		const entriesToDelete = compiledRegexCache.size - 500;
