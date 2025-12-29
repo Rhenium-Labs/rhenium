@@ -190,6 +190,9 @@ export default class MessageCreate extends EventListener {
 		const error = response.error;
 		delete response.error;
 
+		const temporary = response.temporary;
+		delete response.temporary;
+
 		const defaultOptions: MessageReplyOptions = {
 			allowedMentions: { parse: [] }
 		};
@@ -201,7 +204,13 @@ export default class MessageCreate extends EventListener {
 				}
 			: response;
 
-		await reply(message, { ...defaultOptions, ...replyOptions });
+		const msg = await reply(message, { ...defaultOptions, ...replyOptions }).catch(() => null);
+
+		if (error || temporary) {
+			setTimeout(async () => {
+				await msg?.delete().catch(() => {});
+			}, 7500);
+		}
 	}
 
 	private static async _getPrefix(message: Message<true>): Promise<string | null> {

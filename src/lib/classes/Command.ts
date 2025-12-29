@@ -191,15 +191,15 @@ export class CommandManager {
 		}
 
 		if (!commands.length) {
-			Logger.info("Found no commands to register.");
+			Logger.info("Found no application commands to register.");
 			return;
 		}
 
 		try {
 			await client.application.commands.set(commands);
-			Logger.success(`Registered ${commands.length} ${inflect(commands.length, "command")}.`);
+			Logger.success(`Registered ${commands.length} ${inflect(commands.length, "application command")}.`);
 		} catch (error) {
-			Logger.fatal("Failed to register commands:", error);
+			Logger.fatal("Failed to register application commands:", error);
 			process.exit(1);
 		}
 	}

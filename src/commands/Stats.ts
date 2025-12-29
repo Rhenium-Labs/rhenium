@@ -17,11 +17,9 @@ export default class Stats extends Command {
 		});
 	}
 
-	public async messageRun(message: Message<true>): Promise<MessageReplyData> {
+	public async messageRun(message: Message<true>): Promise<MessageReplyData | null> {
 		if (!DEVELOPER_IDS.includes(message.author.id)) {
-			return {
-				error: "You do not have permission to use this command."
-			};
+			return null;
 		}
 
 		// Process Uptime.

@@ -113,6 +113,9 @@ export default class InteractionCreate extends EventListener {
 		const error = response.error;
 		delete response.error;
 
+		const temporary = response.temporary;
+		delete response.temporary;
+
 		const defaultOptions: InteractionReplyOptions = {
 			flags: [MessageFlags.Ephemeral],
 			allowedMentions: { parse: [] }
@@ -134,6 +137,12 @@ export default class InteractionCreate extends EventListener {
 			await interaction.editReply(options);
 		} else {
 			await interaction.reply(replyOptions);
+		}
+
+		if (error || temporary) {
+			setTimeout(async () => {
+				await interaction.deleteReply().catch(() => {});
+			}, 7500);
 		}
 	}
 
