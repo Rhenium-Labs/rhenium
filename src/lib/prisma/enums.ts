@@ -18,6 +18,16 @@ export const RequestStatus = {
 
 export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus];
 
+export const ReportStatus = {
+	AutoResolved: "AutoResolved",
+	Pending: "Pending",
+	Disregarded: "Disregarded",
+	Accepted: "Accepted",
+	Denied: "Denied"
+} as const;
+
+export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
+
 export const Detector = {
 	NSFW: "NSFW",
 	OCR: "OCR",

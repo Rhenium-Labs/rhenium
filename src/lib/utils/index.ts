@@ -132,3 +132,20 @@ export function truncate(str: string, maxLength: number): string {
 
 	return str;
 }
+
+/**
+ * Crops a string to a maximum number of lines.
+ *
+ * - Appends the number of lines cropped if the string exceeds the maximum number of lines.
+ *
+ * @param str The string to crop.
+ * @param maxLines The maximum number of lines to keep.
+ * @returns The cropped string.
+ */
+export function cropLines(str: string, maxLines: number): string {
+	const lines = str.split("\n");
+	if (lines.length <= maxLines) return str;
+
+	const diff = lines.length - maxLines + 1;
+	return [...lines.slice(0, maxLines - 1), `(${diff} more ${inflect(diff, "line")})`].join("\n");
+}

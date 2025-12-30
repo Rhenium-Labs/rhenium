@@ -5,7 +5,7 @@ import { hierarchyCheck } from "./index.js";
 
 import type { SimpleResult } from "./Types.js";
 
-export class ModerationUtils {
+export default class ModerationUtils {
 	/**
 	 * Validate a moderation action.
 	 *

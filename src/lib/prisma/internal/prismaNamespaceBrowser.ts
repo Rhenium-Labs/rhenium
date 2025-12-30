@@ -55,6 +55,7 @@ export const ModelName = {
 	ContentFilterConfig: "ContentFilterConfig",
 	BanRequest: "BanRequest",
 	TemporaryBan: "TemporaryBan",
+	MessageReport: "MessageReport",
 	HighlightConfig: "HighlightConfig",
 	Highlight: "Highlight",
 	HighlightPattern: "HighlightPattern",
@@ -165,6 +166,26 @@ export const TemporaryBanScalarFieldEnum = {
 
 export type TemporaryBanScalarFieldEnum =
 	(typeof TemporaryBanScalarFieldEnum)[keyof typeof TemporaryBanScalarFieldEnum];
+
+export const MessageReportScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	message_id: "message_id",
+	reference_id: "reference_id",
+	message_url: "message_url",
+	channel_id: "channel_id",
+	author_id: "author_id",
+	content: "content",
+	reported_at: "reported_at",
+	reported_by: "reported_by",
+	report_reason: "report_reason",
+	status: "status",
+	resolved_at: "resolved_at",
+	resolved_by: "resolved_by"
+} as const;
+
+export type MessageReportScalarFieldEnum =
+	(typeof MessageReportScalarFieldEnum)[keyof typeof MessageReportScalarFieldEnum];
 
 export const HighlightConfigScalarFieldEnum = {
 	id: "id",

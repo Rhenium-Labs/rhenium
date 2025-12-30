@@ -14,6 +14,7 @@ export type * from "./models/BanRequestConfig.js";
 export type * from "./models/ContentFilterConfig.js";
 export type * from "./models/BanRequest.js";
 export type * from "./models/TemporaryBan.js";
+export type * from "./models/MessageReport.js";
 export type * from "./models/HighlightConfig.js";
 export type * from "./models/Highlight.js";
 export type * from "./models/HighlightPattern.js";

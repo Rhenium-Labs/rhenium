@@ -389,7 +389,6 @@ export default class Highlights extends Command {
 		} catch {
 			return {
 				content: `Failed to ${stringifiedType} ${channel}. Please check whether the channel is already in the scope.`,
-				ephemeral: true,
 				temporary: true
 			};
 		}

@@ -7,6 +7,7 @@ import {
 	MessageReplyOptions,
 	PermissionFlagsBits
 } from "discord.js";
+import { captureException } from "@sentry/node";
 
 import { reply } from "#utils/Messages.js";
 import { RedisCache } from "#utils/Redis.js";
@@ -14,7 +15,6 @@ import { RateLimiter } from "#classes/RateLimiter.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { EventListener } from "#classes/EventListener.js";
 import { client, prisma } from "#root/index.js";
-import { captureException } from "@sentry/node";
 import { formatMessageContent } from "#utils/Messages.js";
 import { Command, CommandManager } from "#classes/Command.js";
 
@@ -41,6 +41,10 @@ export default class MessageCreate extends EventListener {
 	}
 
 	public async onEmit(message: Message<true>) {
+		if (message.author.bot || message.webhookId || message.system) {
+			return;
+		}
+
 		// prettier-ignore
 		return Promise.all([
 			MessageCreate._highlightMessage(message), 
@@ -143,7 +147,6 @@ export default class MessageCreate extends EventListener {
 		const prefix = await this._getPrefix(message);
 
 		if (!prefix) return;
-		if (!(await MessageCreate._checkWhitelist(message))) return;
 
 		const trimmedContent = message.content.slice(prefix.length).trim();
 		const spaceIndex = trimmedContent.indexOf(" ");
@@ -152,6 +155,7 @@ export default class MessageCreate extends EventListener {
 		const command = CommandManager.get(commandName);
 
 		if (!command || !command.messageRun) return;
+		if (!(await MessageCreate._checkWhitelist(message))) return;
 
 		const parameters = spaceIndex === -1 ? "" : trimmedContent.substring(spaceIndex + 1).trim();
 		const args = command.getArgsClass(message, parameters);
@@ -214,10 +218,6 @@ export default class MessageCreate extends EventListener {
 	}
 
 	private static async _getPrefix(message: Message<true>): Promise<string | null> {
-		if (message.author.bot || message.webhookId) {
-			return null;
-		}
-
 		const bot = await message.guild.members.fetchMe();
 		const permissions = message.channel.permissionsFor(bot);
 

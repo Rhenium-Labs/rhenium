@@ -96,7 +96,7 @@ export abstract class Command {
 	 * @return The result of the command execution.
 	 */
 
-	public interactionRun?(interaction: CommandInteraction<"cached">): Awaitable<InteractionReplyData>;
+	public interactionRun?(interaction: CommandInteraction<"cached">): Awaitable<InteractionReplyData | null>;
 
 	/**
 	 * Handles message based command execution.

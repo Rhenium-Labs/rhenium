@@ -52,6 +52,11 @@ export type BanRequest = Prisma.BanRequestModel;
  */
 export type TemporaryBan = Prisma.TemporaryBanModel;
 /**
+ * Model MessageReport
+ *
+ */
+export type MessageReport = Prisma.MessageReportModel;
+/**
  * Model HighlightConfig
  *
  */

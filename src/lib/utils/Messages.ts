@@ -6,6 +6,8 @@ import {
 	MessagePayload,
 	RESTJSONErrorCodes,
 	StickerFormatType,
+	cleanContent as djsCleanContent,
+	type TextBasedChannel,
 	type Message,
 	type MessageCreateOptions,
 	type MessageEditOptions,
@@ -191,4 +193,18 @@ export async function formatMessageContent(
 
 	const maxContentLength = Math.max(0, 1000 - prefix.length);
 	return prefix + codeBlock(truncate(escapedContent, maxContentLength));
+}
+
+/**
+ * Clean the content of a message for logging.
+ *
+ * @param str The string to clean.
+ * @param channel The channel this message was sent in.
+ * @returns The cleaned string.
+ */
+export function cleanMessageContent(str: string, channel: TextBasedChannel): string {
+	return djsCleanContent(
+		str.replace(/<(a?):([^:\n\r]+):(\d{17,19})>/g, "<$1\\:$2\\:$3>").replace(/<@!?(\d{17,19})>/g, "<@$1> ($1)"),
+		channel
+	);
 }

@@ -55,7 +55,7 @@ export default class InteractionCreate extends EventListener {
 			} else {
 				await interaction.reply({
 					content: `An error occurred while executing this interaction (\`${sentryId}\`).`,
-					ephemeral: true
+					flags: [MessageFlags.Ephemeral]
 				});
 			}
 
@@ -71,7 +71,7 @@ export default class InteractionCreate extends EventListener {
 		if (!structure) {
 			await interaction.reply({
 				content: "Unknown interaction.",
-				ephemeral: true
+				flags: [MessageFlags.Ephemeral]
 			});
 
 			return Logger.warn(`Unknown interaction: ${interaction.id}`);
@@ -96,7 +96,7 @@ export default class InteractionCreate extends EventListener {
 
 				await interaction.reply({
 					content: `An error occurred while executing this interaction (\`${sentryId}\`).`,
-					ephemeral: true
+					flags: [MessageFlags.Ephemeral]
 				});
 
 				return Logger.error(`Command ${structure.name} missing interactionRun method.`);

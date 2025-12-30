@@ -15,6 +15,14 @@ enum RequestStatus {
   Denied
 }
 
+enum ReportStatus {
+  AutoResolved
+  Pending
+  Disregarded
+  Accepted
+  Denied
+}
+
 enum Detector {
   NSFW
   OCR
@@ -42,6 +50,7 @@ model Guild {
   highlight_config      HighlightConfig?
   ban_requests          BanRequest[]
   highlights            Highlight[]
+  message_reports       MessageReport[]
 }
 
 model Whitelist {
@@ -138,6 +147,28 @@ model TemporaryBan {
   expires_at DateTime
 
   @@unique([guild_id, target_id])
+}
+
+model MessageReport {
+  id           String  @id
+  guild_id     String
+  message_id   String
+  reference_id String?
+  message_url  String
+  channel_id   String
+  author_id    String
+  content      String?
+
+  reported_at   DateTime
+  reported_by   String
+  report_reason String
+
+  status ReportStatus @default(Pending)
+
+  resolved_at DateTime?
+  resolved_by String?
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }
 
 model HighlightConfig {

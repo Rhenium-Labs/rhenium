@@ -164,6 +164,7 @@ export type GuildWhereInput = {
 	> | null;
 	ban_requests?: Prisma.BanRequestListRelationFilter;
 	highlights?: Prisma.HighlightListRelationFilter;
+	message_reports?: Prisma.MessageReportListRelationFilter;
 };
 
 export type GuildOrderByWithRelationInput = {
@@ -174,6 +175,7 @@ export type GuildOrderByWithRelationInput = {
 	highlight_config?: Prisma.HighlightConfigOrderByWithRelationInput;
 	ban_requests?: Prisma.BanRequestOrderByRelationAggregateInput;
 	highlights?: Prisma.HighlightOrderByRelationAggregateInput;
+	message_reports?: Prisma.MessageReportOrderByRelationAggregateInput;
 };
 
 export type GuildWhereUniqueInput = Prisma.AtLeast<
@@ -200,6 +202,7 @@ export type GuildWhereUniqueInput = Prisma.AtLeast<
 		> | null;
 		ban_requests?: Prisma.BanRequestListRelationFilter;
 		highlights?: Prisma.HighlightListRelationFilter;
+		message_reports?: Prisma.MessageReportListRelationFilter;
 	},
 	"id"
 >;
@@ -226,6 +229,7 @@ export type GuildCreateInput = {
 	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateInput = {
@@ -236,6 +240,7 @@ export type GuildUncheckedCreateInput = {
 	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUpdateInput = {
@@ -246,6 +251,7 @@ export type GuildUpdateInput = {
 	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateInput = {
@@ -256,6 +262,7 @@ export type GuildUncheckedUpdateInput = {
 	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateManyInput = {
@@ -395,6 +402,32 @@ export type GuildUpdateOneRequiredWithoutBan_requestsNestedInput = {
 	>;
 };
 
+export type GuildCreateNestedOneWithoutMessage_reportsInput = {
+	create?: Prisma.XOR<
+		Prisma.GuildCreateWithoutMessage_reportsInput,
+		Prisma.GuildUncheckedCreateWithoutMessage_reportsInput
+	>;
+	connectOrCreate?: Prisma.GuildCreateOrConnectWithoutMessage_reportsInput;
+	connect?: Prisma.GuildWhereUniqueInput;
+};
+
+export type GuildUpdateOneRequiredWithoutMessage_reportsNestedInput = {
+	create?: Prisma.XOR<
+		Prisma.GuildCreateWithoutMessage_reportsInput,
+		Prisma.GuildUncheckedCreateWithoutMessage_reportsInput
+	>;
+	connectOrCreate?: Prisma.GuildCreateOrConnectWithoutMessage_reportsInput;
+	upsert?: Prisma.GuildUpsertWithoutMessage_reportsInput;
+	connect?: Prisma.GuildWhereUniqueInput;
+	update?: Prisma.XOR<
+		Prisma.XOR<
+			Prisma.GuildUpdateToOneWithWhereWithoutMessage_reportsInput,
+			Prisma.GuildUpdateWithoutMessage_reportsInput
+		>,
+		Prisma.GuildUncheckedUpdateWithoutMessage_reportsInput
+	>;
+};
+
 export type GuildCreateNestedOneWithoutHighlight_configInput = {
 	create?: Prisma.XOR<
 		Prisma.GuildCreateWithoutHighlight_configInput,
@@ -445,6 +478,7 @@ export type GuildCreateWithoutMessage_report_configInput = {
 	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutMessage_report_configInput = {
@@ -454,6 +488,7 @@ export type GuildUncheckedCreateWithoutMessage_report_configInput = {
 	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutMessage_report_configInput = {
@@ -491,6 +526,7 @@ export type GuildUpdateWithoutMessage_report_configInput = {
 	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutMessage_report_configInput = {
@@ -500,6 +536,7 @@ export type GuildUncheckedUpdateWithoutMessage_report_configInput = {
 	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutBan_request_configInput = {
@@ -509,6 +546,7 @@ export type GuildCreateWithoutBan_request_configInput = {
 	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutBan_request_configInput = {
@@ -518,6 +556,7 @@ export type GuildUncheckedCreateWithoutBan_request_configInput = {
 	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutBan_request_configInput = {
@@ -555,6 +594,7 @@ export type GuildUpdateWithoutBan_request_configInput = {
 	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutBan_request_configInput = {
@@ -564,6 +604,7 @@ export type GuildUncheckedUpdateWithoutBan_request_configInput = {
 	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutContent_filter_configInput = {
@@ -573,6 +614,7 @@ export type GuildCreateWithoutContent_filter_configInput = {
 	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutContent_filter_configInput = {
@@ -582,6 +624,7 @@ export type GuildUncheckedCreateWithoutContent_filter_configInput = {
 	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutContent_filter_configInput = {
@@ -619,6 +662,7 @@ export type GuildUpdateWithoutContent_filter_configInput = {
 	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutContent_filter_configInput = {
@@ -628,6 +672,7 @@ export type GuildUncheckedUpdateWithoutContent_filter_configInput = {
 	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutBan_requestsInput = {
@@ -637,6 +682,7 @@ export type GuildCreateWithoutBan_requestsInput = {
 	content_filter_config?: Prisma.ContentFilterConfigCreateNestedOneWithoutGuildInput;
 	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
 	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutBan_requestsInput = {
@@ -646,6 +692,7 @@ export type GuildUncheckedCreateWithoutBan_requestsInput = {
 	content_filter_config?: Prisma.ContentFilterConfigUncheckedCreateNestedOneWithoutGuildInput;
 	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
 	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutBan_requestsInput = {
@@ -680,6 +727,7 @@ export type GuildUpdateWithoutBan_requestsInput = {
 	content_filter_config?: Prisma.ContentFilterConfigUpdateOneWithoutGuildNestedInput;
 	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutBan_requestsInput = {
@@ -688,6 +736,75 @@ export type GuildUncheckedUpdateWithoutBan_requestsInput = {
 	ban_request_config?: Prisma.BanRequestConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	content_filter_config?: Prisma.ContentFilterConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
+};
+
+export type GuildCreateWithoutMessage_reportsInput = {
+	id: string;
+	message_report_config?: Prisma.MessageReportConfigCreateNestedOneWithoutGuildInput;
+	ban_request_config?: Prisma.BanRequestConfigCreateNestedOneWithoutGuildInput;
+	content_filter_config?: Prisma.ContentFilterConfigCreateNestedOneWithoutGuildInput;
+	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
+	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
+	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+};
+
+export type GuildUncheckedCreateWithoutMessage_reportsInput = {
+	id: string;
+	message_report_config?: Prisma.MessageReportConfigUncheckedCreateNestedOneWithoutGuildInput;
+	ban_request_config?: Prisma.BanRequestConfigUncheckedCreateNestedOneWithoutGuildInput;
+	content_filter_config?: Prisma.ContentFilterConfigUncheckedCreateNestedOneWithoutGuildInput;
+	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
+	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
+	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+};
+
+export type GuildCreateOrConnectWithoutMessage_reportsInput = {
+	where: Prisma.GuildWhereUniqueInput;
+	create: Prisma.XOR<
+		Prisma.GuildCreateWithoutMessage_reportsInput,
+		Prisma.GuildUncheckedCreateWithoutMessage_reportsInput
+	>;
+};
+
+export type GuildUpsertWithoutMessage_reportsInput = {
+	update: Prisma.XOR<
+		Prisma.GuildUpdateWithoutMessage_reportsInput,
+		Prisma.GuildUncheckedUpdateWithoutMessage_reportsInput
+	>;
+	create: Prisma.XOR<
+		Prisma.GuildCreateWithoutMessage_reportsInput,
+		Prisma.GuildUncheckedCreateWithoutMessage_reportsInput
+	>;
+	where?: Prisma.GuildWhereInput;
+};
+
+export type GuildUpdateToOneWithWhereWithoutMessage_reportsInput = {
+	where?: Prisma.GuildWhereInput;
+	data: Prisma.XOR<
+		Prisma.GuildUpdateWithoutMessage_reportsInput,
+		Prisma.GuildUncheckedUpdateWithoutMessage_reportsInput
+	>;
+};
+
+export type GuildUpdateWithoutMessage_reportsInput = {
+	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	message_report_config?: Prisma.MessageReportConfigUpdateOneWithoutGuildNestedInput;
+	ban_request_config?: Prisma.BanRequestConfigUpdateOneWithoutGuildNestedInput;
+	content_filter_config?: Prisma.ContentFilterConfigUpdateOneWithoutGuildNestedInput;
+	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
+	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
+	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+};
+
+export type GuildUncheckedUpdateWithoutMessage_reportsInput = {
+	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	message_report_config?: Prisma.MessageReportConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	ban_request_config?: Prisma.BanRequestConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	content_filter_config?: Prisma.ContentFilterConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
@@ -698,6 +815,7 @@ export type GuildCreateWithoutHighlight_configInput = {
 	content_filter_config?: Prisma.ContentFilterConfigCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutHighlight_configInput = {
@@ -707,6 +825,7 @@ export type GuildUncheckedCreateWithoutHighlight_configInput = {
 	content_filter_config?: Prisma.ContentFilterConfigUncheckedCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
 	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutHighlight_configInput = {
@@ -744,6 +863,7 @@ export type GuildUpdateWithoutHighlight_configInput = {
 	content_filter_config?: Prisma.ContentFilterConfigUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutHighlight_configInput = {
@@ -753,6 +873,7 @@ export type GuildUncheckedUpdateWithoutHighlight_configInput = {
 	content_filter_config?: Prisma.ContentFilterConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
 	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutHighlightsInput = {
@@ -762,6 +883,7 @@ export type GuildCreateWithoutHighlightsInput = {
 	content_filter_config?: Prisma.ContentFilterConfigCreateNestedOneWithoutGuildInput;
 	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutHighlightsInput = {
@@ -771,6 +893,7 @@ export type GuildUncheckedCreateWithoutHighlightsInput = {
 	content_filter_config?: Prisma.ContentFilterConfigUncheckedCreateNestedOneWithoutGuildInput;
 	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
 	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutHighlightsInput = {
@@ -796,6 +919,7 @@ export type GuildUpdateWithoutHighlightsInput = {
 	content_filter_config?: Prisma.ContentFilterConfigUpdateOneWithoutGuildNestedInput;
 	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutHighlightsInput = {
@@ -805,6 +929,7 @@ export type GuildUncheckedUpdateWithoutHighlightsInput = {
 	content_filter_config?: Prisma.ContentFilterConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
 	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 /**
@@ -814,6 +939,7 @@ export type GuildUncheckedUpdateWithoutHighlightsInput = {
 export type GuildCountOutputType = {
 	ban_requests: number;
 	highlights: number;
+	message_reports: number;
 };
 
 export type GuildCountOutputTypeSelect<
@@ -821,6 +947,7 @@ export type GuildCountOutputTypeSelect<
 > = {
 	ban_requests?: boolean | GuildCountOutputTypeCountBan_requestsArgs;
 	highlights?: boolean | GuildCountOutputTypeCountHighlightsArgs;
+	message_reports?: boolean | GuildCountOutputTypeCountMessage_reportsArgs;
 };
 
 /**
@@ -853,6 +980,15 @@ export type GuildCountOutputTypeCountHighlightsArgs<
 	where?: Prisma.HighlightWhereInput;
 };
 
+/**
+ * GuildCountOutputType without action
+ */
+export type GuildCountOutputTypeCountMessage_reportsArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	where?: Prisma.MessageReportWhereInput;
+};
+
 export type GuildSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> =
 	runtime.Types.Extensions.GetSelect<
 		{
@@ -863,6 +999,7 @@ export type GuildSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 			highlight_config?: boolean | Prisma.Guild$highlight_configArgs<ExtArgs>;
 			ban_requests?: boolean | Prisma.Guild$ban_requestsArgs<ExtArgs>;
 			highlights?: boolean | Prisma.Guild$highlightsArgs<ExtArgs>;
+			message_reports?: boolean | Prisma.Guild$message_reportsArgs<ExtArgs>;
 			_count?: boolean | Prisma.GuildCountOutputTypeDefaultArgs<ExtArgs>;
 		},
 		ExtArgs["result"]["guild"]
@@ -900,6 +1037,7 @@ export type GuildInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
 		highlight_config?: boolean | Prisma.Guild$highlight_configArgs<ExtArgs>;
 		ban_requests?: boolean | Prisma.Guild$ban_requestsArgs<ExtArgs>;
 		highlights?: boolean | Prisma.Guild$highlightsArgs<ExtArgs>;
+		message_reports?: boolean | Prisma.Guild$message_reportsArgs<ExtArgs>;
 		_count?: boolean | Prisma.GuildCountOutputTypeDefaultArgs<ExtArgs>;
 	};
 export type GuildIncludeCreateManyAndReturn<
@@ -920,6 +1058,7 @@ export type $GuildPayload<
 		highlight_config: Prisma.$HighlightConfigPayload<ExtArgs> | null;
 		ban_requests: Prisma.$BanRequestPayload<ExtArgs>[];
 		highlights: Prisma.$HighlightPayload<ExtArgs>[];
+		message_reports: Prisma.$MessageReportPayload<ExtArgs>[];
 	};
 	scalars: runtime.Types.Extensions.GetPayloadResult<
 		{
@@ -1465,6 +1604,11 @@ export interface Prisma__GuildClient<
 		args?: Prisma.Subset<T, Prisma.Guild$highlightsArgs<ExtArgs>>
 	): Prisma.PrismaPromise<
 		runtime.Types.Result.GetResult<Prisma.$HighlightPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null
+	>;
+	message_reports<T extends Prisma.Guild$message_reportsArgs<ExtArgs> = {}>(
+		args?: Prisma.Subset<T, Prisma.Guild$message_reportsArgs<ExtArgs>>
+	): Prisma.PrismaPromise<
+		runtime.Types.Result.GetResult<Prisma.$MessageReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null
 	>;
 	/**
 	 * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2046,6 +2190,32 @@ export type Guild$highlightsArgs<
 	take?: number;
 	skip?: number;
 	distinct?: Prisma.HighlightScalarFieldEnum | Prisma.HighlightScalarFieldEnum[];
+};
+
+/**
+ * Guild.message_reports
+ */
+export type Guild$message_reportsArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	/**
+	 * Select specific fields to fetch from the MessageReport
+	 */
+	select?: Prisma.MessageReportSelect<ExtArgs> | null;
+	/**
+	 * Omit specific fields from the MessageReport
+	 */
+	omit?: Prisma.MessageReportOmit<ExtArgs> | null;
+	/**
+	 * Choose, which related nodes to fetch as well
+	 */
+	include?: Prisma.MessageReportInclude<ExtArgs> | null;
+	where?: Prisma.MessageReportWhereInput;
+	orderBy?: Prisma.MessageReportOrderByWithRelationInput | Prisma.MessageReportOrderByWithRelationInput[];
+	cursor?: Prisma.MessageReportWhereUniqueInput;
+	take?: number;
+	skip?: number;
+	distinct?: Prisma.MessageReportScalarFieldEnum | Prisma.MessageReportScalarFieldEnum[];
 };
 
 /**

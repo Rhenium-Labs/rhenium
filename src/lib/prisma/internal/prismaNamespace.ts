@@ -370,6 +370,7 @@ export const ModelName = {
 	ContentFilterConfig: "ContentFilterConfig",
 	BanRequest: "BanRequest",
 	TemporaryBan: "TemporaryBan",
+	MessageReport: "MessageReport",
 	HighlightConfig: "HighlightConfig",
 	Highlight: "Highlight",
 	HighlightPattern: "HighlightPattern",
@@ -402,6 +403,7 @@ export type TypeMap<
 			| "contentFilterConfig"
 			| "banRequest"
 			| "temporaryBan"
+			| "messageReport"
 			| "highlightConfig"
 			| "highlight"
 			| "highlightPattern"
@@ -932,6 +934,80 @@ export type TypeMap<
 				};
 			};
 		};
+		MessageReport: {
+			payload: Prisma.$MessageReportPayload<ExtArgs>;
+			fields: Prisma.MessageReportFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.MessageReportFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.MessageReportFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>;
+				};
+				findFirst: {
+					args: Prisma.MessageReportFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.MessageReportFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>;
+				};
+				findMany: {
+					args: Prisma.MessageReportFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>[];
+				};
+				create: {
+					args: Prisma.MessageReportCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>;
+				};
+				createMany: {
+					args: Prisma.MessageReportCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.MessageReportCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>[];
+				};
+				delete: {
+					args: Prisma.MessageReportDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>;
+				};
+				update: {
+					args: Prisma.MessageReportUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>;
+				};
+				deleteMany: {
+					args: Prisma.MessageReportDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.MessageReportUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.MessageReportUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>[];
+				};
+				upsert: {
+					args: Prisma.MessageReportUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessageReportPayload>;
+				};
+				aggregate: {
+					args: Prisma.MessageReportAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateMessageReport>;
+				};
+				groupBy: {
+					args: Prisma.MessageReportGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.MessageReportGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.MessageReportCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.MessageReportCountAggregateOutputType> | number;
+				};
+			};
+		};
 		HighlightConfig: {
 			payload: Prisma.$HighlightConfigPayload<ExtArgs>;
 			fields: Prisma.HighlightConfigFieldRefs;
@@ -1433,6 +1509,26 @@ export const TemporaryBanScalarFieldEnum = {
 export type TemporaryBanScalarFieldEnum =
 	(typeof TemporaryBanScalarFieldEnum)[keyof typeof TemporaryBanScalarFieldEnum];
 
+export const MessageReportScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	message_id: "message_id",
+	reference_id: "reference_id",
+	message_url: "message_url",
+	channel_id: "channel_id",
+	author_id: "author_id",
+	content: "content",
+	reported_at: "reported_at",
+	reported_by: "reported_by",
+	report_reason: "report_reason",
+	status: "status",
+	resolved_at: "resolved_at",
+	resolved_by: "resolved_by"
+} as const;
+
+export type MessageReportScalarFieldEnum =
+	(typeof MessageReportScalarFieldEnum)[keyof typeof MessageReportScalarFieldEnum];
+
 export const HighlightConfigScalarFieldEnum = {
 	id: "id",
 	max_patterns: "max_patterns"
@@ -1583,6 +1679,16 @@ export type EnumRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
 export type ListEnumRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "RequestStatus[]">;
 
 /**
+ * Reference to a field of type 'ReportStatus'
+ */
+export type EnumReportStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "ReportStatus">;
+
+/**
+ * Reference to a field of type 'ReportStatus[]'
+ */
+export type ListEnumReportStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "ReportStatus[]">;
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int">;
@@ -1711,6 +1817,7 @@ export type GlobalOmitConfig = {
 	contentFilterConfig?: Prisma.ContentFilterConfigOmit;
 	banRequest?: Prisma.BanRequestOmit;
 	temporaryBan?: Prisma.TemporaryBanOmit;
+	messageReport?: Prisma.MessageReportOmit;
 	highlightConfig?: Prisma.HighlightConfigOmit;
 	highlight?: Prisma.HighlightOmit;
 	highlightPattern?: Prisma.HighlightPatternOmit;
