@@ -175,76 +175,46 @@ export default class Highlights extends Command {
 	}
 
 	public async interactionRun(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
-		const subcommandGroup = interaction.options.getSubcommandGroup();
+		const group = interaction.options.getSubcommandGroup();
 		const subcommand = interaction.options.getSubcommand() as HighlightSubcommand;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		if (!subcommandGroup) {
-			switch (subcommand) {
-				case HighlightSubcommand.List:
-					return Highlights._listHighlights(interaction);
-				case HighlightSubcommand.Clear:
-					return Highlights._clearAllHighlights(interaction);
-				default: {
-					return {
-						error: "Unknown subcommand."
-					};
-				}
-			}
-		}
+		// Route to the appropriate handler based on group and subcommand.
+		const routeKey = group ? `${group}:${subcommand}` : subcommand;
 
-		if (subcommandGroup === HighlightSubcommandGroup.Pattern) {
-			switch (subcommand) {
-				case HighlightSubcommand.Add:
-					return Highlights._addPattern(interaction);
-				case HighlightSubcommand.Remove:
-					return Highlights._removePattern(interaction);
-				case HighlightSubcommand.Clear:
-					return Highlights._clearPatterns(interaction);
-				default: {
-					return {
-						error: "Unknown subcommand."
-					};
-				}
-			}
-		}
+		const handlers: Record<string, () => Promise<InteractionReplyData>> = {
+			// Top-level subcommands (no group)
+			[HighlightSubcommand.List]: () => Highlights._listHighlights(interaction),
+			[HighlightSubcommand.Clear]: () => Highlights._clearAllHighlights(interaction),
 
-		if (subcommandGroup === HighlightSubcommandGroup.ChannelScoping) {
-			switch (subcommand) {
-				case HighlightSubcommand.Add:
-					return Highlights._addChannelScoping(interaction);
-				case HighlightSubcommand.Remove:
-					return Highlights._removeChannelScoping(interaction);
-				case HighlightSubcommand.Clear:
-					return Highlights._clearChannelScoping(interaction);
-				default: {
-					return {
-						error: "Unknown subcommand."
-					};
-				}
-			}
-		}
+			// Pattern group
+			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Add}`]: () =>
+				Highlights._addPattern(interaction),
+			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Remove}`]: () =>
+				Highlights._removePattern(interaction),
+			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Clear}`]: () =>
+				Highlights._clearPatterns(interaction),
 
-		if (subcommandGroup === HighlightSubcommandGroup.UserBlacklist) {
-			switch (subcommand) {
-				case HighlightSubcommand.Add:
-					return Highlights._addUserBlacklist(interaction);
-				case HighlightSubcommand.Remove:
-					return Highlights._removeUserBlacklist(interaction);
-				case HighlightSubcommand.Clear:
-					return Highlights._clearUserBlacklist(interaction);
-				default: {
-					return {
-						error: "Unknown subcommand."
-					};
-				}
-			}
-		}
+			// Channel scoping group
+			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Add}`]: () =>
+				Highlights._addChannelScoping(interaction),
+			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Remove}`]: () =>
+				Highlights._removeChannelScoping(interaction),
+			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Clear}`]: () =>
+				Highlights._clearChannelScoping(interaction),
 
-		return {
-			error: "Unknown subcommand."
+			// User blacklist group
+			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Add}`]: () =>
+				Highlights._addUserBlacklist(interaction),
+			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Remove}`]: () =>
+				Highlights._removeUserBlacklist(interaction),
+			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Clear}`]: () =>
+				Highlights._clearUserBlacklist(interaction)
 		};
+
+		const handler = handlers[routeKey];
+		return handler ? handler() : { error: "Unknown subcommand." };
 	}
 
 	private static async _addPattern(

@@ -8,6 +8,8 @@ import type { InteractionReplyData } from "#utils/Types.js";
 
 import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
 
+const AUTO_DELETE_DELAY = 7000;
+
 export default class BanRequestButton extends Component {
 	public constructor() {
 		super({ matches: /^ban-request-(accept|deny|disregard)$/m });
@@ -18,10 +20,8 @@ export default class BanRequestButton extends Component {
 			where: { id: interaction.guild.id }
 		});
 
-		if (!config || !config.enabled || !config.webhook_url) {
-			return {
-				error: `Ban requests are not configured for this server.`
-			};
+		if (!config?.enabled || !config.webhook_url) {
+			return { error: "Ban requests are not configured for this server." };
 		}
 
 		const action = interaction.customId.split("-")[2] as BanRequestAction;
@@ -30,46 +30,30 @@ export default class BanRequestButton extends Component {
 		});
 
 		if (!request) {
-			setTimeout(async () => {
-				await interaction.message.delete().catch(() => null);
-			}, 7000);
-
+			this._scheduleMessageDeletion(interaction);
 			return {
-				error: `Failed to find the ban request associated with this message. I will attempt to delete this submission in 7 seconds.`
+				error: "Failed to find the ban request associated with this message. I will attempt to delete this submission in 7 seconds."
 			};
 		}
 
 		if (request.resolved_by) {
-			setTimeout(async () => {
-				await interaction.message.delete().catch(() => null);
-			}, 7000);
-
+			this._scheduleMessageDeletion(interaction);
 			return {
-				error: `This request has already been resolved by ${userMentionWithId(
-					request.resolved_by
-				)}. I will attempt to delete this submission in 7 seconds.`
+				error: `This request has already been resolved by ${userMentionWithId(request.resolved_by)}. I will attempt to delete this submission in 7 seconds.`
 			};
 		}
 
-		switch (action) {
-			case BanRequestAction.Disregard: {
-				return BanRequestUtils.disregard({ interaction, request });
-			}
-			case BanRequestAction.Accept: {
-				if (config.enforce_accept_reason) {
-					await interaction.showModal(buildModal(request.id, action));
-					return null;
-				}
-				break;
-			}
+		if (action === BanRequestAction.Disregard) {
+			return BanRequestUtils.disregard({ interaction, request });
+		}
 
-			case BanRequestAction.Deny: {
-				if (config.enforce_deny_reason) {
-					await interaction.showModal(buildModal(request.id, action));
-					return null;
-				}
-				break;
-			}
+		const requiresReason =
+			(action === BanRequestAction.Accept && config.enforce_accept_reason) ||
+			(action === BanRequestAction.Deny && config.enforce_deny_reason);
+
+		if (requiresReason) {
+			await interaction.showModal(buildReasonModal(request.id, action));
+			return null;
 		}
 
 		return BanRequestUtils.process({
@@ -80,17 +64,16 @@ export default class BanRequestButton extends Component {
 			reviewReason: null
 		});
 	}
+
+	private _scheduleMessageDeletion(interaction: ButtonInteraction<"cached">): void {
+		setTimeout(() => interaction.message.delete().catch(() => null), AUTO_DELETE_DELAY);
+	}
 }
 
 /**
- * Builds a modal for ban request review.
- *
- * @param requestId The ID of the ban request.
- * @param action The action to be performed ("accept" or "deny").
- * @returns The constructed modal.
+ * Builds a modal for collecting a reason for the ban request action.
  */
-
-function buildModal(requestId: string, action: "accept" | "deny"): ModalBuilder {
+function buildReasonModal(requestId: string, action: "accept" | "deny"): ModalBuilder {
 	const reasonInput = new TextInputBuilder()
 		.setCustomId("reason")
 		.setStyle(TextInputStyle.Paragraph)
@@ -98,15 +81,10 @@ function buildModal(requestId: string, action: "accept" | "deny"): ModalBuilder 
 		.setMinLength(1)
 		.setRequired(true);
 
-	// prettier-ignore
-	const reasonLabel = new LabelBuilder()
-		.setLabel("Reason")
-		.setTextInputComponent(reasonInput);
+	const reasonLabel = new LabelBuilder().setLabel("Reason").setTextInputComponent(reasonInput);
 
-	const modal = new ModalBuilder()
+	return new ModalBuilder()
 		.setCustomId(`ban-request-${action}-${requestId}`)
 		.setTitle(`${action === "accept" ? "Accept" : "Deny"} Ban Request`)
 		.addLabelComponents(reasonLabel);
-
-	return modal;
 }

@@ -147,7 +147,6 @@ export class CommandManager {
 	/**
 	 * Load all commands from the `commands` directory.
 	 */
-
 	public static async load(): Promise<void> {
 		const directory = path.resolve("src/commands");
 
@@ -163,34 +162,30 @@ export class CommandManager {
 
 		Logger.info(`Loading commands...`);
 
-		let count: number = 0;
+		let loadedCount = 0;
 
 		for (const file of files) {
 			try {
 				await CommandManager.loadFile(file);
-				count++;
+				loadedCount++;
 			} catch (error) {
 				Logger.error(`Failed to load ${file}:`, error);
 				process.exit(1);
 			}
 		}
 
-		Logger.success(`Loaded ${count} ${inflect(count, "command")}.`);
+		Logger.success(`Loaded ${loadedCount} ${inflect(loadedCount, "command")}.`);
 	}
 
 	/**
-	 * Registers commands with Discord.
+	 * Registers application commands with Discord.
 	 */
 	public static async register(): Promise<void> {
-		const commands: ApplicationCommandData[] = [];
+		const commands: ApplicationCommandData[] = this.store
+			.filter(cmd => cmd.register !== undefined)
+			.map(cmd => cmd.register!());
 
-		for (const command of this.store.values()) {
-			if (command.register) {
-				commands.push(command.register());
-			}
-		}
-
-		if (!commands.length) {
+		if (commands.length === 0) {
 			Logger.info("Found no application commands to register.");
 			return;
 		}

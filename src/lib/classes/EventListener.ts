@@ -69,19 +69,19 @@ export class EventListenerManager {
 
 		Logger.info(`Loading event listeners...`);
 
-		let count: number = 0;
+		let loadedCount = 0;
 
 		for (const file of files) {
 			try {
 				await EventListenerManager.loadFile(file);
-				count++;
+				loadedCount++;
 			} catch (error) {
 				Logger.error(`Failed to load ${file}:`, error);
 				process.exit(1);
 			}
 		}
 
-		Logger.success(`Loaded ${count} ${inflect(count, "event listener")}.`);
+		Logger.success(`Loaded ${loadedCount} ${inflect(loadedCount, "event listener")}.`);
 	}
 
 	/**

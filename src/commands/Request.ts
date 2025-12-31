@@ -15,7 +15,7 @@ import { prisma } from "#root/index.js";
 import { Command } from "#classes/Command.js";
 import { parseDurationString, validateDuration } from "#utils/index.js";
 
-import type { InteractionReplyData, SimpleResult } from "#utils/Types.js";
+import type { InteractionReplyData } from "#utils/Types.js";
 
 import BanRequestUtils from "#utils/BanRequests.js";
 import ModerationUtils from "#utils/Moderation.js";
@@ -71,25 +71,17 @@ export default class Request extends Command {
 			where: { id: interaction.guildId }
 		});
 
-		if (!config || !config.enabled || !config.webhook_url) {
-			return {
-				error: `Ban requests are not configured for this server.`
-			};
+		if (!config?.enabled || !config.webhook_url) {
+			return { error: "Ban requests are not configured for this server." };
 		}
 
 		const target = interaction.options.getUser("target", true);
-		const rawDuration = interaction.options.getString("duration", false);
-
-		let reason = interaction.options.getString("reason", false);
-		let results: SimpleResult[] = [];
 
 		if (!target) {
-			return {
-				error: `The target user could not be found.`
-			};
+			return { error: "The target user could not be found." };
 		}
 
-		const exists = await prisma.banRequest.findFirst({
+		const existingRequest = await prisma.banRequest.findFirst({
 			where: {
 				guild_id: interaction.guildId,
 				target_id: target.id,
@@ -98,54 +90,53 @@ export default class Request extends Command {
 			}
 		});
 
-		if (exists) {
-			return {
-				error: `You already have a pending ban request for this user.`
-			};
+		if (existingRequest) {
+			return { error: "You already have a pending ban request for this user." };
 		}
 
-		if (await interaction.guild.bans.fetch(target.id).catch(() => null)) {
-			return {
-				error: `The provided target is already banned.`
-			};
+		const existingBan = await interaction.guild.bans.fetch(target.id).catch(() => null);
+
+		if (existingBan) {
+			return { error: "The provided target is already banned." };
 		}
 
-		if (config.immune_roles.some(role => interaction.guild.members.cache.get(target.id)?.roles.cache.has(role))) {
-			return {
-				error: `The provided target is immune to ban requests.`
-			};
+		const targetMember = interaction.guild.members.cache.get(target.id);
+
+		if (targetMember && config.immune_roles.some(role => targetMember.roles.cache.has(role))) {
+			return { error: "The provided target is immune to ban requests." };
 		}
+
+		const rawDuration = interaction.options.getString("duration", false);
 
 		if (rawDuration && ms(rawDuration as StringValue) === undefined) {
 			return {
-				error: `The provided duration is invalid. Please provide a valid duration string (e.g., 1d, 12h, 30m).`
+				error: "The provided duration is invalid. Please provide a valid duration string (e.g., 1d, 12h, 30m)."
 			};
 		}
 
 		const duration = parseDurationString(rawDuration);
 
 		if (duration) {
-			results.push(validateDuration({ duration, minimum: "1s", maximum: "5y" }));
+			const durationValidation = validateDuration({ duration, minimum: "1s", maximum: "5y" });
+			if (!durationValidation.ok) {
+				return { error: durationValidation.message };
+			}
 		}
 
-		results.push(
-			ModerationUtils.validateAction({
-				target,
-				executor: interaction.member,
-				action: "Ban"
-			})
-		);
+		const actionValidation = ModerationUtils.validateAction({
+			target,
+			executor: interaction.member,
+			action: "Ban"
+		});
+
+		if (!actionValidation.ok) {
+			return { error: actionValidation.message };
+		}
+
+		const reason = interaction.options.getString("reason", false);
 
 		if (!reason && config.enforce_submission_reason) {
-			return {
-				error: `A reason is required to submit a ban request in this server.`
-			};
-		}
-
-		if (results.some(result => !result.ok)) {
-			return {
-				error: results.find(result => !result.ok)!.message
-			};
+			return { error: "A reason is required to submit a ban request in this server." };
 		}
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });

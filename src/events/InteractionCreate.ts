@@ -13,7 +13,7 @@ import { RedisCache } from "#utils/Redis.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { EventListener } from "#classes/EventListener.js";
 import { Command, CommandManager } from "#classes/Command.js";
-import { ComponentInteraction, ComponentManager } from "#classes/Component.js";
+import { Component, ComponentInteraction, ComponentManager } from "#classes/Component.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
@@ -24,9 +24,10 @@ export default class InteractionCreate extends EventListener {
 		super(Events.InteractionCreate);
 	}
 
-	public async onEmit(interaction: Interaction) {
+	public async onEmit(interaction: Interaction): Promise<void> {
 		if (!interaction.inCachedGuild()) return;
 
+		// Autocomplete isn't supported yet.
 		if (interaction.isAutocomplete()) {
 			throw new Error("Autocomplete handling not implemented yet.");
 		}
@@ -36,56 +37,66 @@ export default class InteractionCreate extends EventListener {
 		try {
 			await InteractionCreate._handle(interaction);
 		} catch (error) {
-			const sentryId = captureException(error, {
-				user: {
-					id: interaction.user.id,
-					username: interaction.user.username
-				},
-				extra: {
-					channelId: interaction.channel?.id,
-					guildId: interaction.guild.id,
-					interactionId: interaction.id
-				}
-			});
-
-			if (interaction.deferred || interaction.replied) {
-				await interaction.followUp({
-					content: `An error occurred while executing this interaction (\`${sentryId}\`).`
-				});
-			} else {
-				await interaction.reply({
-					content: `An error occurred while executing this interaction (\`${sentryId}\`).`,
-					flags: [MessageFlags.Ephemeral]
-				});
-			}
-
-			return Logger.error("Error handling interaction:", error);
+			await InteractionCreate._handleError(interaction, error);
 		}
 	}
 
-	private static async _handle(interaction: Exclude<Interaction<"cached">, AutocompleteInteraction>) {
+	/**
+	 * Handles error reporting and user feedback for failed interactions.
+	 */
+	private static async _handleError(
+		interaction: Exclude<Interaction<"cached">, AutocompleteInteraction>,
+		error: unknown
+	): Promise<void> {
+		const sentryId = captureException(error, {
+			user: { id: interaction.user.id, username: interaction.user.username },
+			extra: {
+				channelId: interaction.channel?.id,
+				guildId: interaction.guild.id,
+				interactionId: interaction.id
+			}
+		});
+
+		const errorMessage = `An error occurred while executing this interaction (\`${sentryId}\`).`;
+
+		if (interaction.deferred || interaction.replied) {
+			await interaction.followUp({ content: errorMessage });
+		} else {
+			await interaction.reply({ content: errorMessage, flags: [MessageFlags.Ephemeral] });
+		}
+
+		Logger.error("Error handling interaction:", error);
+	}
+
+	private static async _handle(interaction: Exclude<Interaction<"cached">, AutocompleteInteraction>): Promise<void> {
 		const structure = interaction.isCommand()
 			? CommandManager.get(interaction.commandName)
 			: ComponentManager.get(interaction.customId);
 
 		if (!structure) {
-			await interaction.reply({
-				content: "Unknown interaction.",
-				flags: [MessageFlags.Ephemeral]
-			});
-
+			await interaction.reply({ content: "Unknown interaction.", flags: [MessageFlags.Ephemeral] });
 			return Logger.warn(`Unknown interaction: ${interaction.id}`);
 		}
 
-		let response: InteractionReplyData | null;
+		const response = await InteractionCreate._executeHandler(interaction, structure);
 
+		// Reply was handled manually.
+		if (!response) return;
+
+		return InteractionCreate._sendResponse(interaction, response);
+	}
+
+	/**
+	 * Executes the appropriate handler for the given structure.
+	 */
+	private static async _executeHandler(
+		interaction: Exclude<Interaction<"cached">, AutocompleteInteraction>,
+		structure: Command | Component
+	): Promise<InteractionReplyData | null> {
 		if (structure instanceof Command) {
 			if (!structure.interactionRun) {
 				const sentryId = captureException(new Error("Command missing interactionRun method."), {
-					user: {
-						id: interaction.user.id,
-						username: interaction.user.username
-					},
+					user: { id: interaction.user.id, username: interaction.user.username },
 					extra: {
 						channelId: interaction.channel?.id,
 						guildId: interaction.guild.id,
@@ -99,69 +110,64 @@ export default class InteractionCreate extends EventListener {
 					flags: [MessageFlags.Ephemeral]
 				});
 
-				return Logger.error(`Command ${structure.name} missing interactionRun method.`);
-			} else {
-				response = await structure.interactionRun(interaction as CommandInteraction<"cached">);
+				Logger.error(`Command ${structure.name} missing interactionRun method.`);
+				return null;
 			}
-		} else {
-			response = await structure.run(interaction as ComponentInteraction);
+
+			return structure.interactionRun(interaction as CommandInteraction<"cached">);
 		}
 
-		// Manually handled response.
-		if (!response) return;
+		return structure.run(interaction as ComponentInteraction);
+	}
 
-		const error = response.error;
-		delete response.error;
+	/**
+	 * Sends the response to the user, handling errors and temporary messages.
+	 */
+	private static async _sendResponse(
+		interaction: Exclude<Interaction<"cached">, AutocompleteInteraction>,
+		response: InteractionReplyData
+	): Promise<void> {
+		const { error, temporary, ...options } = response;
 
-		const temporary = response.temporary;
-		delete response.temporary;
+		const defaultFlags = { flags: [MessageFlags.Ephemeral], allowedMentions: { parse: [] } } as const;
 
-		const defaultOptions: InteractionReplyOptions = {
-			flags: [MessageFlags.Ephemeral],
-			allowedMentions: { parse: [] }
-		};
-
-		const replyOptions = error
+		const replyOptions: InteractionReplyOptions = error
 			? {
-					...defaultOptions,
-					...response,
-					embeds: [{ description: error, color: Colors.Red }, ...(response.embeds ?? [])]
+					...defaultFlags,
+					...options,
+					embeds: [{ description: error, color: Colors.Red }, ...(options.embeds ?? [])]
 				}
-			: {
-					...defaultOptions,
-					...response
-				};
+			: { ...defaultFlags, ...options };
 
 		if (interaction.deferred || interaction.replied) {
-			const { flags, ...options } = replyOptions;
-			await interaction.editReply(options);
+			const { flags, ...editOptions } = replyOptions;
+			await interaction.editReply(editOptions);
 		} else {
 			await interaction.reply(replyOptions);
 		}
 
 		if (error || temporary) {
-			setTimeout(async () => {
-				await interaction.deleteReply().catch(() => {});
-			}, 7500);
+			setTimeout(() => interaction.deleteReply().catch(() => {}), 7500);
 		}
 	}
 
+	/**
+	 * Checks if the guild is whitelisted to use the bot.
+	 */
 	private static async _checkWhitelist(
 		interaction: Exclude<Interaction<"cached">, AutocompleteInteraction>
 	): Promise<boolean> {
-		if (DEVELOPER_IDS.includes(interaction.user.id)) {
-			return true;
-		}
+		if (DEVELOPER_IDS.includes(interaction.user.id)) return true;
 
-		const whitelisted = await RedisCache.guildIsWhitelisted(interaction.guild.id);
+		const isWhitelisted = await RedisCache.guildIsWhitelisted(interaction.guild.id);
 
-		if (!whitelisted) {
+		if (!isWhitelisted) {
 			await interaction.reply({
 				content: "This guild is not whitelisted to use the bot.",
 				flags: [MessageFlags.Ephemeral]
 			});
 		}
 
-		return whitelisted;
+		return isWhitelisted;
 	}
 }

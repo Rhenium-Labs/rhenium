@@ -18,8 +18,6 @@ import { client, prisma } from "#root/index.js";
 import { formatMessageContent } from "#utils/Messages.js";
 import { Command, CommandManager } from "#classes/Command.js";
 
-import type { MessageReplyData } from "#utils/Types.js";
-
 import Args from "#classes/Args.js";
 import Logger from "#utils/Logger.js";
 
@@ -40,16 +38,11 @@ export default class MessageCreate extends EventListener {
 		super(Events.MessageCreate);
 	}
 
-	public async onEmit(message: Message<true>) {
-		if (message.author.bot || message.webhookId || message.system) {
-			return;
-		}
+	public async onEmit(message: Message<true>): Promise<any> {
+		// Ignore bot messages, webhooks, and system messages.
+		if (message.author.bot || message.webhookId || message.system) return;
 
-		// prettier-ignore
-		return Promise.all([
-			MessageCreate._highlightMessage(message), 
-			MessageCreate._messageCommand(message)
-		]);
+		return Promise.all([MessageCreate._highlightMessage(message), MessageCreate._processCommand(message)]);
 	}
 
 	private static async _highlightMessage(message: Message<true>) {
@@ -143,9 +136,8 @@ export default class MessageCreate extends EventListener {
 		}
 	}
 
-	private static async _messageCommand(message: Message<true>) {
+	private static async _processCommand(message: Message<true>): Promise<void> {
 		const prefix = await this._getPrefix(message);
-
 		if (!prefix) return;
 
 		const trimmedContent = message.content.slice(prefix.length).trim();
@@ -154,94 +146,86 @@ export default class MessageCreate extends EventListener {
 		const commandName = spaceIndex === -1 ? trimmedContent : trimmedContent.slice(0, spaceIndex);
 		const command = CommandManager.get(commandName);
 
-		if (!command || !command.messageRun) return;
+		// Skip if no command found or command doesn't support message execution.
+		if (!command?.messageRun) return;
 		if (!(await MessageCreate._checkWhitelist(message))) return;
 
 		const parameters = spaceIndex === -1 ? "" : trimmedContent.substring(spaceIndex + 1).trim();
 		const args = command.getArgsClass(message, parameters);
 
 		try {
-			await MessageCreate._runCommand(message, command, args);
+			await MessageCreate._executeCommand(message, command, args);
 		} catch (error) {
-			const sentryId = captureException(error, {
-				user: {
-					id: message.author.id,
-					username: message.author.username
-				},
-				extra: {
-					channelId: message.channel.id,
-					guildId: message.guild.id,
-					messageId: message.id,
-					command: command.name,
-					messageContent: message.content
-				}
-			});
-
-			await reply(message, {
-				content: `An error occurred while executing this command (\`${sentryId}\`).`
-			});
-
-			return Logger.error("Error handling message command:", error);
+			await MessageCreate._handleCommandError(message, command, error);
 		}
 	}
 
-	private static async _runCommand(message: Message<true>, command: Command, args: Args) {
-		const response: MessageReplyData | null = await command.messageRun!(message, args);
+	/**
+	 * Executes a message command and handles the response.
+	 */
+	private static async _executeCommand(message: Message<true>, command: Command, args: Args): Promise<void> {
+		const response = await command.messageRun!(message, args);
 
-		// Manually handled response.
+		// Reply was handled manually.
 		if (response === null) return;
 
-		const error = response.error;
-		delete response.error;
-
-		const temporary = response.temporary;
-		delete response.temporary;
-
-		const defaultOptions: MessageReplyOptions = {
-			allowedMentions: { parse: [] }
-		};
+		const { error, temporary, ...options } = response;
+		const defaultOptions: MessageReplyOptions = { allowedMentions: { parse: [] } };
 
 		const replyOptions = error
-			? {
-					...response,
-					embeds: [{ description: error, color: Colors.Red }, ...(response.embeds ?? [])]
-				}
-			: response;
+			? { ...options, embeds: [{ description: error, color: Colors.Red }, ...(options.embeds ?? [])] }
+			: options;
 
 		const msg = await reply(message, { ...defaultOptions, ...replyOptions }).catch(() => null);
 
 		if (error || temporary) {
-			setTimeout(async () => {
-				await msg?.delete().catch(() => {});
-			}, 7500);
+			setTimeout(() => msg?.delete().catch(() => {}), 7500);
 		}
 	}
 
+	/**
+	 * Handles errors that occur during command execution.
+	 */
+	private static async _handleCommandError(message: Message<true>, command: Command, error: unknown): Promise<void> {
+		const sentryId = captureException(error, {
+			user: { id: message.author.id, username: message.author.username },
+			extra: {
+				channelId: message.channel.id,
+				guildId: message.guild.id,
+				messageId: message.id,
+				command: command.name,
+				messageContent: message.content
+			}
+		});
+
+		await reply(message, { content: `An error occurred while executing this command (\`${sentryId}\`).` });
+		Logger.error("Error handling message command:", error);
+	}
+
+	/**
+	 * Gets the command prefix for a message, if applicable.
+	 */
 	private static async _getPrefix(message: Message<true>): Promise<string | null> {
 		const bot = await message.guild.members.fetchMe();
 		const permissions = message.channel.permissionsFor(bot);
 
-		if (!permissions.has(PermissionFlagsBits.SendMessages)) {
-			return null;
-		}
-
+		if (!permissions.has(PermissionFlagsBits.SendMessages)) return null;
 		return process.env.DEFAULT_PREFIX ?? ".";
 	}
 
+	/**
+	 * Checks if the guild is whitelisted to use the bot.
+	 */
 	private static async _checkWhitelist(message: Message<true>): Promise<boolean> {
-		if (DEVELOPER_IDS.includes(message.author.id)) {
-			return true;
+		if (DEVELOPER_IDS.includes(message.author.id)) return true;
+
+		const isWhitelisted = await RedisCache.guildIsWhitelisted(message.guild.id);
+
+		if (!isWhitelisted) {
+			await message.reply({ content: "This guild is not whitelisted to use the bot." });
 		}
 
-		const whitelisted = await RedisCache.guildIsWhitelisted(message.guild.id);
-
-		if (!whitelisted) {
-			await message.reply({
-				content: "This guild is not whitelisted to use the bot."
-			});
-		}
-
-		return whitelisted;
+		return isWhitelisted;
 	}
 }
 
@@ -253,12 +237,7 @@ type ChannelScoping = {
 /**
  * Checks if a channel is within the specified scoping.
  * Included channels take precedence over excluded channels.
- *
- * @param channel The channel to check.
- * @param scoping The channel scoping configuration.
- * @returns Whether the channel is in scope.
  */
-
 function channelInScope(channel: GuildBasedChannel, scoping: ChannelScoping): boolean {
 	const channelId = channel.isThread() ? channel.parent?.id : channel.id;
 	const threadId = channel.isThread() ? channel.id : null;
@@ -269,7 +248,6 @@ function channelInScope(channel: GuildBasedChannel, scoping: ChannelScoping): bo
 	// Check if included (or no include list exists).
 	const hasInclusions = scoping.include_channels.length > 0;
 	const isIncluded = !hasInclusions || relevantIds.some(id => scoping.include_channels.includes(id));
-
 	if (!isIncluded) return false;
 
 	// Even if included, check if it's excluded.
@@ -281,9 +259,6 @@ function channelInScope(channel: GuildBasedChannel, scoping: ChannelScoping): bo
 
 /**
  * Gets a compiled RegExp from the pattern, using caching to avoid recompilation.
- *
- * @param pattern The highlight pattern.
- * @returns The compiled RegExp.
  */
 function getCompiledRegex(pattern: string): RegExp {
 	let regex = compiledRegexCache.get(pattern);
@@ -301,10 +276,9 @@ function getCompiledRegex(pattern: string): RegExp {
 }
 
 /**
- * Cleans up expired entries in the various caches.
+ * Cleans up the regex cache to prevent unbounded growth.
  */
 function cleanupRegexCache(): void {
-	// Limit regex cache size to prevent unbounded growth.
 	if (compiledRegexCache.size > 1000) {
 		const entriesToDelete = compiledRegexCache.size - 500;
 		const iterator = compiledRegexCache.keys();

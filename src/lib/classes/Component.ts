@@ -81,7 +81,6 @@ export class ComponentManager {
 	/**
 	 * Load all components from the `components` directory.
 	 */
-
 	public static async load(): Promise<void> {
 		const directory = path.resolve("src/components");
 
@@ -97,19 +96,19 @@ export class ComponentManager {
 
 		Logger.info(`Loading components...`);
 
-		let count: number = 0;
+		let loadedCount = 0;
 
 		for (const file of files) {
 			try {
 				await this.loadFile(file);
-				count++;
+				loadedCount++;
 			} catch (error) {
 				Logger.error(`Failed to load ${file}:`, error);
 				process.exit(1);
 			}
 		}
 
-		Logger.success(`Loaded ${count} ${inflect(count, "component")}.`);
+		Logger.success(`Loaded ${loadedCount} ${inflect(loadedCount, "component")}.`);
 	}
 
 	/**

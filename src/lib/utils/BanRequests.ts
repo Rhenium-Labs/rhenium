@@ -58,14 +58,17 @@ export default class BanRequestUtils {
 			.setLabel("Accept")
 			.setStyle(ButtonStyle.Success)
 			.setCustomId(`ban-request-accept`);
+
 		const denyButton = new ButtonBuilder()
 			.setLabel("Deny")
 			.setStyle(ButtonStyle.Danger)
 			.setCustomId(`ban-request-deny`);
+
 		const disregardButton = new ButtonBuilder()
 			.setLabel("Disregard")
 			.setStyle(ButtonStyle.Secondary)
 			.setCustomId(`ban-request-disregard`);
+
 		const userInfoButton = new ButtonBuilder()
 			.setLabel("User Info")
 			.setStyle(ButtonStyle.Secondary)

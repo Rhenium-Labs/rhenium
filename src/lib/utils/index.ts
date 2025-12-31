@@ -1,83 +1,102 @@
 import { GuildMember, Snowflake } from "discord.js";
-
 import ms, { type StringValue } from "ms";
 
 import type { SimpleResult } from "./Types.js";
 
 /**
- * Inflects a word based on the count.
+ * Returns the singular or plural form of a word based on the count.
  *
- * @param count The count to base the inflection on.
+ * @param count The number to base the inflection on.
  * @param singular The singular form of the word.
- * @returns The inflected word.
+ * @param plural The plural form of the word. Defaults to singular + "s".
+ * @returns The appropriate singular or plural form based on the count.
  */
-
 export function inflect(count: number, singular: string, plural = `${singular}s`): string {
 	return count === 1 ? singular : plural;
 }
 
 /**
- * Wait a certain amount of time before proceeding with the next step.
+ * Truncates a string to a maximum length, appending an ellipsis and remaining character count.
  *
- * @param ms The amount of time to wait in milliseconds.
- * @returns A promise that resolves after the specified time has elapsed.
+ * @param str The string to truncate.
+ * @param maxLength The maximum length of the truncated string.
+ *
+ * @returns The truncated string with an ellipsis and remaining character count if truncated.
  */
+export function truncate(str: string, maxLength: number): string {
+	if (str.length <= maxLength) return str;
 
-export async function sleep(ms: number) {
-	return new Promise(resolve => setTimeout(resolve, ms));
+	const croppedStr = str.slice(0, maxLength - 23);
+	return `${croppedStr}…(${str.length - croppedStr.length} more characters)`;
 }
 
 /**
- * Parse a duration string into a number of milliseconds.
+ *  Crops a string to a maximum number of lines, appending an indicator if lines were removed.
  *
- * @param durationStr The duration string to parse.
- * @returns The duration in milliseconds.
+ * @param str The string to crop.
+ * @param maxLines The maximum number of lines to retain.
+ *
+ * @returns The cropped string with an indicator if lines were removed.
  */
+export function cropLines(str: string, maxLines: number): string {
+	const lines = str.split("\n");
+	if (lines.length <= maxLines) return str;
 
-export function parseDurationString(durationStr: string | null): number | null {
-	if (!durationStr) return null;
+	const diff = lines.length - maxLines + 1;
+	return [...lines.slice(0, maxLines - 1), `(${diff} more ${inflect(diff, "line")})`].join("\n");
+}
 
-	const numericValue = Number(durationStr);
+/** Formats a user ID as a mention with the ID in parentheses. */
+export function userMentionWithId(id: Snowflake): `<@${Snowflake}> (\`${Snowflake}\`)` {
+	return `<@${id}> (\`${id}\`)`;
+}
 
+/** Delays execution for the specified number of milliseconds. */
+export function sleep(duration: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, duration));
+}
+
+/** Parses a duration string into milliseconds. */
+export function parseDurationString(str: string | null): number | null {
+	if (!str) return null;
+
+	const numericValue = Number(str);
 	if (!isNaN(numericValue)) return numericValue * 1000;
-	return ms(durationStr as StringValue) ?? null;
+
+	return ms(str as StringValue) ?? null;
 }
 
 /**
- * Validate a duration against optional minimum and maximum values.
+ * Validates that a duration falls within optional minimum and maximum bounds.
  *
  * @param data The duration data to validate.
  * @returns The result of the validation.
  */
-
 export function validateDuration(data: { duration: number; minimum?: string; maximum?: string }): SimpleResult {
-	if (data.minimum !== undefined) {
-		const minMs = ms(data.minimum as StringValue);
+	const { duration, minimum, maximum } = data;
 
-		if (minMs !== undefined && data.duration < minMs) {
-			return { ok: false, message: `Duration must be at least ${data.minimum}.` };
-		}
+	const minMs = minimum ? ms(minimum as StringValue) : undefined;
+	const maxMs = maximum ? ms(maximum as StringValue) : undefined;
+
+	if (minMs && duration < minMs) {
+		return { ok: false, message: `Duration must be at least ${minimum}.` };
 	}
 
-	if (data.maximum !== undefined) {
-		const maxMs = ms(data.maximum as StringValue);
-
-		if (maxMs !== undefined && data.duration > maxMs) {
-			return { ok: false, message: `Duration must not exceed ${data.maximum}.` };
-		}
+	if (maxMs && duration > maxMs) {
+		return { ok: false, message: `Duration must not exceed ${maximum}.` };
 	}
 
 	return { ok: true };
 }
 
 /**
- * Check if a member has a higher role than another member.
+ * Checks if the executor has higher role hierarchy than the target.
  *
- * @param executor The executor
- * @param target The target
- * @returns boolean (Whether the executor has a higher role than the target)
+ * @param executor The member executing the action.
+ * @param target The member being acted upon.
+ *
+ * @returns True if the executor has higher role hierarchy, false otherwise.
  */
-
 export function hierarchyCheck(executor: GuildMember, target: GuildMember): boolean {
 	if (executor.guild.ownerId === executor.id) return true;
 	if (target.guild.ownerId === target.id) return false;
@@ -86,66 +105,19 @@ export function hierarchyCheck(executor: GuildMember, target: GuildMember): bool
 }
 
 /**
- * Converts a { Snowflake } to a formatted string with the format <@${Snowflake}}> (\`${Snowflake}\`).
+ * Upload data to Hastebin and return the URL.
  *
- * @param id The user id to format
- * @returns The formatted string
+ * @param data The data to upload.
+ * @param ext The file extension for the uploaded data.
+ *
+ * @returns The Hastebin URL or null if the upload failed.
  */
+export async function hastebin(data: unknown, ext = "js"): Promise<string | null> {
+	const body = typeof data === "object" ? JSON.stringify(data, null, 2) : String(data);
 
-export function userMentionWithId(id: Snowflake): `<@${Snowflake}> (\`${Snowflake}\`)` {
-	return `<@${id}> (\`${id}\`)`;
-}
+	const response = await fetch("https://hst.sh/documents", { method: "POST", body });
+	if (!response.ok) return null;
 
-/**
- * Uploads data to hastebin and returns the URL of the document.
- *
- * @param data The data to upload
- * @param ext The extension of the file (default .js)
- * @returns The url of the document
- */
-
-export async function hastebin(data: any, ext: string = "js"): Promise<string | null> {
-	const req = await fetch("https://hst.sh/documents", {
-		method: "POST",
-		body: typeof data === "object" ? JSON.stringify(data, null, 2) : data
-	});
-
-	if (!req.ok) return null;
-
-	const bin = (await req.json()) as { key: string };
-	return `https://hst.sh/${bin.key}.${ext}`;
-}
-
-/**
- * Truncates a string to a maximum length, appending an ellipsis and character count if truncated.
- *
- * @param str The string to truncate.
- * @param maxLength The maximum length of the string.
- * @returns The truncated string.
- */
-
-export function truncate(str: string, maxLength: number): string {
-	if (str.length > maxLength) {
-		const croppedStr = str.slice(0, maxLength - 23);
-		return `${croppedStr}…(${str.length - croppedStr.length} more characters)`;
-	}
-
-	return str;
-}
-
-/**
- * Crops a string to a maximum number of lines.
- *
- * - Appends the number of lines cropped if the string exceeds the maximum number of lines.
- *
- * @param str The string to crop.
- * @param maxLines The maximum number of lines to keep.
- * @returns The cropped string.
- */
-export function cropLines(str: string, maxLines: number): string {
-	const lines = str.split("\n");
-	if (lines.length <= maxLines) return str;
-
-	const diff = lines.length - maxLines + 1;
-	return [...lines.slice(0, maxLines - 1), `(${diff} more ${inflect(diff, "line")})`].join("\n");
+	const { key } = (await response.json()) as { key: string };
+	return `https://hst.sh/${key}.${ext}`;
 }
