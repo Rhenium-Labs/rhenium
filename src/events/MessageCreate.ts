@@ -1,37 +1,15 @@
-import {
-	Colors,
-	EmbedBuilder,
-	Events,
-	GuildBasedChannel,
-	Message,
-	MessageReplyOptions,
-	PermissionFlagsBits
-} from "discord.js";
+import { Colors, Events, Message, MessageReplyOptions, PermissionFlagsBits } from "discord.js";
 import { captureException } from "@sentry/node";
 
 import { reply } from "#utils/Messages.js";
 import { RedisCache } from "#utils/Redis.js";
-import { RateLimiter } from "#classes/RateLimiter.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { EventListener } from "#classes/EventListener.js";
-import { client, prisma } from "#root/index.js";
-import { formatMessageContent } from "#utils/Messages.js";
 import { Command, CommandManager } from "#classes/Command.js";
 
 import Args from "#classes/Args.js";
 import Logger from "#utils/Logger.js";
-
-/**
- * Cache for compiled highlight regex patterns.
- * Key: pattern string
- */
-const compiledRegexCache = new Map<string, RegExp>();
-
-/**
- * Rate limiter to prevent highlight spam.
- * Key: `${highlightUserId}:${messageAuthorId}`
- */
-const ratelimiter = new RateLimiter(1, 15000);
+import Highlights from "#root/commands/Highlights.js";
 
 export default class MessageCreate extends EventListener {
 	public constructor() {
@@ -42,98 +20,11 @@ export default class MessageCreate extends EventListener {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author.bot || message.webhookId || message.system) return;
 
-		return Promise.all([MessageCreate._highlightMessage(message), MessageCreate._processCommand(message)]);
-	}
-
-	private static async _highlightMessage(message: Message<true>) {
-		const guildId = message.guild.id;
-
-		const highlights = await prisma.highlight.findMany({
-			where: { guild_id: guildId },
-			select: {
-				user_id: true,
-				patterns: true,
-				channel_scoping: true,
-				user_blacklist: true
-			}
-		});
-
-		// Return early if no highlights exist.
-		if (highlights.length === 0) return;
-
-		const messageContent = message.content;
-		const messageAuthorId = message.author.id;
-
-		for (const highlight of highlights) {
-			// Prevent the same user from triggering the same highlight more than once in 15 seconds.
-			if (!ratelimiter.consume(`${highlight.user_id}:${messageAuthorId}`).success) continue;
-
-			// Ignore messages from the highlight owner.
-			if (highlight.user_id === messageAuthorId) continue;
-
-			// Check if the message author is blacklisted.
-			if (highlight.user_blacklist.some(u => u.target_id === messageAuthorId)) continue;
-
-			const canViewChannel = message.channel
-				.permissionsFor(highlight.user_id)
-				?.has(PermissionFlagsBits.ViewChannel);
-
-			if (!canViewChannel) continue;
-
-			const channelScoping = highlight.channel_scoping.reduce<ChannelScoping>(
-				(acc, channel) => {
-					if (channel.type === 0) {
-						acc.include_channels.push(channel.channel_id);
-					} else {
-						acc.exclude_channels.push(channel.channel_id);
-					}
-
-					return acc;
-				},
-				{
-					include_channels: [],
-					exclude_channels: []
-				}
-			);
-
-			if (!channelInScope(message.channel, channelScoping)) {
-				continue;
-			}
-
-			// Use cached compiled regex for pattern matching.
-			const matchedPattern = highlight.patterns.find(({ pattern }) => {
-				const regex = getCompiledRegex(pattern);
-				return regex.test(messageContent);
-			});
-
-			if (!matchedPattern) continue;
-
-			const user = await client.users.fetch(highlight.user_id).catch(() => null);
-			const formattedContent = await formatMessageContent(message.content, null, message.url);
-
-			const embed = new EmbedBuilder()
-				.setColor(Colors.Blue)
-				.setAuthor({
-					name: `Message from @${message.author.username}`,
-					iconURL: message.author.displayAvatarURL()
-				})
-				.setFields([
-					{
-						name: `Highlight in ${message.channel}`,
-						value: formattedContent
-					},
-					{
-						name: "Pattern",
-						value: `\`${matchedPattern.pattern}\``
-					}
-				])
-				.setTimestamp();
-
-			// Periodically clean up all caches.
-			cleanupRegexCache();
-
-			return user?.send({ embeds: [embed] }).catch(() => null);
-		}
+		// prettier-ignore
+		return Promise.all([
+			Highlights.highlightMessage(message), 
+			MessageCreate._processCommand(message)
+		]);
 	}
 
 	private static async _processCommand(message: Message<true>): Promise<void> {
@@ -226,66 +117,5 @@ export default class MessageCreate extends EventListener {
 		}
 
 		return isWhitelisted;
-	}
-}
-
-type ChannelScoping = {
-	include_channels: string[];
-	exclude_channels: string[];
-};
-
-/**
- * Checks if a channel is within the specified scoping.
- * Included channels take precedence over excluded channels.
- */
-function channelInScope(channel: GuildBasedChannel, scoping: ChannelScoping): boolean {
-	const channelId = channel.isThread() ? channel.parent?.id : channel.id;
-	const threadId = channel.isThread() ? channel.id : null;
-	const categoryId = channel.isThread() ? channel.parent?.parentId : channel.parentId;
-
-	const relevantIds = [channelId, threadId, categoryId].filter((id): id is string => Boolean(id));
-
-	// Check if included (or no include list exists).
-	const hasInclusions = scoping.include_channels.length > 0;
-	const isIncluded = !hasInclusions || relevantIds.some(id => scoping.include_channels.includes(id));
-	if (!isIncluded) return false;
-
-	// Even if included, check if it's excluded.
-	const hasExclusions = scoping.exclude_channels.length > 0;
-	const isExcluded = hasExclusions && relevantIds.some(id => scoping.exclude_channels.includes(id));
-
-	return !isExcluded;
-}
-
-/**
- * Gets a compiled RegExp from the pattern, using caching to avoid recompilation.
- */
-function getCompiledRegex(pattern: string): RegExp {
-	let regex = compiledRegexCache.get(pattern);
-
-	if (!regex) {
-		const isAsciiWord = /^[\w*]+$/.test(pattern);
-		const regexPattern = pattern.replaceAll("*", "(\\n|\\r|.)*");
-		const parsedPattern = isAsciiWord ? `\\b(${regexPattern})\\b` : `(${regexPattern})`;
-
-		regex = new RegExp(parsedPattern, "i");
-		compiledRegexCache.set(pattern, regex);
-	}
-
-	return regex;
-}
-
-/**
- * Cleans up the regex cache to prevent unbounded growth.
- */
-function cleanupRegexCache(): void {
-	if (compiledRegexCache.size > 1000) {
-		const entriesToDelete = compiledRegexCache.size - 500;
-		const iterator = compiledRegexCache.keys();
-
-		for (let i = 0; i < entriesToDelete; i++) {
-			const key = iterator.next().value;
-			if (key) compiledRegexCache.delete(key);
-		}
 	}
 }
