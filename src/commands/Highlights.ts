@@ -256,7 +256,7 @@ export default class Highlights extends Command {
 			if (highlight.user_id === messageAuthorId) continue;
 
 			// Check if the message author is blacklisted.
-			if (highlight.user_blacklist.some(u => u.target_id === messageAuthorId)) continue;
+			if (highlight.user_blacklist.some(userId => userId === messageAuthorId)) continue;
 
 			const canViewChannel = message.channel
 				.permissionsFor(highlight.user_id)
@@ -574,19 +574,13 @@ export default class Highlights extends Command {
 				},
 				update: {
 					user_blacklist: {
-						create: {
-							target_id: user.id
-						}
+						push: user.id
 					}
 				},
 				create: {
 					user_id: interaction.user.id,
 					guild_id: interaction.guild.id,
-					user_blacklist: {
-						create: {
-							target_id: user.id
-						}
-					}
+					user_blacklist: [user.id]
 				}
 			});
 		} catch {
@@ -603,21 +597,37 @@ export default class Highlights extends Command {
 	): Promise<InteractionReplyData> {
 		const user = interaction.options.getUser("user", true);
 
-		try {
-			await prisma.highlightUserBlacklist.delete({
-				where: {
-					user_id_guild_id_target_id: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guild.id,
-						target_id: user.id
-					}
+		const highlight = await prisma.highlight.findUnique({
+			where: {
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
 				}
-			});
-		} catch {
+			},
+			select: {
+				user_blacklist: true
+			}
+		});
+
+		if (!highlight || !highlight.user_blacklist.includes(user.id)) {
 			return {
-				error: `Failed to remove ${user} from your highlight blacklist. They may not be blacklisted.`
+				error: `${user} is not in your highlight blacklist.`
 			};
 		}
+
+		const updatedBlacklist = highlight.user_blacklist.filter(u => u !== user.id);
+
+		await prisma.highlight.update({
+			where: {
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
+				}
+			},
+			data: {
+				user_blacklist: updatedBlacklist
+			}
+		});
 
 		return { content: `Successfully removed ${user} from your highlight blacklist.` };
 	}
@@ -625,20 +635,39 @@ export default class Highlights extends Command {
 	private static async _clearUserBlacklist(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
-		const { count } = await prisma.highlightUserBlacklist.deleteMany({
+		const highlight = await prisma.highlight.findUnique({
 			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guild.id
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
+				}
+			},
+			select: {
+				user_blacklist: true
 			}
 		});
 
-		if (count === 0) {
+		if (!highlight || !highlight.user_blacklist.length) {
 			return {
 				content: `You have no highlight user blacklist to clear.`
 			};
 		}
 
-		return { content: `Successfully cleared \`${count}\` ${inflect(count, "highlight user blacklist entry")}.` };
+		await prisma.highlight.update({
+			where: {
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
+				}
+			},
+			data: {
+				user_blacklist: []
+			}
+		});
+
+		return {
+			content: `Successfully cleared \`${highlight.user_blacklist.length}\` ${inflect(highlight.user_blacklist.length, "highlight user blacklist entry")}.`
+		};
 	}
 
 	private static async _listHighlights(
@@ -653,13 +682,13 @@ export default class Highlights extends Command {
 			},
 			include: {
 				patterns: true,
-				channel_scoping: true,
-				user_blacklist: true
+				channel_scoping: true
 			}
 		});
 
 		const patternCount = highlights?.patterns.length ?? 0;
 		const patterns = highlights?.patterns.map(({ pattern }) => `\`${pattern}\``).join("\n") || "None";
+		const blacklistedUsers = highlights?.user_blacklist.map(id => `<@${id}>`).join("\n") || "None";
 
 		const [includedChannels, excludedChannels] = highlights?.channel_scoping.reduce<[string[], string[]]>(
 			(acc, channel) => {
@@ -689,6 +718,11 @@ export default class Highlights extends Command {
 				{
 					name: `Excluded Channels (${excludedChannels.length})`,
 					value: excludedChannels.length > 0 ? excludedChannels.join("\n") : "None",
+					inline: true
+				},
+				{
+					name: "Blacklisted Users",
+					value: blacklistedUsers,
 					inline: true
 				}
 			])

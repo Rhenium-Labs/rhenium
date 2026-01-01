@@ -184,7 +184,7 @@ model Highlight {
   guild_id        String
   patterns        HighlightPattern[]
   channel_scoping HighlightChannelScoping[]
-  user_blacklist  HighlightUserBlacklist[]
+  user_blacklist  String[]
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 
@@ -209,13 +209,4 @@ model HighlightChannelScoping {
   highlight  Highlight @relation(fields: [user_id, guild_id], references: [user_id, guild_id], onDelete: Cascade)
 
   @@id([user_id, guild_id, channel_id])
-}
-
-model HighlightUserBlacklist {
-  user_id   String
-  guild_id  String
-  target_id String
-  highlight Highlight @relation(fields: [user_id, guild_id], references: [user_id, guild_id], onDelete: Cascade)
-
-  @@id([user_id, guild_id, target_id])
 }

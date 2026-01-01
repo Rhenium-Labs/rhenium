@@ -76,8 +76,3 @@ export type HighlightPattern = Prisma.HighlightPatternModel;
  *
  */
 export type HighlightChannelScoping = Prisma.HighlightChannelScopingModel;
-/**
- * Model HighlightUserBlacklist
- *
- */
-export type HighlightUserBlacklist = Prisma.HighlightUserBlacklistModel;

@@ -59,8 +59,7 @@ export const ModelName = {
 	HighlightConfig: "HighlightConfig",
 	Highlight: "Highlight",
 	HighlightPattern: "HighlightPattern",
-	HighlightChannelScoping: "HighlightChannelScoping",
-	HighlightUserBlacklist: "HighlightUserBlacklist"
+	HighlightChannelScoping: "HighlightChannelScoping"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -197,7 +196,8 @@ export type HighlightConfigScalarFieldEnum =
 
 export const HighlightScalarFieldEnum = {
 	user_id: "user_id",
-	guild_id: "guild_id"
+	guild_id: "guild_id",
+	user_blacklist: "user_blacklist"
 } as const;
 
 export type HighlightScalarFieldEnum = (typeof HighlightScalarFieldEnum)[keyof typeof HighlightScalarFieldEnum];
@@ -220,15 +220,6 @@ export const HighlightChannelScopingScalarFieldEnum = {
 
 export type HighlightChannelScopingScalarFieldEnum =
 	(typeof HighlightChannelScopingScalarFieldEnum)[keyof typeof HighlightChannelScopingScalarFieldEnum];
-
-export const HighlightUserBlacklistScalarFieldEnum = {
-	user_id: "user_id",
-	guild_id: "guild_id",
-	target_id: "target_id"
-} as const;
-
-export type HighlightUserBlacklistScalarFieldEnum =
-	(typeof HighlightUserBlacklistScalarFieldEnum)[keyof typeof HighlightUserBlacklistScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",

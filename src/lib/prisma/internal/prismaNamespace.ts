@@ -374,8 +374,7 @@ export const ModelName = {
 	HighlightConfig: "HighlightConfig",
 	Highlight: "Highlight",
 	HighlightPattern: "HighlightPattern",
-	HighlightChannelScoping: "HighlightChannelScoping",
-	HighlightUserBlacklist: "HighlightUserBlacklist"
+	HighlightChannelScoping: "HighlightChannelScoping"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -407,8 +406,7 @@ export type TypeMap<
 			| "highlightConfig"
 			| "highlight"
 			| "highlightPattern"
-			| "highlightChannelScoping"
-			| "highlightUserBlacklist";
+			| "highlightChannelScoping";
 		txIsolationLevel: TransactionIsolationLevel;
 	};
 	model: {
@@ -1306,82 +1304,6 @@ export type TypeMap<
 				};
 			};
 		};
-		HighlightUserBlacklist: {
-			payload: Prisma.$HighlightUserBlacklistPayload<ExtArgs>;
-			fields: Prisma.HighlightUserBlacklistFieldRefs;
-			operations: {
-				findUnique: {
-					args: Prisma.HighlightUserBlacklistFindUniqueArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload> | null;
-				};
-				findUniqueOrThrow: {
-					args: Prisma.HighlightUserBlacklistFindUniqueOrThrowArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
-				};
-				findFirst: {
-					args: Prisma.HighlightUserBlacklistFindFirstArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload> | null;
-				};
-				findFirstOrThrow: {
-					args: Prisma.HighlightUserBlacklistFindFirstOrThrowArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
-				};
-				findMany: {
-					args: Prisma.HighlightUserBlacklistFindManyArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>[];
-				};
-				create: {
-					args: Prisma.HighlightUserBlacklistCreateArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
-				};
-				createMany: {
-					args: Prisma.HighlightUserBlacklistCreateManyArgs<ExtArgs>;
-					result: BatchPayload;
-				};
-				createManyAndReturn: {
-					args: Prisma.HighlightUserBlacklistCreateManyAndReturnArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>[];
-				};
-				delete: {
-					args: Prisma.HighlightUserBlacklistDeleteArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
-				};
-				update: {
-					args: Prisma.HighlightUserBlacklistUpdateArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
-				};
-				deleteMany: {
-					args: Prisma.HighlightUserBlacklistDeleteManyArgs<ExtArgs>;
-					result: BatchPayload;
-				};
-				updateMany: {
-					args: Prisma.HighlightUserBlacklistUpdateManyArgs<ExtArgs>;
-					result: BatchPayload;
-				};
-				updateManyAndReturn: {
-					args: Prisma.HighlightUserBlacklistUpdateManyAndReturnArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>[];
-				};
-				upsert: {
-					args: Prisma.HighlightUserBlacklistUpsertArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightUserBlacklistPayload>;
-				};
-				aggregate: {
-					args: Prisma.HighlightUserBlacklistAggregateArgs<ExtArgs>;
-					result: runtime.Types.Utils.Optional<Prisma.AggregateHighlightUserBlacklist>;
-				};
-				groupBy: {
-					args: Prisma.HighlightUserBlacklistGroupByArgs<ExtArgs>;
-					result: runtime.Types.Utils.Optional<Prisma.HighlightUserBlacklistGroupByOutputType>[];
-				};
-				count: {
-					args: Prisma.HighlightUserBlacklistCountArgs<ExtArgs>;
-					result:
-						| runtime.Types.Utils.Optional<Prisma.HighlightUserBlacklistCountAggregateOutputType>
-						| number;
-				};
-			};
-		};
 	};
 } & {
 	other: {
@@ -1539,7 +1461,8 @@ export type HighlightConfigScalarFieldEnum =
 
 export const HighlightScalarFieldEnum = {
 	user_id: "user_id",
-	guild_id: "guild_id"
+	guild_id: "guild_id",
+	user_blacklist: "user_blacklist"
 } as const;
 
 export type HighlightScalarFieldEnum = (typeof HighlightScalarFieldEnum)[keyof typeof HighlightScalarFieldEnum];
@@ -1562,15 +1485,6 @@ export const HighlightChannelScopingScalarFieldEnum = {
 
 export type HighlightChannelScopingScalarFieldEnum =
 	(typeof HighlightChannelScopingScalarFieldEnum)[keyof typeof HighlightChannelScopingScalarFieldEnum];
-
-export const HighlightUserBlacklistScalarFieldEnum = {
-	user_id: "user_id",
-	guild_id: "guild_id",
-	target_id: "target_id"
-} as const;
-
-export type HighlightUserBlacklistScalarFieldEnum =
-	(typeof HighlightUserBlacklistScalarFieldEnum)[keyof typeof HighlightUserBlacklistScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",
@@ -1822,7 +1736,6 @@ export type GlobalOmitConfig = {
 	highlight?: Prisma.HighlightOmit;
 	highlightPattern?: Prisma.HighlightPatternOmit;
 	highlightChannelScoping?: Prisma.HighlightChannelScopingOmit;
-	highlightUserBlacklist?: Prisma.HighlightUserBlacklistOmit;
 };
 
 /* Types for Logging */
