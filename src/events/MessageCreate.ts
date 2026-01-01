@@ -35,6 +35,9 @@ export default class MessageCreate extends EventListener {
 		const spaceIndex = trimmedContent.indexOf(" ");
 
 		const commandName = spaceIndex === -1 ? trimmedContent : trimmedContent.slice(0, spaceIndex);
+
+		if (!commandName.length) return;
+
 		const command = CommandManager.get(commandName);
 
 		// Skip if no command found or command doesn't support message execution.
@@ -97,11 +100,15 @@ export default class MessageCreate extends EventListener {
 	 * Gets the command prefix for a message, if applicable.
 	 */
 	private static async _getPrefix(message: Message<true>): Promise<string | null> {
+		const prefix = ".";
+
+		if (!message.content.startsWith(prefix)) return null;
+
 		const bot = await message.guild.members.fetchMe();
 		const permissions = message.channel.permissionsFor(bot);
 
 		if (!permissions.has(PermissionFlagsBits.SendMessages)) return null;
-		return process.env.DEFAULT_PREFIX ?? ".";
+		return prefix;
 	}
 
 	/**
