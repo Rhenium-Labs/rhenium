@@ -58,7 +58,6 @@ export const ModelName = {
 	MessageReport: "MessageReport",
 	HighlightConfig: "HighlightConfig",
 	Highlight: "Highlight",
-	HighlightPattern: "HighlightPattern",
 	HighlightChannelScoping: "HighlightChannelScoping"
 } as const;
 
@@ -197,19 +196,11 @@ export type HighlightConfigScalarFieldEnum =
 export const HighlightScalarFieldEnum = {
 	user_id: "user_id",
 	guild_id: "guild_id",
+	patterns: "patterns",
 	user_blacklist: "user_blacklist"
 } as const;
 
 export type HighlightScalarFieldEnum = (typeof HighlightScalarFieldEnum)[keyof typeof HighlightScalarFieldEnum];
-
-export const HighlightPatternScalarFieldEnum = {
-	user_id: "user_id",
-	guild_id: "guild_id",
-	pattern: "pattern"
-} as const;
-
-export type HighlightPatternScalarFieldEnum =
-	(typeof HighlightPatternScalarFieldEnum)[keyof typeof HighlightPatternScalarFieldEnum];
 
 export const HighlightChannelScopingScalarFieldEnum = {
 	user_id: "user_id",

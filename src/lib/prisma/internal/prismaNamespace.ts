@@ -373,7 +373,6 @@ export const ModelName = {
 	MessageReport: "MessageReport",
 	HighlightConfig: "HighlightConfig",
 	Highlight: "Highlight",
-	HighlightPattern: "HighlightPattern",
 	HighlightChannelScoping: "HighlightChannelScoping"
 } as const;
 
@@ -405,7 +404,6 @@ export type TypeMap<
 			| "messageReport"
 			| "highlightConfig"
 			| "highlight"
-			| "highlightPattern"
 			| "highlightChannelScoping";
 		txIsolationLevel: TransactionIsolationLevel;
 	};
@@ -1154,80 +1152,6 @@ export type TypeMap<
 				};
 			};
 		};
-		HighlightPattern: {
-			payload: Prisma.$HighlightPatternPayload<ExtArgs>;
-			fields: Prisma.HighlightPatternFieldRefs;
-			operations: {
-				findUnique: {
-					args: Prisma.HighlightPatternFindUniqueArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload> | null;
-				};
-				findUniqueOrThrow: {
-					args: Prisma.HighlightPatternFindUniqueOrThrowArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
-				};
-				findFirst: {
-					args: Prisma.HighlightPatternFindFirstArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload> | null;
-				};
-				findFirstOrThrow: {
-					args: Prisma.HighlightPatternFindFirstOrThrowArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
-				};
-				findMany: {
-					args: Prisma.HighlightPatternFindManyArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>[];
-				};
-				create: {
-					args: Prisma.HighlightPatternCreateArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
-				};
-				createMany: {
-					args: Prisma.HighlightPatternCreateManyArgs<ExtArgs>;
-					result: BatchPayload;
-				};
-				createManyAndReturn: {
-					args: Prisma.HighlightPatternCreateManyAndReturnArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>[];
-				};
-				delete: {
-					args: Prisma.HighlightPatternDeleteArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
-				};
-				update: {
-					args: Prisma.HighlightPatternUpdateArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
-				};
-				deleteMany: {
-					args: Prisma.HighlightPatternDeleteManyArgs<ExtArgs>;
-					result: BatchPayload;
-				};
-				updateMany: {
-					args: Prisma.HighlightPatternUpdateManyArgs<ExtArgs>;
-					result: BatchPayload;
-				};
-				updateManyAndReturn: {
-					args: Prisma.HighlightPatternUpdateManyAndReturnArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>[];
-				};
-				upsert: {
-					args: Prisma.HighlightPatternUpsertArgs<ExtArgs>;
-					result: runtime.Types.Utils.PayloadToResult<Prisma.$HighlightPatternPayload>;
-				};
-				aggregate: {
-					args: Prisma.HighlightPatternAggregateArgs<ExtArgs>;
-					result: runtime.Types.Utils.Optional<Prisma.AggregateHighlightPattern>;
-				};
-				groupBy: {
-					args: Prisma.HighlightPatternGroupByArgs<ExtArgs>;
-					result: runtime.Types.Utils.Optional<Prisma.HighlightPatternGroupByOutputType>[];
-				};
-				count: {
-					args: Prisma.HighlightPatternCountArgs<ExtArgs>;
-					result: runtime.Types.Utils.Optional<Prisma.HighlightPatternCountAggregateOutputType> | number;
-				};
-			};
-		};
 		HighlightChannelScoping: {
 			payload: Prisma.$HighlightChannelScopingPayload<ExtArgs>;
 			fields: Prisma.HighlightChannelScopingFieldRefs;
@@ -1462,19 +1386,11 @@ export type HighlightConfigScalarFieldEnum =
 export const HighlightScalarFieldEnum = {
 	user_id: "user_id",
 	guild_id: "guild_id",
+	patterns: "patterns",
 	user_blacklist: "user_blacklist"
 } as const;
 
 export type HighlightScalarFieldEnum = (typeof HighlightScalarFieldEnum)[keyof typeof HighlightScalarFieldEnum];
-
-export const HighlightPatternScalarFieldEnum = {
-	user_id: "user_id",
-	guild_id: "guild_id",
-	pattern: "pattern"
-} as const;
-
-export type HighlightPatternScalarFieldEnum =
-	(typeof HighlightPatternScalarFieldEnum)[keyof typeof HighlightPatternScalarFieldEnum];
 
 export const HighlightChannelScopingScalarFieldEnum = {
 	user_id: "user_id",
@@ -1734,7 +1650,6 @@ export type GlobalOmitConfig = {
 	messageReport?: Prisma.MessageReportOmit;
 	highlightConfig?: Prisma.HighlightConfigOmit;
 	highlight?: Prisma.HighlightOmit;
-	highlightPattern?: Prisma.HighlightPatternOmit;
 	highlightChannelScoping?: Prisma.HighlightChannelScopingOmit;
 };
 

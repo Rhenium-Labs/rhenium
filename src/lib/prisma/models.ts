@@ -17,6 +17,5 @@ export type * from "./models/TemporaryBan.js";
 export type * from "./models/MessageReport.js";
 export type * from "./models/HighlightConfig.js";
 export type * from "./models/Highlight.js";
-export type * from "./models/HighlightPattern.js";
 export type * from "./models/HighlightChannelScoping.js";
 export type * from "./commonInputTypes.js";

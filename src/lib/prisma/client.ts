@@ -93,11 +93,6 @@ export type HighlightConfig = Prisma.HighlightConfigModel;
  */
 export type Highlight = Prisma.HighlightModel;
 /**
- * Model HighlightPattern
- *
- */
-export type HighlightPattern = Prisma.HighlightPatternModel;
-/**
  * Model HighlightChannelScoping
  *
  */

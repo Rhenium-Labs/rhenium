@@ -231,7 +231,6 @@ export default class Highlights extends Command {
 	/** Highlights a message if it matches any user's highlight patterns. */
 	public static async highlightMessage(message: Message<true>) {
 		const guildId = message.guild.id;
-
 		const highlights = await prisma.highlight.findMany({
 			where: { guild_id: guildId },
 			select: {
@@ -256,11 +255,16 @@ export default class Highlights extends Command {
 			if (highlight.user_id === messageAuthorId) continue;
 
 			// Check if the message author is blacklisted.
-			if (highlight.user_blacklist.some(userId => userId === messageAuthorId)) continue;
+			if (highlight.user_blacklist.includes(messageAuthorId)) continue;
+
+			// Check if the highlight user can view the channel.
+			const highlightMember = await message.guild.members.fetch(highlight.user_id).catch(() => null);
+
+			if (!highlightMember) continue;
 
 			const canViewChannel = message.channel
-				.permissionsFor(highlight.user_id)
-				?.has(PermissionFlagsBits.ViewChannel);
+				.permissionsFor(highlightMember)
+				.has(PermissionFlagsBits.ViewChannel);
 
 			if (!canViewChannel) continue;
 
@@ -285,7 +289,7 @@ export default class Highlights extends Command {
 			}
 
 			// Use cached compiled regex for pattern matching.
-			const matchedPattern = highlight.patterns.find(({ pattern }) => {
+			const matchedPattern = highlight.patterns.find(pattern => {
 				const regex = Highlights._getRegex(pattern);
 				return regex.test(messageContent);
 			});
@@ -308,7 +312,7 @@ export default class Highlights extends Command {
 					},
 					{
 						name: "Pattern",
-						value: `\`${matchedPattern.pattern}\``
+						value: `\`${matchedPattern}\``
 					}
 				])
 				.setTimestamp();
@@ -321,22 +325,48 @@ export default class Highlights extends Command {
 	}
 
 	private static _channelInScope(channel: GuildBasedChannel, scoping: ChannelScoping): boolean {
-		const channelId = channel.isThread() ? channel.parent?.id : channel.id;
-		const threadId = channel.isThread() ? channel.id : null;
-		const categoryId = channel.isThread() ? channel.parent?.parentId : channel.parentId;
+		const channelData: ChannelScopingParams = {
+			categoryId: channel.parentId,
+			channelId: channel.id,
+			threadId: null
+		};
 
-		const relevantIds = [channelId, threadId, categoryId].filter((id): id is string => Boolean(id));
+		if (channel.isThread() && channel.parent) {
+			channelData.channelId = channel.parent.id;
+			channelData.threadId = channel.id;
+			channelData.categoryId = channel.parent.parentId;
+		}
 
-		// Check if included (or no include list exists).
-		const hasInclusions = scoping.include_channels.length > 0;
-		const isIncluded = !hasInclusions || relevantIds.some(id => scoping.include_channels.includes(id));
-		if (!isIncluded) return false;
+		if (!scoping.include_channels.length && !scoping.exclude_channels.length) {
+			return true;
+		}
 
-		// Even if included, check if it's excluded.
-		const hasExclusions = scoping.exclude_channels.length > 0;
-		const isExcluded = hasExclusions && relevantIds.some(id => scoping.exclude_channels.includes(id));
+		if (scoping.include_channels.length) {
+			return this._channelIsIncludedInScope(channelData, scoping);
+		}
 
-		return !isExcluded;
+		return !this._channelIsExcludedFromScope(channelData, scoping);
+	}
+
+	private static _channelIsIncludedInScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
+		const { channelId, threadId, categoryId } = channelData;
+
+		return (
+			!scoping.include_channels.length ||
+			scoping.include_channels.includes(channelId) ||
+			(threadId !== null && scoping.include_channels.includes(threadId)) ||
+			(categoryId !== null && scoping.include_channels.includes(categoryId))
+		);
+	}
+
+	private static _channelIsExcludedFromScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
+		const { channelId, threadId, categoryId } = channelData;
+
+		return (
+			scoping.exclude_channels.includes(channelId) ||
+			(threadId !== null && scoping.exclude_channels.includes(threadId)) ||
+			(categoryId !== null && scoping.exclude_channels.includes(categoryId))
+		);
 	}
 
 	private static _getRegex(pattern: string): RegExp {
@@ -364,21 +394,28 @@ export default class Highlights extends Command {
 	private static async _addPattern(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
-		const [config, patternCount] = await prisma.$transaction([
+		const [config, highlight] = await prisma.$transaction([
 			prisma.highlightConfig.upsert({
 				where: { id: interaction.guild.id },
 				create: { id: interaction.guild.id },
 				update: {}
 			}),
-			prisma.highlightPattern.count({
+			prisma.highlight.upsert({
 				where: {
+					user_id_guild_id: {
+						user_id: interaction.user.id,
+						guild_id: interaction.guild.id
+					}
+				},
+				create: {
 					user_id: interaction.user.id,
 					guild_id: interaction.guild.id
-				}
+				},
+				update: {}
 			})
 		]);
 
-		if (patternCount >= config.max_patterns) {
+		if (highlight.patterns.length >= config.max_patterns) {
 			return {
 				error: `You have reached the maximum number of highlight patterns (${config.max_patterns}).`
 			};
@@ -393,32 +430,25 @@ export default class Highlights extends Command {
 			};
 		}
 
-		try {
-			await prisma.highlight.upsert({
-				where: {
-					user_id_guild_id: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guild.id
-					}
-				},
-				update: {
-					patterns: {
-						create: { pattern }
-					}
-				},
-				create: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id,
-					patterns: {
-						create: { pattern }
-					}
-				}
-			});
-		} catch {
+		if (highlight.patterns.includes(pattern)) {
 			return {
-				error: `Failed to add pattern. It may already exist in your highlight patterns.`
+				error: `The pattern \`${pattern}\` already exists in your highlight patterns.`
 			};
 		}
+
+		await prisma.highlight.update({
+			where: {
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
+				}
+			},
+			data: {
+				patterns: {
+					push: pattern
+				}
+			}
+		});
 
 		return { content: `Successfully added \`${pattern}\` to your highlights.` };
 	}
@@ -427,22 +457,37 @@ export default class Highlights extends Command {
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
 		const pattern = interaction.options.getString("pattern", true);
-
-		try {
-			await prisma.highlightPattern.delete({
-				where: {
-					user_id_guild_id_pattern: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guild.id,
-						pattern
-					}
+		const highlight = await prisma.highlight.findUnique({
+			where: {
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
 				}
-			});
-		} catch {
+			},
+			select: {
+				patterns: true
+			}
+		});
+
+		if (!highlight || !highlight.patterns.includes(pattern)) {
 			return {
-				error: `Failed to remove pattern. It may not exist in your highlight patterns.`
+				error: `The pattern \`${pattern}\` does not exist in your highlight patterns.`
 			};
 		}
+
+		await prisma.highlight.update({
+			where: {
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
+				}
+			},
+			data: {
+				patterns: {
+					set: highlight.patterns.filter(p => p !== pattern)
+				}
+			}
+		});
 
 		return { content: `Successfully removed \`${pattern}\` from your highlights.` };
 	}
@@ -450,20 +495,41 @@ export default class Highlights extends Command {
 	private static async _clearPatterns(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
-		const { count } = await prisma.highlightPattern.deleteMany({
+		const highlight = await prisma.highlight.findUnique({
 			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guild.id
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
+				}
+			},
+			select: {
+				patterns: true
 			}
 		});
 
-		if (count === 0) {
+		if (!highlight || highlight.patterns.length === 0) {
 			return {
 				content: `You have no highlight patterns to clear.`
 			};
 		}
 
-		return { content: `Successfully cleared \`${count}\` ${inflect(count, "highlight pattern")}.` };
+		await prisma.highlight.update({
+			where: {
+				user_id_guild_id: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id
+				}
+			},
+			data: {
+				patterns: {
+					set: []
+				}
+			}
+		});
+
+		return {
+			content: `Successfully cleared \`${highlight.patterns.length}\` ${inflect(highlight.patterns.length, "highlight pattern")}.`
+		};
 	}
 
 	private static async _addChannelScoping(
@@ -681,13 +747,12 @@ export default class Highlights extends Command {
 				}
 			},
 			include: {
-				patterns: true,
 				channel_scoping: true
 			}
 		});
 
 		const patternCount = highlights?.patterns.length ?? 0;
-		const patterns = highlights?.patterns.map(({ pattern }) => `\`${pattern}\``).join("\n") || "None";
+		const patterns = highlights?.patterns.map(pattern => `\`${pattern}\``).join("\n") || "None";
 		const blacklistedUsers = highlights?.user_blacklist.map(id => `<@${id}>`).join("\n") || "None";
 
 		const [includedChannels, excludedChannels] = highlights?.channel_scoping.reduce<[string[], string[]]>(
@@ -736,12 +801,6 @@ export default class Highlights extends Command {
 	): Promise<InteractionReplyData> {
 		try {
 			const [patterns] = await prisma.$transaction([
-				prisma.highlightPattern.deleteMany({
-					where: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guildId
-					}
-				}),
 				prisma.highlightChannelScoping.deleteMany({
 					where: {
 						user_id: interaction.user.id,
@@ -789,4 +848,10 @@ type HighlightSubcommand = (typeof HighlightSubcommand)[keyof typeof HighlightSu
 type ChannelScoping = {
 	include_channels: string[];
 	exclude_channels: string[];
+};
+
+type ChannelScopingParams = {
+	channelId: string;
+	threadId: string | null;
+	categoryId: string | null;
 };

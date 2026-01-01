@@ -36,6 +36,7 @@ export type HighlightMaxAggregateOutputType = {
 export type HighlightCountAggregateOutputType = {
 	user_id: number;
 	guild_id: number;
+	patterns: number;
 	user_blacklist: number;
 	_all: number;
 };
@@ -53,6 +54,7 @@ export type HighlightMaxAggregateInputType = {
 export type HighlightCountAggregateInputType = {
 	user_id?: true;
 	guild_id?: true;
+	patterns?: true;
 	user_blacklist?: true;
 	_all?: true;
 };
@@ -133,6 +135,7 @@ export type HighlightGroupByArgs<
 export type HighlightGroupByOutputType = {
 	user_id: string;
 	guild_id: string;
+	patterns: string[];
 	user_blacklist: string[];
 	_count: HighlightCountAggregateOutputType | null;
 	_min: HighlightMinAggregateOutputType | null;
@@ -157,8 +160,8 @@ export type HighlightWhereInput = {
 	NOT?: Prisma.HighlightWhereInput | Prisma.HighlightWhereInput[];
 	user_id?: Prisma.StringFilter<"Highlight"> | string;
 	guild_id?: Prisma.StringFilter<"Highlight"> | string;
+	patterns?: Prisma.StringNullableListFilter<"Highlight">;
 	user_blacklist?: Prisma.StringNullableListFilter<"Highlight">;
-	patterns?: Prisma.HighlightPatternListRelationFilter;
 	channel_scoping?: Prisma.HighlightChannelScopingListRelationFilter;
 	guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 };
@@ -166,8 +169,8 @@ export type HighlightWhereInput = {
 export type HighlightOrderByWithRelationInput = {
 	user_id?: Prisma.SortOrder;
 	guild_id?: Prisma.SortOrder;
+	patterns?: Prisma.SortOrder;
 	user_blacklist?: Prisma.SortOrder;
-	patterns?: Prisma.HighlightPatternOrderByRelationAggregateInput;
 	channel_scoping?: Prisma.HighlightChannelScopingOrderByRelationAggregateInput;
 	guild?: Prisma.GuildOrderByWithRelationInput;
 };
@@ -180,8 +183,8 @@ export type HighlightWhereUniqueInput = Prisma.AtLeast<
 		NOT?: Prisma.HighlightWhereInput | Prisma.HighlightWhereInput[];
 		user_id?: Prisma.StringFilter<"Highlight"> | string;
 		guild_id?: Prisma.StringFilter<"Highlight"> | string;
+		patterns?: Prisma.StringNullableListFilter<"Highlight">;
 		user_blacklist?: Prisma.StringNullableListFilter<"Highlight">;
-		patterns?: Prisma.HighlightPatternListRelationFilter;
 		channel_scoping?: Prisma.HighlightChannelScopingListRelationFilter;
 		guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 	},
@@ -191,6 +194,7 @@ export type HighlightWhereUniqueInput = Prisma.AtLeast<
 export type HighlightOrderByWithAggregationInput = {
 	user_id?: Prisma.SortOrder;
 	guild_id?: Prisma.SortOrder;
+	patterns?: Prisma.SortOrder;
 	user_blacklist?: Prisma.SortOrder;
 	_count?: Prisma.HighlightCountOrderByAggregateInput;
 	_max?: Prisma.HighlightMaxOrderByAggregateInput;
@@ -203,13 +207,14 @@ export type HighlightScalarWhereWithAggregatesInput = {
 	NOT?: Prisma.HighlightScalarWhereWithAggregatesInput | Prisma.HighlightScalarWhereWithAggregatesInput[];
 	user_id?: Prisma.StringWithAggregatesFilter<"Highlight"> | string;
 	guild_id?: Prisma.StringWithAggregatesFilter<"Highlight"> | string;
+	patterns?: Prisma.StringNullableListFilter<"Highlight">;
 	user_blacklist?: Prisma.StringNullableListFilter<"Highlight">;
 };
 
 export type HighlightCreateInput = {
 	user_id: string;
+	patterns?: Prisma.HighlightCreatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternCreateNestedManyWithoutHighlightInput;
 	channel_scoping?: Prisma.HighlightChannelScopingCreateNestedManyWithoutHighlightInput;
 	guild: Prisma.GuildCreateNestedOneWithoutHighlightsInput;
 };
@@ -217,15 +222,15 @@ export type HighlightCreateInput = {
 export type HighlightUncheckedCreateInput = {
 	user_id: string;
 	guild_id: string;
+	patterns?: Prisma.HighlightCreatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUncheckedCreateNestedManyWithoutHighlightInput;
 	channel_scoping?: Prisma.HighlightChannelScopingUncheckedCreateNestedManyWithoutHighlightInput;
 };
 
 export type HighlightUpdateInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUpdateManyWithoutHighlightNestedInput;
 	channel_scoping?: Prisma.HighlightChannelScopingUpdateManyWithoutHighlightNestedInput;
 	guild?: Prisma.GuildUpdateOneRequiredWithoutHighlightsNestedInput;
 };
@@ -233,25 +238,28 @@ export type HighlightUpdateInput = {
 export type HighlightUncheckedUpdateInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
 	guild_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUncheckedUpdateManyWithoutHighlightNestedInput;
 	channel_scoping?: Prisma.HighlightChannelScopingUncheckedUpdateManyWithoutHighlightNestedInput;
 };
 
 export type HighlightCreateManyInput = {
 	user_id: string;
 	guild_id: string;
+	patterns?: Prisma.HighlightCreatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
 };
 
 export type HighlightUpdateManyMutationInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
 };
 
 export type HighlightUncheckedUpdateManyInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
 	guild_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
 };
 
@@ -273,6 +281,7 @@ export type HighlightUser_idGuild_idCompoundUniqueInput = {
 export type HighlightCountOrderByAggregateInput = {
 	user_id?: Prisma.SortOrder;
 	guild_id?: Prisma.SortOrder;
+	patterns?: Prisma.SortOrder;
 	user_blacklist?: Prisma.SortOrder;
 };
 
@@ -365,39 +374,22 @@ export type HighlightUncheckedUpdateManyWithoutGuildNestedInput = {
 	deleteMany?: Prisma.HighlightScalarWhereInput | Prisma.HighlightScalarWhereInput[];
 };
 
+export type HighlightCreatepatternsInput = {
+	set: string[];
+};
+
 export type HighlightCreateuser_blacklistInput = {
 	set: string[];
+};
+
+export type HighlightUpdatepatternsInput = {
+	set?: string[];
+	push?: string | string[];
 };
 
 export type HighlightUpdateuser_blacklistInput = {
 	set?: string[];
 	push?: string | string[];
-};
-
-export type HighlightCreateNestedOneWithoutPatternsInput = {
-	create?: Prisma.XOR<
-		Prisma.HighlightCreateWithoutPatternsInput,
-		Prisma.HighlightUncheckedCreateWithoutPatternsInput
-	>;
-	connectOrCreate?: Prisma.HighlightCreateOrConnectWithoutPatternsInput;
-	connect?: Prisma.HighlightWhereUniqueInput;
-};
-
-export type HighlightUpdateOneRequiredWithoutPatternsNestedInput = {
-	create?: Prisma.XOR<
-		Prisma.HighlightCreateWithoutPatternsInput,
-		Prisma.HighlightUncheckedCreateWithoutPatternsInput
-	>;
-	connectOrCreate?: Prisma.HighlightCreateOrConnectWithoutPatternsInput;
-	upsert?: Prisma.HighlightUpsertWithoutPatternsInput;
-	connect?: Prisma.HighlightWhereUniqueInput;
-	update?: Prisma.XOR<
-		Prisma.XOR<
-			Prisma.HighlightUpdateToOneWithWhereWithoutPatternsInput,
-			Prisma.HighlightUpdateWithoutPatternsInput
-		>,
-		Prisma.HighlightUncheckedUpdateWithoutPatternsInput
-	>;
 };
 
 export type HighlightCreateNestedOneWithoutChannel_scopingInput = {
@@ -428,15 +420,15 @@ export type HighlightUpdateOneRequiredWithoutChannel_scopingNestedInput = {
 
 export type HighlightCreateWithoutGuildInput = {
 	user_id: string;
+	patterns?: Prisma.HighlightCreatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternCreateNestedManyWithoutHighlightInput;
 	channel_scoping?: Prisma.HighlightChannelScopingCreateNestedManyWithoutHighlightInput;
 };
 
 export type HighlightUncheckedCreateWithoutGuildInput = {
 	user_id: string;
+	patterns?: Prisma.HighlightCreatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUncheckedCreateNestedManyWithoutHighlightInput;
 	channel_scoping?: Prisma.HighlightChannelScopingUncheckedCreateNestedManyWithoutHighlightInput;
 };
 
@@ -472,74 +464,22 @@ export type HighlightScalarWhereInput = {
 	NOT?: Prisma.HighlightScalarWhereInput | Prisma.HighlightScalarWhereInput[];
 	user_id?: Prisma.StringFilter<"Highlight"> | string;
 	guild_id?: Prisma.StringFilter<"Highlight"> | string;
+	patterns?: Prisma.StringNullableListFilter<"Highlight">;
 	user_blacklist?: Prisma.StringNullableListFilter<"Highlight">;
-};
-
-export type HighlightCreateWithoutPatternsInput = {
-	user_id: string;
-	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
-	channel_scoping?: Prisma.HighlightChannelScopingCreateNestedManyWithoutHighlightInput;
-	guild: Prisma.GuildCreateNestedOneWithoutHighlightsInput;
-};
-
-export type HighlightUncheckedCreateWithoutPatternsInput = {
-	user_id: string;
-	guild_id: string;
-	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
-	channel_scoping?: Prisma.HighlightChannelScopingUncheckedCreateNestedManyWithoutHighlightInput;
-};
-
-export type HighlightCreateOrConnectWithoutPatternsInput = {
-	where: Prisma.HighlightWhereUniqueInput;
-	create: Prisma.XOR<
-		Prisma.HighlightCreateWithoutPatternsInput,
-		Prisma.HighlightUncheckedCreateWithoutPatternsInput
-	>;
-};
-
-export type HighlightUpsertWithoutPatternsInput = {
-	update: Prisma.XOR<
-		Prisma.HighlightUpdateWithoutPatternsInput,
-		Prisma.HighlightUncheckedUpdateWithoutPatternsInput
-	>;
-	create: Prisma.XOR<
-		Prisma.HighlightCreateWithoutPatternsInput,
-		Prisma.HighlightUncheckedCreateWithoutPatternsInput
-	>;
-	where?: Prisma.HighlightWhereInput;
-};
-
-export type HighlightUpdateToOneWithWhereWithoutPatternsInput = {
-	where?: Prisma.HighlightWhereInput;
-	data: Prisma.XOR<Prisma.HighlightUpdateWithoutPatternsInput, Prisma.HighlightUncheckedUpdateWithoutPatternsInput>;
-};
-
-export type HighlightUpdateWithoutPatternsInput = {
-	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
-	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
-	channel_scoping?: Prisma.HighlightChannelScopingUpdateManyWithoutHighlightNestedInput;
-	guild?: Prisma.GuildUpdateOneRequiredWithoutHighlightsNestedInput;
-};
-
-export type HighlightUncheckedUpdateWithoutPatternsInput = {
-	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
-	guild_id?: Prisma.StringFieldUpdateOperationsInput | string;
-	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
-	channel_scoping?: Prisma.HighlightChannelScopingUncheckedUpdateManyWithoutHighlightNestedInput;
 };
 
 export type HighlightCreateWithoutChannel_scopingInput = {
 	user_id: string;
+	patterns?: Prisma.HighlightCreatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternCreateNestedManyWithoutHighlightInput;
 	guild: Prisma.GuildCreateNestedOneWithoutHighlightsInput;
 };
 
 export type HighlightUncheckedCreateWithoutChannel_scopingInput = {
 	user_id: string;
 	guild_id: string;
+	patterns?: Prisma.HighlightCreatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUncheckedCreateNestedManyWithoutHighlightInput;
 };
 
 export type HighlightCreateOrConnectWithoutChannel_scopingInput = {
@@ -572,39 +512,41 @@ export type HighlightUpdateToOneWithWhereWithoutChannel_scopingInput = {
 
 export type HighlightUpdateWithoutChannel_scopingInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUpdateManyWithoutHighlightNestedInput;
 	guild?: Prisma.GuildUpdateOneRequiredWithoutHighlightsNestedInput;
 };
 
 export type HighlightUncheckedUpdateWithoutChannel_scopingInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
 	guild_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUncheckedUpdateManyWithoutHighlightNestedInput;
 };
 
 export type HighlightCreateManyGuildInput = {
 	user_id: string;
+	patterns?: Prisma.HighlightCreatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightCreateuser_blacklistInput | string[];
 };
 
 export type HighlightUpdateWithoutGuildInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUpdateManyWithoutHighlightNestedInput;
 	channel_scoping?: Prisma.HighlightChannelScopingUpdateManyWithoutHighlightNestedInput;
 };
 
 export type HighlightUncheckedUpdateWithoutGuildInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
-	patterns?: Prisma.HighlightPatternUncheckedUpdateManyWithoutHighlightNestedInput;
 	channel_scoping?: Prisma.HighlightChannelScopingUncheckedUpdateManyWithoutHighlightNestedInput;
 };
 
 export type HighlightUncheckedUpdateManyWithoutGuildInput = {
 	user_id?: Prisma.StringFieldUpdateOperationsInput | string;
+	patterns?: Prisma.HighlightUpdatepatternsInput | string[];
 	user_blacklist?: Prisma.HighlightUpdateuser_blacklistInput | string[];
 };
 
@@ -613,14 +555,12 @@ export type HighlightUncheckedUpdateManyWithoutGuildInput = {
  */
 
 export type HighlightCountOutputType = {
-	patterns: number;
 	channel_scoping: number;
 };
 
 export type HighlightCountOutputTypeSelect<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
-	patterns?: boolean | HighlightCountOutputTypeCountPatternsArgs;
 	channel_scoping?: boolean | HighlightCountOutputTypeCountChannel_scopingArgs;
 };
 
@@ -639,15 +579,6 @@ export type HighlightCountOutputTypeDefaultArgs<
 /**
  * HighlightCountOutputType without action
  */
-export type HighlightCountOutputTypeCountPatternsArgs<
-	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
-> = {
-	where?: Prisma.HighlightPatternWhereInput;
-};
-
-/**
- * HighlightCountOutputType without action
- */
 export type HighlightCountOutputTypeCountChannel_scopingArgs<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
@@ -660,8 +591,8 @@ export type HighlightSelect<
 	{
 		user_id?: boolean;
 		guild_id?: boolean;
+		patterns?: boolean;
 		user_blacklist?: boolean;
-		patterns?: boolean | Prisma.Highlight$patternsArgs<ExtArgs>;
 		channel_scoping?: boolean | Prisma.Highlight$channel_scopingArgs<ExtArgs>;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 		_count?: boolean | Prisma.HighlightCountOutputTypeDefaultArgs<ExtArgs>;
@@ -675,6 +606,7 @@ export type HighlightSelectCreateManyAndReturn<
 	{
 		user_id?: boolean;
 		guild_id?: boolean;
+		patterns?: boolean;
 		user_blacklist?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
@@ -687,6 +619,7 @@ export type HighlightSelectUpdateManyAndReturn<
 	{
 		user_id?: boolean;
 		guild_id?: boolean;
+		patterns?: boolean;
 		user_blacklist?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
@@ -696,16 +629,19 @@ export type HighlightSelectUpdateManyAndReturn<
 export type HighlightSelectScalar = {
 	user_id?: boolean;
 	guild_id?: boolean;
+	patterns?: boolean;
 	user_blacklist?: boolean;
 };
 
 export type HighlightOmit<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
-> = runtime.Types.Extensions.GetOmit<"user_id" | "guild_id" | "user_blacklist", ExtArgs["result"]["highlight"]>;
+> = runtime.Types.Extensions.GetOmit<
+	"user_id" | "guild_id" | "patterns" | "user_blacklist",
+	ExtArgs["result"]["highlight"]
+>;
 export type HighlightInclude<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
-	patterns?: boolean | Prisma.Highlight$patternsArgs<ExtArgs>;
 	channel_scoping?: boolean | Prisma.Highlight$channel_scopingArgs<ExtArgs>;
 	guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	_count?: boolean | Prisma.HighlightCountOutputTypeDefaultArgs<ExtArgs>;
@@ -726,7 +662,6 @@ export type $HighlightPayload<
 > = {
 	name: "Highlight";
 	objects: {
-		patterns: Prisma.$HighlightPatternPayload<ExtArgs>[];
 		channel_scoping: Prisma.$HighlightChannelScopingPayload<ExtArgs>[];
 		guild: Prisma.$GuildPayload<ExtArgs>;
 	};
@@ -734,6 +669,7 @@ export type $HighlightPayload<
 		{
 			user_id: string;
 			guild_id: string;
+			patterns: string[];
 			user_blacklist: string[];
 		},
 		ExtArgs["result"]["highlight"]
@@ -1213,12 +1149,6 @@ export interface Prisma__HighlightClient<
 	GlobalOmitOptions = {}
 > extends Prisma.PrismaPromise<T> {
 	readonly [Symbol.toStringTag]: "PrismaPromise";
-	patterns<T extends Prisma.Highlight$patternsArgs<ExtArgs> = {}>(
-		args?: Prisma.Subset<T, Prisma.Highlight$patternsArgs<ExtArgs>>
-	): Prisma.PrismaPromise<
-		| runtime.Types.Result.GetResult<Prisma.$HighlightPatternPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>
-		| Null
-	>;
 	channel_scoping<T extends Prisma.Highlight$channel_scopingArgs<ExtArgs> = {}>(
 		args?: Prisma.Subset<T, Prisma.Highlight$channel_scopingArgs<ExtArgs>>
 	): Prisma.PrismaPromise<
@@ -1272,6 +1202,7 @@ export interface Prisma__HighlightClient<
 export interface HighlightFieldRefs {
 	readonly user_id: Prisma.FieldRef<"Highlight", "String">;
 	readonly guild_id: Prisma.FieldRef<"Highlight", "String">;
+	readonly patterns: Prisma.FieldRef<"Highlight", "String[]">;
 	readonly user_blacklist: Prisma.FieldRef<"Highlight", "String[]">;
 }
 
@@ -1693,32 +1624,6 @@ export type HighlightDeleteManyArgs<
 	 * Limit how many Highlights to delete.
 	 */
 	limit?: number;
-};
-
-/**
- * Highlight.patterns
- */
-export type Highlight$patternsArgs<
-	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
-> = {
-	/**
-	 * Select specific fields to fetch from the HighlightPattern
-	 */
-	select?: Prisma.HighlightPatternSelect<ExtArgs> | null;
-	/**
-	 * Omit specific fields from the HighlightPattern
-	 */
-	omit?: Prisma.HighlightPatternOmit<ExtArgs> | null;
-	/**
-	 * Choose, which related nodes to fetch as well
-	 */
-	include?: Prisma.HighlightPatternInclude<ExtArgs> | null;
-	where?: Prisma.HighlightPatternWhereInput;
-	orderBy?: Prisma.HighlightPatternOrderByWithRelationInput | Prisma.HighlightPatternOrderByWithRelationInput[];
-	cursor?: Prisma.HighlightPatternWhereUniqueInput;
-	take?: number;
-	skip?: number;
-	distinct?: Prisma.HighlightPatternScalarFieldEnum | Prisma.HighlightPatternScalarFieldEnum[];
 };
 
 /**
