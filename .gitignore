@@ -6,7 +6,6 @@ out
 dist
 *.tgz
 
-
 # Environment variables
 .env
 .env.development.local
@@ -16,3 +15,6 @@ dist
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Sentry Config File
+.sentryclirc

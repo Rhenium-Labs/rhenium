@@ -28,6 +28,7 @@
 		"@sapphire/discord-utilities": "^4.0.0",
 		"@sapphire/lexure": "^1.1.12",
 		"@sapphire/result": "^2.8.0",
+		"@sentry/cli": "2",
 		"@sentry/node": "^10.32.1",
 		"@upstash/redis": "^1.35.8",
 		"discord.js": "^14.25.1",

@@ -1,5 +1,12 @@
 import "dotenv/config.js";
 
+import {
+	init,
+	prismaIntegration,
+	consoleIntegration,
+	nodeContextIntegration,
+	consoleLoggingIntegration
+} from "@sentry/node";
 import { Redis } from "@upstash/redis";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -11,14 +18,6 @@ import { EventListenerManager } from "#classes/EventListener.js";
 
 import Logger from "#utils/Logger.js";
 import StrafeStryker from "#classes/Client.js";
-
-if (!process.env.BOT_TOKEN) {
-	throw new Error("Missing BOT_TOKEN in environment variables.");
-}
-
-if (!process.env.PG_URL) {
-	throw new Error("Missing PG_URL in environment variables.");
-}
 
 /** The Discord client instance. */
 export const client = new StrafeStryker();
@@ -49,6 +48,24 @@ async function main(): Promise<void> {
 		Logger.fatal("Failed to connect to the database:", error);
 		process.exit(1);
 	}
+
+	// Initialize Sentry for error tracking.
+	init({
+		dsn: process.env.SENTRY_DSN,
+		environment: process.env.NODE_ENV || "production",
+		tracesSampleRate: 1.0,
+		profilesSampleRate: 1.0,
+		sampleRate: 1.0,
+		enableLogs: true,
+		integrations: [
+			nodeContextIntegration(),
+			consoleIntegration(),
+			consoleLoggingIntegration(),
+			prismaIntegration()
+		]
+	});
+
+	Logger.success("Sentry initialized.");
 
 	// Log in to Discord.
 	await client.login(process.env.BOT_TOKEN);
