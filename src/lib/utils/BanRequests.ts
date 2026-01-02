@@ -201,7 +201,8 @@ export default class BanRequestUtils {
 						config: data.config,
 						request: data.request,
 						action: "accepted",
-						reviewedBy: interaction.user
+						reviewedBy: interaction.user,
+						reason: reviewReason
 					}),
 					prisma.banRequest.update({
 						where: { id: request.id },
@@ -238,7 +239,8 @@ export default class BanRequestUtils {
 						config: data.config,
 						request: data.request,
 						action: "denied",
-						reviewedBy: interaction.user
+						reviewedBy: interaction.user,
+						reason: reviewReason
 					}),
 					prisma.banRequest.update({
 						where: { id: request.id },
@@ -335,8 +337,9 @@ export default class BanRequestUtils {
 		request: BanRequest;
 		action: "accepted" | "denied";
 		reviewedBy: User;
+		reason: string | null;
 	}): Promise<APIMessage | null> {
-		const { config, request, action, reviewedBy } = data;
+		const { config, request, action, reviewedBy, reason } = data;
 
 		if (!config.webhook_url) return null;
 
@@ -346,13 +349,17 @@ export default class BanRequestUtils {
 			.setFields([
 				{ name: "Target", value: userMentionWithId(request.target_id) },
 				{ name: "Requested By", value: userMentionWithId(request.requested_by) },
-				{ name: "Reason", value: request.reason }
+				{ name: "Request Reason", value: request.reason }
 			])
 			.setFooter({
 				text: `Reviewed by @${reviewedBy.username} (${reviewedBy.id})`,
 				iconURL: reviewedBy.displayAvatarURL()
 			})
 			.setTimestamp();
+
+		if (reason) {
+			embed.addFields({ name: "Reviewer Reason", value: reason });
+		}
 
 		return new WebhookClient({ url: config.webhook_url })
 			.send({
