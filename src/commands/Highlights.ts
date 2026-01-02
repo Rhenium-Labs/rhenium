@@ -740,7 +740,7 @@ export default class Highlights extends Command {
 					inline: true
 				},
 				{
-					name: "Blacklisted Users",
+					name: `Blacklisted Users (${blacklistedUsers.length})`,
 					value: blacklistedUsers,
 					inline: true
 				}
@@ -753,32 +753,32 @@ export default class Highlights extends Command {
 	private static async _clearAllHighlights(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
-		try {
-			const [patterns] = await prisma.$transaction([
-				prisma.highlightChannelScoping.deleteMany({
-					where: {
+		const [patterns] = await prisma.$transaction([
+			prisma.highlightChannelScoping.deleteMany({
+				where: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guildId
+				}
+			}),
+			prisma.highlight.delete({
+				where: {
+					user_id_guild_id: {
 						user_id: interaction.user.id,
 						guild_id: interaction.guildId
 					}
-				}),
-				prisma.highlight.delete({
-					where: {
-						user_id_guild_id: {
-							user_id: interaction.user.id,
-							guild_id: interaction.guildId
-						}
-					}
-				})
-			]);
+				}
+			})
+		]);
 
+		if (patterns.count === 0) {
 			return {
-				content: `Successfully erased \`${patterns.count}\` ${inflect(patterns.count, "highlight")}.`
-			};
-		} catch {
-			return {
-				content: `Failed to erase highlights. You may not have any highlights set up.`
+				content: `You have no highlights to clear.`
 			};
 		}
+
+		return {
+			content: `Successfully erased \`${patterns.count}\` ${inflect(patterns.count, "highlight")}.`
+		};
 	}
 }
 
