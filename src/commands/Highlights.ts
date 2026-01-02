@@ -247,7 +247,8 @@ export default class Highlights extends Command {
 
 		for (const highlight of highlights) {
 			// Prevent the same user from triggering the same highlight more than once in 15 seconds.
-			if (!ratelimiter.consume(`${highlight.user_id}:${messageAuthorId}`).success) continue;
+			const { success } = ratelimiter.limit(`${highlight.user_id}:${messageAuthorId}`);
+			if (!success) continue;
 
 			// Ignore messages from the highlight owner.
 			if (highlight.user_id === messageAuthorId) continue;
