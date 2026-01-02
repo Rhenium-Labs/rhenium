@@ -740,7 +740,7 @@ export default class Highlights extends Command {
 					inline: true
 				},
 				{
-					name: `Blacklisted Users (${blacklistedUsers.length})`,
+					name: `Blacklisted Users (${highlights?.user_blacklist.length})`,
 					value: blacklistedUsers,
 					inline: true
 				}
