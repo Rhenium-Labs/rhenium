@@ -37,27 +37,6 @@ export default class Eval extends Command {
 		const isAsync = args.getFlags("async", "a");
 		const isSilent = args.getFlags("silent", "s");
 
-		const { output, isError, timeTaken, type } = await this._evaluate(code, isAsync, depth);
-
-		// If silent, do not send any response.
-		if (isSilent) return null;
-
-		if (output.length > 1900) {
-			return this._buildLargeOutputResponse(output, isError, type, timeTaken);
-		}
-
-		const header = isError ? "**Error**" : "**Output**";
-		const typeInfo = isError ? "" : `\n**Return Type:** \`${type}\``;
-		const content = `${header}\n${codeBlock("ts", output)}${typeInfo}\n**Time Taken:** \`${formatExecutionTime(timeTaken)}\``;
-
-		return { content };
-	}
-
-	private async _evaluate(
-		code: string,
-		isAsync: boolean,
-		depth: number
-	): Promise<{ output: string; isError: boolean; timeTaken: number; type: string }> {
 		const start = performance.now();
 
 		let rawOutput: unknown;
@@ -74,7 +53,18 @@ export default class Eval extends Command {
 		const type = typeof rawOutput;
 		const output = typeof rawOutput === "string" ? rawOutput : util.inspect(rawOutput, { depth });
 
-		return { output, isError, timeTaken, type };
+		// If silent, do not send any response.
+		if (isSilent) return null;
+
+		if (output.length > 1900) {
+			return this._buildLargeOutputResponse(output, isError, type, timeTaken);
+		}
+
+		const header = isError ? "**Error**" : "**Output**";
+		const typeInfo = isError ? "" : `\n**Return Type:** \`${type}\``;
+		const content = `${header}\n${codeBlock("ts", output)}${typeInfo}\n**Time Taken:** \`${formatExecutionTime(timeTaken)}\``;
+
+		return { content };
 	}
 
 	private async _buildLargeOutputResponse(
