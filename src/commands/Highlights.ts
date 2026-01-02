@@ -246,10 +246,6 @@ export default class Highlights extends Command {
 		const messageAuthorId = message.author.id;
 
 		for (const highlight of highlights) {
-			// Prevent the same user from triggering the same highlight more than once in 15 seconds.
-			const { success } = ratelimiter.limit(`${highlight.user_id}:${messageAuthorId}`);
-			if (!success) continue;
-
 			// Ignore messages from the highlight owner.
 			if (highlight.user_id === messageAuthorId) continue;
 
@@ -294,6 +290,9 @@ export default class Highlights extends Command {
 			});
 
 			if (!matchedPattern) continue;
+
+			// Prevent the same user from triggering the same highlight more than once in 15 seconds.
+			if (!ratelimiter.limit(`${highlight.user_id}:${messageAuthorId}`).success) continue;
 
 			const user = await client.users.fetch(highlight.user_id).catch(() => null);
 			const formattedContent = await formatMessageContent(message.content, null, message.url);
