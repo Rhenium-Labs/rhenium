@@ -73,8 +73,7 @@ export default class Highlights extends Command {
 									name: "pattern",
 									description: "The pattern to remove.",
 									type: ApplicationCommandOptionType.String,
-									required: true,
-									max_length: 45
+									required: true
 								}
 							]
 						},

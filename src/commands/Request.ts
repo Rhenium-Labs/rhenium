@@ -56,7 +56,9 @@ export default class Request extends Command {
 							name: "reason",
 							description: "The reason for the ban.",
 							type: ApplicationCommandOptionType.String,
-							required: false
+							required: false,
+							max_length: 1024,
+							min_length: 1
 						}
 					]
 				}
