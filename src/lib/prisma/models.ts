@@ -18,4 +18,7 @@ export type * from "./models/MessageReport.js";
 export type * from "./models/HighlightConfig.js";
 export type * from "./models/Highlight.js";
 export type * from "./models/HighlightChannelScoping.js";
+export type * from "./models/QuickMuteConfig.js";
+export type * from "./models/QuickMuteChannelScoping.js";
+export type * from "./models/QuickMute.js";
 export type * from "./commonInputTypes.js";

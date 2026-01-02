@@ -16,7 +16,7 @@ export default class ModerationUtils {
 	public static validateAction(data: {
 		target: GuildMember | User;
 		executor: GuildMember;
-		action: "Ban" | "Mute";
+		action: "Ban" | "Mute" | "Quick Mute";
 	}): SimpleResult {
 		const { target, executor, action } = data;
 		const actionLower = action.toLowerCase();

@@ -48,9 +48,12 @@ model Guild {
   ban_request_config    BanRequestConfig?
   content_filter_config ContentFilterConfig?
   highlight_config      HighlightConfig?
-  ban_requests          BanRequest[]
-  highlights            Highlight[]
-  message_reports       MessageReport[]
+  quick_mute_config     QuickMuteConfig?
+
+  ban_requests    BanRequest[]
+  highlights      Highlight[]
+  message_reports MessageReport[]
+  quick_mutes     QuickMute[]
 }
 
 model Whitelist {
@@ -174,9 +177,10 @@ model MessageReport {
 model HighlightConfig {
   id String @id
 
+  enabled      Boolean @default(false)
   // Hardcoded limit of 30 highlights per guild.
-  max_patterns Int   @default(15)
-  guild        Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+  max_patterns Int     @default(15)
+  guild        Guild   @relation(fields: [id], references: [id], onDelete: Cascade)
 }
 
 model Highlight {
@@ -200,4 +204,40 @@ model HighlightChannelScoping {
   highlight  Highlight @relation(fields: [user_id, guild_id], references: [user_id, guild_id], onDelete: Cascade)
 
   @@id([user_id, guild_id, channel_id])
+}
+
+model QuickMuteConfig {
+  // ID of the guild.
+  id String @id
+
+  enabled            Boolean                   @default(false)
+  purge_limit        Int                       @default(100)
+  webhook_url        String?
+  result_webhook_url String?
+  channel_scoping    QuickMuteChannelScoping[]
+
+  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model QuickMuteChannelScoping {
+  guild_id          String
+  channel_id        String
+  /// Include [`0`] or Exclude [`1`]
+  type              Int
+  quick_mute_config QuickMuteConfig @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@id([guild_id, channel_id])
+}
+
+model QuickMute {
+  user_id      String
+  guild_id     String
+  reaction     String
+  duration     BigInt
+  reason       String
+  purge_amount Int    @default(0)
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, guild_id, reaction])
 }

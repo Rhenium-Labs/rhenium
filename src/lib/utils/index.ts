@@ -1,7 +1,11 @@
-import { GuildMember, Snowflake } from "discord.js";
+import { Emoji, GuildBasedChannel, GuildMember, Snowflake } from "discord.js";
+
 import ms, { type StringValue } from "ms";
 
-import type { SimpleResult } from "./Types.js";
+import { client } from "#root/index.js";
+import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants.js";
+
+import type { ChannelScoping, SimpleResult } from "./Types.js";
 
 /**
  * Returns the singular or plural form of a word based on the count.
@@ -121,3 +125,173 @@ export async function hastebin(data: unknown, ext = "js"): Promise<string | null
 	const { key } = (await response.json()) as { key: string };
 	return `https://hst.sh/${key}.${ext}`;
 }
+
+/**
+ * Checks if a channel is within the defined scoping.
+ *
+ * @param channel The channel to check.
+ * @param scoping The scoping configuration.
+ * @returns True if the channel is within scope, false otherwise.
+ */
+
+export function channelInScope(channel: GuildBasedChannel, scoping: ChannelScoping): boolean {
+	const channelData: ChannelScopingParams = {
+		categoryId: channel.parentId,
+		channelId: channel.id,
+		threadId: null
+	};
+
+	if (channel.isThread() && channel.parent) {
+		channelData.channelId = channel.parent.id;
+		channelData.threadId = channel.id;
+		channelData.categoryId = channel.parent.parentId;
+	}
+
+	if (!scoping.include_channels.length && !scoping.exclude_channels.length) {
+		return true;
+	}
+
+	if (scoping.include_channels.length) {
+		return channelIsIncludedInScope(channelData, scoping);
+	}
+
+	return !channelIsExcludedFromScope(channelData, scoping);
+}
+
+/** Helper function to determine if a channel is included in scope. */
+function channelIsIncludedInScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
+	const { channelId, threadId, categoryId } = channelData;
+
+	return (
+		!scoping.include_channels.length ||
+		scoping.include_channels.includes(channelId) ||
+		(threadId !== null && scoping.include_channels.includes(threadId)) ||
+		(categoryId !== null && scoping.include_channels.includes(categoryId))
+	);
+}
+
+/** Helper function to determine if a channel is excluded from scope. */
+function channelIsExcludedFromScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
+	const { channelId, threadId, categoryId } = channelData;
+
+	return (
+		scoping.exclude_channels.includes(channelId) ||
+		(threadId !== null && scoping.exclude_channels.includes(threadId)) ||
+		(categoryId !== null && scoping.exclude_channels.includes(categoryId))
+	);
+}
+
+/**
+ * Extracts the identifier from an emoji object.
+ *
+ * @param emoji A partial emoji object containing optional `id` and `name` properties.
+ * @returns The emoji's ID if available, otherwise its name, or `null` if neither exists.
+ */
+export function getEmojiIdentifier(emoji: Partial<Pick<Emoji, "id" | "name">>): Snowflake | string | null {
+	return emoji.id ?? emoji.name ?? null;
+}
+
+/**
+ * Validates an emoji string and returns its parsed representation.
+ *
+ * Supports both unicode emojis and custom Discord emojis. For custom emojis,
+ * validates that the emoji exists within the specified guild.
+ *
+ * @param emoji The emoji string to validate (unicode character or Discord emoji format).
+ * @param guildId The guild ID to check custom emoji membership against.
+ * @returns A validated emoji object, or `null` if validation fails.
+ */
+export async function validateEmoji(emoji: string, guildId: Snowflake): Promise<ValidatedEmoji | null> {
+	const unicodeMatch = emoji.match(UNICODE_EMOJI_REGEX);
+
+	if (unicodeMatch) {
+		return { name: unicodeMatch[0] };
+	}
+
+	const customMatch = DISCORD_EMOJI_REGEX.exec(emoji);
+
+	if (!customMatch?.groups) {
+		return null;
+	}
+
+	const { id, name } = customMatch.groups;
+
+	const emojis = await fetchGuildEmojis(guildId);
+
+	if (!emojis) {
+		return null;
+	}
+
+	const existsInGuild = emojis.some(e => e.id === id);
+	return existsInGuild ? { id, name } : null;
+}
+
+/**
+ * Fetches all emojis from a guild.
+ *
+ * @param guildId - The ID of the guild to fetch emojis from.
+ * @returns An array of emoji objects, or `null` if the guild doesn't exist or fetching fails.
+ */
+export async function fetchGuildEmojis(guildId: Snowflake): Promise<Emoji[] | null> {
+	const guild = await client.guilds.fetch(guildId).catch(() => null);
+
+	if (!guild) {
+		return null;
+	}
+
+	const emojis = await guild.emojis.fetch().catch(() => null);
+	return emojis ? [...emojis.values()] : null;
+}
+
+/**
+ * Retrieves the name of an emoji.
+ *
+ * For unicode emojis, returns the emoji character itself.
+ * For custom emojis, looks up the name from the guild's emoji list.
+ *
+ * @param emoji - The emoji string or ID to look up.
+ * @param guildId - The guild ID to search for custom emojis.
+ * @returns The emoji's name, or `null` if not found.
+ */
+export async function getEmojiName(emoji: string, guildId: Snowflake): Promise<string | null> {
+	const unicodeMatch = emoji.match(UNICODE_EMOJI_REGEX);
+
+	if (unicodeMatch) {
+		return unicodeMatch[0];
+	}
+
+	return getGuildEmojiName(emoji, guildId);
+}
+
+/**
+ * Retrieves the name of a custom guild emoji by its ID.
+ *
+ * @param emojiId - The ID of the custom emoji to look up.
+ * @param guildId - The guild ID to search in.
+ * @returns The emoji's name, or `null` if not found.
+ */
+async function getGuildEmojiName(emojiId: string, guildId: Snowflake): Promise<string | null> {
+	const emojis = await fetchGuildEmojis(guildId);
+
+	if (!emojis) {
+		return null;
+	}
+
+	const emoji = emojis.find(e => e.id === emojiId);
+	return emoji?.name ?? null;
+}
+
+/** Represents a validated emoji with optional ID (for custom emojis) and name. */
+type ValidatedEmoji = {
+	/** The emoji's unique ID (only present for custom emojis). */
+	id?: Snowflake;
+	/** The emoji's name (unicode character for standard emojis, custom name for guild emojis). */
+	name: string;
+};
+
+/** Parameters representing channel scoping details. */
+type ChannelScopingParams = {
+	channelId: string;
+	threadId: string | null;
+	categoryId: string | null;
+};

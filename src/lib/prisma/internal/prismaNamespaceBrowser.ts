@@ -58,7 +58,10 @@ export const ModelName = {
 	MessageReport: "MessageReport",
 	HighlightConfig: "HighlightConfig",
 	Highlight: "Highlight",
-	HighlightChannelScoping: "HighlightChannelScoping"
+	HighlightChannelScoping: "HighlightChannelScoping",
+	QuickMuteConfig: "QuickMuteConfig",
+	QuickMuteChannelScoping: "QuickMuteChannelScoping",
+	QuickMute: "QuickMute"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -187,6 +190,7 @@ export type MessageReportScalarFieldEnum =
 
 export const HighlightConfigScalarFieldEnum = {
 	id: "id",
+	enabled: "enabled",
 	max_patterns: "max_patterns"
 } as const;
 
@@ -211,6 +215,37 @@ export const HighlightChannelScopingScalarFieldEnum = {
 
 export type HighlightChannelScopingScalarFieldEnum =
 	(typeof HighlightChannelScopingScalarFieldEnum)[keyof typeof HighlightChannelScopingScalarFieldEnum];
+
+export const QuickMuteConfigScalarFieldEnum = {
+	id: "id",
+	enabled: "enabled",
+	purge_limit: "purge_limit",
+	webhook_url: "webhook_url",
+	result_webhook_url: "result_webhook_url"
+} as const;
+
+export type QuickMuteConfigScalarFieldEnum =
+	(typeof QuickMuteConfigScalarFieldEnum)[keyof typeof QuickMuteConfigScalarFieldEnum];
+
+export const QuickMuteChannelScopingScalarFieldEnum = {
+	guild_id: "guild_id",
+	channel_id: "channel_id",
+	type: "type"
+} as const;
+
+export type QuickMuteChannelScopingScalarFieldEnum =
+	(typeof QuickMuteChannelScopingScalarFieldEnum)[keyof typeof QuickMuteChannelScopingScalarFieldEnum];
+
+export const QuickMuteScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	reaction: "reaction",
+	duration: "duration",
+	reason: "reason",
+	purge_amount: "purge_amount"
+} as const;
+
+export type QuickMuteScalarFieldEnum = (typeof QuickMuteScalarFieldEnum)[keyof typeof QuickMuteScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",

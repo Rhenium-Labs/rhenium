@@ -35,16 +35,19 @@ export type HighlightConfigSumAggregateOutputType = {
 
 export type HighlightConfigMinAggregateOutputType = {
 	id: string | null;
+	enabled: boolean | null;
 	max_patterns: number | null;
 };
 
 export type HighlightConfigMaxAggregateOutputType = {
 	id: string | null;
+	enabled: boolean | null;
 	max_patterns: number | null;
 };
 
 export type HighlightConfigCountAggregateOutputType = {
 	id: number;
+	enabled: number;
 	max_patterns: number;
 	_all: number;
 };
@@ -59,16 +62,19 @@ export type HighlightConfigSumAggregateInputType = {
 
 export type HighlightConfigMinAggregateInputType = {
 	id?: true;
+	enabled?: true;
 	max_patterns?: true;
 };
 
 export type HighlightConfigMaxAggregateInputType = {
 	id?: true;
+	enabled?: true;
 	max_patterns?: true;
 };
 
 export type HighlightConfigCountAggregateInputType = {
 	id?: true;
+	enabled?: true;
 	max_patterns?: true;
 	_all?: true;
 };
@@ -162,6 +168,7 @@ export type HighlightConfigGroupByArgs<
 
 export type HighlightConfigGroupByOutputType = {
 	id: string;
+	enabled: boolean;
 	max_patterns: number;
 	_count: HighlightConfigCountAggregateOutputType | null;
 	_avg: HighlightConfigAvgAggregateOutputType | null;
@@ -187,12 +194,14 @@ export type HighlightConfigWhereInput = {
 	OR?: Prisma.HighlightConfigWhereInput[];
 	NOT?: Prisma.HighlightConfigWhereInput | Prisma.HighlightConfigWhereInput[];
 	id?: Prisma.StringFilter<"HighlightConfig"> | string;
+	enabled?: Prisma.BoolFilter<"HighlightConfig"> | boolean;
 	max_patterns?: Prisma.IntFilter<"HighlightConfig"> | number;
 	guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 };
 
 export type HighlightConfigOrderByWithRelationInput = {
 	id?: Prisma.SortOrder;
+	enabled?: Prisma.SortOrder;
 	max_patterns?: Prisma.SortOrder;
 	guild?: Prisma.GuildOrderByWithRelationInput;
 };
@@ -203,6 +212,7 @@ export type HighlightConfigWhereUniqueInput = Prisma.AtLeast<
 		AND?: Prisma.HighlightConfigWhereInput | Prisma.HighlightConfigWhereInput[];
 		OR?: Prisma.HighlightConfigWhereInput[];
 		NOT?: Prisma.HighlightConfigWhereInput | Prisma.HighlightConfigWhereInput[];
+		enabled?: Prisma.BoolFilter<"HighlightConfig"> | boolean;
 		max_patterns?: Prisma.IntFilter<"HighlightConfig"> | number;
 		guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 	},
@@ -211,6 +221,7 @@ export type HighlightConfigWhereUniqueInput = Prisma.AtLeast<
 
 export type HighlightConfigOrderByWithAggregationInput = {
 	id?: Prisma.SortOrder;
+	enabled?: Prisma.SortOrder;
 	max_patterns?: Prisma.SortOrder;
 	_count?: Prisma.HighlightConfigCountOrderByAggregateInput;
 	_avg?: Prisma.HighlightConfigAvgOrderByAggregateInput;
@@ -228,40 +239,48 @@ export type HighlightConfigScalarWhereWithAggregatesInput = {
 		| Prisma.HighlightConfigScalarWhereWithAggregatesInput
 		| Prisma.HighlightConfigScalarWhereWithAggregatesInput[];
 	id?: Prisma.StringWithAggregatesFilter<"HighlightConfig"> | string;
+	enabled?: Prisma.BoolWithAggregatesFilter<"HighlightConfig"> | boolean;
 	max_patterns?: Prisma.IntWithAggregatesFilter<"HighlightConfig"> | number;
 };
 
 export type HighlightConfigCreateInput = {
+	enabled?: boolean;
 	max_patterns?: number;
 	guild: Prisma.GuildCreateNestedOneWithoutHighlight_configInput;
 };
 
 export type HighlightConfigUncheckedCreateInput = {
 	id: string;
+	enabled?: boolean;
 	max_patterns?: number;
 };
 
 export type HighlightConfigUpdateInput = {
+	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	max_patterns?: Prisma.IntFieldUpdateOperationsInput | number;
 	guild?: Prisma.GuildUpdateOneRequiredWithoutHighlight_configNestedInput;
 };
 
 export type HighlightConfigUncheckedUpdateInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	max_patterns?: Prisma.IntFieldUpdateOperationsInput | number;
 };
 
 export type HighlightConfigCreateManyInput = {
 	id: string;
+	enabled?: boolean;
 	max_patterns?: number;
 };
 
 export type HighlightConfigUpdateManyMutationInput = {
+	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	max_patterns?: Prisma.IntFieldUpdateOperationsInput | number;
 };
 
 export type HighlightConfigUncheckedUpdateManyInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	max_patterns?: Prisma.IntFieldUpdateOperationsInput | number;
 };
 
@@ -272,6 +291,7 @@ export type HighlightConfigNullableScalarRelationFilter = {
 
 export type HighlightConfigCountOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
+	enabled?: Prisma.SortOrder;
 	max_patterns?: Prisma.SortOrder;
 };
 
@@ -281,11 +301,13 @@ export type HighlightConfigAvgOrderByAggregateInput = {
 
 export type HighlightConfigMaxOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
+	enabled?: Prisma.SortOrder;
 	max_patterns?: Prisma.SortOrder;
 };
 
 export type HighlightConfigMinOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
+	enabled?: Prisma.SortOrder;
 	max_patterns?: Prisma.SortOrder;
 };
 
@@ -358,10 +380,12 @@ export type IntFieldUpdateOperationsInput = {
 };
 
 export type HighlightConfigCreateWithoutGuildInput = {
+	enabled?: boolean;
 	max_patterns?: number;
 };
 
 export type HighlightConfigUncheckedCreateWithoutGuildInput = {
+	enabled?: boolean;
 	max_patterns?: number;
 };
 
@@ -394,10 +418,12 @@ export type HighlightConfigUpdateToOneWithWhereWithoutGuildInput = {
 };
 
 export type HighlightConfigUpdateWithoutGuildInput = {
+	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	max_patterns?: Prisma.IntFieldUpdateOperationsInput | number;
 };
 
 export type HighlightConfigUncheckedUpdateWithoutGuildInput = {
+	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	max_patterns?: Prisma.IntFieldUpdateOperationsInput | number;
 };
 
@@ -406,6 +432,7 @@ export type HighlightConfigSelect<
 > = runtime.Types.Extensions.GetSelect<
 	{
 		id?: boolean;
+		enabled?: boolean;
 		max_patterns?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
@@ -417,6 +444,7 @@ export type HighlightConfigSelectCreateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
 	{
 		id?: boolean;
+		enabled?: boolean;
 		max_patterns?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
@@ -428,6 +456,7 @@ export type HighlightConfigSelectUpdateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
 	{
 		id?: boolean;
+		enabled?: boolean;
 		max_patterns?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
@@ -436,12 +465,13 @@ export type HighlightConfigSelectUpdateManyAndReturn<
 
 export type HighlightConfigSelectScalar = {
 	id?: boolean;
+	enabled?: boolean;
 	max_patterns?: boolean;
 };
 
 export type HighlightConfigOmit<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
-> = runtime.Types.Extensions.GetOmit<"id" | "max_patterns", ExtArgs["result"]["highlightConfig"]>;
+> = runtime.Types.Extensions.GetOmit<"id" | "enabled" | "max_patterns", ExtArgs["result"]["highlightConfig"]>;
 export type HighlightConfigInclude<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
@@ -468,6 +498,7 @@ export type $HighlightConfigPayload<
 	scalars: runtime.Types.Extensions.GetPayloadResult<
 		{
 			id: string;
+			enabled: boolean;
 			max_patterns: number;
 		},
 		ExtArgs["result"]["highlightConfig"]
@@ -1018,6 +1049,7 @@ export interface Prisma__HighlightConfigClient<
  */
 export interface HighlightConfigFieldRefs {
 	readonly id: Prisma.FieldRef<"HighlightConfig", "String">;
+	readonly enabled: Prisma.FieldRef<"HighlightConfig", "Boolean">;
 	readonly max_patterns: Prisma.FieldRef<"HighlightConfig", "Int">;
 }
 

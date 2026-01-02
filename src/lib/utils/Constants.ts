@@ -35,3 +35,16 @@ export const DEVELOPER_IDS: readonly string[] = [
 	"746055295314165862", // @cobaltorum
 	"389504173714046976" // @spidermat
 ];
+
+/**
+ * Regex patterns for matching Discord emojis.
+ */
+
+export const DISCORD_EMOJI_REGEX: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/g;
+
+/**
+ * Regex pattern for matching Unicode emojis.
+ */
+
+export const UNICODE_EMOJI_REGEX: Readonly<RegExp> =
+	/(?:\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?(?:\u200D(?:\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?))*)/gu;

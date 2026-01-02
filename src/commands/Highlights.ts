@@ -6,7 +6,6 @@ import {
 	ChatInputCommandInteraction,
 	Colors,
 	EmbedBuilder,
-	GuildBasedChannel,
 	InteractionContextType,
 	Message,
 	MessageFlags,
@@ -16,12 +15,12 @@ import {
 import safe from "safe-regex";
 
 import { client, prisma } from "#root/index.js";
-import { inflect } from "#utils/index.js";
+import { channelInScope, inflect } from "#utils/index.js";
 import { Command } from "#classes/Command.js";
 import { RateLimiter } from "#classes/RateLimiter.js";
 import { formatMessageContent } from "#utils/Messages.js";
 
-import type { InteractionReplyData } from "#utils/Types.js";
+import type { ChannelScoping, InteractionReplyData } from "#utils/Types.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
@@ -283,7 +282,7 @@ export default class Highlights extends Command {
 				}
 			);
 
-			if (!Highlights._channelInScope(message.channel, channelScoping)) {
+			if (!channelInScope(message.channel, channelScoping)) {
 				continue;
 			}
 
@@ -321,51 +320,6 @@ export default class Highlights extends Command {
 
 			return user?.send({ embeds: [embed] }).catch(() => null);
 		}
-	}
-
-	private static _channelInScope(channel: GuildBasedChannel, scoping: ChannelScoping): boolean {
-		const channelData: ChannelScopingParams = {
-			categoryId: channel.parentId,
-			channelId: channel.id,
-			threadId: null
-		};
-
-		if (channel.isThread() && channel.parent) {
-			channelData.channelId = channel.parent.id;
-			channelData.threadId = channel.id;
-			channelData.categoryId = channel.parent.parentId;
-		}
-
-		if (!scoping.include_channels.length && !scoping.exclude_channels.length) {
-			return true;
-		}
-
-		if (scoping.include_channels.length) {
-			return this._channelIsIncludedInScope(channelData, scoping);
-		}
-
-		return !this._channelIsExcludedFromScope(channelData, scoping);
-	}
-
-	private static _channelIsIncludedInScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
-		const { channelId, threadId, categoryId } = channelData;
-
-		return (
-			!scoping.include_channels.length ||
-			scoping.include_channels.includes(channelId) ||
-			(threadId !== null && scoping.include_channels.includes(threadId)) ||
-			(categoryId !== null && scoping.include_channels.includes(categoryId))
-		);
-	}
-
-	private static _channelIsExcludedFromScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
-		const { channelId, threadId, categoryId } = channelData;
-
-		return (
-			scoping.exclude_channels.includes(channelId) ||
-			(threadId !== null && scoping.exclude_channels.includes(threadId)) ||
-			(categoryId !== null && scoping.exclude_channels.includes(categoryId))
-		);
 	}
 
 	private static _getRegex(pattern: string): RegExp {
@@ -843,14 +797,3 @@ const HighlightSubcommand = {
 } as const;
 
 type HighlightSubcommand = (typeof HighlightSubcommand)[keyof typeof HighlightSubcommand];
-
-type ChannelScoping = {
-	include_channels: string[];
-	exclude_channels: string[];
-};
-
-type ChannelScopingParams = {
-	channelId: string;
-	threadId: string | null;
-	categoryId: string | null;
-};

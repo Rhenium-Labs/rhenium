@@ -97,3 +97,18 @@ export type Highlight = Prisma.HighlightModel;
  *
  */
 export type HighlightChannelScoping = Prisma.HighlightChannelScopingModel;
+/**
+ * Model QuickMuteConfig
+ *
+ */
+export type QuickMuteConfig = Prisma.QuickMuteConfigModel;
+/**
+ * Model QuickMuteChannelScoping
+ *
+ */
+export type QuickMuteChannelScoping = Prisma.QuickMuteChannelScopingModel;
+/**
+ * Model QuickMute
+ *
+ */
+export type QuickMute = Prisma.QuickMuteModel;
