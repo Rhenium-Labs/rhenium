@@ -1,5 +1,6 @@
 import {
 	ActionRowBuilder,
+	APIMessage,
 	ButtonBuilder,
 	ButtonInteraction,
 	ButtonStyle,
@@ -17,17 +18,17 @@ import {
 import ms from "ms";
 
 import { client, prisma } from "#root/index.js";
-import { userMentionWithId } from "./index.js";
+import { capitalize, userMentionWithId } from "./index.js";
 import { RequestStatus, type BanRequest, type BanRequestConfig } from "#prisma/client.js";
 
-import type { InteractionReplyData, SimpleResult } from "./Types.js";
+import type { InteractionReplyData } from "./Types.js";
 
 export default class BanRequestUtils {
 	/**
 	 * Creates a ban request and sends it to the configured webhook for review.
 	 *
 	 * @param data The ban request data.
-	 * @return The result of the ban request creation.
+	 * @return Interaction reply data indicating success or failure.
 	 */
 
 	public static async create(data: {
@@ -85,12 +86,14 @@ export default class BanRequestUtils {
 		const content =
 			config.notify_roles.length > 0 ? config.notify_roles.map(r => roleMention(r)).join(", ") : undefined;
 
-		const log = await webhook.send({
-			content,
-			embeds: [embed],
-			components: [actionRow],
-			allowedMentions: { parse: ["roles"] }
-		});
+		const log = await webhook
+			.send({
+				content,
+				embeds: [embed],
+				components: [actionRow],
+				allowedMentions: { parse: ["roles"] }
+			})
+			.catch(() => null);
 
 		if (!log) {
 			return {
@@ -187,12 +190,18 @@ export default class BanRequestUtils {
 				}
 
 				Promise.all([
-					BanRequestUtils.sendNotification({
+					BanRequestUtils.notify({
 						webhook_url: data.config.webhook_url,
 						target_id: request.target_id,
 						requested_by: request.requested_by,
 						reviewReason,
 						action
+					}),
+					BanRequestUtils.log({
+						config: data.config,
+						request: data.request,
+						action: "accepted",
+						reviewedBy: interaction.user
 					}),
 					prisma.banRequest.update({
 						where: { id: request.id },
@@ -218,12 +227,18 @@ export default class BanRequestUtils {
 				}
 
 				Promise.all([
-					BanRequestUtils.sendNotification({
+					BanRequestUtils.notify({
 						webhook_url: data.config.webhook_url,
 						target_id: request.target_id,
 						requested_by: request.requested_by,
 						reviewReason,
 						action
+					}),
+					BanRequestUtils.log({
+						config: data.config,
+						request: data.request,
+						action: "denied",
+						reviewedBy: interaction.user
 					}),
 					prisma.banRequest.update({
 						where: { id: request.id },
@@ -287,16 +302,16 @@ export default class BanRequestUtils {
 	 * @return The result of the notification.
 	 */
 
-	public static async sendNotification(data: {
+	public static async notify(data: {
 		webhook_url: string | null;
 		target_id: string;
 		requested_by: string;
 		reviewReason: string | null;
 		action: Exclude<BanRequestAction, "disregard">;
-	}): Promise<SimpleResult> {
+	}): Promise<APIMessage | null> {
 		const { webhook_url, requested_by, reviewReason, action, target_id } = data;
 
-		if (!webhook_url) return { ok: false, message: "No webhook URL provided." };
+		if (!webhook_url) return null;
 
 		const formattedReason = reviewReason ? reviewReason.replaceAll("`", "") : null;
 		const content = `${userMention(requested_by)}, your ban request against ${userMentionWithId(
@@ -305,8 +320,46 @@ export default class BanRequestUtils {
 
 		return new WebhookClient({ url: webhook_url })
 			.send({ content, allowedMentions: { parse: ["users"] } })
-			.then(() => ({ ok: true as const }))
-			.catch(() => ({ ok: false, message: `Failed to send notification.` }));
+			.catch(() => null);
+	}
+
+	/**
+	 * Sends a log message to the specified webhook.
+	 *
+	 * @param data The log data.
+	 * @return The sent API message, or `null` if sending failed.
+	 */
+
+	public static async log(data: {
+		config: BanRequestConfig;
+		request: BanRequest;
+		action: "accepted" | "denied";
+		reviewedBy: User;
+	}): Promise<APIMessage | null> {
+		const { config, request, action, reviewedBy } = data;
+
+		if (!config.webhook_url) return null;
+
+		const embed = new EmbedBuilder()
+			.setColor(action === "accepted" ? Colors.Green : Colors.Red)
+			.setAuthor({ name: `Ban Request ${capitalize(action)}` })
+			.setFields([
+				{ name: "Target", value: userMentionWithId(request.target_id) },
+				{ name: "Requested By", value: userMentionWithId(request.requested_by) },
+				{ name: "Reason", value: request.reason }
+			])
+			.setFooter({
+				text: `Reviewed by @${reviewedBy.username} (${reviewedBy.id})`,
+				iconURL: reviewedBy.displayAvatarURL()
+			})
+			.setTimestamp();
+
+		return new WebhookClient({ url: config.webhook_url })
+			.send({
+				embeds: [embed],
+				allowedMentions: { parse: [] }
+			})
+			.catch(() => null);
 	}
 }
 

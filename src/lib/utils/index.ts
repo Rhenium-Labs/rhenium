@@ -50,6 +50,18 @@ export function cropLines(str: string, maxLines: number): string {
 	return [...lines.slice(0, maxLines - 1), `(${diff} more ${inflect(diff, "line")})`].join("\n");
 }
 
+/**
+ * Capitalize the first letter of a string.
+ *
+ * @param str The string to capitalize
+ * @returns The capitalized string
+ */
+
+export function capitalize(str: string): string {
+	if (str.length === 0) return str;
+	return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 /** Formats a user ID as a mention with the ID in parentheses. */
 export function userMentionWithId(id: Snowflake): `<@${Snowflake}> (\`${Snowflake}\`)` {
 	return `<@${id}> (\`${id}\`)`;
