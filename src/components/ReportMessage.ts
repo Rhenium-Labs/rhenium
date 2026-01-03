@@ -1,4 +1,4 @@
-import { type Message, type ModalSubmitInteraction, type TextBasedChannel, MessageFlags } from "discord.js";
+import type { Message, ModalSubmitInteraction, TextBasedChannel } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#classes/Component.js";
@@ -10,15 +10,11 @@ export default class ReportMessage extends Component {
 	}
 
 	public async run(interaction: ModalSubmitInteraction<"cached">): Promise<InteractionReplyData> {
-		const config = await this.prisma.messageReportConfig.upsert({
-			where: { id: interaction.guild.id },
-			create: { id: interaction.guild.id },
-			update: {}
+		const config = await this.prisma.messageReportConfig.findUnique({
+			where: { id: interaction.guild.id }
 		});
 
-		await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
-		if (!config.enabled || !config.webhook_url) {
+		if (!config?.enabled || !config.webhook_url) {
 			return { error: "Message reports have not been configured on this server." };
 		}
 
