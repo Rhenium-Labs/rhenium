@@ -207,7 +207,7 @@ export default class QuickActionUtils {
 
 		const successMessage =
 			purgeResult && purgeResult.deleted > 0
-				? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\` ${inflect(purgeResult.deleted, "message")} in ${message.channel}.`
+				? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} in ${message.channel}.`
 				: `${executor}, successfully quick muted ${target} for \`${formattedDuration}\`.`;
 
 		return Promise.all([
@@ -349,7 +349,7 @@ export default class QuickActionUtils {
 			logWebhook.send({ embeds: [embed] }).catch(() => null),
 			resultWebhook
 				.send({
-					content: `${executor}, successfully purged \`${purgeResult.deleted}\` ${inflect(purgeResult.deleted, "message")} from ${target} in ${message.channel}.`
+					content: `${executor}, successfully purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} from ${target} in ${message.channel}.`
 				})
 				.catch(() => null)
 		]);
