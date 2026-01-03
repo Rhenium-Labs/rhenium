@@ -16,9 +16,10 @@ import ms from "ms";
 
 import { prisma } from "#root/index.js";
 import { getEmojiName, inflect, parseDurationString, validateDuration, validateEmoji } from "#utils/index.js";
-import { Command } from "#classes/Command.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
+
+import Command from "#classes/Command.js";
 
 export default class QuickActions extends Command {
 	public constructor() {

@@ -3,13 +3,13 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, codeBlock, Message } from
 import ms from "ms";
 import util from "node:util";
 
-import { Command } from "#classes/Command.js";
 import { hastebin } from "#utils/index.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 
 import type { MessageReplyData } from "#utils/Types.js";
 
 import Args from "#classes/Args.js";
+import Command from "#classes/Command.js";
 
 export default class Eval extends Command {
 	public constructor() {

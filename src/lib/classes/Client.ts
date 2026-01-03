@@ -13,7 +13,7 @@ export default class StrafeStryker extends Client<true> {
 	 * Constructs a new StrafeStryker client.
 	 */
 
-	constructor() {
+	public constructor() {
 		super({
 			intents: CLIENT_INTENTS,
 			partials: CLIENT_PARTIALS,

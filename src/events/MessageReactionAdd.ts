@@ -1,7 +1,7 @@
 import { Events, Message, MessageReaction, PartialMessage, PartialMessageReaction, User } from "discord.js";
-import { EventListener } from "#classes/EventListener.js";
 
 import QuickActionUtils from "#utils/QuickActions.js";
+import EventListener from "#classes/EventListener.js";
 
 export default class MessageReactionAdd extends EventListener {
 	public constructor() {

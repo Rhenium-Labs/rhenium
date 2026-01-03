@@ -1,4 +1,3 @@
-import { Command } from "#classes/Command.js";
 import { EmbedBuilder, Message } from "discord.js";
 
 import ms from "ms";
@@ -8,8 +7,10 @@ import { DEVELOPER_IDS } from "#utils/Constants.js";
 
 import type { MessageReplyData } from "#utils/Types.js";
 
+import Command from "#classes/Command.js";
+
 export default class Stats extends Command {
-	constructor() {
+	public constructor() {
 		super({
 			name: "stats",
 			aliases: ["proc", "process"],

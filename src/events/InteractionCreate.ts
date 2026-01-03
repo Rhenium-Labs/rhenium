@@ -11,13 +11,16 @@ import { captureException } from "@sentry/node";
 
 import { RedisCache } from "#utils/Redis.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
-import { EventListener } from "#classes/EventListener.js";
-import { Command, CommandManager } from "#classes/Command.js";
-import { Component, ComponentInteraction, ComponentManager } from "#classes/Component.js";
 
+import type { ComponentInteraction } from "#classes/Component.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Logger from "#utils/Logger.js";
+import Command from "#classes/Command.js";
+import Component from "#classes/Component.js";
+import EventListener from "#classes/EventListener.js";
+import CommandManager from "#managers/CommandManager.js";
+import ComponentManager from "#managers/ComponentManager.js";
 
 export default class InteractionCreate extends EventListener {
 	public constructor() {

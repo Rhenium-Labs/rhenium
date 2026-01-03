@@ -1,7 +1,7 @@
 import { Events, Guild } from "discord.js";
-
 import { prisma } from "#root/index.js";
-import { EventListener } from "#classes/EventListener.js";
+
+import EventListener from "#classes/EventListener.js";
 
 export default class GuildCreate extends EventListener {
 	public constructor() {

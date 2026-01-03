@@ -1,12 +1,12 @@
 import { ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 
 import { prisma } from "#root/index.js";
-import { Component } from "#classes/Component.js";
 import { userMentionWithId } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
+import Component from "#classes/Component.js";
 
 const AUTO_DELETE_DELAY = 7000;
 

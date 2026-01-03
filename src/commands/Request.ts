@@ -11,11 +11,11 @@ import {
 import ms, { type StringValue } from "ms";
 
 import { prisma } from "#root/index.js";
-import { Command } from "#classes/Command.js";
 import { parseDurationString, validateDuration } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
+import Command from "#classes/Command.js";
 import BanRequestUtils from "#utils/BanRequests.js";
 import ModerationUtils from "#utils/Moderation.js";
 

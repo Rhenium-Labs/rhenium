@@ -1,10 +1,9 @@
 import { Message, MessageFlags, ModalSubmitInteraction, TextBasedChannel } from "discord.js";
-
 import { prisma } from "#root/index.js";
-import { Component } from "#classes/Component.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
+import Component from "#classes/Component.js";
 import MessageReportUtils from "#utils/MessageReports.js";
 
 export default class ReportMessage extends Component {

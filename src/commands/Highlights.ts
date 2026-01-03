@@ -14,13 +14,14 @@ import {
 
 import safe from "safe-regex";
 
-import { client, prisma } from "#root/index.js";
-import { channelInScope, inflect } from "#utils/index.js";
-import { Command } from "#classes/Command.js";
 import { RateLimiter } from "#classes/RateLimiter.js";
+import { client, prisma } from "#root/index.js";
 import { formatMessageContent } from "#utils/Messages.js";
+import { channelInScope, inflect } from "#utils/index.js";
 
 import type { ChannelScoping, InteractionReplyData } from "#utils/Types.js";
+
+import Command from "#classes/Command.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);

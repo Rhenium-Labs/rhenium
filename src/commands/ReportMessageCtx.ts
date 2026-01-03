@@ -9,10 +9,11 @@ import {
 } from "discord.js";
 
 import { prisma } from "#root/index.js";
-import { Command } from "#classes/Command.js";
 import { ReportStatus } from "#prisma/enums.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
+
+import Command from "#classes/Command.js";
 
 export default class ReportMessageCtx extends Command {
 	public constructor() {

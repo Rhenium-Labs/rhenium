@@ -55,6 +55,7 @@
 		"#prisma/*": "./dist/lib/prisma/*",
 		"#utils/*": "./dist/lib/utils/*",
 		"#classes/*": "./dist/lib/classes/*",
+		"#managers/*": "./dist/lib/managers/*",
 		"#root/*": "./dist/*"
 	}
 }

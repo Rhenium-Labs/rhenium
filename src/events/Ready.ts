@@ -1,8 +1,8 @@
 import { Events } from "discord.js";
-import { EventListener } from "#classes/EventListener.js";
 import { MessageQueue } from "#utils/Messages.js";
 
 import Logger from "#utils/Logger.js";
+import EventListener from "#classes/EventListener.js";
 
 export default class Ready extends EventListener {
 	public constructor() {

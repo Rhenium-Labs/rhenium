@@ -4,12 +4,13 @@ import { captureException } from "@sentry/node";
 import { MessageQueue, reply } from "#utils/Messages.js";
 import { RedisCache } from "#utils/Redis.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
-import { EventListener } from "#classes/EventListener.js";
-import { Command, CommandManager } from "#classes/Command.js";
 
 import Args from "#classes/Args.js";
 import Logger from "#utils/Logger.js";
+import Command from "#classes/Command.js";
 import Highlights from "#root/commands/Highlights.js";
+import EventListener from "#classes/EventListener.js";
+import CommandManager from "#managers/CommandManager.js";
 
 export default class MessageCreate extends EventListener {
 	public constructor() {

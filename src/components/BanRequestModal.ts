@@ -1,10 +1,9 @@
 import { ModalSubmitInteraction } from "discord.js";
-
 import { prisma } from "#root/index.js";
-import { Component } from "#classes/Component.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
+import Component from "#classes/Component.js";
 import BanRequestUtils from "#utils/BanRequests.js";
 
 const AUTO_DELETE_DELAY = 7000;
