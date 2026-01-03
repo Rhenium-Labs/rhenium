@@ -14,7 +14,6 @@ import {
 
 import ms from "ms";
 
-import { prisma } from "#root/index.js";
 import { getEmojiName, inflect, parseDurationString, validateDuration, validateEmoji } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
@@ -167,24 +166,22 @@ export default class QuickActions extends Command {
 
 		const handlers: Record<string, () => Promise<InteractionReplyData>> = {
 			// Mutes group
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Add}`]: () => QuickActions._addMute(interaction),
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Remove}`]: () => QuickActions._removeMute(interaction),
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.List}`]: () => QuickActions._listMutes(interaction),
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Clear}`]: () => QuickActions._clearMutes(interaction),
-
+			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Add}`]: () => this._addMute(interaction),
+			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Remove}`]: () => this._removeMute(interaction),
+			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.List}`]: () => this._listMutes(interaction),
+			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Clear}`]: () => this._clearMutes(interaction),
 			// Purges group
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Add}`]: () => QuickActions._addPurge(interaction),
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Remove}`]: () =>
-				QuickActions._removePurge(interaction),
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.List}`]: () => QuickActions._listPurges(interaction),
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Clear}`]: () => QuickActions._clearPurges(interaction)
+			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Add}`]: () => this._addPurge(interaction),
+			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Remove}`]: () => this._removePurge(interaction),
+			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.List}`]: () => this._listPurges(interaction),
+			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Clear}`]: () => this._clearPurges(interaction)
 		};
 
 		const handler = handlers[routeKey];
 		return handler ? handler() : { error: "Unknown subcommand." };
 	}
 
-	private static async _addMute(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+	private async _addMute(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const durationInput = interaction.options.getString("duration", true);
 		const reason = interaction.options.getString("reason", true);
@@ -217,7 +214,7 @@ export default class QuickActions extends Command {
 			return { error: durationValidation.message };
 		}
 
-		const existing = await prisma.quickMute.findUnique({
+		const existing = await this.prisma.quickMute.findUnique({
 			where: {
 				user_id_guild_id_reaction: {
 					user_id: interaction.user.id,
@@ -233,7 +230,7 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		await prisma.quickMute.create({
+		await this.prisma.quickMute.create({
 			data: {
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId,
@@ -254,9 +251,7 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private static async _removeMute(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
+	private async _removeMute(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const validatedEmoji = await validateEmoji(reactionInput, interaction.guildId);
 
@@ -269,7 +264,7 @@ export default class QuickActions extends Command {
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
 
 		try {
-			await prisma.quickMute.delete({
+			await this.prisma.quickMute.delete({
 				where: {
 					user_id_guild_id_reaction: {
 						user_id: interaction.user.id,
@@ -293,10 +288,8 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private static async _listMutes(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
-		const quickMutes = await prisma.quickMute.findMany({
+	private async _listMutes(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+		const quickMutes = await this.prisma.quickMute.findMany({
 			where: {
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId
@@ -335,10 +328,8 @@ export default class QuickActions extends Command {
 		return { embeds: [embed] };
 	}
 
-	private static async _clearMutes(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
-		const { count } = await prisma.quickMute.deleteMany({
+	private async _clearMutes(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+		const { count } = await this.prisma.quickMute.deleteMany({
 			where: {
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId
@@ -356,7 +347,7 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private static async _addPurge(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+	private async _addPurge(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const purgeAmount = interaction.options.getInteger("amount", true);
 
@@ -370,7 +361,7 @@ export default class QuickActions extends Command {
 
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
 
-		const existing = await prisma.quickPurge.findUnique({
+		const existing = await this.prisma.quickPurge.findUnique({
 			where: {
 				user_id_guild_id_reaction: {
 					user_id: interaction.user.id,
@@ -386,7 +377,7 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		await prisma.quickPurge.create({
+		await this.prisma.quickPurge.create({
 			data: {
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId,
@@ -404,9 +395,7 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private static async _removePurge(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
+	private async _removePurge(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const validatedEmoji = await validateEmoji(reactionInput, interaction.guildId);
 
@@ -419,7 +408,7 @@ export default class QuickActions extends Command {
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
 
 		try {
-			await prisma.quickPurge.delete({
+			await this.prisma.quickPurge.delete({
 				where: {
 					user_id_guild_id_reaction: {
 						user_id: interaction.user.id,
@@ -443,10 +432,8 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private static async _listPurges(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
-		const quickPurges = await prisma.quickPurge.findMany({
+	private async _listPurges(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+		const quickPurges = await this.prisma.quickPurge.findMany({
 			where: {
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId
@@ -480,10 +467,8 @@ export default class QuickActions extends Command {
 		return { embeds: [embed] };
 	}
 
-	private static async _clearPurges(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
-		const { count } = await prisma.quickPurge.deleteMany({
+	private async _clearPurges(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+		const { count } = await this.prisma.quickPurge.deleteMany({
 			where: {
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId

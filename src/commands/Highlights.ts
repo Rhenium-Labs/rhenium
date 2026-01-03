@@ -195,32 +195,31 @@ export default class Highlights extends Command {
 
 		const handlers: Record<string, () => Promise<InteractionReplyData>> = {
 			// Top-level subcommands (no group)
-			[HighlightSubcommand.List]: () => Highlights._listHighlights(interaction),
-			[HighlightSubcommand.Clear]: () => Highlights._clearAllHighlights(interaction),
+			[HighlightSubcommand.List]: () => this._listHighlights(interaction),
+			[HighlightSubcommand.Clear]: () => this._clearAllHighlights(interaction),
 
 			// Pattern group
-			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Add}`]: () =>
-				Highlights._addPattern(interaction),
+			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Add}`]: () => this._addPattern(interaction),
 			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Remove}`]: () =>
-				Highlights._removePattern(interaction),
+				this._removePattern(interaction),
 			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Clear}`]: () =>
-				Highlights._clearPatterns(interaction),
+				this._clearPatterns(interaction),
 
 			// Channel scoping group
 			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Add}`]: () =>
-				Highlights._addChannelScoping(interaction),
+				this._addChannelScoping(interaction),
 			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Remove}`]: () =>
-				Highlights._removeChannelScoping(interaction),
+				this._removeChannelScoping(interaction),
 			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Clear}`]: () =>
-				Highlights._clearChannelScoping(interaction),
+				this._clearChannelScoping(interaction),
 
 			// User blacklist group
 			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Add}`]: () =>
-				Highlights._addUserBlacklist(interaction),
+				this._addUserBlacklist(interaction),
 			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Remove}`]: () =>
-				Highlights._removeUserBlacklist(interaction),
+				this._removeUserBlacklist(interaction),
 			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Clear}`]: () =>
-				Highlights._clearUserBlacklist(interaction)
+				this._clearUserBlacklist(interaction)
 		};
 
 		const handler = handlers[routeKey];
@@ -345,16 +344,14 @@ export default class Highlights extends Command {
 		}
 	}
 
-	private static async _addPattern(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
-		const [config, highlight] = await prisma.$transaction([
-			prisma.highlightConfig.upsert({
+	private async _addPattern(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+		const [config, highlight] = await this.prisma.$transaction([
+			this.prisma.highlightConfig.upsert({
 				where: { id: interaction.guild.id },
 				create: { id: interaction.guild.id },
 				update: {}
 			}),
-			prisma.highlight.upsert({
+			this.prisma.highlight.upsert({
 				where: {
 					user_id_guild_id: {
 						user_id: interaction.user.id,
@@ -390,7 +387,7 @@ export default class Highlights extends Command {
 			};
 		}
 
-		await prisma.highlight.update({
+		await this.prisma.highlight.update({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -407,11 +404,9 @@ export default class Highlights extends Command {
 		return { content: `Successfully added \`${pattern}\` to your highlights.` };
 	}
 
-	private static async _removePattern(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
+	private async _removePattern(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
 		const pattern = interaction.options.getString("pattern", true);
-		const highlight = await prisma.highlight.findUnique({
+		const highlight = await this.prisma.highlight.findUnique({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -429,7 +424,7 @@ export default class Highlights extends Command {
 			};
 		}
 
-		await prisma.highlight.update({
+		await this.prisma.highlight.update({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -446,10 +441,8 @@ export default class Highlights extends Command {
 		return { content: `Successfully removed \`${pattern}\` from your highlights.` };
 	}
 
-	private static async _clearPatterns(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
-		const highlight = await prisma.highlight.findUnique({
+	private async _clearPatterns(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+		const highlight = await this.prisma.highlight.findUnique({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -467,7 +460,7 @@ export default class Highlights extends Command {
 			};
 		}
 
-		await prisma.highlight.update({
+		await this.prisma.highlight.update({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -486,7 +479,7 @@ export default class Highlights extends Command {
 		};
 	}
 
-	private static async _addChannelScoping(
+	private async _addChannelScoping(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true);
@@ -494,7 +487,7 @@ export default class Highlights extends Command {
 		const stringifiedType = scopeType === 0 ? "include" : "exclude";
 
 		try {
-			await prisma.highlight.upsert({
+			await this.prisma.highlight.upsert({
 				where: {
 					user_id_guild_id: {
 						user_id: interaction.user.id,
@@ -530,13 +523,13 @@ export default class Highlights extends Command {
 		return { content: `Successfully ${stringifiedType}d ${channel} for your highlights.` };
 	}
 
-	private static async _removeChannelScoping(
+	private async _removeChannelScoping(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true);
 
 		try {
-			await prisma.highlightChannelScoping.delete({
+			await this.prisma.highlightChannelScoping.delete({
 				where: {
 					user_id_guild_id_channel_id: {
 						user_id: interaction.user.id,
@@ -554,10 +547,10 @@ export default class Highlights extends Command {
 		return { content: `Successfully removed ${channel} from your highlight scoping.` };
 	}
 
-	private static async _clearChannelScoping(
+	private async _clearChannelScoping(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
-		const { count } = await prisma.highlightChannelScoping.deleteMany({
+		const { count } = await this.prisma.highlightChannelScoping.deleteMany({
 			where: {
 				user_id: interaction.user.id,
 				guild_id: interaction.guild.id
@@ -573,7 +566,7 @@ export default class Highlights extends Command {
 		return { content: `Successfully cleared \`${count}\` ${inflect(count, "highlight channel scoping")}.` };
 	}
 
-	private static async _addUserBlacklist(
+	private async _addUserBlacklist(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
 		const user = interaction.options.getUser("user", true);
@@ -585,7 +578,7 @@ export default class Highlights extends Command {
 		}
 
 		try {
-			await prisma.highlight.upsert({
+			await this.prisma.highlight.upsert({
 				where: {
 					user_id_guild_id: {
 						user_id: interaction.user.id,
@@ -612,12 +605,12 @@ export default class Highlights extends Command {
 		return { content: `Successfully blacklisted ${user} from triggering your highlights.` };
 	}
 
-	private static async _removeUserBlacklist(
+	private async _removeUserBlacklist(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
 		const user = interaction.options.getUser("user", true);
 
-		const highlight = await prisma.highlight.findUnique({
+		const highlight = await this.prisma.highlight.findUnique({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -637,7 +630,7 @@ export default class Highlights extends Command {
 
 		const updatedBlacklist = highlight.user_blacklist.filter(u => u !== user.id);
 
-		await prisma.highlight.update({
+		await this.prisma.highlight.update({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -652,10 +645,10 @@ export default class Highlights extends Command {
 		return { content: `Successfully removed ${user} from your highlight blacklist.` };
 	}
 
-	private static async _clearUserBlacklist(
+	private async _clearUserBlacklist(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
-		const highlight = await prisma.highlight.findUnique({
+		const highlight = await this.prisma.highlight.findUnique({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -673,7 +666,7 @@ export default class Highlights extends Command {
 			};
 		}
 
-		await prisma.highlight.update({
+		await this.prisma.highlight.update({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -690,10 +683,8 @@ export default class Highlights extends Command {
 		};
 	}
 
-	private static async _listHighlights(
-		interaction: ChatInputCommandInteraction<"cached">
-	): Promise<InteractionReplyData> {
-		const highlights = await prisma.highlight.findUnique({
+	private async _listHighlights(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+		const highlights = await this.prisma.highlight.findUnique({
 			where: {
 				user_id_guild_id: {
 					user_id: interaction.user.id,
@@ -750,17 +741,17 @@ export default class Highlights extends Command {
 		return { embeds: [embed] };
 	}
 
-	private static async _clearAllHighlights(
+	private async _clearAllHighlights(
 		interaction: ChatInputCommandInteraction<"cached">
 	): Promise<InteractionReplyData> {
-		const [patterns] = await prisma.$transaction([
-			prisma.highlightChannelScoping.deleteMany({
+		const [patterns] = await this.prisma.$transaction([
+			this.prisma.highlightChannelScoping.deleteMany({
 				where: {
 					user_id: interaction.user.id,
 					guild_id: interaction.guildId
 				}
 			}),
-			prisma.highlight.delete({
+			this.prisma.highlight.delete({
 				where: {
 					user_id_guild_id: {
 						user_id: interaction.user.id,

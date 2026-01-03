@@ -1,7 +1,7 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Colors, Message } from "discord.js";
 
+import { kv } from "#root/index.js";
 import { hastebin } from "#utils/index.js";
-import { kv, prisma } from "#root/index.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 
 import type { MessageReplyData } from "#utils/Types.js";
@@ -57,13 +57,13 @@ export default class Whitelist extends Command {
 	}
 
 	private async _createWhitelist(guildId: string): Promise<MessageReplyData> {
-		const exists = await prisma.whitelist.findUnique({ where: { id: guildId } });
+		const exists = await this.prisma.whitelist.findUnique({ where: { id: guildId } });
 
 		if (exists) {
 			return { error: `Guild with ID \`${guildId}\` is already whitelisted.` };
 		}
 
-		await prisma.whitelist.create({ data: { id: guildId } });
+		await this.prisma.whitelist.create({ data: { id: guildId } });
 		await kv.set<boolean>(`whitelists:${guildId}`, true);
 
 		return {
@@ -72,13 +72,12 @@ export default class Whitelist extends Command {
 	}
 
 	private async _deleteWhitelist(guildId: string): Promise<MessageReplyData> {
-		const exists = await prisma.whitelist.findUnique({ where: { id: guildId } });
-
+		const exists = await this.prisma.whitelist.findUnique({ where: { id: guildId } });
 		if (!exists) {
 			return { error: `Guild with ID \`${guildId}\` is not whitelisted.` };
 		}
 
-		await prisma.whitelist.delete({ where: { id: guildId } });
+		await this.prisma.whitelist.delete({ where: { id: guildId } });
 		await kv.set<boolean>(`whitelists:${guildId}`, false);
 
 		return {
@@ -92,7 +91,7 @@ export default class Whitelist extends Command {
 	}
 
 	private async _checkWhitelist(guildId: string): Promise<MessageReplyData> {
-		const isWhitelisted = await prisma.whitelist.findUnique({ where: { id: guildId } });
+		const isWhitelisted = await this.prisma.whitelist.findUnique({ where: { id: guildId } });
 
 		return {
 			embeds: [
@@ -105,7 +104,7 @@ export default class Whitelist extends Command {
 	}
 
 	private async _listWhitelists(): Promise<MessageReplyData> {
-		const whitelists = await prisma.whitelist.findMany();
+		const whitelists = await this.prisma.whitelist.findMany();
 
 		if (whitelists.length === 0) {
 			return {

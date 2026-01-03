@@ -1,9 +1,9 @@
 import { Colors, Events, Message, MessageReplyOptions, PermissionFlagsBits } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import { MessageQueue, reply } from "#utils/Messages.js";
 import { RedisCache } from "#utils/Redis.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
+import { MessageQueue, reply } from "#utils/Messages.js";
 
 import Args from "#classes/Args.js";
 import Logger from "#utils/Logger.js";

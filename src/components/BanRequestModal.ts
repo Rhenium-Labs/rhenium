@@ -1,6 +1,4 @@
 import { ModalSubmitInteraction } from "discord.js";
-import { prisma } from "#root/index.js";
-
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#classes/Component.js";
@@ -14,7 +12,7 @@ export default class BanRequestModal extends Component {
 	}
 
 	public async run(interaction: ModalSubmitInteraction<"cached">): Promise<InteractionReplyData | null> {
-		const config = await prisma.banRequestConfig.findUnique({
+		const config = await this.prisma.banRequestConfig.findUnique({
 			where: { id: interaction.guild.id }
 		});
 
@@ -25,7 +23,7 @@ export default class BanRequestModal extends Component {
 		const action = interaction.customId.split("-")[2] as "accept" | "deny";
 		const requestId = interaction.customId.split("-")[3];
 
-		const request = await prisma.banRequest.findUnique({
+		const request = await this.prisma.banRequest.findUnique({
 			where: { id: requestId, guild_id: interaction.guild.id }
 		});
 

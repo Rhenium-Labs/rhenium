@@ -1,6 +1,4 @@
 import { Message, MessageFlags, ModalSubmitInteraction, TextBasedChannel } from "discord.js";
-import { prisma } from "#root/index.js";
-
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#classes/Component.js";
@@ -12,7 +10,7 @@ export default class ReportMessage extends Component {
 	}
 
 	public async run(interaction: ModalSubmitInteraction<"cached">): Promise<InteractionReplyData> {
-		const config = await prisma.messageReportConfig.upsert({
+		const config = await this.prisma.messageReportConfig.upsert({
 			where: { id: interaction.guild.id },
 			create: { id: interaction.guild.id },
 			update: {}

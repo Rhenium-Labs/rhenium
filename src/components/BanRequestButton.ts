@@ -1,8 +1,6 @@
 import { ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 
-import { prisma } from "#root/index.js";
 import { userMentionWithId } from "#utils/index.js";
-
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
@@ -16,7 +14,7 @@ export default class BanRequestButton extends Component {
 	}
 
 	public async run(interaction: ButtonInteraction<"cached">): Promise<InteractionReplyData | null> {
-		const config = await prisma.banRequestConfig.findUnique({
+		const config = await this.prisma.banRequestConfig.findUnique({
 			where: { id: interaction.guild.id }
 		});
 
@@ -25,7 +23,7 @@ export default class BanRequestButton extends Component {
 		}
 
 		const action = interaction.customId.split("-")[2] as BanRequestAction;
-		const request = await prisma.banRequest.findUnique({
+		const request = await this.prisma.banRequest.findUnique({
 			where: { id: interaction.message.id, guild_id: interaction.guild.id }
 		});
 

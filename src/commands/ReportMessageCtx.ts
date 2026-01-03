@@ -8,9 +8,7 @@ import {
 	TextInputStyle
 } from "discord.js";
 
-import { prisma } from "#root/index.js";
 import { ReportStatus } from "#prisma/enums.js";
-
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#classes/Command.js";
@@ -33,7 +31,7 @@ export default class ReportMessageCtx extends Command {
 	public async interactionRun(
 		interaction: MessageContextMenuCommandInteraction<"cached">
 	): Promise<InteractionReplyData | null> {
-		const config = await prisma.messageReportConfig.upsert({
+		const config = await this.prisma.messageReportConfig.upsert({
 			where: { id: interaction.guild.id },
 			create: { id: interaction.guild.id },
 			update: {}
@@ -93,7 +91,7 @@ export default class ReportMessageCtx extends Command {
 			}
 		}
 
-		const report = await prisma.messageReport.findFirst({
+		const report = await this.prisma.messageReport.findFirst({
 			where: {
 				guild_id: interaction.guild.id,
 				message_id: message.id,

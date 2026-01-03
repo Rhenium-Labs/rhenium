@@ -10,9 +10,7 @@ import {
 
 import ms, { type StringValue } from "ms";
 
-import { prisma } from "#root/index.js";
 import { parseDurationString, validateDuration } from "#utils/index.js";
-
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#classes/Command.js";
@@ -67,7 +65,7 @@ export default class Request extends Command {
 	}
 
 	public async interactionRun(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
-		const config = await prisma.banRequestConfig.findUnique({
+		const config = await this.prisma.banRequestConfig.findUnique({
 			where: { id: interaction.guildId }
 		});
 
@@ -81,7 +79,7 @@ export default class Request extends Command {
 			return { error: "The target user could not be found." };
 		}
 
-		const existingRequest = await prisma.banRequest.findFirst({
+		const existingRequest = await this.prisma.banRequest.findFirst({
 			where: {
 				guild_id: interaction.guildId,
 				target_id: target.id,

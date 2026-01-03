@@ -1,7 +1,7 @@
 import { ArgumentStream, IUnorderedStrategy, Lexer, Parser } from "@sapphire/lexure";
 import type { ApplicationCommandData, Awaitable, CommandInteraction, Message } from "discord.js";
 
-import { client } from "#root/index.js";
+import { client, prisma } from "#root/index.js";
 
 import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
@@ -14,6 +14,12 @@ export default abstract class Command {
 	 */
 
 	public client = client;
+
+	/**
+	 * Prisma client instance.
+	 */
+
+	public prisma = prisma;
 
 	/**
 	 * The name of the command.

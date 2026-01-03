@@ -1,5 +1,5 @@
 import { Awaitable, Events } from "discord.js";
-import { client } from "#root/index.js";
+import { client, prisma } from "#root/index.js";
 
 export default abstract class EventListener {
 	/**
@@ -7,6 +7,12 @@ export default abstract class EventListener {
 	 */
 
 	public client = client;
+
+	/**
+	 * The Prisma client instance.
+	 */
+
+	public prisma = prisma;
 
 	/**
 	 * The event this listener listens to.

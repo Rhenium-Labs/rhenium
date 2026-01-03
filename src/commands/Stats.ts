@@ -2,9 +2,7 @@ import { EmbedBuilder, Message } from "discord.js";
 
 import ms from "ms";
 
-import { prisma } from "#root/index.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
-
 import type { MessageReplyData } from "#utils/Types.js";
 
 import Command from "#classes/Command.js";
@@ -41,7 +39,7 @@ export default class Stats extends Command {
 		const { guilds, users, channels } = this.client;
 
 		// Database Size.
-		const dbSizeQuery = await prisma.$queryRaw<DatabaseSizeResult[]>`
+		const dbSizeQuery = await this.prisma.$queryRaw<DatabaseSizeResult[]>`
                 SELECT pg_database_size(current_database()) / (1024 * 1024) as size_in_mb
                 FROM pg_database
                 WHERE datname = current_database()

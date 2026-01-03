@@ -1,14 +1,20 @@
 import type { Awaitable, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import { client } from "#root/index.js";
+import { client, prisma } from "#root/index.js";
 
 export default abstract class Component {
 	/**
 	 * The client this component is associated with.
 	 */
 
-	public readonly client = client;
+	public client = client;
+
+	/**
+	 * Prisma client instance.
+	 */
+
+	public prisma = prisma;
 
 	/**
 	 * The component's custom ID.
