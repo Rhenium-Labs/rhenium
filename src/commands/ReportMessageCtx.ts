@@ -31,13 +31,11 @@ export default class ReportMessageCtx extends Command {
 	public async interactionRun(
 		interaction: MessageContextMenuCommandInteraction<"cached">
 	): Promise<InteractionReplyData | null> {
-		const config = await this.prisma.messageReportConfig.upsert({
-			where: { id: interaction.guild.id },
-			create: { id: interaction.guild.id },
-			update: {}
+		const config = await this.prisma.messageReportConfig.findUnique({
+			where: { id: interaction.guild.id }
 		});
 
-		if (!config.enabled || !config.webhook_url) {
+		if (!config?.enabled || !config.webhook_url) {
 			return {
 				error: "Message reports have not been configured on this server."
 			};
