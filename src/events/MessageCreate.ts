@@ -1,7 +1,7 @@
 import { Colors, Events, Message, MessageReplyOptions, PermissionFlagsBits } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import { reply } from "#utils/Messages.js";
+import { MessageQueue, reply } from "#utils/Messages.js";
 import { RedisCache } from "#utils/Redis.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { EventListener } from "#classes/EventListener.js";
@@ -23,7 +23,8 @@ export default class MessageCreate extends EventListener {
 		// prettier-ignore
 		return Promise.all([
 			Highlights.highlightMessage(message), 
-			MessageCreate._processCommand(message)
+			MessageCreate._processCommand(message),
+			MessageQueue.queue(message)
 		]);
 	}
 

@@ -376,7 +376,11 @@ export const ModelName = {
 	HighlightChannelScoping: "HighlightChannelScoping",
 	QuickMuteConfig: "QuickMuteConfig",
 	QuickMuteChannelScoping: "QuickMuteChannelScoping",
-	QuickMute: "QuickMute"
+	QuickMute: "QuickMute",
+	QuickPurgeConfig: "QuickPurgeConfig",
+	QuickPurgeChannelScoping: "QuickPurgeChannelScoping",
+	QuickPurge: "QuickPurge",
+	Message: "Message"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -410,7 +414,11 @@ export type TypeMap<
 			| "highlightChannelScoping"
 			| "quickMuteConfig"
 			| "quickMuteChannelScoping"
-			| "quickMute";
+			| "quickMute"
+			| "quickPurgeConfig"
+			| "quickPurgeChannelScoping"
+			| "quickPurge"
+			| "message";
 		txIsolationLevel: TransactionIsolationLevel;
 	};
 	model: {
@@ -1458,6 +1466,304 @@ export type TypeMap<
 				};
 			};
 		};
+		QuickPurgeConfig: {
+			payload: Prisma.$QuickPurgeConfigPayload<ExtArgs>;
+			fields: Prisma.QuickPurgeConfigFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.QuickPurgeConfigFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.QuickPurgeConfigFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>;
+				};
+				findFirst: {
+					args: Prisma.QuickPurgeConfigFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.QuickPurgeConfigFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>;
+				};
+				findMany: {
+					args: Prisma.QuickPurgeConfigFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>[];
+				};
+				create: {
+					args: Prisma.QuickPurgeConfigCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>;
+				};
+				createMany: {
+					args: Prisma.QuickPurgeConfigCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.QuickPurgeConfigCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>[];
+				};
+				delete: {
+					args: Prisma.QuickPurgeConfigDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>;
+				};
+				update: {
+					args: Prisma.QuickPurgeConfigUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>;
+				};
+				deleteMany: {
+					args: Prisma.QuickPurgeConfigDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.QuickPurgeConfigUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.QuickPurgeConfigUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>[];
+				};
+				upsert: {
+					args: Prisma.QuickPurgeConfigUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeConfigPayload>;
+				};
+				aggregate: {
+					args: Prisma.QuickPurgeConfigAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateQuickPurgeConfig>;
+				};
+				groupBy: {
+					args: Prisma.QuickPurgeConfigGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.QuickPurgeConfigGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.QuickPurgeConfigCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.QuickPurgeConfigCountAggregateOutputType> | number;
+				};
+			};
+		};
+		QuickPurgeChannelScoping: {
+			payload: Prisma.$QuickPurgeChannelScopingPayload<ExtArgs>;
+			fields: Prisma.QuickPurgeChannelScopingFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.QuickPurgeChannelScopingFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.QuickPurgeChannelScopingFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>;
+				};
+				findFirst: {
+					args: Prisma.QuickPurgeChannelScopingFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.QuickPurgeChannelScopingFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>;
+				};
+				findMany: {
+					args: Prisma.QuickPurgeChannelScopingFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>[];
+				};
+				create: {
+					args: Prisma.QuickPurgeChannelScopingCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>;
+				};
+				createMany: {
+					args: Prisma.QuickPurgeChannelScopingCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.QuickPurgeChannelScopingCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>[];
+				};
+				delete: {
+					args: Prisma.QuickPurgeChannelScopingDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>;
+				};
+				update: {
+					args: Prisma.QuickPurgeChannelScopingUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>;
+				};
+				deleteMany: {
+					args: Prisma.QuickPurgeChannelScopingDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.QuickPurgeChannelScopingUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.QuickPurgeChannelScopingUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>[];
+				};
+				upsert: {
+					args: Prisma.QuickPurgeChannelScopingUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgeChannelScopingPayload>;
+				};
+				aggregate: {
+					args: Prisma.QuickPurgeChannelScopingAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateQuickPurgeChannelScoping>;
+				};
+				groupBy: {
+					args: Prisma.QuickPurgeChannelScopingGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.QuickPurgeChannelScopingGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.QuickPurgeChannelScopingCountArgs<ExtArgs>;
+					result:
+						| runtime.Types.Utils.Optional<Prisma.QuickPurgeChannelScopingCountAggregateOutputType>
+						| number;
+				};
+			};
+		};
+		QuickPurge: {
+			payload: Prisma.$QuickPurgePayload<ExtArgs>;
+			fields: Prisma.QuickPurgeFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.QuickPurgeFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.QuickPurgeFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>;
+				};
+				findFirst: {
+					args: Prisma.QuickPurgeFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.QuickPurgeFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>;
+				};
+				findMany: {
+					args: Prisma.QuickPurgeFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>[];
+				};
+				create: {
+					args: Prisma.QuickPurgeCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>;
+				};
+				createMany: {
+					args: Prisma.QuickPurgeCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.QuickPurgeCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>[];
+				};
+				delete: {
+					args: Prisma.QuickPurgeDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>;
+				};
+				update: {
+					args: Prisma.QuickPurgeUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>;
+				};
+				deleteMany: {
+					args: Prisma.QuickPurgeDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.QuickPurgeUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.QuickPurgeUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>[];
+				};
+				upsert: {
+					args: Prisma.QuickPurgeUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$QuickPurgePayload>;
+				};
+				aggregate: {
+					args: Prisma.QuickPurgeAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateQuickPurge>;
+				};
+				groupBy: {
+					args: Prisma.QuickPurgeGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.QuickPurgeGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.QuickPurgeCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.QuickPurgeCountAggregateOutputType> | number;
+				};
+			};
+		};
+		Message: {
+			payload: Prisma.$MessagePayload<ExtArgs>;
+			fields: Prisma.MessageFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.MessageFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.MessageFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>;
+				};
+				findFirst: {
+					args: Prisma.MessageFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.MessageFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>;
+				};
+				findMany: {
+					args: Prisma.MessageFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>[];
+				};
+				create: {
+					args: Prisma.MessageCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>;
+				};
+				createMany: {
+					args: Prisma.MessageCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.MessageCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>[];
+				};
+				delete: {
+					args: Prisma.MessageDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>;
+				};
+				update: {
+					args: Prisma.MessageUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>;
+				};
+				deleteMany: {
+					args: Prisma.MessageDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.MessageUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.MessageUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>[];
+				};
+				upsert: {
+					args: Prisma.MessageUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$MessagePayload>;
+				};
+				aggregate: {
+					args: Prisma.MessageAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateMessage>;
+				};
+				groupBy: {
+					args: Prisma.MessageGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.MessageGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.MessageCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.MessageCountAggregateOutputType> | number;
+				};
+			};
+		};
 	};
 } & {
 	other: {
@@ -1663,6 +1969,50 @@ export const QuickMuteScalarFieldEnum = {
 } as const;
 
 export type QuickMuteScalarFieldEnum = (typeof QuickMuteScalarFieldEnum)[keyof typeof QuickMuteScalarFieldEnum];
+
+export const QuickPurgeConfigScalarFieldEnum = {
+	id: "id",
+	enabled: "enabled",
+	max_limit: "max_limit",
+	webhook_url: "webhook_url",
+	result_webhook_url: "result_webhook_url"
+} as const;
+
+export type QuickPurgeConfigScalarFieldEnum =
+	(typeof QuickPurgeConfigScalarFieldEnum)[keyof typeof QuickPurgeConfigScalarFieldEnum];
+
+export const QuickPurgeChannelScopingScalarFieldEnum = {
+	guild_id: "guild_id",
+	channel_id: "channel_id",
+	type: "type"
+} as const;
+
+export type QuickPurgeChannelScopingScalarFieldEnum =
+	(typeof QuickPurgeChannelScopingScalarFieldEnum)[keyof typeof QuickPurgeChannelScopingScalarFieldEnum];
+
+export const QuickPurgeScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	reaction: "reaction",
+	purge_amount: "purge_amount"
+} as const;
+
+export type QuickPurgeScalarFieldEnum = (typeof QuickPurgeScalarFieldEnum)[keyof typeof QuickPurgeScalarFieldEnum];
+
+export const MessageScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	author_id: "author_id",
+	channel_id: "channel_id",
+	sticker_id: "sticker_id",
+	reference_id: "reference_id",
+	created_at: "created_at",
+	content: "content",
+	attachments: "attachments",
+	deleted: "deleted"
+} as const;
+
+export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",
@@ -1916,6 +2266,10 @@ export type GlobalOmitConfig = {
 	quickMuteConfig?: Prisma.QuickMuteConfigOmit;
 	quickMuteChannelScoping?: Prisma.QuickMuteChannelScopingOmit;
 	quickMute?: Prisma.QuickMuteOmit;
+	quickPurgeConfig?: Prisma.QuickPurgeConfigOmit;
+	quickPurgeChannelScoping?: Prisma.QuickPurgeChannelScopingOmit;
+	quickPurge?: Prisma.QuickPurgeOmit;
+	message?: Prisma.MessageOmit;
 };
 
 /* Types for Logging */

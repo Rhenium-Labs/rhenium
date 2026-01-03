@@ -86,3 +86,23 @@ export type QuickMuteChannelScoping = Prisma.QuickMuteChannelScopingModel;
  *
  */
 export type QuickMute = Prisma.QuickMuteModel;
+/**
+ * Model QuickPurgeConfig
+ *
+ */
+export type QuickPurgeConfig = Prisma.QuickPurgeConfigModel;
+/**
+ * Model QuickPurgeChannelScoping
+ *
+ */
+export type QuickPurgeChannelScoping = Prisma.QuickPurgeChannelScopingModel;
+/**
+ * Model QuickPurge
+ *
+ */
+export type QuickPurge = Prisma.QuickPurgeModel;
+/**
+ * Model Message
+ *
+ */
+export type Message = Prisma.MessageModel;

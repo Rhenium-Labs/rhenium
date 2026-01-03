@@ -49,11 +49,14 @@ model Guild {
   content_filter_config ContentFilterConfig?
   highlight_config      HighlightConfig?
   quick_mute_config     QuickMuteConfig?
+  quick_purge_config    QuickPurgeConfig?
 
   ban_requests    BanRequest[]
   highlights      Highlight[]
   message_reports MessageReport[]
   quick_mutes     QuickMute[]
+  messages        Message[]
+  quick_purges    QuickPurge[]
 }
 
 model Whitelist {
@@ -240,4 +243,52 @@ model QuickMute {
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, guild_id, reaction])
+}
+
+model QuickPurgeConfig {
+  id String @id
+
+  enabled            Boolean                    @default(false)
+  max_limit          Int                        @default(100)
+  webhook_url        String?
+  result_webhook_url String?
+  channel_scoping    QuickPurgeChannelScoping[]
+
+  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model QuickPurgeChannelScoping {
+  guild_id           String
+  channel_id         String
+  /// Include [`0`] or Exclude [`1`]
+  type               Int
+  quick_purge_config QuickPurgeConfig @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@id([guild_id, channel_id])
+}
+
+model QuickPurge {
+  user_id      String
+  guild_id     String
+  reaction     String
+  purge_amount Int
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, guild_id, reaction])
+}
+
+model Message {
+  id           String   @id
+  guild_id     String
+  author_id    String
+  channel_id   String
+  sticker_id   String?
+  reference_id String?
+  created_at   DateTime
+  content      String?
+  attachments  String[]
+  deleted      Boolean  @default(false)
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }

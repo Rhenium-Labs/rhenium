@@ -1,7 +1,7 @@
 import { Events, Message, MessageReaction, PartialMessage, PartialMessageReaction, User } from "discord.js";
 import { EventListener } from "#classes/EventListener.js";
 
-import QuickMuteUtils from "#utils/QuickMutes.js";
+import QuickActionUtils from "#utils/QuickActions.js";
 
 export default class MessageReactionAdd extends EventListener {
 	public constructor() {
@@ -15,7 +15,10 @@ export default class MessageReactionAdd extends EventListener {
 		const message = await MessageReactionAdd._parseMessage(reaction.message);
 		if (!message || !message.inGuild()) return;
 
-		await QuickMuteUtils.handleQuickMute({ user, message, reaction });
+		await Promise.all([
+			QuickActionUtils.handleQuickMute({ user, message, reaction }),
+			QuickActionUtils.handleQuickPurge({ user, message, reaction })
+		]);
 	}
 
 	private static async _parseReaction(

@@ -13,15 +13,214 @@ import {
 	type MessageEditOptions,
 	type MessageReplyOptions,
 	type PartialGroupDMChannel,
-	type ReplyOptions
+	type ReplyOptions,
+	Collection,
+	Snowflake,
+	PartialMessage
 } from "discord.js";
 
-import { client } from "#root/index.js";
-import { hastebin, truncate } from "./index.js";
+import { client, prisma } from "#root/index.js";
+import { hastebin, inflect, truncate } from "./index.js";
+import { type Message as SerializedMessage } from "#prisma/client.js";
+import Logger from "./Logger.js";
 
 const replies = new WeakMap<Message, Message>();
 
 type MessageOptions = MessageCreateOptions | MessageReplyOptions | MessageEditOptions;
+
+export class MessageQueue {
+	/**
+	 * Collection of messages that are queued to be added to the database.
+	 */
+	private static readonly _cache = new Collection<Snowflake, SerializedMessage>();
+
+	/**
+	 * Queues a message to be added to the database.
+	 * @param message The message to queue.
+	 */
+
+	public static queue(message: Message<true>): void {
+		const messageEntry = MessageQueue._serializeMessage(message);
+		MessageQueue._cache.set(message.id, messageEntry);
+	}
+
+	/**
+	 * Retrieves a message from the database or the queue.
+	 *
+	 * @param id The ID of the message.
+	 * @returns The message, or null if it does not exist.
+	 */
+
+	public static async getMessage(id: Snowflake): Promise<SerializedMessage | null> {
+		let message = MessageQueue._cache.get(id) ?? null;
+
+		if (!message) {
+			message = await prisma.message.findUnique({ where: { id } });
+		}
+
+		return message;
+	}
+
+	/**
+	 * Mark a message as deleted in the database.
+	 *
+	 * @param id The ID of the message to update.
+	 * @returns The updated message, or null if it does not exist.
+	 */
+
+	public static async deleteMessage(id: Snowflake): Promise<SerializedMessage | null> {
+		let message = MessageQueue._cache.get(id) ?? null;
+
+		if (message) {
+			message.deleted = true;
+		} else {
+			message = await prisma.message
+				.update({
+					data: { deleted: true },
+					where: { id }
+				})
+				.catch(() => null);
+		}
+
+		return message;
+	}
+
+	/**
+	 * Marks a group of messages as deleted in the database.
+	 *
+	 * @param collection The collection of messages to mark as deleted.
+	 * @returns The updated messages.
+	 */
+
+	public static async bulkDeleteMessages(collection: Collection<Snowflake, PartialMessage | Message<true>>) {
+		const ids = Array.from(collection.keys());
+
+		const messages = MessageQueue._cache.filter(message => ids.includes(message.id) && !message.deleted);
+
+		const deletedMessages = messages.map(message => {
+			message.deleted = true;
+			return message;
+		});
+
+		// Update what's left in the database.
+		if (messages.size !== deletedMessages.length) {
+			const updated = await prisma.message.updateManyAndReturn({
+				where: { id: { in: ids } },
+				data: { deleted: true }
+			});
+
+			// Merge the cached and stored messages.
+			return deletedMessages.concat(updated);
+		}
+
+		return deletedMessages;
+	}
+
+	/**
+	 * Update the content of a message.
+	 *
+	 * @param id The ID of the message to update.
+	 * @param newContent The new content of the message.
+	 * @returns The old content of the message.
+	 */
+
+	public static async updateMessage(id: Snowflake, newContent: string): Promise<string> {
+		const message = MessageQueue._cache.get(id);
+
+		if (message) {
+			const oldContent = message.content ?? "No message content.";
+			message.content = newContent;
+
+			return oldContent;
+		}
+
+		const oldMessage = await prisma.message.findUnique({ where: { id } });
+
+		await prisma.message
+			.update({
+				where: { id },
+				data: { content: newContent }
+			})
+			.catch(() => null);
+
+		return oldMessage?.content ?? "No message content.";
+	}
+
+	/** Stores all cached messages into the database. */
+	static async store(): Promise<void> {
+		Logger.info("Storing cached messages...");
+
+		// Insert all cached messages into the database.
+		const messages = Array.from(MessageQueue._cache.values());
+		const { count } = await prisma.message.createMany({ data: messages });
+
+		// Clear the cache.
+		MessageQueue._cache.clear();
+
+		if (!count) {
+			Logger.info("No messages were stored.");
+		} else {
+			Logger.info(`Stored ${count} ${inflect(count, "message")}.`);
+		}
+	}
+
+	/**
+	 * Retrieves message IDs from the cache for purging.
+	 * Returns messages matching the criteria, sorted newest to oldest.
+	 *
+	 * @param data The filter criteria for messages.
+	 * @returns An array of message IDs from the cache.
+	 */
+	public static getMessagesForPurge(data: {
+		channelId: Snowflake;
+		authorId: Snowflake;
+		triggerMessageId: Snowflake;
+		limit: number;
+	}): Snowflake[] {
+		const { channelId, authorId, triggerMessageId, limit } = data;
+
+		// Filter cached messages by channel, author, not deleted, and <= trigger message
+		const matching = MessageQueue._cache.filter(
+			msg =>
+				msg.channel_id === channelId &&
+				msg.author_id === authorId &&
+				!msg.deleted &&
+				msg.id <= triggerMessageId
+		);
+
+		// Sort by ID descending (newest first) and take up to limit
+		return matching
+			.sort((a, b) => (BigInt(b.id) > BigInt(a.id) ? 1 : -1))
+			.map(msg => msg.id)
+			.slice(0, limit);
+	}
+
+	/**
+	 * Serializes a message to make it suitable for insertion into the database.
+	 *
+	 * @param message The message to serialize.
+	 * @returns The serialized message.
+	 */
+
+	private static _serializeMessage(message: Message<true>): SerializedMessage {
+		const stickerId = message.stickers?.first()?.id ?? null;
+		const referenceId = message.reference?.messageId ?? null;
+		const content = cleanMessageContent(message.content, message.channel);
+
+		return {
+			id: message.id,
+			guild_id: message.guild.id,
+			author_id: message.author.id,
+			channel_id: message.channel.id,
+			sticker_id: stickerId,
+			reference_id: referenceId,
+			content,
+			attachments: message.attachments.map(attachment => attachment.url),
+			created_at: message.createdAt,
+			deleted: false
+		};
+	}
+}
 
 /**
  * Tracks a response with a message, in a way that if {@link send} is called with `message`, `response` will be edited.

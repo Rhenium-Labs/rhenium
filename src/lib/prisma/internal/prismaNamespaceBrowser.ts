@@ -61,7 +61,11 @@ export const ModelName = {
 	HighlightChannelScoping: "HighlightChannelScoping",
 	QuickMuteConfig: "QuickMuteConfig",
 	QuickMuteChannelScoping: "QuickMuteChannelScoping",
-	QuickMute: "QuickMute"
+	QuickMute: "QuickMute",
+	QuickPurgeConfig: "QuickPurgeConfig",
+	QuickPurgeChannelScoping: "QuickPurgeChannelScoping",
+	QuickPurge: "QuickPurge",
+	Message: "Message"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -246,6 +250,50 @@ export const QuickMuteScalarFieldEnum = {
 } as const;
 
 export type QuickMuteScalarFieldEnum = (typeof QuickMuteScalarFieldEnum)[keyof typeof QuickMuteScalarFieldEnum];
+
+export const QuickPurgeConfigScalarFieldEnum = {
+	id: "id",
+	enabled: "enabled",
+	max_limit: "max_limit",
+	webhook_url: "webhook_url",
+	result_webhook_url: "result_webhook_url"
+} as const;
+
+export type QuickPurgeConfigScalarFieldEnum =
+	(typeof QuickPurgeConfigScalarFieldEnum)[keyof typeof QuickPurgeConfigScalarFieldEnum];
+
+export const QuickPurgeChannelScopingScalarFieldEnum = {
+	guild_id: "guild_id",
+	channel_id: "channel_id",
+	type: "type"
+} as const;
+
+export type QuickPurgeChannelScopingScalarFieldEnum =
+	(typeof QuickPurgeChannelScopingScalarFieldEnum)[keyof typeof QuickPurgeChannelScopingScalarFieldEnum];
+
+export const QuickPurgeScalarFieldEnum = {
+	user_id: "user_id",
+	guild_id: "guild_id",
+	reaction: "reaction",
+	purge_amount: "purge_amount"
+} as const;
+
+export type QuickPurgeScalarFieldEnum = (typeof QuickPurgeScalarFieldEnum)[keyof typeof QuickPurgeScalarFieldEnum];
+
+export const MessageScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	author_id: "author_id",
+	channel_id: "channel_id",
+	sticker_id: "sticker_id",
+	reference_id: "reference_id",
+	created_at: "created_at",
+	content: "content",
+	attachments: "attachments",
+	deleted: "deleted"
+} as const;
+
+export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",

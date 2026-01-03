@@ -19,7 +19,7 @@ export default class StrafeStryker extends Client<true> {
 			partials: CLIENT_PARTIALS,
 			makeCache: Options.cacheWithLimits({
 				GuildBanManager: 0,
-				GuildEmojiManager: 0,
+				GuildEmojiManager: Infinity,
 				GuildStickerManager: 0,
 				GuildMemberManager: Infinity,
 				GuildTextThreadManager: 0,
