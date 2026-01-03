@@ -1,10 +1,10 @@
 import {
-	AutocompleteInteraction,
+	type AutocompleteInteraction,
+	type CommandInteraction,
+	type Interaction,
+	type InteractionReplyOptions,
 	Colors,
-	CommandInteraction,
 	Events,
-	Interaction,
-	InteractionReplyOptions,
 	MessageFlags
 } from "discord.js";
 import { captureException } from "@sentry/node";

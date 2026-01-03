@@ -1,4 +1,4 @@
-import { Colors, Events, Message, MessageReplyOptions, PermissionFlagsBits } from "discord.js";
+import { type Message, type MessageReplyOptions, Colors, Events, PermissionFlagsBits } from "discord.js";
 import { captureException } from "@sentry/node";
 
 import { RedisCache } from "#utils/Redis.js";

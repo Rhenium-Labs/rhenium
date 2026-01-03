@@ -1,4 +1,4 @@
-import { ButtonInteraction, Colors, EmbedBuilder, time } from "discord.js";
+import { type ButtonInteraction, Colors, EmbedBuilder, time } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#classes/Component.js";

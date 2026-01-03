@@ -1,13 +1,13 @@
 import {
+	type User,
+	type Message,
+	type Snowflake,
+	type TextChannel,
+	type MessageReaction,
+	type WebhookMessageCreateOptions,
 	Colors,
 	EmbedBuilder,
-	Message,
-	MessageReaction,
-	Snowflake,
-	TextChannel,
-	User,
-	WebhookClient,
-	WebhookMessageCreateOptions
+	WebhookClient
 } from "discord.js";
 
 import ms from "ms";

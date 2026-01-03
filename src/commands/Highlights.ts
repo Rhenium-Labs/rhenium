@@ -1,13 +1,13 @@
 import {
-	ApplicationCommandData,
+	type ApplicationCommandData,
+	type ChatInputCommandInteraction,
+	type Message,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
-	ChatInputCommandInteraction,
 	Colors,
 	EmbedBuilder,
 	InteractionContextType,
-	Message,
 	MessageFlags,
 	PermissionFlagsBits
 } from "discord.js";

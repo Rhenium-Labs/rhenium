@@ -1,4 +1,4 @@
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Colors, Message } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Colors, type Message } from "discord.js";
 
 import { kv } from "#root/index.js";
 import { hastebin } from "#utils/index.js";

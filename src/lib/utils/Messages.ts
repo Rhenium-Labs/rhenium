@@ -1,27 +1,28 @@
 import {
-	codeBlock,
-	DiscordAPIError,
-	escapeCodeBlock,
-	hyperlink,
-	MessagePayload,
-	RESTJSONErrorCodes,
-	StickerFormatType,
-	cleanContent as djsCleanContent,
-	type TextBasedChannel,
 	type Message,
+	type TextBasedChannel,
 	type MessageCreateOptions,
 	type MessageEditOptions,
 	type MessageReplyOptions,
 	type PartialGroupDMChannel,
 	type ReplyOptions,
+	type Snowflake,
+	type PartialMessage,
+	codeBlock,
+	DiscordAPIError,
+	escapeCodeBlock,
+	hyperlink,
+	RESTJSONErrorCodes,
+	StickerFormatType,
+	cleanContent as djsCleanContent,
 	Collection,
-	Snowflake,
-	PartialMessage
+	MessagePayload
 } from "discord.js";
 
 import { client, prisma } from "#root/index.js";
 import { hastebin, inflect, truncate } from "./index.js";
-import { type Message as SerializedMessage } from "#prisma/client.js";
+import type { Message as SerializedMessage } from "#prisma/client.js";
+
 import Logger from "./Logger.js";
 
 const replies = new WeakMap<Message, Message>();

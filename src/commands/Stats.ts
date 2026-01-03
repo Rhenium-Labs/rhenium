@@ -1,4 +1,4 @@
-import { EmbedBuilder, Message } from "discord.js";
+import { EmbedBuilder, type Message } from "discord.js";
 
 import ms from "ms";
 

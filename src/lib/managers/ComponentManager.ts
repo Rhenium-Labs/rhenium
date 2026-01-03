@@ -6,7 +6,7 @@ import path from "node:path";
 import { inflect } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
-import Component, { ComponentCustomID } from "#classes/Component.js";
+import Component, { type ComponentCustomID } from "#classes/Component.js";
 
 export default class ComponentManager {
 	/**

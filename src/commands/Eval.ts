@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, codeBlock, Message } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, codeBlock, type Message } from "discord.js";
 
 import ms from "ms";
 import util from "node:util";

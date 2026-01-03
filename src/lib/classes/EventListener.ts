@@ -1,4 +1,4 @@
-import { Awaitable, Events } from "discord.js";
+import { type Awaitable, Events } from "discord.js";
 import { client, prisma } from "#root/index.js";
 
 export default abstract class EventListener {

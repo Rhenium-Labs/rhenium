@@ -1,8 +1,8 @@
 import {
-	ApplicationCommandData,
+	type MessageContextMenuCommandInteraction,
+	type ApplicationCommandData,
 	ApplicationCommandType,
 	LabelBuilder,
-	MessageContextMenuCommandInteraction,
 	ModalBuilder,
 	TextInputBuilder,
 	TextInputStyle

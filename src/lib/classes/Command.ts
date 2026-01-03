@@ -1,4 +1,4 @@
-import { ArgumentStream, IUnorderedStrategy, Lexer, Parser } from "@sapphire/lexure";
+import { type IUnorderedStrategy, ArgumentStream, Lexer, Parser } from "@sapphire/lexure";
 import type { ApplicationCommandData, Awaitable, CommandInteraction, Message } from "discord.js";
 
 import { client, prisma } from "#root/index.js";

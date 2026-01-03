@@ -1,4 +1,4 @@
-import { GuildMember, User } from "discord.js";
+import { GuildMember, type User } from "discord.js";
 
 import { client } from "#root/index.js";
 import { hierarchyCheck } from "./index.js";

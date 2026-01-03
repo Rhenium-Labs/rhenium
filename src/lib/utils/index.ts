@@ -1,4 +1,4 @@
-import { Emoji, GuildBasedChannel, GuildMember, Snowflake } from "discord.js";
+import type { Emoji, GuildBasedChannel, GuildMember, Snowflake } from "discord.js";
 
 import ms, { type StringValue } from "ms";
 

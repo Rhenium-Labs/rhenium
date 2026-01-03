@@ -1,16 +1,16 @@
 import {
+	type User,
+	type APIMessage,
+	type ButtonInteraction,
+	type ModalSubmitInteraction,
 	ActionRowBuilder,
-	APIMessage,
 	ButtonBuilder,
-	ButtonInteraction,
 	ButtonStyle,
 	Colors,
 	EmbedBuilder,
-	GuildMember,
+	type GuildMember,
 	MessageFlags,
-	ModalSubmitInteraction,
 	roleMention,
-	User,
 	userMention,
 	WebhookClient
 } from "discord.js";

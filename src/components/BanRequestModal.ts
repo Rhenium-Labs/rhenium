@@ -1,4 +1,4 @@
-import { ModalSubmitInteraction } from "discord.js";
+import type { ModalSubmitInteraction } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#classes/Component.js";

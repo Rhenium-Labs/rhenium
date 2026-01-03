@@ -1,4 +1,4 @@
-import { ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { type ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 
 import { userMentionWithId } from "#utils/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";

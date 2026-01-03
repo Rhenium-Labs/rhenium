@@ -1,21 +1,21 @@
 import {
+	type User,
+	type Message,
+	type ModalSubmitInteraction,
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
 	Colors,
 	EmbedBuilder,
 	roleMention,
-	WebhookClient,
-	type User,
-	type Message,
-	type ModalSubmitInteraction
+	WebhookClient
 } from "discord.js";
 
 import { prisma } from "#root/index.js";
-import { MessageReportConfig } from "#prisma/client.js";
 import { cropLines, userMentionWithId } from "./index.js";
 import { cleanMessageContent, formatMessageContent } from "./Messages.js";
 
+import type { MessageReportConfig } from "#prisma/client.js";
 import type { InteractionReplyData } from "./Types.js";
 
 export default class MessageReportUtils {

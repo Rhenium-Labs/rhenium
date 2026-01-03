@@ -1,4 +1,4 @@
-import { Message, MessageFlags, ModalSubmitInteraction, TextBasedChannel } from "discord.js";
+import { type Message, type ModalSubmitInteraction, type TextBasedChannel, MessageFlags } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#classes/Component.js";

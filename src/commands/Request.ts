@@ -1,9 +1,9 @@
 import {
-	ApplicationCommandData,
+	type ChatInputCommandInteraction,
+	type ApplicationCommandData,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
-	ChatInputCommandInteraction,
 	InteractionContextType,
 	MessageFlags
 } from "discord.js";

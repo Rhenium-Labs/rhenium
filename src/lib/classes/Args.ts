@@ -1,7 +1,7 @@
 import { Result } from "@sapphire/result";
 import { ArgumentStream, join, WordParameter } from "@sapphire/lexure";
-import { GuildMember, Message, Snowflake, User } from "discord.js";
 import { SnowflakeRegex, UserOrMemberMentionRegex } from "@sapphire/discord-utilities";
+import type { GuildMember, Message, Snowflake, User } from "discord.js";
 
 export default class Args {
 	/**

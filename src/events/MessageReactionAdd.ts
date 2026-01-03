@@ -1,4 +1,11 @@
-import { Events, Message, MessageReaction, PartialMessage, PartialMessageReaction, User } from "discord.js";
+import {
+	Events,
+	type User,
+	type Message,
+	type MessageReaction,
+	type PartialMessage,
+	type PartialMessageReaction
+} from "discord.js";
 
 import QuickActionUtils from "#utils/QuickActions.js";
 import EventListener from "#classes/EventListener.js";
