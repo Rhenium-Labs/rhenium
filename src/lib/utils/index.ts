@@ -293,6 +293,39 @@ async function getGuildEmojiName(emojiId: string, guildId: Snowflake): Promise<s
 	return emoji?.name ?? null;
 }
 
+/**
+ * Retrieves the display string for an emoji with proper Discord formatting.
+ *
+ * For unicode emojis, returns the emoji character itself.
+ * For custom emojis, returns the full Discord format `<:name:id>` or `<a:name:id>` for animated.
+ *
+ * @param emoji - The emoji string or ID to look up.
+ * @param guildId - The guild ID to search for custom emojis.
+ * @returns The formatted emoji display string, or `null` if not found.
+ */
+export async function getEmojiDisplay(emoji: string, guildId: Snowflake): Promise<string | null> {
+	const unicodeMatch = emoji.match(UNICODE_EMOJI_REGEX);
+
+	if (unicodeMatch) {
+		return unicodeMatch[0];
+	}
+
+	const emojis = await fetchGuildEmojis(guildId);
+
+	if (!emojis) {
+		return null;
+	}
+
+	const guildEmoji = emojis.find(e => e.id === emoji);
+
+	if (!guildEmoji?.name) {
+		return null;
+	}
+
+	const animated = guildEmoji.animated ? "a" : "";
+	return `<${animated}:${guildEmoji.name}:${guildEmoji.id}>`;
+}
+
 /** Represents a validated emoji with optional ID (for custom emojis) and name. */
 type ValidatedEmoji = {
 	/** The emoji's unique ID (only present for custom emojis). */

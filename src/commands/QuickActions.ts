@@ -14,7 +14,14 @@ import {
 
 import ms from "ms";
 
-import { getEmojiName, inflect, parseDurationString, truncate, validateDuration, validateEmoji } from "#utils/index.js";
+import {
+	getEmojiDisplay,
+	inflect,
+	parseDurationString,
+	truncate,
+	validateDuration,
+	validateEmoji
+} from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
@@ -311,15 +318,14 @@ export default class QuickActions extends Command {
 			.setTimestamp();
 
 		for (const qm of quickMutes) {
-			const emojiName = await getEmojiName(qm.reaction, interaction.guildId);
-			const emojiDisplay = emojiName ?? "unknown";
+			const emojiDisplay = (await getEmojiDisplay(qm.reaction, interaction.guildId)) ?? "unknown";
 
 			const formattedDuration = ms(Number(qm.duration), { long: true });
 			const purgeInfo = qm.purge_amount > 0 ? ` + purge ${qm.purge_amount}` : "";
 
 			embed.addFields({
 				name: emojiDisplay,
-				value: `→ **${formattedDuration}**${purgeInfo}\n└ \`${truncate(escapeCodeBlock(qm.reason), 512)}\``,
+				value: `→ **${formattedDuration}**${purgeInfo}\n└ \`${truncate(escapeCodeBlock(qm.reason), 256)}\``,
 				inline: false
 			});
 		}
@@ -454,8 +460,7 @@ export default class QuickActions extends Command {
 			.setTimestamp();
 
 		for (const qp of quickPurges) {
-			const emojiName = await getEmojiName(qp.reaction, interaction.guildId);
-			const emojiDisplay = emojiName ?? "unknown";
+			const emojiDisplay = (await getEmojiDisplay(qp.reaction, interaction.guildId)) ?? "unknown";
 
 			embed.addFields({
 				name: emojiDisplay,
