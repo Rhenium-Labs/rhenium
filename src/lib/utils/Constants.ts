@@ -41,7 +41,7 @@ export const DEVELOPER_IDS: readonly string[] = [
  * Regex patterns for matching Discord emojis.
  */
 
-export const DISCORD_EMOJI_REGEX: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/g;
+export const DISCORD_EMOJI_REGEX: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/;
 
 /**
  * Regex pattern for matching Unicode emojis.
