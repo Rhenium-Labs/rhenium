@@ -14,7 +14,7 @@ import {
 
 import ms from "ms";
 
-import { getEmojiName, inflect, parseDurationString, validateDuration, validateEmoji } from "#utils/index.js";
+import { getEmojiName, inflect, parseDurationString, truncate, validateDuration, validateEmoji } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
@@ -302,7 +302,13 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		const lines: string[] = [];
+		const embed = new EmbedBuilder()
+			.setColor(Colors.NotQuiteBlack)
+			.setAuthor({
+				name: `Quick Mute Configs for @${interaction.user.username}`,
+				iconURL: interaction.user.displayAvatarURL()
+			})
+			.setTimestamp();
 
 		for (const qm of quickMutes) {
 			const emojiName = await getEmojiName(qm.reaction, interaction.guildId);
@@ -311,19 +317,12 @@ export default class QuickActions extends Command {
 			const formattedDuration = ms(Number(qm.duration), { long: true });
 			const purgeInfo = qm.purge_amount > 0 ? ` + purge ${qm.purge_amount}` : "";
 
-			lines.push(
-				`${emojiDisplay} → **${formattedDuration}**${purgeInfo}\n└ \`${escapeCodeBlock(qm.reason)}\``
-			);
+			embed.addFields({
+				name: emojiDisplay,
+				value: `→ **${formattedDuration}**${purgeInfo}\n└ \`${truncate(escapeCodeBlock(qm.reason), 512)}\``,
+				inline: false
+			});
 		}
-
-		const embed = new EmbedBuilder()
-			.setColor(Colors.NotQuiteBlack)
-			.setAuthor({
-				name: `Quick Mute Configs for @${interaction.user.username}`,
-				iconURL: interaction.user.displayAvatarURL()
-			})
-			.setDescription(lines.join("\n\n"))
-			.setTimestamp();
 
 		return { embeds: [embed] };
 	}
@@ -446,23 +445,24 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		const lines: string[] = [];
-
-		for (const qp of quickPurges) {
-			const emojiName = await getEmojiName(qp.reaction, interaction.guildId);
-			const emojiDisplay = emojiName ?? "unknown";
-
-			lines.push(`${emojiDisplay} → purge **${qp.purge_amount}** ${inflect(qp.purge_amount, "message")}`);
-		}
-
 		const embed = new EmbedBuilder()
 			.setColor(Colors.NotQuiteBlack)
 			.setAuthor({
 				name: `Quick Purge Configs for @${interaction.user.username}`,
 				iconURL: interaction.user.displayAvatarURL()
 			})
-			.setDescription(lines.join("\n"))
 			.setTimestamp();
+
+		for (const qp of quickPurges) {
+			const emojiName = await getEmojiName(qp.reaction, interaction.guildId);
+			const emojiDisplay = emojiName ?? "unknown";
+
+			embed.addFields({
+				name: emojiDisplay,
+				value: `→ purge **${qp.purge_amount}** ${inflect(qp.purge_amount, "message")}`,
+				inline: false
+			});
+		}
 
 		return { embeds: [embed] };
 	}
