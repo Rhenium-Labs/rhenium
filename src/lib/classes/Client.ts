@@ -37,7 +37,8 @@ export default class StrafeStryker extends Client<true> {
 				MessageManager: 0,
 
 				UserManager: Infinity,
-				ApplicationCommandManager: Infinity
+				ApplicationCommandManager: Infinity,
+				BaseGuildEmojiManager: Infinity
 			}),
 			allowedMentions: { parse: [] }
 		});
