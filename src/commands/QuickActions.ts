@@ -194,6 +194,31 @@ export default class QuickActions extends Command {
 		const reason = interaction.options.getString("reason", true);
 		const purgeAmount = interaction.options.getInteger("purge_amount") ?? 0;
 
+		const [config, quickMuteCount] = await this.prisma.$transaction([
+			this.prisma.quickMuteConfig.findUnique({
+				where: { id: interaction.guildId }
+			}),
+			this.prisma.quickMute.count({
+				where: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guildId
+				}
+			})
+		]);
+
+		if (!config?.enabled || !config.webhook_url) {
+			return {
+				error: "Quick mutes have not been configured on this server."
+			};
+		}
+
+		// Hardcoded limit of 10 quick mutes per user.
+		if (quickMuteCount >= 10) {
+			return {
+				error: "You have reached the maximum of 10 quick mutes. Please remove an existing one before adding a new one."
+			};
+		}
+
 		const validatedEmoji = await validateEmoji(reactionInput, interaction.guildId);
 
 		if (!validatedEmoji) {
@@ -355,6 +380,31 @@ export default class QuickActions extends Command {
 	private async _addPurge(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const purgeAmount = interaction.options.getInteger("amount", true);
+
+		const [config, quickPurgeCount] = await this.prisma.$transaction([
+			this.prisma.quickPurgeConfig.findUnique({
+				where: { id: interaction.guildId }
+			}),
+			this.prisma.quickPurge.count({
+				where: {
+					user_id: interaction.user.id,
+					guild_id: interaction.guildId
+				}
+			})
+		]);
+
+		if (!config?.enabled || !config.webhook_url) {
+			return {
+				error: "Quick purges have not been configured on this server."
+			};
+		}
+
+		// Hardcoded limit of 10 quick purges per user.
+		if (quickPurgeCount >= 10) {
+			return {
+				error: "You have reached the maximum of 10 quick purges. Please remove an existing one before adding a new one."
+			};
+		}
 
 		const validatedEmoji = await validateEmoji(reactionInput, interaction.guildId);
 
