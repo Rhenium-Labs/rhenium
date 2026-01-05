@@ -22,6 +22,7 @@ import { channelInScope, inflect } from "#utils/index.js";
 import type { ChannelScoping, InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#classes/Command.js";
+import GuildConfig from "#classes/GuildConfig.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
@@ -184,7 +185,10 @@ export default class Highlights extends Command {
 		};
 	}
 
-	public async interactionRun(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+	public async interactionRun(
+		interaction: ChatInputCommandInteraction<"cached">,
+		config: GuildConfig
+	): Promise<InteractionReplyData> {
 		const group = interaction.options.getSubcommandGroup();
 		const subcommand = interaction.options.getSubcommand() as HighlightSubcommand;
 
@@ -199,7 +203,8 @@ export default class Highlights extends Command {
 			[HighlightSubcommand.Clear]: () => this._clearAllHighlights(interaction),
 
 			// Pattern group
-			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Add}`]: () => this._addPattern(interaction),
+			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Add}`]: () =>
+				this._addPattern(interaction, config),
 			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Remove}`]: () =>
 				this._removePattern(interaction),
 			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Clear}`]: () =>
@@ -344,31 +349,27 @@ export default class Highlights extends Command {
 		}
 	}
 
-	private async _addPattern(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
-		const [config, highlight] = await this.prisma.$transaction([
-			this.prisma.highlightConfig.upsert({
-				where: { id: interaction.guild.id },
-				create: { id: interaction.guild.id },
-				update: {}
-			}),
-			this.prisma.highlight.upsert({
-				where: {
-					user_id_guild_id: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guild.id
-					}
-				},
-				create: {
+	private async _addPattern(
+		interaction: ChatInputCommandInteraction<"cached">,
+		config: GuildConfig
+	): Promise<InteractionReplyData> {
+		const highlight = await this.prisma.highlight.upsert({
+			where: {
+				user_id_guild_id: {
 					user_id: interaction.user.id,
 					guild_id: interaction.guild.id
-				},
-				update: {}
-			})
-		]);
+				}
+			},
+			create: {
+				user_id: interaction.user.id,
+				guild_id: interaction.guild.id
+			},
+			update: {}
+		});
 
-		if (highlight.patterns.length >= config.max_patterns) {
+		if (highlight.patterns.length >= config.data.highlights.max_patterns) {
 			return {
-				error: `You have reached the maximum number of highlight patterns (${config.max_patterns}).`
+				error: `You have reached the maximum number of highlight patterns (${config.data.highlights.max_patterns}).`
 			};
 		}
 

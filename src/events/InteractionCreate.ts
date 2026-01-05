@@ -21,6 +21,7 @@ import Component from "#classes/Component.js";
 import EventListener from "#classes/EventListener.js";
 import CommandManager from "#managers/CommandManager.js";
 import ComponentManager from "#managers/ComponentManager.js";
+import ConfigManager from "#managers/ConfigManager.js";
 
 export default class InteractionCreate extends EventListener {
 	public constructor() {
@@ -96,6 +97,8 @@ export default class InteractionCreate extends EventListener {
 		interaction: Exclude<Interaction<"cached">, AutocompleteInteraction>,
 		structure: Command | Component
 	): Promise<InteractionReplyData | null> {
+		const config = await ConfigManager.getGuildConfig(interaction.guild.id);
+
 		if (structure instanceof Command) {
 			if (!structure.interactionRun) {
 				const sentryId = captureException(new Error("Command missing interactionRun method."), {
@@ -117,10 +120,10 @@ export default class InteractionCreate extends EventListener {
 				return null;
 			}
 
-			return structure.interactionRun(interaction as CommandInteraction<"cached">);
+			return structure.interactionRun(interaction as CommandInteraction<"cached">, config);
 		}
 
-		return structure.run(interaction as ComponentInteraction);
+		return structure.run(interaction as ComponentInteraction, config);
 	}
 
 	/**

@@ -19,6 +19,7 @@ import { MessageQueue } from "./Messages.js";
 import type { ChannelScoping } from "./Types.js";
 
 import ModerationUtils from "./Moderation.js";
+import GuildConfig from "#classes/GuildConfig.js";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */
 const BULK_DELETE_MAX_AGE = 14 * 24 * 60 * 60 * 1000;
@@ -54,21 +55,12 @@ export default class QuickActionUtils {
 		user: User;
 		message: Message<true>;
 		reaction: MessageReaction;
+		config: GuildConfig;
 	}): Promise<unknown> {
-		const { user, message, reaction } = data;
+		const { user, message, reaction, config } = data;
 
-		const quickMuteGuildConfig = await prisma.quickMuteConfig.findUnique({
-			where: { id: message.guildId },
-			include: { channel_scoping: true }
-		});
-
-		if (
-			!quickMuteGuildConfig?.enabled ||
-			!quickMuteGuildConfig.webhook_url ||
-			!quickMuteGuildConfig.result_webhook_url
-		) {
-			return;
-		}
+		const quickMuteGuildConfig = config.getQuickMutesConfig();
+		if (!quickMuteGuildConfig) return;
 
 		const channelScoping = quickMuteGuildConfig.channel_scoping.reduce<ChannelScoping>(
 			(acc, channel) => {
@@ -227,21 +219,12 @@ export default class QuickActionUtils {
 		user: User;
 		message: Message<true>;
 		reaction: MessageReaction;
+		config: GuildConfig;
 	}): Promise<unknown> {
-		const { user, message, reaction } = data;
+		const { user, message, reaction, config } = data;
 
-		const quickPurgeGuildConfig = await prisma.quickPurgeConfig.findUnique({
-			where: { id: message.guildId },
-			include: { channel_scoping: true }
-		});
-
-		if (
-			!quickPurgeGuildConfig?.enabled ||
-			!quickPurgeGuildConfig.webhook_url ||
-			!quickPurgeGuildConfig.result_webhook_url
-		) {
-			return;
-		}
+		const quickPurgeGuildConfig = config.getQuickPurgesConfig();
+		if (!quickPurgeGuildConfig) return;
 
 		const channelScoping = quickPurgeGuildConfig.channel_scoping.reduce<ChannelScoping>(
 			(acc, channel) => {

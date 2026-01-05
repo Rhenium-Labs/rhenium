@@ -3,6 +3,7 @@ import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#classes/Component.js";
 import BanRequestUtils from "#utils/BanRequests.js";
+import GuildConfig from "#classes/GuildConfig.js";
 
 const AUTO_DELETE_DELAY = 7000;
 
@@ -11,12 +12,13 @@ export default class BanRequestModal extends Component {
 		super({ matches: /^ban-request-(accept|deny)-\d{17,19}$/m });
 	}
 
-	public async run(interaction: ModalSubmitInteraction<"cached">): Promise<InteractionReplyData | null> {
-		const config = await this.prisma.banRequestConfig.findUnique({
-			where: { id: interaction.guild.id }
-		});
+	public async run(
+		interaction: ModalSubmitInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData | null> {
+		const config = configClass.getBanRequestsConfig();
 
-		if (!config?.enabled || !config.webhook_url) {
+		if (!config) {
 			return { error: "Ban requests are not configured for this server." };
 		}
 

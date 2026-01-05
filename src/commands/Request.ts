@@ -16,6 +16,7 @@ import type { InteractionReplyData } from "#utils/Types.js";
 import Command from "#classes/Command.js";
 import BanRequestUtils from "#utils/BanRequests.js";
 import ModerationUtils from "#utils/Moderation.js";
+import GuildConfig from "#classes/GuildConfig.js";
 
 export default class Request extends Command {
 	public constructor() {
@@ -64,10 +65,11 @@ export default class Request extends Command {
 		};
 	}
 
-	public async interactionRun(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
-		const config = await this.prisma.banRequestConfig.findUnique({
-			where: { id: interaction.guildId }
-		});
+	public async interactionRun(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const config = configClass.getBanRequestsConfig();
 
 		if (!config?.enabled || !config.webhook_url) {
 			return { error: "Ban requests are not configured for this server." };

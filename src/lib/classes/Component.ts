@@ -1,7 +1,9 @@
 import type { Awaitable, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
-import type { InteractionReplyData } from "#utils/Types.js";
 
 import { client, prisma } from "#root/index.js";
+import type { InteractionReplyData } from "#utils/Types.js";
+
+import GuildConfig from "./GuildConfig.js";
 
 export default abstract class Component {
 	/**
@@ -40,7 +42,7 @@ export default abstract class Component {
 	 * @returns The result of the component interaction.
 	 */
 
-	abstract run(interaction: ComponentInteraction): Awaitable<InteractionReplyData | null>;
+	abstract run(interaction: ComponentInteraction, config: GuildConfig): Awaitable<InteractionReplyData | null>;
 }
 
 export type ComponentCustomID =

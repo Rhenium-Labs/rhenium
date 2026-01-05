@@ -9,6 +9,8 @@ import {
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#classes/Command.js";
+import GuildConfig from "#classes/GuildConfig.js";
+import ConfigManager, { ConfigKeys } from "#managers/ConfigManager.js";
 
 export default class Reports extends Command {
 	public constructor() {
@@ -56,29 +58,34 @@ export default class Reports extends Command {
 		};
 	}
 
-	public async interactionRun(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+	public async interactionRun(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
 		const subcommand = interaction.options.getSubcommand(true);
+		const config = configClass.getMessageReportsConfig();
+
+		if (!config) {
+			return { error: "Message reports have not been configured on this server." };
+		}
 
 		switch (subcommand) {
 			case "blacklist": {
 				const user = interaction.options.getUser("user", true);
-				const config = await this.prisma.messageReportConfig.findUnique({
-					where: { id: interaction.guild.id }
-				});
-
-				if (!config?.enabled || !config.webhook_url) {
-					return { error: "Message reports have not been configured on this server." };
-				}
 
 				if (config.blacklisted_users.includes(user.id)) {
 					return { error: "This user is already blacklisted from using the report system." };
 				}
 
+				const updatedBlacklist = [...config.blacklisted_users, user.id];
+
 				await this.prisma.messageReportConfig.update({
 					where: { id: interaction.guild.id },
-					data: {
-						blacklisted_users: { push: user.id }
-					}
+					data: { blacklisted_users: { push: user.id } }
+				});
+
+				await ConfigManager.updateCachedConfig(interaction.guildId, ConfigKeys.MessageReports, {
+					blacklisted_users: updatedBlacklist
 				});
 
 				return {
@@ -88,23 +95,22 @@ export default class Reports extends Command {
 
 			case "unblacklist": {
 				const user = interaction.options.getUser("user", true);
-				const config = await this.prisma.messageReportConfig.findUnique({
-					where: { id: interaction.guild.id }
-				});
-
-				if (!config?.enabled || !config.webhook_url) {
-					return { error: "Message reports have not been configured on this server." };
-				}
 
 				if (!config.blacklisted_users.includes(user.id)) {
 					return { error: "This user is not blacklisted from using the report system." };
 				}
 
+				const updatedBlacklist = config.blacklisted_users.filter(id => id !== user.id);
+
 				await this.prisma.messageReportConfig.update({
 					where: { id: interaction.guild.id },
 					data: {
-						blacklisted_users: config.blacklisted_users.filter(id => id !== user.id)
+						blacklisted_users: updatedBlacklist
 					}
+				});
+
+				await ConfigManager.updateCachedConfig(interaction.guildId, ConfigKeys.MessageReports, {
+					blacklisted_users: updatedBlacklist
 				});
 
 				return {

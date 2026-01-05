@@ -3,18 +3,20 @@ import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#classes/Component.js";
 import MessageReportUtils from "#utils/MessageReports.js";
+import GuildConfig from "#classes/GuildConfig.js";
 
 export default class ReportMessage extends Component {
 	public constructor() {
 		super({ matches: /^report-message-\d{17,19}-\d{17,19}$/m });
 	}
 
-	public async run(interaction: ModalSubmitInteraction<"cached">): Promise<InteractionReplyData> {
-		const config = await this.prisma.messageReportConfig.findUnique({
-			where: { id: interaction.guild.id }
-		});
+	public async run(
+		interaction: ModalSubmitInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const config = configClass.getMessageReportsConfig();
 
-		if (!config?.enabled || !config.webhook_url) {
+		if (!config) {
 			return { error: "Message reports have not been configured on this server." };
 		}
 

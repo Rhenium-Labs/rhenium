@@ -26,6 +26,7 @@ import {
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#classes/Command.js";
+import GuildConfig from "#classes/GuildConfig.js";
 
 export default class QuickActions extends Command {
 	public constructor() {
@@ -163,7 +164,10 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	public async interactionRun(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+	public async interactionRun(
+		interaction: ChatInputCommandInteraction<"cached">,
+		config: GuildConfig
+	): Promise<InteractionReplyData> {
 		const group = interaction.options.getSubcommandGroup(true) as QuickSubcommandGroup;
 		const subcommand = interaction.options.getSubcommand(true) as QuickSubcommand;
 
@@ -173,12 +177,12 @@ export default class QuickActions extends Command {
 
 		const handlers: Record<string, () => Promise<InteractionReplyData>> = {
 			// Mutes group
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Add}`]: () => this._addMute(interaction),
+			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Add}`]: () => this._addMute(interaction, config),
 			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Remove}`]: () => this._removeMute(interaction),
 			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.List}`]: () => this._listMutes(interaction),
 			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Clear}`]: () => this._clearMutes(interaction),
 			// Purges group
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Add}`]: () => this._addPurge(interaction),
+			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Add}`]: () => this._addPurge(interaction, config),
 			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Remove}`]: () => this._removePurge(interaction),
 			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.List}`]: () => this._listPurges(interaction),
 			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Clear}`]: () => this._clearPurges(interaction)
@@ -188,25 +192,23 @@ export default class QuickActions extends Command {
 		return handler ? handler() : { error: "Unknown subcommand." };
 	}
 
-	private async _addMute(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+	private async _addMute(
+		interaction: ChatInputCommandInteraction<"cached">,
+		config: GuildConfig
+	): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const durationInput = interaction.options.getString("duration", true);
 		const reason = interaction.options.getString("reason", true);
 		const purgeAmount = interaction.options.getInteger("purge_amount") ?? 0;
 
-		const [config, quickMuteCount] = await this.prisma.$transaction([
-			this.prisma.quickMuteConfig.findUnique({
-				where: { id: interaction.guildId }
-			}),
-			this.prisma.quickMute.count({
-				where: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guildId
-				}
-			})
-		]);
+		const quickMuteCount = await this.prisma.quickMute.count({
+			where: {
+				user_id: interaction.user.id,
+				guild_id: interaction.guildId
+			}
+		});
 
-		if (!config?.enabled || !config.webhook_url) {
+		if (!config.data.quick_mutes.enabled || !config.data.quick_mutes.webhook_url) {
 			return {
 				error: "Quick mutes have not been configured on this server."
 			};
@@ -377,23 +379,21 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private async _addPurge(interaction: ChatInputCommandInteraction<"cached">): Promise<InteractionReplyData> {
+	private async _addPurge(
+		interaction: ChatInputCommandInteraction<"cached">,
+		config: GuildConfig
+	): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const purgeAmount = interaction.options.getInteger("amount", true);
 
-		const [config, quickPurgeCount] = await this.prisma.$transaction([
-			this.prisma.quickPurgeConfig.findUnique({
-				where: { id: interaction.guildId }
-			}),
-			this.prisma.quickPurge.count({
-				where: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guildId
-				}
-			})
-		]);
+		const quickPurgeCount = await this.prisma.quickPurge.count({
+			where: {
+				user_id: interaction.user.id,
+				guild_id: interaction.guildId
+			}
+		});
 
-		if (!config?.enabled || !config.webhook_url) {
+		if (!config.data.quick_purges.enabled || !config.data.quick_purges.webhook_url) {
 			return {
 				error: "Quick purges have not been configured on this server."
 			};

@@ -11,6 +11,7 @@ import Command from "#classes/Command.js";
 import Highlights from "#root/commands/Highlights.js";
 import EventListener from "#classes/EventListener.js";
 import CommandManager from "#managers/CommandManager.js";
+import ConfigManager from "#managers/ConfigManager.js";
 
 export default class MessageCreate extends EventListener {
 	public constructor() {
@@ -60,7 +61,8 @@ export default class MessageCreate extends EventListener {
 	 * Executes a message command and handles the response.
 	 */
 	private static async _executeCommand(message: Message<true>, command: Command, args: Args): Promise<void> {
-		const response = await command.messageRun!(message, args);
+		const config = await ConfigManager.getGuildConfig(message.guild.id);
+		const response = await command.messageRun!(message, args, config);
 
 		// Reply was handled manually.
 		if (response === null) return;

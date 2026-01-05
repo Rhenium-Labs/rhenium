@@ -12,6 +12,7 @@ import { ReportStatus } from "#prisma/enums.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#classes/Command.js";
+import GuildConfig from "#classes/GuildConfig.js";
 
 export default class ReportMessageCtx extends Command {
 	public constructor() {
@@ -29,13 +30,12 @@ export default class ReportMessageCtx extends Command {
 	}
 
 	public async interactionRun(
-		interaction: MessageContextMenuCommandInteraction<"cached">
+		interaction: MessageContextMenuCommandInteraction<"cached">,
+		configClass: GuildConfig
 	): Promise<InteractionReplyData | null> {
-		const config = await this.prisma.messageReportConfig.findUnique({
-			where: { id: interaction.guild.id }
-		});
+		const config = configClass.getMessageReportsConfig();
 
-		if (!config?.enabled || !config.webhook_url) {
+		if (!config) {
 			return {
 				error: "Message reports have not been configured on this server."
 			};

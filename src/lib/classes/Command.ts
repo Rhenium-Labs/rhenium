@@ -7,6 +7,7 @@ import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
 import Args from "./Args.js";
 import FlagStrategy from "./FlagStrategy.js";
+import GuildConfig from "./GuildConfig.js";
 
 export default abstract class Command {
 	/**
@@ -97,7 +98,10 @@ export default abstract class Command {
 	 * @return The result of the command execution.
 	 */
 
-	public interactionRun?(interaction: CommandInteraction<"cached">): Awaitable<InteractionReplyData | null>;
+	public interactionRun?(
+		interaction: CommandInteraction<"cached">,
+		config: GuildConfig
+	): Awaitable<InteractionReplyData | null>;
 
 	/**
 	 * Handles message based command execution.
@@ -107,7 +111,7 @@ export default abstract class Command {
 	 * @return The result of the command execution.
 	 */
 
-	public messageRun?(message: Message<true>, args: Args): Awaitable<MessageReplyData | null>;
+	public messageRun?(message: Message<true>, args: Args, config: GuildConfig): Awaitable<MessageReplyData | null>;
 
 	/**
 	 * Parses the flags array passed to the command and returns the flags and options.

@@ -9,6 +9,7 @@ import {
 
 import QuickActionUtils from "#utils/QuickActions.js";
 import EventListener from "#classes/EventListener.js";
+import ConfigManager from "#managers/ConfigManager.js";
 
 export default class MessageReactionAdd extends EventListener {
 	public constructor() {
@@ -22,9 +23,11 @@ export default class MessageReactionAdd extends EventListener {
 		const message = await MessageReactionAdd._parseMessage(reaction.message);
 		if (!message || !message.inGuild()) return;
 
+		const config = await ConfigManager.getGuildConfig(message.guild.id);
+
 		await Promise.all([
-			QuickActionUtils.handleQuickMute({ user, message, reaction }),
-			QuickActionUtils.handleQuickPurge({ user, message, reaction })
+			QuickActionUtils.handleQuickMute({ user, message, reaction, config }),
+			QuickActionUtils.handleQuickPurge({ user, message, reaction, config })
 		]);
 	}
 
