@@ -31,14 +31,14 @@ export const prisma = new PrismaClient({
 export const kv = Redis.fromEnv();
 
 async function main(): Promise<void> {
-	// Load commands.
-	await CommandManager.load();
+	// Cache commands.
+	await CommandManager.cache();
 
-	// Load components.
-	await ComponentManager.load();
+	// Cache components.
+	await ComponentManager.cache();
 
-	// Load event listeners.
-	await EventListenerManager.load();
+	// Mount event listeners.
+	await EventListenerManager.mount();
 
 	// Connect to the database.
 	try {
@@ -64,8 +64,6 @@ async function main(): Promise<void> {
 			prismaIntegration()
 		]
 	});
-
-	Logger.success("Sentry initialized.");
 
 	// Log in to Discord.
 	await client.login(process.env.BOT_TOKEN);

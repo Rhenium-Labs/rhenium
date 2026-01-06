@@ -1,4 +1,5 @@
 import { Collection } from "discord.js";
+import { pathToFileURL } from "node:url";
 
 import fs from "node:fs";
 import path from "node:path";
@@ -9,19 +10,17 @@ import Logger from "#utils/Logger.js";
 import Component, { type ComponentCustomID } from "./Component.js";
 
 export default class ComponentManager {
-	/**
-	 * The store of registered components.
-	 */
-	public static readonly store: Collection<ComponentCustomID, Component> = new Collection();
+	/** Collection of all cached components. */
+	private static readonly _cache: Collection<ComponentCustomID, Component> = new Collection();
 
 	/**
-	 * Get a component from the store by its custom ID.
+	 * Get a component from the cache by its custom ID.
 	 *
 	 * @param customId The custom ID of the component.
 	 * @returns The component if found, otherwise undefined.
 	 */
 	public static get(customId: string): Component | undefined {
-		return this.store.find(component => {
+		return this._cache.find(component => {
 			if (typeof component.id === "string") {
 				return component.id === customId;
 			}
@@ -42,59 +41,41 @@ export default class ComponentManager {
 		});
 	}
 
-	/**
-	 * Load all components from the `components` directory.
-	 */
-	public static async load(): Promise<void> {
-		const directory = path.resolve("src/components");
+	/** Cache all components from the `components` directory. */
+	public static async cache(): Promise<void> {
+		const directory = path.resolve("dist/components");
 
 		if (!fs.existsSync(directory)) {
-			Logger.fatal(`Components directory not found: ${directory}.`);
+			Logger.fatal(`Components directory not found: ${directory}`);
 			process.exit(1);
 		}
 
-		const files = fs
-			.readdirSync(directory)
-			.filter(file => file.endsWith(".ts"))
-			.map(file => file.replace(".ts", ".js"));
+		Logger.info("Caching components...");
 
-		Logger.info(`Loading components...`);
+		const filenames = fs.readdirSync(directory).filter(file => file.endsWith(".js"));
+		let count = 0;
 
-		let loadedCount = 0;
+		for (const filename of filenames) {
+			const filepath = path.resolve(directory, filename);
+			const url = pathToFileURL(filepath);
 
-		for (const file of files) {
-			try {
-				await this.loadFile(file);
-				loadedCount++;
-			} catch (error) {
-				Logger.error(`Failed to load ${file}:`, error);
-				process.exit(1);
+			const componentClass = (await import(url.href)).default;
+			const component = new componentClass();
+
+			if (!(component instanceof Component)) {
+				Logger.warn(`${filename} is not a valid component.`);
+				continue;
 			}
+
+			this._cache.set(component.id, component);
+			count++;
+
+			Logger.custom("COMPONENTS", `Cached component "${this._parseComponentCustomId(component.id)}".`, {
+				color: "Cyan"
+			});
 		}
 
-		Logger.success(`Loaded ${loadedCount} ${inflect(loadedCount, "component")}.`);
-	}
-
-	/**
-	 * Load a single component from a file.
-	 *
-	 * @param filename The file to load the component from.
-	 */
-
-	public static async loadFile(filename: string): Promise<void> {
-		const componentClass = (await import(`../../../components/${filename}`)).default;
-		const component = new componentClass();
-
-		if (!(component instanceof Component)) {
-			Logger.warn(`Skipping ${filename}: not a valid Component.`);
-			return;
-		}
-
-		this.store.set(component.id, component);
-
-		return Logger.custom("COMPONENTS", `Loaded component: ${this._parseComponentCustomId(component.id)}`, {
-			color: "Cyan"
-		});
+		Logger.info(`Cached ${count} ${inflect(count, "component")}.`);
 	}
 
 	/**
