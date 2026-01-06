@@ -1,16 +1,11 @@
-import { type Message, type MessageReplyOptions, Colors, Events, PermissionFlagsBits } from "discord.js";
-import { captureException } from "@sentry/node";
+import { type Message, Events } from "discord.js";
 
 import { RedisCache } from "#utils/Redis.js";
+import { MessageQueue } from "#utils/Messages.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
-import { MessageQueue, reply } from "#utils/Messages.js";
 
-import Logger from "#utils/Logger.js";
-import Command from "#managers/commands/Command.js";
 import Highlights from "#root/commands/Highlights.js";
 import EventListener from "#managers/events/EventListener.js";
-import ConfigManager from "#managers/config/ConfigManager.js";
-import ArgumentParser from "#managers/commands/ArgParser.js";
 import CommandManager from "#managers/commands/CommandManager.js";
 
 export default class MessageCreate extends EventListener {
@@ -22,115 +17,20 @@ export default class MessageCreate extends EventListener {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author.bot || message.webhookId || message.system) return;
 
-		// prettier-ignore
-		return Promise.all([
-			Highlights.highlightMessage(message), 
-			MessageCreate._processCommand(message),
-			MessageQueue.queue(message)
-		]);
-	}
+		const whitelist = await RedisCache.guildIsWhitelisted(message.guild.id);
 
-	private static async _processCommand(message: Message<true>): Promise<void> {
-		const prefix = await this._getPrefix(message);
-		if (!prefix) return;
-
-		const trimmedContent = message.content.slice(prefix.length).trim();
-		const spaceIndex = trimmedContent.indexOf(" ");
-
-		const commandName = spaceIndex === -1 ? trimmedContent : trimmedContent.slice(0, spaceIndex);
-
-		if (!commandName.length) return;
-
-		const command = CommandManager.get(commandName);
-
-		// Skip if no command found or command doesn't support message execution.
-		if (!command?.messageRun) return;
-		if (!(await MessageCreate._checkWhitelist(message))) return;
-
-		const parameters = spaceIndex === -1 ? "" : trimmedContent.substring(spaceIndex + 1).trim();
-		const args = command.getArgumentParser(message, parameters);
-
-		try {
-			await MessageCreate._executeCommand(message, command, args);
-		} catch (error) {
-			await MessageCreate._handleCommandError(message, command, error);
-		}
-	}
-
-	/**
-	 * Executes a message command and handles the response.
-	 */
-	private static async _executeCommand(
-		message: Message<true>,
-		command: Command,
-		args: ArgumentParser
-	): Promise<void> {
-		const config = await ConfigManager.getGuildConfig(message.guild.id);
-		const response = await command.messageRun!(message, args, config);
-
-		// Reply was handled manually.
-		if (response === null) return;
-
-		const { error, temporary, ...options } = response;
-		const defaultOptions: MessageReplyOptions = { allowedMentions: { parse: [] } };
-
-		const replyOptions = error
-			? { ...options, embeds: [{ description: error, color: Colors.Red }, ...(options.embeds ?? [])] }
-			: options;
-
-		const msg = await reply(message, { ...defaultOptions, ...replyOptions }).catch(() => null);
-
-		if (error || temporary) {
-			setTimeout(() => msg?.delete().catch(() => {}), 7500);
-		}
-	}
-
-	/**
-	 * Handles errors that occur during command execution.
-	 */
-	private static async _handleCommandError(message: Message<true>, command: Command, error: unknown): Promise<void> {
-		const sentryId = captureException(error, {
-			user: { id: message.author.id, username: message.author.username },
-			extra: {
-				channelId: message.channel.id,
-				guildId: message.guild.id,
-				messageId: message.id,
-				command: command.name,
-				messageContent: message.content
+		if (!whitelist) {
+			if (DEVELOPER_IDS.includes(message.author.id)) {
+				return CommandManager.handleMessageCommand(message);
 			}
-		});
 
-		await reply(message, { content: `An error occurred while executing this command (\`${sentryId}\`).` });
-		Logger.error("Error handling message command:", error);
-	}
-
-	/**
-	 * Gets the command prefix for a message, if applicable.
-	 */
-	private static async _getPrefix(message: Message<true>): Promise<string | null> {
-		const prefix = ".";
-
-		if (!message.content.startsWith(prefix)) return null;
-
-		const bot = await message.guild.members.fetchMe();
-		const permissions = message.channel.permissionsFor(bot);
-
-		if (!permissions.has(PermissionFlagsBits.SendMessages)) return null;
-		return prefix;
-	}
-
-	/**
-	 * Checks if the guild is whitelisted to use the bot.
-	 */
-	private static async _checkWhitelist(message: Message<true>): Promise<boolean> {
-		if (DEVELOPER_IDS.includes(message.author.id)) return true;
-
-		const isWhitelisted = await RedisCache.guildIsWhitelisted(message.guild.id);
-
-		if (!isWhitelisted) {
-			await message.reply({ content: "This guild is not whitelisted to use the bot." });
+			return;
 		}
 
-		return isWhitelisted;
+		return Promise.all([
+			MessageQueue.queue(message),
+			Highlights.highlightMessage(message),
+			CommandManager.handleMessageCommand(message)
+		]);
 	}
 }

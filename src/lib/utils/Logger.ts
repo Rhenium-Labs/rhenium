@@ -25,6 +25,7 @@ export const LogLevel = {
 	Success: "SUCCESS",
 	Warn: "WARN",
 	Error: "ERROR",
+	ErrorWithId: "ERROR",
 	Fatal: "FATAL"
 } as const;
 
@@ -40,27 +41,36 @@ export interface LogOptions {
 }
 
 export default class Logger {
-	static debug(...values: unknown[]): void {
+	public static debug(...values: unknown[]): void {
 		this._log(LogLevel.Debug, ...values);
 	}
 
-	static info(...values: unknown[]): void {
+	public static info(...values: unknown[]): void {
 		this._log(LogLevel.Info, ...values);
 	}
 
-	static success(...values: unknown[]): void {
+	public static success(...values: unknown[]): void {
 		this._log(LogLevel.Success, ...values);
 	}
 
-	static warn(...values: unknown[]): void {
+	public static warn(...values: unknown[]): void {
 		this._log(LogLevel.Warn, ...values);
 	}
 
-	static error(...values: unknown[]): void {
+	public static error(...values: unknown[]): void {
 		this._log(LogLevel.Error, ...values);
 	}
 
-	static fatal(...values: unknown[]): void {
+	public static tracable(sentryId: string, ...values: unknown[]): void {
+		const timestamp = new Date().toISOString();
+		const ts = `${LogColor.Grey}[${timestamp}]${LogColor.Reset}`;
+		const color = this._getColor(LogLevel.Error);
+		const badge = `${color}[${sentryId}]${LogColor.Reset}`;
+
+		console.log(`${ts} ${badge}`, ...values);
+	}
+
+	public static fatal(...values: unknown[]): void {
 		this._log(LogLevel.Fatal, ...values);
 	}
 
@@ -71,7 +81,7 @@ export default class Logger {
 	 * @param message The message to log.
 	 * @param options Optional log options such as color.
 	 */
-	static custom(level: string, message: string, options?: LogOptions): void {
+	public static custom(level: string, message: string, options?: LogOptions): void {
 		const timestamp = new Date().toISOString();
 		const ts = `${LogColor.Grey}[${timestamp}]${LogColor.Reset}`;
 		const color = options?.color ? LogColor[options.color] : "";
@@ -119,6 +129,7 @@ export default class Logger {
 			case LogLevel.Warn:
 				return LogColor.Yellow;
 			case LogLevel.Error:
+			case LogLevel.ErrorWithId:
 			case LogLevel.Fatal:
 				return LogColor.Red;
 		}

@@ -1,4 +1,5 @@
-import { Collection } from "discord.js";
+import { Collection, Colors, InteractionReplyOptions, MessageFlags } from "discord.js";
+import { captureException } from "@sentry/node";
 import { pathToFileURL } from "node:url";
 
 import fs from "node:fs";
@@ -7,7 +8,8 @@ import path from "node:path";
 import { inflect } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
-import Component, { type ComponentCustomID } from "./Component.js";
+import Component, { ComponentInteraction, type ComponentCustomID } from "./Component.js";
+import ConfigManager from "#managers/config/ConfigManager.js";
 
 export default class ComponentManager {
 	/** Collection of all cached components. */
@@ -76,6 +78,89 @@ export default class ComponentManager {
 		}
 
 		Logger.info(`Cached ${count} ${inflect(count, "component")}.`);
+	}
+
+	/** Handles component execution for interactions. */
+	public static async handleComponent(interaction: ComponentInteraction): Promise<any> {
+		const component = this.get(interaction.customId);
+
+		if (!component) {
+			const sentryId = captureException(new Error("Unknown Component Interaction."), {
+				user: {
+					id: interaction.user.id,
+					username: interaction.user.username
+				},
+				extra: {
+					interactionId: interaction.id,
+					interactionIdentifier: interaction.customId,
+					channelId: interaction.channel?.id,
+					guildId: interaction.guild.id
+				}
+			});
+
+			return interaction.reply({
+				content: `An error occurred while executing this component. Please include this ID when reporting the bug: \`${sentryId}\`.`,
+				flags: [MessageFlags.Ephemeral]
+			});
+		}
+
+		const config = await ConfigManager.getGuildConfig(interaction.guild.id);
+
+		try {
+			const response = await component.run(interaction, config);
+
+			// Reply was handled manually.
+			if (response === null) return;
+
+			const { error, temporary, ...options } = response;
+
+			const defaultReplyOptions = {
+				flags: [MessageFlags.Ephemeral],
+				allowedMentions: { parse: [] }
+			} as const;
+
+			const replyOptions: InteractionReplyOptions = error
+				? {
+						...defaultReplyOptions,
+						...options,
+						embeds: [{ description: error, color: Colors.Red }, ...(options.embeds ?? [])]
+					}
+				: { ...defaultReplyOptions, ...options };
+
+			if (interaction.deferred || interaction.replied) {
+				const { flags, ...options } = replyOptions;
+				await interaction.editReply(options);
+			} else {
+				await interaction.reply(replyOptions);
+			}
+
+			if (error || temporary) {
+				setTimeout(() => {
+					interaction.deleteReply().catch(() => {});
+				}, 7500);
+			}
+		} catch (error) {
+			const sentryId = captureException(error, {
+				user: {
+					id: interaction.user.id,
+					username: interaction.user.username
+				},
+				extra: {
+					interactionId: interaction.id,
+					interactionIdentifier: interaction.customId,
+					channelId: interaction.channel?.id,
+					guildId: interaction.guild.id
+				}
+			});
+
+			const content = `An error occurred while executing this component. Please include this ID when reporting the bug: \`${sentryId}\`.`;
+
+			if (interaction.deferred || interaction.replied) {
+				await interaction.editReply({ content: content });
+			} else {
+				await interaction.reply({ content: content, flags: [MessageFlags.Ephemeral] });
+			}
+		}
 	}
 
 	/**
