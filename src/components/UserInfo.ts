@@ -1,7 +1,7 @@
 import { type ButtonInteraction, Colors, EmbedBuilder, time } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Component from "#classes/Component.js";
+import Component from "#managers/components/Component.js";
 
 export default class UserInfo extends Component {
 	public constructor() {

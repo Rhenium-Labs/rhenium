@@ -8,9 +8,9 @@ import {
 } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#classes/Command.js";
-import GuildConfig from "#classes/GuildConfig.js";
-import ConfigManager, { ConfigKeys } from "#managers/ConfigManager.js";
+import Command from "#managers/commands/Command.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
+import ConfigManager, { ConfigKeys } from "#managers/config/ConfigManager.js";
 
 export default class Reports extends Command {
 	public constructor() {

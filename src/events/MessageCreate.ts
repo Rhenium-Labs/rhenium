@@ -5,13 +5,13 @@ import { RedisCache } from "#utils/Redis.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 import { MessageQueue, reply } from "#utils/Messages.js";
 
-import Args from "#classes/Args.js";
 import Logger from "#utils/Logger.js";
-import Command from "#classes/Command.js";
+import Command from "#managers/commands/Command.js";
 import Highlights from "#root/commands/Highlights.js";
-import EventListener from "#classes/EventListener.js";
-import CommandManager from "#managers/CommandManager.js";
-import ConfigManager from "#managers/ConfigManager.js";
+import EventListener from "#managers/events/EventListener.js";
+import ConfigManager from "#managers/config/ConfigManager.js";
+import ArgumentParser from "#managers/commands/ArgParser.js";
+import CommandManager from "#managers/commands/CommandManager.js";
 
 export default class MessageCreate extends EventListener {
 	public constructor() {
@@ -48,7 +48,7 @@ export default class MessageCreate extends EventListener {
 		if (!(await MessageCreate._checkWhitelist(message))) return;
 
 		const parameters = spaceIndex === -1 ? "" : trimmedContent.substring(spaceIndex + 1).trim();
-		const args = command.getArgsClass(message, parameters);
+		const args = command.getArgumentParser(message, parameters);
 
 		try {
 			await MessageCreate._executeCommand(message, command, args);
@@ -60,7 +60,11 @@ export default class MessageCreate extends EventListener {
 	/**
 	 * Executes a message command and handles the response.
 	 */
-	private static async _executeCommand(message: Message<true>, command: Command, args: Args): Promise<void> {
+	private static async _executeCommand(
+		message: Message<true>,
+		command: Command,
+		args: ArgumentParser
+	): Promise<void> {
 		const config = await ConfigManager.getGuildConfig(message.guild.id);
 		const response = await command.messageRun!(message, args, config);
 

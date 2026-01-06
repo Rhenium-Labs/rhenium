@@ -25,8 +25,8 @@ import {
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#classes/Command.js";
-import GuildConfig from "#classes/GuildConfig.js";
+import Command from "#managers/commands/Command.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
 
 export default class QuickActions extends Command {
 	public constructor() {

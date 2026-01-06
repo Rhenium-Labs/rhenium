@@ -1,9 +1,9 @@
 import type { ModalSubmitInteraction } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Component from "#classes/Component.js";
+import Component from "#managers/components/Component.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
 import BanRequestUtils from "#utils/BanRequests.js";
-import GuildConfig from "#classes/GuildConfig.js";
 
 const AUTO_DELETE_DELAY = 7000;
 

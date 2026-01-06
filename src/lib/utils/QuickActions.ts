@@ -19,7 +19,7 @@ import { MessageQueue } from "./Messages.js";
 import type { ChannelScoping } from "./Types.js";
 
 import ModerationUtils from "./Moderation.js";
-import GuildConfig from "#classes/GuildConfig.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */
 const BULK_DELETE_MAX_AGE = 14 * 24 * 60 * 60 * 1000;

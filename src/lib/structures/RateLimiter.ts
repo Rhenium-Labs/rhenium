@@ -1,4 +1,4 @@
-export class RateLimiter {
+export default class RateLimiter {
 	/**
 	 * The maximum number of requests allowed per window.
 	 */

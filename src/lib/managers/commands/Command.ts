@@ -5,9 +5,9 @@ import { client, prisma } from "#root/index.js";
 
 import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
-import Args from "./Args.js";
-import FlagStrategy from "./FlagStrategy.js";
-import GuildConfig from "./GuildConfig.js";
+import FlagStrategy from "#structures/FlagStrategy.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
+import ArgumentParser from "./ArgParser.js";
 
 export default abstract class Command {
 	/**
@@ -78,10 +78,10 @@ export default abstract class Command {
 	 * @param parameters The parameters passed to the command.
 	 */
 
-	public getArgsClass(message: Message<true>, parameters: string): Args {
+	public getArgumentParser(message: Message<true>, parameters: string): ArgumentParser {
 		const parser = new Parser(this.strategy);
 		const stream = new ArgumentStream(parser.run(this.lexer.run(parameters)));
-		return new Args(message, stream);
+		return new ArgumentParser(message, stream);
 	}
 
 	/**
@@ -95,6 +95,7 @@ export default abstract class Command {
 	 * Handles interaction based command execution.
 	 *
 	 * @param interaction The command interaction.
+	 * @param config The guild configuration.
 	 * @return The result of the command execution.
 	 */
 
@@ -108,10 +109,15 @@ export default abstract class Command {
 	 *
 	 * @param message The message that triggered the command.
 	 * @param args The argument parser instance.
+	 * @param config The guild configuration.
 	 * @return The result of the command execution.
 	 */
 
-	public messageRun?(message: Message<true>, args: Args, config: GuildConfig): Awaitable<MessageReplyData | null>;
+	public messageRun?(
+		message: Message<true>,
+		args: ArgumentParser,
+		config: GuildConfig
+	): Awaitable<MessageReplyData | null>;
 
 	/**
 	 * Parses the flags array passed to the command and returns the flags and options.

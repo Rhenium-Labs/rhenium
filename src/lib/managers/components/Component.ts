@@ -3,7 +3,7 @@ import type { Awaitable, MessageComponentInteraction, ModalSubmitInteraction } f
 import { client, prisma } from "#root/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "./GuildConfig.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
 
 export default abstract class Component {
 	/**

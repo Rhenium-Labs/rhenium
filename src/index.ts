@@ -14,10 +14,10 @@ import { sleep } from "#utils/index.js";
 import { PrismaClient } from "#prisma/client.js";
 
 import Logger from "#utils/Logger.js";
-import StrafeStryker from "#classes/Client.js";
-import CommandManager from "#managers/CommandManager.js";
-import ComponentManager from "#managers/ComponentManager.js";
-import EventListenerManager from "#managers/EventListenerManager.js";
+import StrafeStryker from "#structures/Client.js";
+import CommandManager from "#managers/commands/CommandManager.js";
+import ComponentManager from "#managers/components/ComponentManager.js";
+import EventListenerManager from "#managers/events/EventListenerManager.js";
 
 /** The Discord client instance. */
 export const client = new StrafeStryker();

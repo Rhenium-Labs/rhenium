@@ -5,7 +5,7 @@ import ms from "ms";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 import type { MessageReplyData } from "#utils/Types.js";
 
-import Command from "#classes/Command.js";
+import Command from "#managers/commands/Command.js";
 
 export default class Stats extends Command {
 	public constructor() {

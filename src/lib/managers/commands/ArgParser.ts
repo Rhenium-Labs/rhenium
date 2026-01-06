@@ -3,7 +3,7 @@ import { ArgumentStream, join, WordParameter } from "@sapphire/lexure";
 import { SnowflakeRegex, UserOrMemberMentionRegex } from "@sapphire/discord-utilities";
 import type { GuildMember, Message, Snowflake, User } from "discord.js";
 
-export default class Args {
+export default class ArgumentParser {
 	/**
 	 * The message that triggered the parser.
 	 */

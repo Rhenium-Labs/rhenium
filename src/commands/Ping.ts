@@ -8,7 +8,7 @@ import {
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#classes/Command.js";
+import Command from "#managers/commands/Command.js";
 
 export default class Ping extends Command {
 	public constructor() {

@@ -3,9 +3,9 @@ import { type ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, T
 import { userMentionWithId } from "#utils/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
+import Component from "#managers/components/Component.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
 import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
-import Component from "#classes/Component.js";
-import GuildConfig from "#classes/GuildConfig.js";
 
 const AUTO_DELETE_DELAY = 7000;
 

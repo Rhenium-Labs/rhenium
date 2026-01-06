@@ -6,8 +6,8 @@ import { DEVELOPER_IDS } from "#utils/Constants.js";
 
 import type { MessageReplyData } from "#utils/Types.js";
 
-import Args from "#classes/Args.js";
-import Command from "#classes/Command.js";
+import Command from "#managers/commands/Command.js";
+import ArgumentParser from "#managers/commands/ArgParser.js";
 
 export default class Whitelist extends Command {
 	public constructor() {
@@ -18,7 +18,7 @@ export default class Whitelist extends Command {
 		});
 	}
 
-	public async messageRun(message: Message<true>, args: Args): Promise<MessageReplyData> {
+	public async messageRun(message: Message<true>, args: ArgumentParser): Promise<MessageReplyData> {
 		if (!DEVELOPER_IDS.includes(message.author.id)) {
 			return { error: "You do not have permission to use this command." };
 		}

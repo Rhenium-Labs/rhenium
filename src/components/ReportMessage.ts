@@ -1,9 +1,9 @@
 import type { Message, ModalSubmitInteraction, TextBasedChannel } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Component from "#classes/Component.js";
+import Component from "#managers/components/Component.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
 import MessageReportUtils from "#utils/MessageReports.js";
-import GuildConfig from "#classes/GuildConfig.js";
 
 export default class ReportMessage extends Component {
 	public constructor() {

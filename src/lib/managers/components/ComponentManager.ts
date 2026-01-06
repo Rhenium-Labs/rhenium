@@ -6,7 +6,7 @@ import path from "node:path";
 import { inflect } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
-import Component, { type ComponentCustomID } from "#classes/Component.js";
+import Component, { type ComponentCustomID } from "./Component.js";
 
 export default class ComponentManager {
 	/**
@@ -82,7 +82,7 @@ export default class ComponentManager {
 	 */
 
 	public static async loadFile(filename: string): Promise<void> {
-		const componentClass = (await import(`../../components/${filename}`)).default;
+		const componentClass = (await import(`../../../components/${filename}`)).default;
 		const component = new componentClass();
 
 		if (!(component instanceof Component)) {

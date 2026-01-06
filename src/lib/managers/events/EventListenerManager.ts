@@ -5,7 +5,7 @@ import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
-import EventListener from "#classes/EventListener.js";
+import EventListener from "#managers/events/EventListener.js";
 
 export default class EventListenerManager {
 	/**
@@ -47,7 +47,7 @@ export default class EventListenerManager {
 	 * @param filename The event listener file to load.
 	 */
 	private static async loadFile(filename: string): Promise<void> {
-		const listenerClass = (await import(`../../events/${filename}`)).default;
+		const listenerClass = (await import(`../../../events/${filename}`)).default;
 		const listener = new listenerClass();
 
 		if (!(listener instanceof EventListener)) {

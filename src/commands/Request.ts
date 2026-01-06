@@ -13,10 +13,10 @@ import ms, { type StringValue } from "ms";
 import { parseDurationString, validateDuration } from "#utils/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#classes/Command.js";
+import Command from "#managers/commands/Command.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
 import BanRequestUtils from "#utils/BanRequests.js";
 import ModerationUtils from "#utils/Moderation.js";
-import GuildConfig from "#classes/GuildConfig.js";
 
 export default class Request extends Command {
 	public constructor() {

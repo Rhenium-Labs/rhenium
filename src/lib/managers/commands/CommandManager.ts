@@ -7,7 +7,7 @@ import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
-import Command from "#classes/Command.js";
+import Command from "./Command.js";
 
 export default class CommandManager {
 	/**
@@ -87,7 +87,7 @@ export default class CommandManager {
 	 * @param filename The command file to load.
 	 */
 	private static async loadFile(filename: string): Promise<void> {
-		const commandClass = (await import(`../../commands/${filename}`)).default;
+		const commandClass = (await import(`../../../commands/${filename}`)).default;
 		const command = new commandClass();
 
 		if (!(command instanceof Command)) {

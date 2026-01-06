@@ -9,7 +9,7 @@ import type {
 	QuickPurgeConfig
 } from "#prisma/client.js";
 
-import GuildConfig, { type GuildConfigData } from "#classes/GuildConfig.js";
+import GuildConfig, { type GuildConfigData } from "#managers/config/GuildConfig.js";
 
 export default class ConfigManager {
 	/**

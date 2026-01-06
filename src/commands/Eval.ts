@@ -8,8 +8,8 @@ import { DEVELOPER_IDS } from "#utils/Constants.js";
 
 import type { MessageReplyData } from "#utils/Types.js";
 
-import Args from "#classes/Args.js";
-import Command from "#classes/Command.js";
+import Command from "#managers/commands/Command.js";
+import ArgumentParser from "#managers/commands/ArgParser.js";
 
 export default class Eval extends Command {
 	public constructor() {
@@ -25,7 +25,7 @@ export default class Eval extends Command {
 		});
 	}
 
-	public async messageRun(message: Message<true>, args: Args): Promise<MessageReplyData | null> {
+	public async messageRun(message: Message<true>, args: ArgumentParser): Promise<MessageReplyData | null> {
 		if (!DEVELOPER_IDS.includes(message.author.id)) return null;
 
 		if (args.finished) {

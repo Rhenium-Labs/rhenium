@@ -12,16 +12,16 @@ import { captureException } from "@sentry/node";
 import { RedisCache } from "#utils/Redis.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 
-import type { ComponentInteraction } from "#classes/Component.js";
+import type { ComponentInteraction } from "#managers/components/Component.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Logger from "#utils/Logger.js";
-import Command from "#classes/Command.js";
-import Component from "#classes/Component.js";
-import EventListener from "#classes/EventListener.js";
-import CommandManager from "#managers/CommandManager.js";
-import ComponentManager from "#managers/ComponentManager.js";
-import ConfigManager from "#managers/ConfigManager.js";
+import Command from "#managers/commands/Command.js";
+import Component from "#managers/components/Component.js";
+import EventListener from "#managers/events/EventListener.js";
+import CommandManager from "#managers/commands/CommandManager.js";
+import ComponentManager from "#managers/components/ComponentManager.js";
+import ConfigManager from "#managers/config/ConfigManager.js";
 
 export default class InteractionCreate extends EventListener {
 	public constructor() {

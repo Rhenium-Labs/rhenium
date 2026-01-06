@@ -11,8 +11,8 @@ import {
 import { ReportStatus } from "#prisma/enums.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#classes/Command.js";
-import GuildConfig from "#classes/GuildConfig.js";
+import Command from "#managers/commands/Command.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
 
 export default class ReportMessageCtx extends Command {
 	public constructor() {

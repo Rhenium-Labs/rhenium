@@ -54,7 +54,7 @@
 	"imports": {
 		"#prisma/*": "./dist/lib/prisma/*",
 		"#utils/*": "./dist/lib/utils/*",
-		"#classes/*": "./dist/lib/classes/*",
+		"#structures/*": "./dist/lib/structures/*",
 		"#managers/*": "./dist/lib/managers/*",
 		"#root/*": "./dist/*"
 	}

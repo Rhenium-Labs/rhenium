@@ -8,8 +8,8 @@ import {
 } from "discord.js";
 
 import QuickActionUtils from "#utils/QuickActions.js";
-import EventListener from "#classes/EventListener.js";
-import ConfigManager from "#managers/ConfigManager.js";
+import EventListener from "#managers/events/EventListener.js";
+import ConfigManager from "#managers/config/ConfigManager.js";
 
 export default class MessageReactionAdd extends EventListener {
 	public constructor() {
