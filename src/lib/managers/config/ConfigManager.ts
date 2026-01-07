@@ -5,6 +5,7 @@ import type {
 	BanRequestConfig,
 	HighlightConfig,
 	MessageReportConfig,
+	PermissionScope,
 	QuickMuteConfig,
 	QuickPurgeConfig
 } from "#prisma/client.js";
@@ -56,12 +57,18 @@ export default class ConfigManager {
 			return;
 		}
 
+		// Merge the existing feature data with the new data.
+		// Arrays are replaced entirely, while objects are merged.
+		const newFeatureData = Array.isArray(data)
+			? data
+			: {
+					...config.data[feature],
+					...data
+				};
+
 		const updatedData: GuildConfigData = {
 			...config.data,
-			[feature]: {
-				...config.data[feature],
-				...data
-			}
+			[feature]: newFeatureData
 		};
 
 		this._cache.set(guildId, new GuildConfig(updatedData));
@@ -144,6 +151,7 @@ type ConfigFeatureMap = {
 	quick_mutes: QuickMuteConfig;
 	quick_purges: QuickPurgeConfig;
 	highlights: HighlightConfig;
+	permission_scopes: PermissionScope[];
 };
 
 type ConfigFeature = keyof ConfigFeatureMap;
@@ -153,5 +161,6 @@ export const ConfigKeys = {
 	BanRequests: "ban_requests",
 	QuickMutes: "quick_mutes",
 	QuickPurges: "quick_purges",
-	Highlights: "highlights"
+	Highlights: "highlights",
+	PermissionScopes: "permission_scopes"
 } as const;
