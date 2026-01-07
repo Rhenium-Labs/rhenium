@@ -34,14 +34,14 @@ export default class BanRequestButton extends Component {
 		});
 
 		if (!request) {
-			this._scheduleMessageDeletion(interaction);
+			setTimeout(() => interaction.message?.delete().catch(() => null), AUTO_DELETE_DELAY);
 			return {
 				error: "Failed to find the ban request associated with this message. I will attempt to delete this submission in 7 seconds."
 			};
 		}
 
 		if (request.resolved_by) {
-			this._scheduleMessageDeletion(interaction);
+			setTimeout(() => interaction.message?.delete().catch(() => null), AUTO_DELETE_DELAY);
 			return {
 				error: `This request has already been resolved by ${userMentionWithId(request.resolved_by)}. I will attempt to delete this submission in 7 seconds.`
 			};
@@ -67,10 +67,6 @@ export default class BanRequestButton extends Component {
 			request,
 			reviewReason: null
 		});
-	}
-
-	private _scheduleMessageDeletion(interaction: ButtonInteraction<"cached">): void {
-		setTimeout(() => interaction.message.delete().catch(() => null), AUTO_DELETE_DELAY);
 	}
 }
 

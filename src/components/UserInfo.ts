@@ -80,7 +80,7 @@ export default class UserInfo extends Component {
 				(acc, report) => {
 					if (report.resolved_by) {
 						acc[1]++;
-					} else {
+					} else if (report.status === "Pending") {
 						acc[0]++;
 					}
 					return acc;

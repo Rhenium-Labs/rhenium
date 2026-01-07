@@ -8,14 +8,16 @@ import {
 	Colors,
 	EmbedBuilder,
 	roleMention,
-	WebhookClient
+	WebhookClient,
+	ButtonInteraction,
+	ComponentType
 } from "discord.js";
 
 import { prisma } from "#root/index.js";
 import { cropLines, userMentionWithId } from "./index.js";
 import { cleanMessageContent, formatMessageContent } from "./Messages.js";
 
-import type { MessageReportConfig } from "#prisma/client.js";
+import type { MessageReport, MessageReportConfig } from "#prisma/client.js";
 import type { InteractionReplyData } from "./Types.js";
 
 export default class MessageReportUtils {
@@ -172,4 +174,112 @@ export default class MessageReportUtils {
 			content: `Successfully submitted a report for ${author}'s message - ID \`#${log.id}\``
 		};
 	}
+
+	/**
+	 * Handles resolving or disregarding a message report.
+	 *
+	 * @param data The message report action data.
+	 * @return Interaction reply data indicating success or failure.
+	 */
+
+	public static async handle(data: {
+		interaction: ButtonInteraction<"cached">;
+		config: MessageReportConfig;
+		action: MessageReportAction;
+		report: MessageReport;
+	}): Promise<InteractionReplyData> {
+		const { interaction, config, action, report } = data;
+
+		switch (action) {
+			case MessageReportAction.Resolve: {
+				await Promise.all([
+					MessageReportUtils._log({
+						config,
+						action,
+						interaction
+					}),
+					prisma.messageReport.update({
+						where: { id: report.id },
+						data: {
+							resolved_by: interaction.user.id,
+							resolved_at: new Date(),
+							status: "Resolved"
+						}
+					}),
+					interaction.message.delete().catch(() => null)
+				]);
+
+				return {
+					content: `Successfully resolved message report - ID \`#${report.id}\`.`
+				};
+			}
+
+			case MessageReportAction.Disregard: {
+				await Promise.all([
+					MessageReportUtils._log({
+						config,
+						action,
+						interaction
+					}),
+					prisma.messageReport.update({
+						where: { id: report.id },
+						data: {
+							resolved_by: interaction.user.id,
+							resolved_at: new Date(),
+							status: "Disregarded"
+						}
+					}),
+					interaction.message.delete().catch(() => null)
+				]);
+
+				return {
+					content: `Successfully disregarded message report - ID \`#${report.id}\`.`
+				};
+			}
+		}
+	}
+
+	/**
+	 * Sends a log message to the specified webhook.
+	 *
+	 * @param data The log data.
+	 * @returns A promise that resolves when the log is sent.
+	 */
+
+	private static async _log(data: {
+		config: MessageReportConfig;
+		action: MessageReportAction;
+		interaction: ButtonInteraction<"cached">;
+	}): Promise<void> {
+		const { config, action, interaction } = data;
+
+		if (!config.webhook_url) return;
+
+		const components = interaction.message.components!.filter(c => c.type === ComponentType.ActionRow);
+		const hasDeleteRefButton = components.find(c =>
+			c.components.some(comp => comp.customId?.startsWith("delete-reference-report-message"))
+		);
+
+		const formattedAction = action === MessageReportAction.Resolve ? "Resolved" : "Disregarded";
+
+		const embed = new EmbedBuilder(interaction.message.embeds[hasDeleteRefButton ? 1 : 0].data)
+			.setAuthor({ name: `Message Report ${formattedAction}` })
+			.setColor(action === MessageReportAction.Resolve ? Colors.Green : Colors.NotQuiteBlack)
+			.setFooter({
+				text: `Reviewed by @${interaction.user.username} (${interaction.user.id})`,
+				iconURL: interaction.user.displayAvatarURL()
+			})
+			.setTimestamp();
+
+		await new WebhookClient({ url: config.webhook_url! })
+			.send({ embeds: [embed], allowedMentions: { parse: [] } })
+			.catch(() => null);
+		return;
+	}
 }
+
+export const MessageReportAction = {
+	Resolve: "resolve",
+	Disregard: "disregard"
+} as const;
+export type MessageReportAction = (typeof MessageReportAction)[keyof typeof MessageReportAction];

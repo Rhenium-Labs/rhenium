@@ -22,8 +22,7 @@ export const ReportStatus = {
 	AutoResolved: "AutoResolved",
 	Pending: "Pending",
 	Disregarded: "Disregarded",
-	Accepted: "Accepted",
-	Denied: "Denied"
+	Resolved: "Resolved"
 } as const;
 
 export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];

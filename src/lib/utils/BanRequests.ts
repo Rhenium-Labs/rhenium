@@ -1,5 +1,6 @@
 import {
 	type User,
+	type GuildMember,
 	type APIMessage,
 	type ButtonInteraction,
 	type ModalSubmitInteraction,
@@ -8,7 +9,6 @@ import {
 	ButtonStyle,
 	Colors,
 	EmbedBuilder,
-	type GuildMember,
 	MessageFlags,
 	roleMention,
 	userMention,
@@ -324,10 +324,10 @@ export default class BanRequestUtils {
 		action: "accepted" | "denied";
 		reviewedBy: User;
 		reason: string | null;
-	}): Promise<APIMessage | null> {
+	}): Promise<void> {
 		const { config, request, action, reviewedBy, reason } = data;
 
-		if (!config.webhook_url) return null;
+		if (!config.webhook_url) return;
 
 		const embed = new EmbedBuilder()
 			.setColor(action === "accepted" ? Colors.Green : Colors.Red)
@@ -347,12 +347,10 @@ export default class BanRequestUtils {
 			embed.addFields({ name: "Reviewer Reason", value: reason });
 		}
 
-		return new WebhookClient({ url: config.webhook_url })
-			.send({
-				embeds: [embed],
-				allowedMentions: { parse: [] }
-			})
+		await new WebhookClient({ url: config.webhook_url })
+			.send({ embeds: [embed], allowedMentions: { parse: [] } })
 			.catch(() => null);
+		return;
 	}
 }
 

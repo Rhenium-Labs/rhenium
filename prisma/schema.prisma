@@ -19,8 +19,7 @@ enum ReportStatus {
   AutoResolved
   Pending
   Disregarded
-  Accepted
-  Denied
+  Resolved
 }
 
 enum Detector {
