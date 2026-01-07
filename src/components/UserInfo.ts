@@ -2,6 +2,7 @@ import { type ButtonInteraction, Colors, EmbedBuilder, time } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#managers/components/Component.js";
+import { inflect } from "#utils/index.js";
 
 export default class UserInfo extends Component {
 	public constructor() {
@@ -62,6 +63,35 @@ export default class UserInfo extends Component {
 				{
 					name: "Banned",
 					value: `${banned.reason ?? "No reason provided"}.`,
+					inline: true
+				}
+			]);
+		}
+
+		const reports = await this.prisma.messageReport.findMany({
+			where: {
+				author_id: targetId,
+				guild_id: interaction.guild.id
+			}
+		});
+
+		if (reports.length > 0) {
+			const [pending, resolved] = reports.reduce(
+				(acc, report) => {
+					if (report.resolved_by) {
+						acc[1]++;
+					} else {
+						acc[0]++;
+					}
+					return acc;
+				},
+				[0, 0]
+			);
+
+			embed.addFields([
+				{
+					name: "Existing Reports",
+					value: `${reports.length} ${inflect(reports.length, "report", "reports")} (${pending} pending, ${resolved} resolved).`,
 					inline: true
 				}
 			]);
