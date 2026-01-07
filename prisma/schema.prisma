@@ -86,8 +86,6 @@ model MessageReportConfig {
   notify_roles      String[] @default([])
   blacklisted_users String[] @default([])
 
-  enforce_accept_reason   Boolean @default(true)
-  enforce_deny_reason     Boolean @default(true)
   enforce_member_in_guild Boolean @default(true)
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
