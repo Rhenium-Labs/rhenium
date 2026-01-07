@@ -20,6 +20,10 @@ export default class BanRequestButton extends Component {
 	): Promise<InteractionReplyData | null> {
 		const config = configClass.getBanRequestsConfig();
 
+		if (!configClass.hasPermission(interaction.member, "ReviewBanRequests")) {
+			return { error: "You do not have permission to review ban requests." };
+		}
+
 		if (!config) {
 			return { error: "Ban requests are not configured for this server." };
 		}
@@ -44,7 +48,7 @@ export default class BanRequestButton extends Component {
 		}
 
 		if (action === BanRequestAction.Disregard) {
-			return BanRequestUtils.disregard({ interaction, request });
+			return BanRequestUtils.process({ interaction, request, action, config, reviewReason: null });
 		}
 
 		const requiresReason =

@@ -62,6 +62,14 @@ export default class QuickActionUtils {
 		const quickMuteGuildConfig = config.getQuickMutesConfig();
 		if (!quickMuteGuildConfig) return;
 
+		const executor = await message.guild.members.fetch(user.id).catch(() => null);
+		if (!executor) return;
+
+		// Prevent people who had access to quick mutes but lost it from executing quick mutes.
+		if (!config.hasPermission(executor, "UseQuickMute")) {
+			return;
+		}
+
 		const channelScoping = quickMuteGuildConfig.channel_scoping.reduce<ChannelScoping>(
 			(acc, channel) => {
 				if (channel.type === 0) {
@@ -103,11 +111,7 @@ export default class QuickActionUtils {
 		}
 
 		const target = await message.guild.members.fetch(message.author.id).catch(() => null);
-		const executor = await message.guild.members.fetch(user.id).catch(() => null);
-
-		if (!target || !executor) {
-			return;
-		}
+		if (!target) return;
 
 		const resultWebhook = new WebhookClient({ url: quickMuteGuildConfig.result_webhook_url });
 
@@ -226,6 +230,14 @@ export default class QuickActionUtils {
 		const quickPurgeGuildConfig = config.getQuickPurgesConfig();
 		if (!quickPurgeGuildConfig) return;
 
+		const executor = await message.guild.members.fetch(user.id).catch(() => null);
+		if (!executor) return;
+
+		// Prevent people who had access to quick purges but lost it from executing quick purges.
+		if (!config.hasPermission(executor, "UseQuickPurge")) {
+			return;
+		}
+
 		const channelScoping = quickPurgeGuildConfig.channel_scoping.reduce<ChannelScoping>(
 			(acc, channel) => {
 				if (channel.type === 0) {
@@ -267,11 +279,7 @@ export default class QuickActionUtils {
 		}
 
 		const target = await message.guild.members.fetch(message.author.id).catch(() => null);
-		const executor = await message.guild.members.fetch(user.id).catch(() => null);
-
-		if (!target || !executor) {
-			return;
-		}
+		if (!target) return;
 
 		const resultWebhook = new WebhookClient({ url: quickPurgeGuildConfig.result_webhook_url });
 

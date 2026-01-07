@@ -65,7 +65,8 @@ export const ModelName = {
 	QuickPurgeConfig: "QuickPurgeConfig",
 	QuickPurgeChannelScoping: "QuickPurgeChannelScoping",
 	QuickPurge: "QuickPurge",
-	Message: "Message"
+	Message: "Message",
+	PermissionScope: "PermissionScope"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -294,6 +295,15 @@ export const MessageScalarFieldEnum = {
 } as const;
 
 export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum];
+
+export const PermissionScopeScalarFieldEnum = {
+	guild_id: "guild_id",
+	role_id: "role_id",
+	allowed_permissions: "allowed_permissions"
+} as const;
+
+export type PermissionScopeScalarFieldEnum =
+	(typeof PermissionScopeScalarFieldEnum)[keyof typeof PermissionScopeScalarFieldEnum];
 
 export const SortOrder = {
 	asc: "asc",

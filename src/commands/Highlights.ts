@@ -23,6 +23,7 @@ import type { ChannelScoping, InteractionReplyData } from "#utils/Types.js";
 import Command from "#managers/commands/Command.js";
 import RateLimiter from "#structures/RateLimiter.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
+import ConfigManager from "#managers/config/ConfigManager.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
@@ -45,6 +46,7 @@ export default class Highlights extends Command {
 			type: ApplicationCommandType.ChatInput,
 			contexts: [InteractionContextType.Guild],
 			integrationTypes: [ApplicationIntegrationType.GuildInstall],
+			defaultMemberPermissions: PermissionFlagsBits.ManageMessages,
 			options: [
 				{
 					name: HighlightSubcommandGroup.Pattern,
@@ -234,6 +236,8 @@ export default class Highlights extends Command {
 	/** Highlights a message if it matches any user's highlight patterns. */
 	public static async highlightMessage(message: Message<true>) {
 		const guildId = message.guild.id;
+
+		const config = await ConfigManager.getGuildConfig(guildId);
 		const highlights = await prisma.highlight.findMany({
 			where: { guild_id: guildId },
 			select: {
@@ -261,6 +265,9 @@ export default class Highlights extends Command {
 			const highlightMember = await message.guild.members.fetch(highlight.user_id).catch(() => null);
 
 			if (!highlightMember) continue;
+
+			// Prevent people who had access to highlights but lost it from receiving highlights.
+			if (!config.hasPermission(highlightMember, "UseHighlights")) continue;
 
 			const canViewChannel = message.channel
 				.permissionsFor(highlightMember)

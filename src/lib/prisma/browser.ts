@@ -106,3 +106,8 @@ export type QuickPurge = Prisma.QuickPurgeModel;
  *
  */
 export type Message = Prisma.MessageModel;
+/**
+ * Model PermissionScope
+ *
+ */
+export type PermissionScope = Prisma.PermissionScopeModel;

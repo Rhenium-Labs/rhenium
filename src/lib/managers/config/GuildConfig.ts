@@ -1,11 +1,15 @@
+import type { GuildMember } from "discord.js";
+
 import type {
 	BanRequestConfig,
 	HighlightConfig,
 	MessageReportConfig,
+	PermissionScope,
 	QuickMuteChannelScoping,
 	QuickMuteConfig,
 	QuickPurgeChannelScoping,
-	QuickPurgeConfig
+	QuickPurgeConfig,
+	UserPermission
 } from "#prisma/client.js";
 
 export default class GuildConfig {
@@ -115,6 +119,28 @@ export default class GuildConfig {
 			result_webhook_url: string;
 		};
 	}
+
+	/**
+	 * Check if a member has a specific permission scope.
+	 *
+	 * @param member The guild member to check.
+	 * @param permission The permission to check for.
+	 * @returns True if the member has the permission scope, false otherwise.
+	 */
+	public hasPermission(member: GuildMember, permission: UserPermission): boolean {
+		const scopes = this.data.permission_scopes;
+		const scopesLen = scopes.length;
+
+		for (let i = 0; i < scopesLen; i++) {
+			const scope = scopes[i];
+
+			if (member.roles.cache.has(scope.role_id) && scope.allowed_permissions.includes(permission)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
 
 export type GuildConfigData = {
@@ -124,4 +150,5 @@ export type GuildConfigData = {
 	highlights: HighlightConfig;
 	quick_mutes: QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] };
 	quick_purges: QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] };
+	permission_scopes: PermissionScope[];
 };

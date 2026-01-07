@@ -380,7 +380,8 @@ export const ModelName = {
 	QuickPurgeConfig: "QuickPurgeConfig",
 	QuickPurgeChannelScoping: "QuickPurgeChannelScoping",
 	QuickPurge: "QuickPurge",
-	Message: "Message"
+	Message: "Message",
+	PermissionScope: "PermissionScope"
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -418,7 +419,8 @@ export type TypeMap<
 			| "quickPurgeConfig"
 			| "quickPurgeChannelScoping"
 			| "quickPurge"
-			| "message";
+			| "message"
+			| "permissionScope";
 		txIsolationLevel: TransactionIsolationLevel;
 	};
 	model: {
@@ -1764,6 +1766,80 @@ export type TypeMap<
 				};
 			};
 		};
+		PermissionScope: {
+			payload: Prisma.$PermissionScopePayload<ExtArgs>;
+			fields: Prisma.PermissionScopeFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.PermissionScopeFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.PermissionScopeFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>;
+				};
+				findFirst: {
+					args: Prisma.PermissionScopeFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.PermissionScopeFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>;
+				};
+				findMany: {
+					args: Prisma.PermissionScopeFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>[];
+				};
+				create: {
+					args: Prisma.PermissionScopeCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>;
+				};
+				createMany: {
+					args: Prisma.PermissionScopeCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.PermissionScopeCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>[];
+				};
+				delete: {
+					args: Prisma.PermissionScopeDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>;
+				};
+				update: {
+					args: Prisma.PermissionScopeUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>;
+				};
+				deleteMany: {
+					args: Prisma.PermissionScopeDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.PermissionScopeUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.PermissionScopeUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>[];
+				};
+				upsert: {
+					args: Prisma.PermissionScopeUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$PermissionScopePayload>;
+				};
+				aggregate: {
+					args: Prisma.PermissionScopeAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregatePermissionScope>;
+				};
+				groupBy: {
+					args: Prisma.PermissionScopeGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.PermissionScopeGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.PermissionScopeCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.PermissionScopeCountAggregateOutputType> | number;
+				};
+			};
+		};
 	};
 } & {
 	other: {
@@ -2014,6 +2090,15 @@ export const MessageScalarFieldEnum = {
 
 export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum];
 
+export const PermissionScopeScalarFieldEnum = {
+	guild_id: "guild_id",
+	role_id: "role_id",
+	allowed_permissions: "allowed_permissions"
+} as const;
+
+export type PermissionScopeScalarFieldEnum =
+	(typeof PermissionScopeScalarFieldEnum)[keyof typeof PermissionScopeScalarFieldEnum];
+
 export const SortOrder = {
 	asc: "asc",
 	desc: "desc"
@@ -2139,6 +2224,16 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int[]">;
+
+/**
+ * Reference to a field of type 'UserPermission[]'
+ */
+export type ListEnumUserPermissionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "UserPermission[]">;
+
+/**
+ * Reference to a field of type 'UserPermission'
+ */
+export type EnumUserPermissionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "UserPermission">;
 
 /**
  * Reference to a field of type 'Float'
@@ -2270,6 +2365,7 @@ export type GlobalOmitConfig = {
 	quickPurgeChannelScoping?: Prisma.QuickPurgeChannelScopingOmit;
 	quickPurge?: Prisma.QuickPurgeOmit;
 	message?: Prisma.MessageOmit;
+	permissionScope?: Prisma.PermissionScopeOmit;
 };
 
 /* Types for Logging */

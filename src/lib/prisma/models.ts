@@ -25,4 +25,5 @@ export type * from "./models/QuickPurgeConfig.js";
 export type * from "./models/QuickPurgeChannelScoping.js";
 export type * from "./models/QuickPurge.js";
 export type * from "./models/Message.js";
+export type * from "./models/PermissionScope.js";
 export type * from "./commonInputTypes.js";

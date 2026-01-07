@@ -41,6 +41,14 @@ enum ContentFilterVerbosity {
   Verbose
 }
 
+enum UserPermission {
+  ReviewMessageReports
+  ReviewBanRequests
+  UseHighlights
+  UseQuickMute
+  UseQuickPurge
+}
+
 model Guild {
   id String @id
 
@@ -51,12 +59,13 @@ model Guild {
   quick_mute_config     QuickMuteConfig?
   quick_purge_config    QuickPurgeConfig?
 
-  ban_requests    BanRequest[]
-  highlights      Highlight[]
-  message_reports MessageReport[]
-  quick_mutes     QuickMute[]
-  messages        Message[]
-  quick_purges    QuickPurge[]
+  ban_requests      BanRequest[]
+  highlights        Highlight[]
+  message_reports   MessageReport[]
+  quick_mutes       QuickMute[]
+  messages          Message[]
+  quick_purges      QuickPurge[]
+  permission_scopes PermissionScope[]
 }
 
 model Whitelist {
@@ -291,4 +300,14 @@ model Message {
   deleted      Boolean  @default(false)
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+}
+
+model PermissionScope {
+  guild_id            String
+  role_id             String
+  allowed_permissions UserPermission[]
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@id([guild_id, role_id])
 }

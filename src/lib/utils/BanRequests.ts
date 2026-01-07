@@ -67,7 +67,7 @@ export default class BanRequestUtils {
 
 		const disregardButton = new ButtonBuilder()
 			.setLabel("Disregard")
-			.setStyle(ButtonStyle.Secondary)
+			.setStyle(ButtonStyle.Primary)
 			.setCustomId(`ban-request-disregard`);
 
 		const userInfoButton = new ButtonBuilder()
@@ -141,7 +141,7 @@ export default class BanRequestUtils {
 	public static async process(data: {
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 		config: BanRequestConfig;
-		action: Exclude<BanRequestAction, "disregard">;
+		action: BanRequestAction;
 		request: BanRequest;
 		reviewReason: string | null;
 	}): Promise<InteractionReplyData> {
@@ -153,6 +153,29 @@ export default class BanRequestUtils {
 		const targetMember = await interaction.guild.members.fetch(request.target_id).catch(() => null);
 
 		switch (action) {
+			case BanRequestAction.Disregard: {
+				if (targetMember && request.target_muted_automatically) {
+					await targetMember
+						.timeout(null, `[${request.id}] Automatic unmute after ban request disregard`)
+						.catch(() => null);
+				}
+
+				await prisma.banRequest.update({
+					where: { id: request.id },
+					data: {
+						resolved_by: interaction.user.id,
+						resolved_at: new Date(),
+						status: RequestStatus.Disregarded
+					}
+				});
+
+				await interaction.message?.delete().catch(() => null);
+
+				return {
+					content: `Successfully disregarded the ban request for ${userMention(request.target_id)} - ID \`${request.id}\``
+				};
+			}
+
 			case BanRequestAction.Accept: {
 				if (!target) {
 					return {
@@ -190,14 +213,14 @@ export default class BanRequestUtils {
 				}
 
 				Promise.all([
-					BanRequestUtils.notify({
+					BanRequestUtils._notify({
 						webhook_url: data.config.webhook_url,
 						target_id: request.target_id,
 						requested_by: request.requested_by,
 						reviewReason,
 						action
 					}),
-					BanRequestUtils.log({
+					BanRequestUtils._log({
 						config: data.config,
 						request: data.request,
 						action: "accepted",
@@ -228,14 +251,14 @@ export default class BanRequestUtils {
 				}
 
 				Promise.all([
-					BanRequestUtils.notify({
+					BanRequestUtils._notify({
 						webhook_url: data.config.webhook_url,
 						target_id: request.target_id,
 						requested_by: request.requested_by,
 						reviewReason,
 						action
 					}),
-					BanRequestUtils.log({
+					BanRequestUtils._log({
 						config: data.config,
 						request: data.request,
 						action: "denied",
@@ -261,50 +284,13 @@ export default class BanRequestUtils {
 	}
 
 	/**
-	 * Disregards a ban request.
-	 *
-	 * @param data The ban request disregard data.
-	 * @return The result of the ban request disregard.
-	 */
-
-	public static async disregard(data: {
-		interaction: ButtonInteraction<"cached">;
-		request: BanRequest;
-	}): Promise<InteractionReplyData> {
-		const { interaction, request } = data;
-
-		const targetMember = await interaction.guild.members.fetch(request.target_id).catch(() => null);
-
-		if (targetMember && request.target_muted_automatically) {
-			await targetMember
-				.timeout(null, `Automatic unmute after ban request disregard - ID ${request.id}`)
-				.catch(() => null);
-		}
-
-		await prisma.banRequest.update({
-			where: { id: request.id },
-			data: {
-				resolved_by: interaction.user.id,
-				resolved_at: new Date(),
-				status: RequestStatus.Disregarded
-			}
-		});
-
-		await interaction.message.delete().catch(() => null);
-
-		return {
-			content: `Successfully disregarded the ban request for ${userMention(request.target_id)} - ID \`${request.id}\``
-		};
-	}
-
-	/**
 	 * Notifies the requester about the outcome of their ban request.
 	 *
 	 * @param data The notification data.
 	 * @return The result of the notification.
 	 */
 
-	public static async notify(data: {
+	private static async _notify(data: {
 		webhook_url: string | null;
 		target_id: string;
 		requested_by: string;
@@ -332,7 +318,7 @@ export default class BanRequestUtils {
 	 * @return The sent API message, or `null` if sending failed.
 	 */
 
-	public static async log(data: {
+	private static async _log(data: {
 		config: BanRequestConfig;
 		request: BanRequest;
 		action: "accepted" | "denied";

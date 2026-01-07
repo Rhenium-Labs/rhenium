@@ -4,7 +4,8 @@ import {
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
-	InteractionContextType
+	InteractionContextType,
+	PermissionFlagsBits
 } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
@@ -25,8 +26,9 @@ export default class Reports extends Command {
 			name: this.name,
 			description: this.description,
 			type: ApplicationCommandType.ChatInput,
-			integrationTypes: [ApplicationIntegrationType.GuildInstall],
 			contexts: [InteractionContextType.Guild],
+			integrationTypes: [ApplicationIntegrationType.GuildInstall],
+			defaultMemberPermissions: PermissionFlagsBits.ModerateMembers,
 			options: [
 				{
 					name: "blacklist",

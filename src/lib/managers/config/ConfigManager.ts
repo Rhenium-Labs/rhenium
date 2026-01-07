@@ -85,35 +85,37 @@ export default class ConfigManager {
 			update: {}
 		});
 
-		const [messageReports, banRequests, quickMutes, quickPurges, highlights] = await prisma.$transaction([
-			prisma.messageReportConfig.upsert({
-				where: { id: guildId },
-				create: { id: guildId },
-				update: {}
-			}),
-			prisma.banRequestConfig.upsert({
-				where: { id: guildId },
-				create: { id: guildId },
-				update: {}
-			}),
-			prisma.quickMuteConfig.upsert({
-				where: { id: guildId },
-				create: { id: guildId },
-				include: { channel_scoping: true },
-				update: {}
-			}),
-			prisma.quickPurgeConfig.upsert({
-				where: { id: guildId },
-				create: { id: guildId },
-				include: { channel_scoping: true },
-				update: {}
-			}),
-			prisma.highlightConfig.upsert({
-				where: { id: guildId },
-				create: { id: guildId },
-				update: {}
-			})
-		]);
+		const [messageReports, banRequests, quickMutes, quickPurges, highlights, permissionScopes] =
+			await prisma.$transaction([
+				prisma.messageReportConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					update: {}
+				}),
+				prisma.banRequestConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					update: {}
+				}),
+				prisma.quickMuteConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					include: { channel_scoping: true },
+					update: {}
+				}),
+				prisma.quickPurgeConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					include: { channel_scoping: true },
+					update: {}
+				}),
+				prisma.highlightConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					update: {}
+				}),
+				prisma.permissionScope.findMany({ where: { guild_id: guildId } })
+			]);
 
 		const data: GuildConfigData = {
 			id: guildId,
@@ -127,7 +129,8 @@ export default class ConfigManager {
 				...quickPurges,
 				channel_scoping: quickPurges.channel_scoping
 			},
-			highlights: highlights
+			highlights: highlights,
+			permission_scopes: permissionScopes
 		};
 
 		return new GuildConfig(data);

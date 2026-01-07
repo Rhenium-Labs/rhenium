@@ -5,7 +5,8 @@ import {
 	ApplicationCommandType,
 	ApplicationIntegrationType,
 	InteractionContextType,
-	MessageFlags
+	MessageFlags,
+	PermissionFlagsBits
 } from "discord.js";
 
 import ms, { type StringValue } from "ms";
@@ -31,8 +32,9 @@ export default class Request extends Command {
 			name: this.name,
 			description: this.description,
 			type: ApplicationCommandType.ChatInput,
-			integrationTypes: [ApplicationIntegrationType.GuildInstall],
 			contexts: [InteractionContextType.Guild],
+			integrationTypes: [ApplicationIntegrationType.GuildInstall],
+			defaultMemberPermissions: PermissionFlagsBits.ModerateMembers,
 			options: [
 				{
 					name: "ban",

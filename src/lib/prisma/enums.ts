@@ -51,3 +51,13 @@ export const ContentFilterVerbosity = {
 } as const;
 
 export type ContentFilterVerbosity = (typeof ContentFilterVerbosity)[keyof typeof ContentFilterVerbosity];
+
+export const UserPermission = {
+	ReviewMessageReports: "ReviewMessageReports",
+	ReviewBanRequests: "ReviewBanRequests",
+	UseHighlights: "UseHighlights",
+	UseQuickMute: "UseQuickMute",
+	UseQuickPurge: "UseQuickPurge"
+} as const;
+
+export type UserPermission = (typeof UserPermission)[keyof typeof UserPermission];

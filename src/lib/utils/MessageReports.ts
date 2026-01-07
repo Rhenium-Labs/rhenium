@@ -19,6 +19,13 @@ import type { MessageReportConfig } from "#prisma/client.js";
 import type { InteractionReplyData } from "./Types.js";
 
 export default class MessageReportUtils {
+	/**
+	 * Creates a message report and sends it to the configured webhook for review
+	 *
+	 * @param data The message report data.
+	 * @returns Interaction reply data indicating success or failure.
+	 */
+
 	public static async create(data: {
 		interaction: ModalSubmitInteraction<"cached">;
 		config: MessageReportConfig;
@@ -59,8 +66,7 @@ export default class MessageReportUtils {
 		const reference = message.reference && (await message.fetchReference().catch(() => null));
 
 		const embeds: EmbedBuilder[] = [];
-		const primaryRow = new ActionRowBuilder<ButtonBuilder>();
-		const secondaryRow = new ActionRowBuilder<ButtonBuilder>();
+		const actionRow = new ActionRowBuilder<ButtonBuilder>();
 
 		if (reference) {
 			const referenceContent = cleanMessageContent(reference.content, reference.channel);
@@ -93,43 +99,38 @@ export default class MessageReportUtils {
 		const deleteMessageButton = new ButtonBuilder()
 			.setCustomId(`delete-original-report-message-${message.channel.id}-${message.id}`)
 			.setLabel("Delete Message")
-			.setStyle(ButtonStyle.Secondary);
-
-		const acceptButton = new ButtonBuilder()
-			.setCustomId(`message-report-accept`)
-			.setLabel("Accept")
-			.setStyle(ButtonStyle.Success);
-
-		const denyButton = new ButtonBuilder()
-			.setCustomId("message-report-deny")
-			.setLabel("Deny")
 			.setStyle(ButtonStyle.Danger);
+
+		const resolveButton = new ButtonBuilder()
+			.setCustomId(`message-report-resolve`)
+			.setLabel("Resolve")
+			.setStyle(ButtonStyle.Success);
 
 		const disregardButton = new ButtonBuilder()
 			.setCustomId("message-report-disregard")
 			.setLabel("Disregard")
-			.setStyle(ButtonStyle.Secondary);
+			.setStyle(ButtonStyle.Primary);
 
 		const userInfoButton = new ButtonBuilder()
 			.setCustomId(`user-info-${author.id}`)
 			.setLabel("User Info")
 			.setStyle(ButtonStyle.Secondary);
 
-		const components: ActionRowBuilder<ButtonBuilder>[] = [];
-
 		if (reference) {
 			const deleteReferenceButton = new ButtonBuilder()
 				.setCustomId(`delete-reference-report-message-${reference.channel.id}-${reference.id}`)
 				.setLabel("Delete Reference")
-				.setStyle(ButtonStyle.Secondary);
+				.setStyle(ButtonStyle.Danger);
 
-			primaryRow.setComponents(acceptButton, denyButton, disregardButton, userInfoButton);
-			secondaryRow.setComponents(deleteMessageButton, deleteReferenceButton);
-
-			components.push(primaryRow, secondaryRow);
+			actionRow.setComponents(
+				resolveButton,
+				disregardButton,
+				deleteMessageButton,
+				deleteReferenceButton,
+				userInfoButton
+			);
 		} else {
-			primaryRow.setComponents(acceptButton, denyButton, disregardButton, deleteMessageButton, userInfoButton);
-			components.push(primaryRow);
+			actionRow.setComponents(resolveButton, disregardButton, userInfoButton, deleteMessageButton);
 		}
 
 		const webhook = new WebhookClient({ url: config.webhook_url! });
@@ -140,7 +141,7 @@ export default class MessageReportUtils {
 			.send({
 				content,
 				embeds,
-				components,
+				components: [actionRow],
 				allowedMentions: { parse: ["roles"] }
 			})
 			.catch(() => null);
