@@ -5,7 +5,10 @@ import {
 	prismaIntegration,
 	consoleIntegration,
 	nodeContextIntegration,
-	consoleLoggingIntegration
+	consoleLoggingIntegration,
+	postgresIntegration,
+	onUncaughtExceptionIntegration,
+	onUnhandledRejectionIntegration
 } from "@sentry/node";
 import { open } from "lmdb";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -64,7 +67,10 @@ async function main(): Promise<void> {
 			nodeContextIntegration(),
 			consoleIntegration(),
 			consoleLoggingIntegration(),
-			prismaIntegration()
+			prismaIntegration(),
+			postgresIntegration(),
+			onUncaughtExceptionIntegration(),
+			onUnhandledRejectionIntegration()
 		]
 	});
 
