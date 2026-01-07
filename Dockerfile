@@ -9,7 +9,7 @@ ENV PATH="/root/.bun/bin:${PATH}"
 # Install dependencies
 FROM base AS install
 COPY package.json bun.lock ./
-RUN bun install
+RUN bun install --frozen-lockfile
 
 # Build the project
 FROM base AS build
