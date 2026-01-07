@@ -691,7 +691,14 @@ export default class Highlights extends Command {
 		const patterns = highlights?.patterns.map(pattern => `\`${pattern}\``).join("\n") || "None";
 		const blacklistedUsers = highlights?.user_blacklist.map(id => `<@${id}>`).join("\n") || "None";
 
-		const { include_channels, exclude_channels } = parseChannelScoping(highlights?.channel_scoping || []);
+		const [includedChannels, excludedChannels] = highlights?.channel_scoping.reduce<[string[], string[]]>(
+			(acc, channel) => {
+				const index = channel.type === 0 ? 0 : 1;
+				acc[index].push(`<#${channel.channel_id}>`);
+				return acc;
+			},
+			[[], []]
+		) ?? [[], []];
 
 		const embed = new EmbedBuilder()
 			.setColor(Colors.Blue)
@@ -705,13 +712,13 @@ export default class Highlights extends Command {
 					value: patterns
 				},
 				{
-					name: `Included Channels (${include_channels.length})`,
-					value: include_channels.length > 0 ? include_channels.join("\n") : "None",
+					name: `Included Channels (${includedChannels.length})`,
+					value: includedChannels.length > 0 ? includedChannels.join("\n") : "None",
 					inline: true
 				},
 				{
-					name: `Excluded Channels (${exclude_channels.length})`,
-					value: exclude_channels.length > 0 ? exclude_channels.join("\n") : "None",
+					name: `Excluded Channels (${excludedChannels.length})`,
+					value: excludedChannels.length > 0 ? excludedChannels.join("\n") : "None",
 					inline: true
 				},
 				{
