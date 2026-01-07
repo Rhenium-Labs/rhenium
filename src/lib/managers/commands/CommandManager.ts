@@ -1,11 +1,12 @@
 import {
 	type ApplicationCommandData,
+	type CommandInteraction,
+	type InteractionReplyOptions,
+	type Message,
+	type MessageReplyOptions,
 	Collection,
-	Colors,
-	CommandInteraction,
-	InteractionReplyOptions,
-	Message,
 	MessageFlags,
+	Colors,
 	PermissionFlagsBits
 } from "discord.js";
 import { captureException } from "@sentry/node";
@@ -17,6 +18,9 @@ import path from "node:path";
 import { reply } from "#utils/Messages.js";
 import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";
+import { ComponentInteraction } from "#managers/components/Component.js";
+
+import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
 import Logger from "#utils/Logger.js";
 import Command from "./Command.js";
@@ -149,37 +153,7 @@ export default class CommandManager {
 
 		try {
 			const response = await command.interactionRun(interaction, config);
-
-			// Reply was handled manually.
-			if (response === null) return;
-
-			const { error, temporary, ...options } = response;
-
-			const defaultReplyOptions = {
-				flags: [MessageFlags.Ephemeral],
-				allowedMentions: { parse: [] }
-			} as const;
-
-			const replyOptions: InteractionReplyOptions = error
-				? {
-						...defaultReplyOptions,
-						...options,
-						embeds: [{ description: error, color: Colors.Red }, ...(options.embeds ?? [])]
-					}
-				: { ...defaultReplyOptions, ...options };
-
-			if (interaction.deferred || interaction.replied) {
-				const { flags, ...options } = replyOptions;
-				await interaction.editReply(options);
-			} else {
-				await interaction.reply(replyOptions);
-			}
-
-			if (error || temporary) {
-				setTimeout(() => {
-					interaction.deleteReply().catch(() => {});
-				}, 7500);
-			}
+			await processResponse("Interaction", { interaction, response });
 		} catch (error) {
 			const sentryId = captureException(error, {
 				user: {
@@ -231,21 +205,7 @@ export default class CommandManager {
 
 		try {
 			const response = await command.messageRun(message, args, config);
-
-			// Reply was handled manually.
-			if (response === null) return;
-
-			const { error, temporary, ...options } = response;
-
-			const replyOptions = error
-				? { ...options, embeds: [{ description: error, color: Colors.Red }, ...(options.embeds ?? [])] }
-				: options;
-
-			const status = await reply(message, replyOptions);
-
-			if (error || temporary) {
-				setTimeout(() => status?.delete().catch(() => {}), 7500);
-			}
+			await processResponse("Message", { message, response });
 		} catch (error) {
 			const sentryId = captureException(error, {
 				user: { id: message.author.id, username: message.author.username },
@@ -262,3 +222,84 @@ export default class CommandManager {
 		}
 	}
 }
+
+/**
+ * Processes an interaction response uniformly.
+ *
+ * @param interaction The interaction to respond to.
+ * @param response The response data to process.
+ * @returns A promise that resolves when the response has been processed.
+ */
+
+export async function processResponse<T extends ResponseType>(type: T, data: ResponseData<T>): Promise<void> {
+	switch (type) {
+		case "Message": {
+			const { message, response } = data as ResponseData<"Message">;
+
+			// Reply was handled manually.
+			if (response === null) return;
+
+			const { error, temporary, ...rest } = response;
+
+			const options: MessageReplyOptions = error
+				? {
+						embeds: [{ description: error, color: Colors.Red }, ...(rest.embeds ?? [])],
+						...rest
+					}
+				: { ...rest };
+
+			const createdMessage = await message.reply(options);
+
+			if (error || temporary) {
+				setTimeout(() => {
+					createdMessage.delete().catch(() => {});
+				}, 7500);
+			}
+
+			return;
+		}
+		case "Interaction": {
+			const { interaction, response } = data as ResponseData<"Interaction">;
+
+			if (response === null) return;
+
+			const { error, temporary, ...rest } = response;
+
+			const defaultReplyOptions: InteractionReplyOptions = {
+				flags: [MessageFlags.Ephemeral]
+			};
+
+			const options: InteractionReplyOptions = error
+				? {
+						...defaultReplyOptions,
+						...rest,
+						embeds: [{ description: error, color: Colors.Red }, ...(rest.embeds ?? [])]
+					}
+				: { ...defaultReplyOptions, ...rest };
+
+			if (interaction.deferred || interaction.replied) {
+				const { flags, ...editOptions } = options;
+				await interaction.editReply(editOptions);
+			} else {
+				await interaction.reply(options);
+			}
+
+			if (error || temporary) {
+				setTimeout(() => {
+					interaction.deleteReply().catch(() => {});
+				}, 7500);
+			}
+
+			return;
+		}
+	}
+}
+
+type ResponseType = "Message" | "Interaction";
+
+type ResponseData<T extends ResponseType> = T extends "Message"
+	? { message: Message<true>; response: MessageReplyData | null }
+	: {
+			interaction: CommandInteraction<"cached"> | ComponentInteraction;
+			response: InteractionReplyData | null;
+		};

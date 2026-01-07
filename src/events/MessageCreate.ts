@@ -1,6 +1,6 @@
 import { type Message, Events } from "discord.js";
 
-import { RedisCache } from "#utils/Redis.js";
+import { KvCache } from "#utils/KvCache.js";
 import { MessageQueue } from "#utils/Messages.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 
@@ -17,7 +17,7 @@ export default class MessageCreate extends EventListener {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author.bot || message.webhookId || message.system) return;
 
-		const whitelist = await RedisCache.guildIsWhitelisted(message.guild.id);
+		const whitelist = await KvCache.getWhitelistStatus(message.guild.id);
 
 		if (!whitelist) {
 			if (DEVELOPER_IDS.includes(message.author.id)) {

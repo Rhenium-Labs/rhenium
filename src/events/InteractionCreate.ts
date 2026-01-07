@@ -1,7 +1,7 @@
 import { type Interaction, Events } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import { RedisCache } from "#utils/Redis.js";
+import { KvCache } from "#utils/KvCache.js";
 import { DEVELOPER_IDS } from "#utils/Constants.js";
 
 import Logger from "#utils/Logger.js";
@@ -22,7 +22,7 @@ export default class InteractionCreate extends EventListener {
 			throw new Error("Autocomplete handling not implemented yet.");
 		}
 
-		const whitelist = await RedisCache.guildIsWhitelisted(interaction.guild.id);
+		const whitelist = await KvCache.getWhitelistStatus(interaction.guild.id);
 
 		if (!whitelist && !DEVELOPER_IDS.includes(interaction.user.id)) {
 			return;
@@ -54,7 +54,7 @@ export default class InteractionCreate extends EventListener {
 				}
 			});
 
-			Logger.tracable(sentryId, `Unknown Error`, error);
+			Logger.tracable(sentryId, error);
 			return;
 		}
 	}

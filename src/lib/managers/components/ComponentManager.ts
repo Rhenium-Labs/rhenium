@@ -1,4 +1,4 @@
-import { Collection, Colors, InteractionReplyOptions, MessageFlags } from "discord.js";
+import { Collection, MessageFlags } from "discord.js";
 import { captureException } from "@sentry/node";
 import { pathToFileURL } from "node:url";
 
@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { inflect } from "#utils/index.js";
+import { processResponse } from "#managers/commands/CommandManager.js";
 
 import Logger from "#utils/Logger.js";
 import Component, { ComponentInteraction, type ComponentCustomID } from "./Component.js";
@@ -108,37 +109,7 @@ export default class ComponentManager {
 
 		try {
 			const response = await component.run(interaction, config);
-
-			// Reply was handled manually.
-			if (response === null) return;
-
-			const { error, temporary, ...options } = response;
-
-			const defaultReplyOptions = {
-				flags: [MessageFlags.Ephemeral],
-				allowedMentions: { parse: [] }
-			} as const;
-
-			const replyOptions: InteractionReplyOptions = error
-				? {
-						...defaultReplyOptions,
-						...options,
-						embeds: [{ description: error, color: Colors.Red }, ...(options.embeds ?? [])]
-					}
-				: { ...defaultReplyOptions, ...options };
-
-			if (interaction.deferred || interaction.replied) {
-				const { flags, ...options } = replyOptions;
-				await interaction.editReply(options);
-			} else {
-				await interaction.reply(replyOptions);
-			}
-
-			if (error || temporary) {
-				setTimeout(() => {
-					interaction.deleteReply().catch(() => {});
-				}, 7500);
-			}
+			await processResponse("Interaction", { interaction, response });
 		} catch (error) {
 			const sentryId = captureException(error, {
 				user: {

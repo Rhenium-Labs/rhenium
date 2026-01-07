@@ -1,6 +1,6 @@
 import { kv, prisma } from "#root/index.js";
 
-export class RedisCache {
+export class KvCache {
 	/**
 	 * Check a guild's whitelist status.
 	 *
@@ -8,11 +8,11 @@ export class RedisCache {
 	 * @return True if the guild is whitelisted, false otherwise.
 	 */
 
-	public static async guildIsWhitelisted(guildId: string): Promise<boolean> {
+	public static async getWhitelistStatus(guildId: string): Promise<boolean> {
 		const cacheKey = `whitelists:${guildId}`;
-		const cached = await kv.get<boolean>(cacheKey);
+		const cached = kv.get(cacheKey) as { status: boolean } | undefined;
 
-		if (cached !== null) return cached;
+		if (cached !== undefined) return cached.status;
 
 		const isWhitelisted = await prisma.whitelist
 			.findUnique({ where: { id: guildId } })
@@ -20,7 +20,7 @@ export class RedisCache {
 			// If there's an error (e.g., database connection issue), treat as not whitelisted.
 			.catch(() => false);
 
-		await kv.set(cacheKey, isWhitelisted);
+		await kv.put(cacheKey, { status: isWhitelisted });
 		return isWhitelisted;
 	}
 }

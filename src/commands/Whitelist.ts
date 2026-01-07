@@ -64,7 +64,7 @@ export default class Whitelist extends Command {
 		}
 
 		await this.prisma.whitelist.create({ data: { id: guildId } });
-		await kv.set<boolean>(`whitelists:${guildId}`, true);
+		await kv.put(`whitelists:${guildId}`, { status: true });
 
 		return {
 			embeds: [{ description: `Successfully whitelisted guild with ID \`${guildId}\`.`, color: Colors.Green }]
@@ -78,7 +78,7 @@ export default class Whitelist extends Command {
 		}
 
 		await this.prisma.whitelist.delete({ where: { id: guildId } });
-		await kv.set<boolean>(`whitelists:${guildId}`, false);
+		await kv.put(`whitelists:${guildId}`, { status: false });
 
 		return {
 			embeds: [

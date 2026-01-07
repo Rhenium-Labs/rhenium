@@ -7,7 +7,7 @@ import {
 	nodeContextIntegration,
 	consoleLoggingIntegration
 } from "@sentry/node";
-import { Redis } from "@upstash/redis";
+import { open } from "lmdb";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { sleep } from "#utils/index.js";
@@ -27,8 +27,11 @@ export const prisma = new PrismaClient({
 	adapter: new PrismaPg({ connectionString: process.env.PG_URL })
 });
 
-/** Redis client instance, powered by Upstash. */
-export const kv = Redis.fromEnv();
+/** LMDB KV. */
+export const kv = open<Object, string>({
+	encoding: "json",
+	compression: true
+});
 
 async function main(): Promise<void> {
 	// Cache commands.
