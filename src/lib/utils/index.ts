@@ -5,7 +5,7 @@ import ms, { type StringValue } from "ms";
 import { client } from "#root/index.js";
 import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants.js";
 
-import type { ChannelScoping, SimpleResult } from "./Types.js";
+import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types.js";
 
 /**
  * Returns the singular or plural form of a word based on the count.
@@ -136,6 +136,27 @@ export async function hastebin(data: unknown, ext = "js"): Promise<string | null
 
 	const { key } = (await response.json()) as { key: string };
 	return `https://hst.sh/${key}.${ext}`;
+}
+
+/**
+ * Parses raw channel scoping data into the structured format.
+ *
+ * @param scoping The raw channel scoping data.
+ * @returns The structured channel scoping configuration.
+ */
+
+export function parseChannelScoping(scoping: RawChannelScoping[]): ChannelScoping {
+	return scoping.reduce<ChannelScoping>(
+		(acc, item) => {
+			if (item.type === 1) {
+				acc.include_channels.push(item.channel_id);
+			} else if (item.type === 2) {
+				acc.exclude_channels.push(item.channel_id);
+			}
+			return acc;
+		},
+		{ include_channels: [], exclude_channels: [] }
+	);
 }
 
 /**

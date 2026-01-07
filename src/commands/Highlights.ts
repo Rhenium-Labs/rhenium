@@ -16,9 +16,9 @@ import safe from "safe-regex";
 
 import { client, prisma } from "#root/index.js";
 import { formatMessageContent } from "#utils/Messages.js";
-import { channelInScope, inflect } from "#utils/index.js";
+import { channelInScope, inflect, parseChannelScoping } from "#utils/index.js";
 
-import type { ChannelScoping, InteractionReplyData } from "#utils/Types.js";
+import type { InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#managers/commands/Command.js";
 import RateLimiter from "#structures/RateLimiter.js";
@@ -275,25 +275,8 @@ export default class Highlights extends Command {
 
 			if (!canViewChannel) continue;
 
-			const channelScoping = highlight.channel_scoping.reduce<ChannelScoping>(
-				(acc, channel) => {
-					if (channel.type === 0) {
-						acc.include_channels.push(channel.channel_id);
-					} else {
-						acc.exclude_channels.push(channel.channel_id);
-					}
-
-					return acc;
-				},
-				{
-					include_channels: [],
-					exclude_channels: []
-				}
-			);
-
-			if (!channelInScope(message.channel, channelScoping)) {
-				continue;
-			}
+			const channelScoping = parseChannelScoping(highlight.channel_scoping);
+			if (!channelInScope(message.channel, channelScoping)) continue;
 
 			// Use cached compiled regex for pattern matching.
 			const matchedPattern = highlight.patterns.find(pattern => {
@@ -708,14 +691,7 @@ export default class Highlights extends Command {
 		const patterns = highlights?.patterns.map(pattern => `\`${pattern}\``).join("\n") || "None";
 		const blacklistedUsers = highlights?.user_blacklist.map(id => `<@${id}>`).join("\n") || "None";
 
-		const [includedChannels, excludedChannels] = highlights?.channel_scoping.reduce<[string[], string[]]>(
-			(acc, channel) => {
-				const index = channel.type === 0 ? 0 : 1;
-				acc[index].push(`<#${channel.channel_id}>`);
-				return acc;
-			},
-			[[], []]
-		) ?? [[], []];
+		const { include_channels, exclude_channels } = parseChannelScoping(highlights?.channel_scoping || []);
 
 		const embed = new EmbedBuilder()
 			.setColor(Colors.Blue)
@@ -729,13 +705,13 @@ export default class Highlights extends Command {
 					value: patterns
 				},
 				{
-					name: `Included Channels (${includedChannels.length})`,
-					value: includedChannels.length > 0 ? includedChannels.join("\n") : "None",
+					name: `Included Channels (${include_channels.length})`,
+					value: include_channels.length > 0 ? include_channels.join("\n") : "None",
 					inline: true
 				},
 				{
-					name: `Excluded Channels (${excludedChannels.length})`,
-					value: excludedChannels.length > 0 ? excludedChannels.join("\n") : "None",
+					name: `Excluded Channels (${exclude_channels.length})`,
+					value: exclude_channels.length > 0 ? exclude_channels.join("\n") : "None",
 					inline: true
 				},
 				{

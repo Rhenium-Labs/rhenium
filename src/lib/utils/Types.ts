@@ -12,3 +12,8 @@ export type ChannelScoping = {
 	include_channels: string[];
 	exclude_channels: string[];
 };
+
+export type RawChannelScoping = {
+	type: number;
+	channel_id: string;
+};

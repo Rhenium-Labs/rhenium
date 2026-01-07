@@ -13,10 +13,16 @@ import {
 import ms from "ms";
 
 import { prisma } from "#root/index.js";
-import { channelInScope, getEmojiIdentifier, inflect, sleep, truncate, userMentionWithId } from "./index.js";
+import {
+	channelInScope,
+	getEmojiIdentifier,
+	inflect,
+	parseChannelScoping,
+	sleep,
+	truncate,
+	userMentionWithId
+} from "./index.js";
 import { MessageQueue } from "./Messages.js";
-
-import type { ChannelScoping } from "./Types.js";
 
 import ModerationUtils from "./Moderation.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
@@ -66,35 +72,13 @@ export default class QuickActionUtils {
 		if (!executor) return;
 
 		// Prevent people who had access to quick mutes but lost it from executing quick mutes.
-		if (!config.hasPermission(executor, "UseQuickMute")) {
-			return;
-		}
+		if (!config.hasPermission(executor, "UseQuickMute")) return;
 
-		const channelScoping = quickMuteGuildConfig.channel_scoping.reduce<ChannelScoping>(
-			(acc, channel) => {
-				if (channel.type === 0) {
-					acc.include_channels.push(channel.channel_id);
-				} else {
-					acc.exclude_channels.push(channel.channel_id);
-				}
-
-				return acc;
-			},
-			{
-				include_channels: [],
-				exclude_channels: []
-			}
-		);
-
-		if (!channelInScope(message.channel, channelScoping)) {
-			return;
-		}
+		const channelScoping = parseChannelScoping(quickMuteGuildConfig.channel_scoping);
+		if (!channelInScope(message.channel, channelScoping)) return;
 
 		const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
-
-		if (!reactionIdentifier) {
-			return;
-		}
+		if (!reactionIdentifier) return;
 
 		const quickMuteConfig = await prisma.quickMute.findUnique({
 			where: {
@@ -106,9 +90,7 @@ export default class QuickActionUtils {
 			}
 		});
 
-		if (!quickMuteConfig) {
-			return;
-		}
+		if (!quickMuteConfig) return;
 
 		const target = await message.guild.members.fetch(message.author.id).catch(() => null);
 		if (!target) return;
@@ -234,35 +216,13 @@ export default class QuickActionUtils {
 		if (!executor) return;
 
 		// Prevent people who had access to quick purges but lost it from executing quick purges.
-		if (!config.hasPermission(executor, "UseQuickPurge")) {
-			return;
-		}
+		if (!config.hasPermission(executor, "UseQuickPurge")) return;
 
-		const channelScoping = quickPurgeGuildConfig.channel_scoping.reduce<ChannelScoping>(
-			(acc, channel) => {
-				if (channel.type === 0) {
-					acc.include_channels.push(channel.channel_id);
-				} else {
-					acc.exclude_channels.push(channel.channel_id);
-				}
-
-				return acc;
-			},
-			{
-				include_channels: [],
-				exclude_channels: []
-			}
-		);
-
-		if (!channelInScope(message.channel, channelScoping)) {
-			return;
-		}
+		const channelScoping = parseChannelScoping(quickPurgeGuildConfig.channel_scoping);
+		if (!channelInScope(message.channel, channelScoping)) return;
 
 		const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
-
-		if (!reactionIdentifier) {
-			return;
-		}
+		if (!reactionIdentifier) return;
 
 		const quickPurgeConfig = await prisma.quickPurge.findUnique({
 			where: {
@@ -274,9 +234,7 @@ export default class QuickActionUtils {
 			}
 		});
 
-		if (!quickPurgeConfig) {
-			return;
-		}
+		if (!quickPurgeConfig) return;
 
 		const target = await message.guild.members.fetch(message.author.id).catch(() => null);
 		if (!target) return;
