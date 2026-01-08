@@ -201,18 +201,20 @@ export default class QuickActions extends Command {
 		const reason = interaction.options.getString("reason", true);
 		const purgeAmount = interaction.options.getInteger("purge_amount") ?? 0;
 
+		const muteConfig = config.getQuickMutesConfig();
+
+		if (!muteConfig) {
+			return {
+				error: "Quick mutes have not been configured on this server."
+			};
+		}
+
 		const quickMuteCount = await this.prisma.quickMute.count({
 			where: {
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId
 			}
 		});
-
-		if (!config.data.quick_mutes.enabled || !config.data.quick_mutes.webhook_url) {
-			return {
-				error: "Quick mutes have not been configured on this server."
-			};
-		}
 
 		// Hardcoded limit of 10 quick mutes per user.
 		if (quickMuteCount >= 10) {
@@ -246,6 +248,12 @@ export default class QuickActions extends Command {
 
 		if (!durationValidation.ok) {
 			return { error: durationValidation.message };
+		}
+
+		if (purgeAmount > config.data.quick_purges.max_limit) {
+			return {
+				error: `The maximum purge amount for this server is \`${config.data.quick_purges.max_limit}\` messages.`
+			};
 		}
 
 		const existing = await this.prisma.quickMute.findUnique({
@@ -385,6 +393,13 @@ export default class QuickActions extends Command {
 	): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const purgeAmount = interaction.options.getInteger("amount", true);
+		const purgeConfig = config.getQuickPurgesConfig();
+
+		if (!purgeConfig) {
+			return {
+				error: "Quick purges have not been configured on this server."
+			};
+		}
 
 		const quickPurgeCount = await this.prisma.quickPurge.count({
 			where: {
@@ -392,12 +407,6 @@ export default class QuickActions extends Command {
 				guild_id: interaction.guildId
 			}
 		});
-
-		if (!config.data.quick_purges.enabled || !config.data.quick_purges.webhook_url) {
-			return {
-				error: "Quick purges have not been configured on this server."
-			};
-		}
 
 		// Hardcoded limit of 10 quick purges per user.
 		if (quickPurgeCount >= 10) {
@@ -411,6 +420,12 @@ export default class QuickActions extends Command {
 		if (!validatedEmoji) {
 			return {
 				error: "Invalid emoji. Please provide a valid unicode emoji or a custom emoji from this server."
+			};
+		}
+
+		if (purgeAmount > purgeConfig.max_limit) {
+			return {
+				error: `The maximum purge amount for this server is \`${purgeConfig.max_limit}\` messages.`
 			};
 		}
 
