@@ -40,6 +40,13 @@ enum ContentFilterVerbosity {
   Verbose
 }
 
+enum ContentFilterStatus {
+  Pending
+  Resolved
+  False
+  Deleted
+}
+
 enum UserPermission {
   ReviewMessageReports
   ReviewBanRequests
@@ -58,13 +65,15 @@ model Guild {
   quick_mute_config     QuickMuteConfig?
   quick_purge_config    QuickPurgeConfig?
 
-  ban_requests      BanRequest[]
-  highlights        Highlight[]
-  message_reports   MessageReport[]
-  quick_mutes       QuickMute[]
-  messages          Message[]
-  quick_purges      QuickPurge[]
-  permission_scopes PermissionScope[]
+  ban_requests          BanRequest[]
+  highlights            Highlight[]
+  message_reports       MessageReport[]
+  quick_mutes           QuickMute[]
+  messages              Message[]
+  quick_purges          QuickPurge[]
+  permission_scopes     PermissionScope[]
+  content_filter_alerts ContentFilterAlert[]
+  content_filter_logs   ContentFilterLog[]
 }
 
 model Whitelist {
@@ -131,6 +140,39 @@ model ContentFilterConfig {
   ocr_filter_regex    String[] @default([])
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model ContentFilterAlert {
+  id               String              @id @default(cuid())
+  guild_id         String
+  message_id       String
+  channel_id       String
+  alert_message_id String
+  alert_channel_id String
+  offender_id      String
+  detectors        Detector[]
+  highest_score    Float               @default(0)
+  mod_status       ContentFilterStatus @default(Pending)
+  del_status       ContentFilterStatus @default(Pending)
+  created_at       DateTime            @default(now())
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@index([guild_id, channel_id, created_at])
+  @@index([message_id])
+}
+
+model ContentFilterLog {
+  id         String   @id @default(cuid())
+  guild_id   String
+  alert_id   String
+  content    String
+  created_at DateTime @default(now())
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@index([alert_id])
+  @@index([created_at])
 }
 
 model BanRequest {

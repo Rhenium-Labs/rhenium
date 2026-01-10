@@ -177,6 +177,8 @@ export type GuildWhereInput = {
 	messages?: Prisma.MessageListRelationFilter;
 	quick_purges?: Prisma.QuickPurgeListRelationFilter;
 	permission_scopes?: Prisma.PermissionScopeListRelationFilter;
+	content_filter_alerts?: Prisma.ContentFilterAlertListRelationFilter;
+	content_filter_logs?: Prisma.ContentFilterLogListRelationFilter;
 };
 
 export type GuildOrderByWithRelationInput = {
@@ -194,6 +196,8 @@ export type GuildOrderByWithRelationInput = {
 	messages?: Prisma.MessageOrderByRelationAggregateInput;
 	quick_purges?: Prisma.QuickPurgeOrderByRelationAggregateInput;
 	permission_scopes?: Prisma.PermissionScopeOrderByRelationAggregateInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertOrderByRelationAggregateInput;
+	content_filter_logs?: Prisma.ContentFilterLogOrderByRelationAggregateInput;
 };
 
 export type GuildWhereUniqueInput = Prisma.AtLeast<
@@ -233,6 +237,8 @@ export type GuildWhereUniqueInput = Prisma.AtLeast<
 		messages?: Prisma.MessageListRelationFilter;
 		quick_purges?: Prisma.QuickPurgeListRelationFilter;
 		permission_scopes?: Prisma.PermissionScopeListRelationFilter;
+		content_filter_alerts?: Prisma.ContentFilterAlertListRelationFilter;
+		content_filter_logs?: Prisma.ContentFilterLogListRelationFilter;
 	},
 	"id"
 >;
@@ -266,6 +272,8 @@ export type GuildCreateInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateInput = {
@@ -283,6 +291,8 @@ export type GuildUncheckedCreateInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUpdateInput = {
@@ -300,6 +310,8 @@ export type GuildUpdateInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateInput = {
@@ -317,6 +329,8 @@ export type GuildUncheckedUpdateInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateManyInput = {
@@ -427,6 +441,58 @@ export type GuildUpdateOneRequiredWithoutContent_filter_configNestedInput = {
 			Prisma.GuildUpdateWithoutContent_filter_configInput
 		>,
 		Prisma.GuildUncheckedUpdateWithoutContent_filter_configInput
+	>;
+};
+
+export type GuildCreateNestedOneWithoutContent_filter_alertsInput = {
+	create?: Prisma.XOR<
+		Prisma.GuildCreateWithoutContent_filter_alertsInput,
+		Prisma.GuildUncheckedCreateWithoutContent_filter_alertsInput
+	>;
+	connectOrCreate?: Prisma.GuildCreateOrConnectWithoutContent_filter_alertsInput;
+	connect?: Prisma.GuildWhereUniqueInput;
+};
+
+export type GuildUpdateOneRequiredWithoutContent_filter_alertsNestedInput = {
+	create?: Prisma.XOR<
+		Prisma.GuildCreateWithoutContent_filter_alertsInput,
+		Prisma.GuildUncheckedCreateWithoutContent_filter_alertsInput
+	>;
+	connectOrCreate?: Prisma.GuildCreateOrConnectWithoutContent_filter_alertsInput;
+	upsert?: Prisma.GuildUpsertWithoutContent_filter_alertsInput;
+	connect?: Prisma.GuildWhereUniqueInput;
+	update?: Prisma.XOR<
+		Prisma.XOR<
+			Prisma.GuildUpdateToOneWithWhereWithoutContent_filter_alertsInput,
+			Prisma.GuildUpdateWithoutContent_filter_alertsInput
+		>,
+		Prisma.GuildUncheckedUpdateWithoutContent_filter_alertsInput
+	>;
+};
+
+export type GuildCreateNestedOneWithoutContent_filter_logsInput = {
+	create?: Prisma.XOR<
+		Prisma.GuildCreateWithoutContent_filter_logsInput,
+		Prisma.GuildUncheckedCreateWithoutContent_filter_logsInput
+	>;
+	connectOrCreate?: Prisma.GuildCreateOrConnectWithoutContent_filter_logsInput;
+	connect?: Prisma.GuildWhereUniqueInput;
+};
+
+export type GuildUpdateOneRequiredWithoutContent_filter_logsNestedInput = {
+	create?: Prisma.XOR<
+		Prisma.GuildCreateWithoutContent_filter_logsInput,
+		Prisma.GuildUncheckedCreateWithoutContent_filter_logsInput
+	>;
+	connectOrCreate?: Prisma.GuildCreateOrConnectWithoutContent_filter_logsInput;
+	upsert?: Prisma.GuildUpsertWithoutContent_filter_logsInput;
+	connect?: Prisma.GuildWhereUniqueInput;
+	update?: Prisma.XOR<
+		Prisma.XOR<
+			Prisma.GuildUpdateToOneWithWhereWithoutContent_filter_logsInput,
+			Prisma.GuildUpdateWithoutContent_filter_logsInput
+		>,
+		Prisma.GuildUncheckedUpdateWithoutContent_filter_logsInput
 	>;
 };
 
@@ -680,6 +746,8 @@ export type GuildCreateWithoutMessage_report_configInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutMessage_report_configInput = {
@@ -696,6 +764,8 @@ export type GuildUncheckedCreateWithoutMessage_report_configInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutMessage_report_configInput = {
@@ -740,6 +810,8 @@ export type GuildUpdateWithoutMessage_report_configInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutMessage_report_configInput = {
@@ -756,6 +828,8 @@ export type GuildUncheckedUpdateWithoutMessage_report_configInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutBan_request_configInput = {
@@ -772,6 +846,8 @@ export type GuildCreateWithoutBan_request_configInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutBan_request_configInput = {
@@ -788,6 +864,8 @@ export type GuildUncheckedCreateWithoutBan_request_configInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutBan_request_configInput = {
@@ -832,6 +910,8 @@ export type GuildUpdateWithoutBan_request_configInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutBan_request_configInput = {
@@ -848,6 +928,8 @@ export type GuildUncheckedUpdateWithoutBan_request_configInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutContent_filter_configInput = {
@@ -864,6 +946,8 @@ export type GuildCreateWithoutContent_filter_configInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutContent_filter_configInput = {
@@ -880,6 +964,8 @@ export type GuildUncheckedCreateWithoutContent_filter_configInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutContent_filter_configInput = {
@@ -924,6 +1010,8 @@ export type GuildUpdateWithoutContent_filter_configInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutContent_filter_configInput = {
@@ -940,6 +1028,208 @@ export type GuildUncheckedUpdateWithoutContent_filter_configInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
+};
+
+export type GuildCreateWithoutContent_filter_alertsInput = {
+	id: string;
+	message_report_config?: Prisma.MessageReportConfigCreateNestedOneWithoutGuildInput;
+	ban_request_config?: Prisma.BanRequestConfigCreateNestedOneWithoutGuildInput;
+	content_filter_config?: Prisma.ContentFilterConfigCreateNestedOneWithoutGuildInput;
+	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
+	quick_mute_config?: Prisma.QuickMuteConfigCreateNestedOneWithoutGuildInput;
+	quick_purge_config?: Prisma.QuickPurgeConfigCreateNestedOneWithoutGuildInput;
+	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
+	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
+	quick_mutes?: Prisma.QuickMuteCreateNestedManyWithoutGuildInput;
+	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
+	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
+	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
+};
+
+export type GuildUncheckedCreateWithoutContent_filter_alertsInput = {
+	id: string;
+	message_report_config?: Prisma.MessageReportConfigUncheckedCreateNestedOneWithoutGuildInput;
+	ban_request_config?: Prisma.BanRequestConfigUncheckedCreateNestedOneWithoutGuildInput;
+	content_filter_config?: Prisma.ContentFilterConfigUncheckedCreateNestedOneWithoutGuildInput;
+	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
+	quick_mute_config?: Prisma.QuickMuteConfigUncheckedCreateNestedOneWithoutGuildInput;
+	quick_purge_config?: Prisma.QuickPurgeConfigUncheckedCreateNestedOneWithoutGuildInput;
+	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
+	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
+	quick_mutes?: Prisma.QuickMuteUncheckedCreateNestedManyWithoutGuildInput;
+	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
+	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
+	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
+};
+
+export type GuildCreateOrConnectWithoutContent_filter_alertsInput = {
+	where: Prisma.GuildWhereUniqueInput;
+	create: Prisma.XOR<
+		Prisma.GuildCreateWithoutContent_filter_alertsInput,
+		Prisma.GuildUncheckedCreateWithoutContent_filter_alertsInput
+	>;
+};
+
+export type GuildUpsertWithoutContent_filter_alertsInput = {
+	update: Prisma.XOR<
+		Prisma.GuildUpdateWithoutContent_filter_alertsInput,
+		Prisma.GuildUncheckedUpdateWithoutContent_filter_alertsInput
+	>;
+	create: Prisma.XOR<
+		Prisma.GuildCreateWithoutContent_filter_alertsInput,
+		Prisma.GuildUncheckedCreateWithoutContent_filter_alertsInput
+	>;
+	where?: Prisma.GuildWhereInput;
+};
+
+export type GuildUpdateToOneWithWhereWithoutContent_filter_alertsInput = {
+	where?: Prisma.GuildWhereInput;
+	data: Prisma.XOR<
+		Prisma.GuildUpdateWithoutContent_filter_alertsInput,
+		Prisma.GuildUncheckedUpdateWithoutContent_filter_alertsInput
+	>;
+};
+
+export type GuildUpdateWithoutContent_filter_alertsInput = {
+	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	message_report_config?: Prisma.MessageReportConfigUpdateOneWithoutGuildNestedInput;
+	ban_request_config?: Prisma.BanRequestConfigUpdateOneWithoutGuildNestedInput;
+	content_filter_config?: Prisma.ContentFilterConfigUpdateOneWithoutGuildNestedInput;
+	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
+	quick_mute_config?: Prisma.QuickMuteConfigUpdateOneWithoutGuildNestedInput;
+	quick_purge_config?: Prisma.QuickPurgeConfigUpdateOneWithoutGuildNestedInput;
+	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
+	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
+	quick_mutes?: Prisma.QuickMuteUpdateManyWithoutGuildNestedInput;
+	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
+	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
+	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
+};
+
+export type GuildUncheckedUpdateWithoutContent_filter_alertsInput = {
+	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	message_report_config?: Prisma.MessageReportConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	ban_request_config?: Prisma.BanRequestConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	content_filter_config?: Prisma.ContentFilterConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	quick_mute_config?: Prisma.QuickMuteConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	quick_purge_config?: Prisma.QuickPurgeConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
+	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
+	quick_mutes?: Prisma.QuickMuteUncheckedUpdateManyWithoutGuildNestedInput;
+	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
+	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
+	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
+};
+
+export type GuildCreateWithoutContent_filter_logsInput = {
+	id: string;
+	message_report_config?: Prisma.MessageReportConfigCreateNestedOneWithoutGuildInput;
+	ban_request_config?: Prisma.BanRequestConfigCreateNestedOneWithoutGuildInput;
+	content_filter_config?: Prisma.ContentFilterConfigCreateNestedOneWithoutGuildInput;
+	highlight_config?: Prisma.HighlightConfigCreateNestedOneWithoutGuildInput;
+	quick_mute_config?: Prisma.QuickMuteConfigCreateNestedOneWithoutGuildInput;
+	quick_purge_config?: Prisma.QuickPurgeConfigCreateNestedOneWithoutGuildInput;
+	ban_requests?: Prisma.BanRequestCreateNestedManyWithoutGuildInput;
+	highlights?: Prisma.HighlightCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportCreateNestedManyWithoutGuildInput;
+	quick_mutes?: Prisma.QuickMuteCreateNestedManyWithoutGuildInput;
+	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
+	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
+	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+};
+
+export type GuildUncheckedCreateWithoutContent_filter_logsInput = {
+	id: string;
+	message_report_config?: Prisma.MessageReportConfigUncheckedCreateNestedOneWithoutGuildInput;
+	ban_request_config?: Prisma.BanRequestConfigUncheckedCreateNestedOneWithoutGuildInput;
+	content_filter_config?: Prisma.ContentFilterConfigUncheckedCreateNestedOneWithoutGuildInput;
+	highlight_config?: Prisma.HighlightConfigUncheckedCreateNestedOneWithoutGuildInput;
+	quick_mute_config?: Prisma.QuickMuteConfigUncheckedCreateNestedOneWithoutGuildInput;
+	quick_purge_config?: Prisma.QuickPurgeConfigUncheckedCreateNestedOneWithoutGuildInput;
+	ban_requests?: Prisma.BanRequestUncheckedCreateNestedManyWithoutGuildInput;
+	highlights?: Prisma.HighlightUncheckedCreateNestedManyWithoutGuildInput;
+	message_reports?: Prisma.MessageReportUncheckedCreateNestedManyWithoutGuildInput;
+	quick_mutes?: Prisma.QuickMuteUncheckedCreateNestedManyWithoutGuildInput;
+	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
+	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
+	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+};
+
+export type GuildCreateOrConnectWithoutContent_filter_logsInput = {
+	where: Prisma.GuildWhereUniqueInput;
+	create: Prisma.XOR<
+		Prisma.GuildCreateWithoutContent_filter_logsInput,
+		Prisma.GuildUncheckedCreateWithoutContent_filter_logsInput
+	>;
+};
+
+export type GuildUpsertWithoutContent_filter_logsInput = {
+	update: Prisma.XOR<
+		Prisma.GuildUpdateWithoutContent_filter_logsInput,
+		Prisma.GuildUncheckedUpdateWithoutContent_filter_logsInput
+	>;
+	create: Prisma.XOR<
+		Prisma.GuildCreateWithoutContent_filter_logsInput,
+		Prisma.GuildUncheckedCreateWithoutContent_filter_logsInput
+	>;
+	where?: Prisma.GuildWhereInput;
+};
+
+export type GuildUpdateToOneWithWhereWithoutContent_filter_logsInput = {
+	where?: Prisma.GuildWhereInput;
+	data: Prisma.XOR<
+		Prisma.GuildUpdateWithoutContent_filter_logsInput,
+		Prisma.GuildUncheckedUpdateWithoutContent_filter_logsInput
+	>;
+};
+
+export type GuildUpdateWithoutContent_filter_logsInput = {
+	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	message_report_config?: Prisma.MessageReportConfigUpdateOneWithoutGuildNestedInput;
+	ban_request_config?: Prisma.BanRequestConfigUpdateOneWithoutGuildNestedInput;
+	content_filter_config?: Prisma.ContentFilterConfigUpdateOneWithoutGuildNestedInput;
+	highlight_config?: Prisma.HighlightConfigUpdateOneWithoutGuildNestedInput;
+	quick_mute_config?: Prisma.QuickMuteConfigUpdateOneWithoutGuildNestedInput;
+	quick_purge_config?: Prisma.QuickPurgeConfigUpdateOneWithoutGuildNestedInput;
+	ban_requests?: Prisma.BanRequestUpdateManyWithoutGuildNestedInput;
+	highlights?: Prisma.HighlightUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUpdateManyWithoutGuildNestedInput;
+	quick_mutes?: Prisma.QuickMuteUpdateManyWithoutGuildNestedInput;
+	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
+	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
+	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+};
+
+export type GuildUncheckedUpdateWithoutContent_filter_logsInput = {
+	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	message_report_config?: Prisma.MessageReportConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	ban_request_config?: Prisma.BanRequestConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	content_filter_config?: Prisma.ContentFilterConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	highlight_config?: Prisma.HighlightConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	quick_mute_config?: Prisma.QuickMuteConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	quick_purge_config?: Prisma.QuickPurgeConfigUncheckedUpdateOneWithoutGuildNestedInput;
+	ban_requests?: Prisma.BanRequestUncheckedUpdateManyWithoutGuildNestedInput;
+	highlights?: Prisma.HighlightUncheckedUpdateManyWithoutGuildNestedInput;
+	message_reports?: Prisma.MessageReportUncheckedUpdateManyWithoutGuildNestedInput;
+	quick_mutes?: Prisma.QuickMuteUncheckedUpdateManyWithoutGuildNestedInput;
+	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
+	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
+	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutBan_requestsInput = {
@@ -956,6 +1246,8 @@ export type GuildCreateWithoutBan_requestsInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutBan_requestsInput = {
@@ -972,6 +1264,8 @@ export type GuildUncheckedCreateWithoutBan_requestsInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutBan_requestsInput = {
@@ -1013,6 +1307,8 @@ export type GuildUpdateWithoutBan_requestsInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutBan_requestsInput = {
@@ -1029,6 +1325,8 @@ export type GuildUncheckedUpdateWithoutBan_requestsInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutMessage_reportsInput = {
@@ -1045,6 +1343,8 @@ export type GuildCreateWithoutMessage_reportsInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutMessage_reportsInput = {
@@ -1061,6 +1361,8 @@ export type GuildUncheckedCreateWithoutMessage_reportsInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutMessage_reportsInput = {
@@ -1105,6 +1407,8 @@ export type GuildUpdateWithoutMessage_reportsInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutMessage_reportsInput = {
@@ -1121,6 +1425,8 @@ export type GuildUncheckedUpdateWithoutMessage_reportsInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutHighlight_configInput = {
@@ -1137,6 +1443,8 @@ export type GuildCreateWithoutHighlight_configInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutHighlight_configInput = {
@@ -1153,6 +1461,8 @@ export type GuildUncheckedCreateWithoutHighlight_configInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutHighlight_configInput = {
@@ -1197,6 +1507,8 @@ export type GuildUpdateWithoutHighlight_configInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutHighlight_configInput = {
@@ -1213,6 +1525,8 @@ export type GuildUncheckedUpdateWithoutHighlight_configInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutHighlightsInput = {
@@ -1229,6 +1543,8 @@ export type GuildCreateWithoutHighlightsInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutHighlightsInput = {
@@ -1245,6 +1561,8 @@ export type GuildUncheckedCreateWithoutHighlightsInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutHighlightsInput = {
@@ -1277,6 +1595,8 @@ export type GuildUpdateWithoutHighlightsInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutHighlightsInput = {
@@ -1293,6 +1613,8 @@ export type GuildUncheckedUpdateWithoutHighlightsInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutQuick_mute_configInput = {
@@ -1309,6 +1631,8 @@ export type GuildCreateWithoutQuick_mute_configInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutQuick_mute_configInput = {
@@ -1325,6 +1649,8 @@ export type GuildUncheckedCreateWithoutQuick_mute_configInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutQuick_mute_configInput = {
@@ -1369,6 +1695,8 @@ export type GuildUpdateWithoutQuick_mute_configInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutQuick_mute_configInput = {
@@ -1385,6 +1713,8 @@ export type GuildUncheckedUpdateWithoutQuick_mute_configInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutQuick_mutesInput = {
@@ -1401,6 +1731,8 @@ export type GuildCreateWithoutQuick_mutesInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutQuick_mutesInput = {
@@ -1417,6 +1749,8 @@ export type GuildUncheckedCreateWithoutQuick_mutesInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutQuick_mutesInput = {
@@ -1449,6 +1783,8 @@ export type GuildUpdateWithoutQuick_mutesInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutQuick_mutesInput = {
@@ -1465,6 +1801,8 @@ export type GuildUncheckedUpdateWithoutQuick_mutesInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutQuick_purge_configInput = {
@@ -1481,6 +1819,8 @@ export type GuildCreateWithoutQuick_purge_configInput = {
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutQuick_purge_configInput = {
@@ -1497,6 +1837,8 @@ export type GuildUncheckedCreateWithoutQuick_purge_configInput = {
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutQuick_purge_configInput = {
@@ -1541,6 +1883,8 @@ export type GuildUpdateWithoutQuick_purge_configInput = {
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutQuick_purge_configInput = {
@@ -1557,6 +1901,8 @@ export type GuildUncheckedUpdateWithoutQuick_purge_configInput = {
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutQuick_purgesInput = {
@@ -1573,6 +1919,8 @@ export type GuildCreateWithoutQuick_purgesInput = {
 	quick_mutes?: Prisma.QuickMuteCreateNestedManyWithoutGuildInput;
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutQuick_purgesInput = {
@@ -1589,6 +1937,8 @@ export type GuildUncheckedCreateWithoutQuick_purgesInput = {
 	quick_mutes?: Prisma.QuickMuteUncheckedCreateNestedManyWithoutGuildInput;
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutQuick_purgesInput = {
@@ -1630,6 +1980,8 @@ export type GuildUpdateWithoutQuick_purgesInput = {
 	quick_mutes?: Prisma.QuickMuteUpdateManyWithoutGuildNestedInput;
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutQuick_purgesInput = {
@@ -1646,6 +1998,8 @@ export type GuildUncheckedUpdateWithoutQuick_purgesInput = {
 	quick_mutes?: Prisma.QuickMuteUncheckedUpdateManyWithoutGuildNestedInput;
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutMessagesInput = {
@@ -1662,6 +2016,8 @@ export type GuildCreateWithoutMessagesInput = {
 	quick_mutes?: Prisma.QuickMuteCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutMessagesInput = {
@@ -1678,6 +2034,8 @@ export type GuildUncheckedCreateWithoutMessagesInput = {
 	quick_mutes?: Prisma.QuickMuteUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutMessagesInput = {
@@ -1710,6 +2068,8 @@ export type GuildUpdateWithoutMessagesInput = {
 	quick_mutes?: Prisma.QuickMuteUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutMessagesInput = {
@@ -1726,6 +2086,8 @@ export type GuildUncheckedUpdateWithoutMessagesInput = {
 	quick_mutes?: Prisma.QuickMuteUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
 	permission_scopes?: Prisma.PermissionScopeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildCreateWithoutPermission_scopesInput = {
@@ -1742,6 +2104,8 @@ export type GuildCreateWithoutPermission_scopesInput = {
 	quick_mutes?: Prisma.QuickMuteCreateNestedManyWithoutGuildInput;
 	messages?: Prisma.MessageCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildUncheckedCreateWithoutPermission_scopesInput = {
@@ -1758,6 +2122,8 @@ export type GuildUncheckedCreateWithoutPermission_scopesInput = {
 	quick_mutes?: Prisma.QuickMuteUncheckedCreateNestedManyWithoutGuildInput;
 	messages?: Prisma.MessageUncheckedCreateNestedManyWithoutGuildInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedCreateNestedManyWithoutGuildInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedCreateNestedManyWithoutGuildInput;
 };
 
 export type GuildCreateOrConnectWithoutPermission_scopesInput = {
@@ -1802,6 +2168,8 @@ export type GuildUpdateWithoutPermission_scopesInput = {
 	quick_mutes?: Prisma.QuickMuteUpdateManyWithoutGuildNestedInput;
 	messages?: Prisma.MessageUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUpdateManyWithoutGuildNestedInput;
 };
 
 export type GuildUncheckedUpdateWithoutPermission_scopesInput = {
@@ -1818,6 +2186,8 @@ export type GuildUncheckedUpdateWithoutPermission_scopesInput = {
 	quick_mutes?: Prisma.QuickMuteUncheckedUpdateManyWithoutGuildNestedInput;
 	messages?: Prisma.MessageUncheckedUpdateManyWithoutGuildNestedInput;
 	quick_purges?: Prisma.QuickPurgeUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_alerts?: Prisma.ContentFilterAlertUncheckedUpdateManyWithoutGuildNestedInput;
+	content_filter_logs?: Prisma.ContentFilterLogUncheckedUpdateManyWithoutGuildNestedInput;
 };
 
 /**
@@ -1832,6 +2202,8 @@ export type GuildCountOutputType = {
 	messages: number;
 	quick_purges: number;
 	permission_scopes: number;
+	content_filter_alerts: number;
+	content_filter_logs: number;
 };
 
 export type GuildCountOutputTypeSelect<
@@ -1844,6 +2216,8 @@ export type GuildCountOutputTypeSelect<
 	messages?: boolean | GuildCountOutputTypeCountMessagesArgs;
 	quick_purges?: boolean | GuildCountOutputTypeCountQuick_purgesArgs;
 	permission_scopes?: boolean | GuildCountOutputTypeCountPermission_scopesArgs;
+	content_filter_alerts?: boolean | GuildCountOutputTypeCountContent_filter_alertsArgs;
+	content_filter_logs?: boolean | GuildCountOutputTypeCountContent_filter_logsArgs;
 };
 
 /**
@@ -1921,6 +2295,24 @@ export type GuildCountOutputTypeCountPermission_scopesArgs<
 	where?: Prisma.PermissionScopeWhereInput;
 };
 
+/**
+ * GuildCountOutputType without action
+ */
+export type GuildCountOutputTypeCountContent_filter_alertsArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	where?: Prisma.ContentFilterAlertWhereInput;
+};
+
+/**
+ * GuildCountOutputType without action
+ */
+export type GuildCountOutputTypeCountContent_filter_logsArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	where?: Prisma.ContentFilterLogWhereInput;
+};
+
 export type GuildSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> =
 	runtime.Types.Extensions.GetSelect<
 		{
@@ -1938,6 +2330,8 @@ export type GuildSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 			messages?: boolean | Prisma.Guild$messagesArgs<ExtArgs>;
 			quick_purges?: boolean | Prisma.Guild$quick_purgesArgs<ExtArgs>;
 			permission_scopes?: boolean | Prisma.Guild$permission_scopesArgs<ExtArgs>;
+			content_filter_alerts?: boolean | Prisma.Guild$content_filter_alertsArgs<ExtArgs>;
+			content_filter_logs?: boolean | Prisma.Guild$content_filter_logsArgs<ExtArgs>;
 			_count?: boolean | Prisma.GuildCountOutputTypeDefaultArgs<ExtArgs>;
 		},
 		ExtArgs["result"]["guild"]
@@ -1982,6 +2376,8 @@ export type GuildInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
 		messages?: boolean | Prisma.Guild$messagesArgs<ExtArgs>;
 		quick_purges?: boolean | Prisma.Guild$quick_purgesArgs<ExtArgs>;
 		permission_scopes?: boolean | Prisma.Guild$permission_scopesArgs<ExtArgs>;
+		content_filter_alerts?: boolean | Prisma.Guild$content_filter_alertsArgs<ExtArgs>;
+		content_filter_logs?: boolean | Prisma.Guild$content_filter_logsArgs<ExtArgs>;
 		_count?: boolean | Prisma.GuildCountOutputTypeDefaultArgs<ExtArgs>;
 	};
 export type GuildIncludeCreateManyAndReturn<
@@ -2009,6 +2405,8 @@ export type $GuildPayload<
 		messages: Prisma.$MessagePayload<ExtArgs>[];
 		quick_purges: Prisma.$QuickPurgePayload<ExtArgs>[];
 		permission_scopes: Prisma.$PermissionScopePayload<ExtArgs>[];
+		content_filter_alerts: Prisma.$ContentFilterAlertPayload<ExtArgs>[];
+		content_filter_logs: Prisma.$ContentFilterLogPayload<ExtArgs>[];
 	};
 	scalars: runtime.Types.Extensions.GetPayloadResult<
 		{
@@ -2605,6 +3003,18 @@ export interface Prisma__GuildClient<
 		args?: Prisma.Subset<T, Prisma.Guild$permission_scopesArgs<ExtArgs>>
 	): Prisma.PrismaPromise<
 		| runtime.Types.Result.GetResult<Prisma.$PermissionScopePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>
+		| Null
+	>;
+	content_filter_alerts<T extends Prisma.Guild$content_filter_alertsArgs<ExtArgs> = {}>(
+		args?: Prisma.Subset<T, Prisma.Guild$content_filter_alertsArgs<ExtArgs>>
+	): Prisma.PrismaPromise<
+		| runtime.Types.Result.GetResult<Prisma.$ContentFilterAlertPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>
+		| Null
+	>;
+	content_filter_logs<T extends Prisma.Guild$content_filter_logsArgs<ExtArgs> = {}>(
+		args?: Prisma.Subset<T, Prisma.Guild$content_filter_logsArgs<ExtArgs>>
+	): Prisma.PrismaPromise<
+		| runtime.Types.Result.GetResult<Prisma.$ContentFilterLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>
 		| Null
 	>;
 	/**
@@ -3359,6 +3769,58 @@ export type Guild$permission_scopesArgs<
 	take?: number;
 	skip?: number;
 	distinct?: Prisma.PermissionScopeScalarFieldEnum | Prisma.PermissionScopeScalarFieldEnum[];
+};
+
+/**
+ * Guild.content_filter_alerts
+ */
+export type Guild$content_filter_alertsArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	/**
+	 * Select specific fields to fetch from the ContentFilterAlert
+	 */
+	select?: Prisma.ContentFilterAlertSelect<ExtArgs> | null;
+	/**
+	 * Omit specific fields from the ContentFilterAlert
+	 */
+	omit?: Prisma.ContentFilterAlertOmit<ExtArgs> | null;
+	/**
+	 * Choose, which related nodes to fetch as well
+	 */
+	include?: Prisma.ContentFilterAlertInclude<ExtArgs> | null;
+	where?: Prisma.ContentFilterAlertWhereInput;
+	orderBy?: Prisma.ContentFilterAlertOrderByWithRelationInput | Prisma.ContentFilterAlertOrderByWithRelationInput[];
+	cursor?: Prisma.ContentFilterAlertWhereUniqueInput;
+	take?: number;
+	skip?: number;
+	distinct?: Prisma.ContentFilterAlertScalarFieldEnum | Prisma.ContentFilterAlertScalarFieldEnum[];
+};
+
+/**
+ * Guild.content_filter_logs
+ */
+export type Guild$content_filter_logsArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	/**
+	 * Select specific fields to fetch from the ContentFilterLog
+	 */
+	select?: Prisma.ContentFilterLogSelect<ExtArgs> | null;
+	/**
+	 * Omit specific fields from the ContentFilterLog
+	 */
+	omit?: Prisma.ContentFilterLogOmit<ExtArgs> | null;
+	/**
+	 * Choose, which related nodes to fetch as well
+	 */
+	include?: Prisma.ContentFilterLogInclude<ExtArgs> | null;
+	where?: Prisma.ContentFilterLogWhereInput;
+	orderBy?: Prisma.ContentFilterLogOrderByWithRelationInput | Prisma.ContentFilterLogOrderByWithRelationInput[];
+	cursor?: Prisma.ContentFilterLogWhereUniqueInput;
+	take?: number;
+	skip?: number;
+	distinct?: Prisma.ContentFilterLogScalarFieldEnum | Prisma.ContentFilterLogScalarFieldEnum[];
 };
 
 /**

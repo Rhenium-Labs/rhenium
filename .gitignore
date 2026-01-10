@@ -21,3 +21,5 @@ dist
 
 # Config files
 cfg.global.yml
+
+/old_codebase

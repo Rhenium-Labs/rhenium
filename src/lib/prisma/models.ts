@@ -12,6 +12,8 @@ export type * from "./models/Whitelist.js";
 export type * from "./models/MessageReportConfig.js";
 export type * from "./models/BanRequestConfig.js";
 export type * from "./models/ContentFilterConfig.js";
+export type * from "./models/ContentFilterAlert.js";
+export type * from "./models/ContentFilterLog.js";
 export type * from "./models/BanRequest.js";
 export type * from "./models/TemporaryBan.js";
 export type * from "./models/MessageReport.js";

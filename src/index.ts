@@ -1,5 +1,7 @@
 import "dotenv/config.js";
 
+import OpenAI from "openai";
+
 import {
 	init,
 	prismaIntegration,
@@ -37,6 +39,11 @@ export const prisma = new PrismaClient({
 export const kv = open<Object, string>({
 	encoding: "json",
 	compression: true
+});
+
+/** OpenAI client. */
+export const openAi = new OpenAI({
+	apiKey: process.env.OPENAI_API_KEY
 });
 
 async function main(): Promise<void> {

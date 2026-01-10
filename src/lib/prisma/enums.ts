@@ -51,6 +51,15 @@ export const ContentFilterVerbosity = {
 
 export type ContentFilterVerbosity = (typeof ContentFilterVerbosity)[keyof typeof ContentFilterVerbosity];
 
+export const ContentFilterStatus = {
+	Pending: "Pending",
+	Resolved: "Resolved",
+	False: "False",
+	Deleted: "Deleted"
+} as const;
+
+export type ContentFilterStatus = (typeof ContentFilterStatus)[keyof typeof ContentFilterStatus];
+
 export const UserPermission = {
 	ReviewMessageReports: "ReviewMessageReports",
 	ReviewBanRequests: "ReviewBanRequests",

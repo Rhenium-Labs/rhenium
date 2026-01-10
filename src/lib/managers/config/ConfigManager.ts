@@ -3,6 +3,7 @@ import { prisma } from "#root/index.js";
 
 import type {
 	BanRequestConfig,
+	ContentFilterConfig,
 	HighlightConfig,
 	MessageReportConfig,
 	PermissionScope,
@@ -92,7 +93,7 @@ export default class ConfigManager {
 			update: {}
 		});
 
-		const [messageReports, banRequests, quickMutes, quickPurges, highlights, permissionScopes] =
+		const [messageReports, banRequests, quickMutes, quickPurges, highlights, contentFilter, permissionScopes] =
 			await prisma.$transaction([
 				prisma.messageReportConfig.upsert({
 					where: { id: guildId },
@@ -121,6 +122,11 @@ export default class ConfigManager {
 					create: { id: guildId },
 					update: {}
 				}),
+				prisma.contentFilterConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					update: {}
+				}),
 				prisma.permissionScope.findMany({ where: { guild_id: guildId } })
 			]);
 
@@ -137,6 +143,7 @@ export default class ConfigManager {
 				channel_scoping: quickPurges.channel_scoping
 			},
 			highlights: highlights,
+			content_filter: contentFilter,
 			permission_scopes: permissionScopes
 		};
 
@@ -151,6 +158,7 @@ type ConfigFeatureMap = {
 	quick_mutes: QuickMuteConfig;
 	quick_purges: QuickPurgeConfig;
 	highlights: HighlightConfig;
+	content_filter: ContentFilterConfig;
 	permission_scopes: PermissionScope[];
 };
 
@@ -162,5 +170,6 @@ export const ConfigKeys = {
 	QuickMutes: "quick_mutes",
 	QuickPurges: "quick_purges",
 	Highlights: "highlights",
+	ContentFilter: "content_filter",
 	PermissionScopes: "permission_scopes"
 } as const;

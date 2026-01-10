@@ -40,7 +40,7 @@ export class MessageQueue {
 	 */
 
 	public static queue(message: Message<true>): void {
-		const messageEntry = MessageQueue._serializeMessage(message);
+		const messageEntry = MessageQueue.serializeMessage(message);
 		MessageQueue._cache.set(message.id, messageEntry);
 	}
 
@@ -89,6 +89,45 @@ export class MessageQueue {
 		return matching
 			.sort((a, b) => (BigInt(b.id) > BigInt(a.id) ? 1 : -1))
 			.map(msg => msg.id)
+			.slice(0, limit);
+	}
+
+	/**
+	 * Retrieves messages for a specific channel from both cache and database.
+	 * Returns messages sorted by creation time (newest first).
+	 *
+	 * @param channelId The channel ID to get messages for.
+	 * @param limit The maximum number of messages to return.
+	 * @returns An array of serialized messages.
+	 */
+	public static async getMessagesForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
+		// Get messages from cache for this channel
+		const cachedMessages = MessageQueue._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
+
+		// Get messages from database
+		const dbMessages = await prisma.message.findMany({
+			where: {
+				channel_id: channelId,
+				deleted: false
+			},
+			orderBy: { created_at: "desc" },
+			take: limit
+		});
+
+		// Merge and deduplicate (cache takes priority)
+		const messageMap = new Map<Snowflake, SerializedMessage>();
+
+		for (const msg of dbMessages) {
+			messageMap.set(msg.id, msg);
+		}
+
+		for (const [id, msg] of cachedMessages) {
+			messageMap.set(id, msg);
+		}
+
+		// Sort by created_at descending and limit
+		return Array.from(messageMap.values())
+			.sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
 			.slice(0, limit);
 	}
 
@@ -200,7 +239,7 @@ export class MessageQueue {
 	 * @returns The serialized message.
 	 */
 
-	private static _serializeMessage(message: Message<true>): SerializedMessage {
+	public static serializeMessage(message: Message<true>): SerializedMessage {
 		const stickerId = message.stickers?.first()?.id ?? null;
 		const referenceId = message.reference?.messageId ?? null;
 		const content = cleanMessageContent(message.content, message.channel);

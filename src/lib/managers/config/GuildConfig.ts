@@ -2,6 +2,7 @@ import type { GuildMember } from "discord.js";
 
 import type {
 	BanRequestConfig,
+	ContentFilterConfig,
 	HighlightConfig,
 	MessageReportConfig,
 	PermissionScope,
@@ -121,6 +122,23 @@ export default class GuildConfig {
 	}
 
 	/**
+	 * Gets the content filter configuration.
+	 *
+	 * This method will return null if ANY the following conditions are met:
+	 * - Content filter is disabled in the guild.
+	 * - No webhook URL is configured.
+	 *
+	 * @return The content filter configuration or null.
+	 */
+	public getContentFilterConfig(): ContentFilterConfig | null {
+		if (!this.data.content_filter.enabled || !this.data.content_filter.webhook_url) {
+			return null;
+		}
+
+		return this.data.content_filter;
+	}
+
+	/**
 	 * Check if a member has a specific permission scope.
 	 *
 	 * @param member The guild member to check.
@@ -147,6 +165,7 @@ export type GuildConfigData = {
 	id: string;
 	message_reports: MessageReportConfig;
 	ban_requests: BanRequestConfig;
+	content_filter: ContentFilterConfig;
 	highlights: HighlightConfig;
 	quick_mutes: QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] };
 	quick_purges: QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] };
