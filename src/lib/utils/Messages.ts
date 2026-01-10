@@ -176,8 +176,8 @@ export class MessageQueue {
 	}
 
 	/** Stores all cached messages into the database. */
-	static async store(): Promise<void> {
-		Logger.info("Storing cached messages...");
+	static async store(event?: NodeJS.Signals): Promise<void> {
+		Logger.info(`Storing cached messages ${event ? `before exiting due to ${event}` : ""}...`);
 
 		// Insert all cached messages into the database.
 		const messages = Array.from(MessageQueue._cache.values());

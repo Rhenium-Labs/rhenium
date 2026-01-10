@@ -62,3 +62,19 @@ export const LOG_DATE_FORMAT: Intl.DateTimeFormatOptions = {
 	timeZone: "GMT",
 	hour12: false
 };
+
+/** Process events that will trigger a message store and exit the process. */
+export const PROCESS_EXIT_EVENTS: readonly NodeJS.Signals[] = [
+	"SIGHUP",
+	"SIGINT",
+	"SIGQUIT",
+	"SIGILL",
+	"SIGTRAP",
+	"SIGABRT",
+	"SIGBUS",
+	"SIGFPE",
+	"SIGUSR1",
+	"SIGSEGV",
+	"SIGUSR2",
+	"SIGTERM"
+];

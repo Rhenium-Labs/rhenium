@@ -15,6 +15,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { sleep } from "#utils/index.js";
 import { PrismaClient } from "#prisma/client.js";
+import { MessageQueue } from "#utils/Messages.js";
+import { PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
 
 import Logger from "#utils/Logger.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
@@ -87,3 +89,17 @@ async function main(): Promise<void> {
 }
 
 void main();
+
+/** Handles storing messages on process exit events. */
+PROCESS_EXIT_EVENTS.forEach(event => {
+	process.on(event, async () => {
+		await MessageQueue.store(event)
+			.catch(error => {
+				Logger.error("Error when storing messages on process exit:", error);
+				process.exit(1);
+			})
+			.then(() => {
+				process.exit(0);
+			});
+	});
+});
