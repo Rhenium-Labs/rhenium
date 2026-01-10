@@ -50,14 +50,11 @@ const MAX_CONCURRENT_DELETIONS = 5;
 /** Discord epoch: 2015-01-01T00:00:00.000Z */
 const DISCORD_EPOCH = 1420070400000n;
 
-export type QuickPurgeResult = {
-	ok: boolean;
-	deleted: number;
-	failed: number;
-	message?: string;
-	entries?: string[];
-	logUrl?: string;
-};
+/** Queue locks to prevent concurrent quick purge actions on the same message. */
+const quickPurgeActionLocks: Set<Snowflake> = new Set();
+
+/** Queue locks to prevent concurrent quick mute actions on the same message. */
+const quickMuteActionLocks: Set<Snowflake> = new Set();
 
 export default class QuickActionUtils {
 	/**
@@ -75,160 +72,169 @@ export default class QuickActionUtils {
 	}): Promise<unknown> {
 		const { user, message, reaction, config } = data;
 
-		const quickMuteGuildConfig = config.getQuickMutesConfig();
-		if (!quickMuteGuildConfig) return;
+		if (quickMuteActionLocks.has(message.author.id)) return;
+		quickMuteActionLocks.add(message.author.id);
 
-		const executor = await message.guild.members.fetch(user.id).catch(() => null);
-		if (!executor) return;
+		try {
+			const quickMuteGuildConfig = config.getQuickMutesConfig();
+			if (!quickMuteGuildConfig) return;
 
-		// Prevent people who had access to quick mutes but lost it from executing quick mutes.
-		if (!config.hasPermission(executor, "UseQuickMute")) return;
+			const executor = await message.guild.members.fetch(user.id).catch(() => null);
+			if (!executor) return;
 
-		const channelScoping = parseChannelScoping(quickMuteGuildConfig.channel_scoping);
-		if (!channelInScope(message.channel, channelScoping)) return;
+			// Prevent people who had access to quick mutes but lost it from executing quick mutes.
+			if (!config.hasPermission(executor, "UseQuickMute")) return;
 
-		const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
-		if (!reactionIdentifier) return;
+			const channelScoping = parseChannelScoping(quickMuteGuildConfig.channel_scoping);
+			if (!channelInScope(message.channel, channelScoping)) return;
 
-		const quickMuteConfig = await prisma.quickMute.findUnique({
-			where: {
-				user_id_guild_id_reaction: {
-					user_id: user.id,
-					guild_id: message.guildId,
-					reaction: reactionIdentifier
+			const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
+			if (!reactionIdentifier) return;
+
+			const quickMuteConfig = await prisma.quickMute.findUnique({
+				where: {
+					user_id_guild_id_reaction: {
+						user_id: user.id,
+						guild_id: message.guildId,
+						reaction: reactionIdentifier
+					}
 				}
+			});
+
+			if (!quickMuteConfig) return;
+
+			const target = await message.guild.members.fetch(message.author.id).catch(() => null);
+			if (!target) return;
+
+			const resultWebhook = new WebhookClient({ url: quickMuteGuildConfig.result_webhook_url });
+
+			if (target.isCommunicationDisabled()) {
+				return temporaryReply(resultWebhook, {
+					content: `${executor}, ${target} is already muted.`
+				});
 			}
-		});
 
-		if (!quickMuteConfig) return;
+			if (!executor.guild.members.me!.permissions.has("ModerateMembers")) {
+				return temporaryReply(resultWebhook, {
+					content: `${executor}, I do not have the "Timeout Members" permission which is required to mute ${target}.`
+				});
+			}
 
-		const target = await message.guild.members.fetch(message.author.id).catch(() => null);
-		if (!target) return;
-
-		const resultWebhook = new WebhookClient({ url: quickMuteGuildConfig.result_webhook_url });
-
-		if (target.isCommunicationDisabled()) {
-			return temporaryReply(resultWebhook, {
-				content: `${executor}, ${target} is already muted.`
+			const validationResult = ModerationUtils.validateAction({
+				target,
+				executor,
+				action: "Quick Mute"
 			});
-		}
 
-		if (!executor.guild.members.me!.permissions.has("ModerateMembers")) {
-			return temporaryReply(resultWebhook, {
-				content: `${executor}, I do not have the "Timeout Members" permission which is required to mute ${target}.`
-			});
-		}
+			if (!validationResult.ok) {
+				return temporaryReply(resultWebhook, {
+					content: `${executor}, ${validationResult.message}`
+				});
+			}
 
-		const validationResult = ModerationUtils.validateAction({
-			target,
-			executor,
-			action: "Quick Mute"
-		});
+			const truncatedReason = truncate(
+				`Quick mute issued by @${executor.user.username} (${executor.id}) - ${quickMuteConfig.reason}`,
+				512
+			);
+			const formattedDuration = ms(Number(quickMuteConfig.duration), { long: true });
 
-		if (!validationResult.ok) {
-			return temporaryReply(resultWebhook, {
-				content: `${executor}, ${validationResult.message}`
-			});
-		}
+			const result = await target
+				.timeout(Number(quickMuteConfig.duration), truncatedReason)
+				.then(() => ({ ok: true }))
+				.catch(() => ({ ok: false }));
 
-		const truncatedReason = truncate(
-			`Quick mute issued by @${executor.user.username} (${executor.id}) - ${quickMuteConfig.reason}`,
-			512
-		);
-		const formattedDuration = ms(Number(quickMuteConfig.duration), { long: true });
+			if (!result.ok) {
+				return temporaryReply(resultWebhook, {
+					content: `${executor}, failed to quick mute ${target}.`
+				});
+			}
 
-		const result = await target
-			.timeout(Number(quickMuteConfig.duration), truncatedReason)
-			.then(() => ({ ok: true }))
-			.catch(() => ({ ok: false }));
+			// Handle message deletion/purge
+			let purgeResult: QuickPurgeResult | null = null;
 
-		if (!result.ok) {
-			return temporaryReply(resultWebhook, {
-				content: `${executor}, failed to quick mute ${target}.`
-			});
-		}
+			const purgeAmount = Math.min(quickMuteConfig.purge_amount, quickMuteGuildConfig.purge_limit);
 
-		// Handle message deletion/purge
-		let purgeResult: QuickPurgeResult | null = null;
+			if (purgeAmount > 1) {
+				purgeResult = await QuickActionUtils._executePurge({
+					channel: message.channel as TextChannel,
+					authorId: message.author.id,
+					triggerMessageId: message.id,
+					amount: purgeAmount
+				});
+			} else {
+				await message.delete().catch(() => null);
+			}
 
-		const purgeAmount = Math.min(quickMuteConfig.purge_amount, quickMuteGuildConfig.purge_limit);
+			const embed = new EmbedBuilder()
+				.setAuthor({ name: `Quick Mute Executed (${formattedDuration})` })
+				.setThumbnail(target.user.displayAvatarURL({ size: 64 }))
+				.setColor(Colors.Blue)
+				.setFields([
+					{
+						name: "Target",
+						value: userMentionWithId(target.id)
+					},
+					{
+						name: "Executor",
+						value: userMentionWithId(executor.id)
+					},
+					{
+						name: "Reason",
+						value: quickMuteConfig.reason
+					}
+				])
+				.setTimestamp();
 
-		if (purgeAmount > 1) {
-			purgeResult = await QuickActionUtils._executePurge({
-				channel: message.channel as TextChannel,
-				authorId: message.author.id,
-				triggerMessageId: message.id,
-				amount: purgeAmount
-			});
-		} else {
-			await message.delete().catch(() => null);
-		}
+			if (purgeResult?.ok && purgeResult.deleted > 0) {
+				embed.addFields({
+					name: "Messages Purged",
+					value: `${purgeResult.deleted} ${inflect(purgeResult.deleted, "message")}${purgeResult.failed > 0 ? ` (${purgeResult.failed} failed)` : ""}${purgeResult.logUrl ? `- [View Deleted Messages](${purgeResult.logUrl})` : ""}`
+				});
+			}
 
-		const embed = new EmbedBuilder()
-			.setAuthor({ name: `Quick Mute Executed (${formattedDuration})` })
-			.setThumbnail(target.user.displayAvatarURL({ size: 64 }))
-			.setColor(Colors.Blue)
-			.setFields([
-				{
-					name: "Target",
-					value: userMentionWithId(target.id)
-				},
-				{
-					name: "Executor",
-					value: userMentionWithId(executor.id)
-				},
-				{
-					name: "Reason",
-					value: quickMuteConfig.reason
+			const logWebhook = new WebhookClient({ url: quickMuteGuildConfig.webhook_url });
+
+			const content =
+				purgeResult && purgeResult.deleted > 0
+					? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} in ${message.channel}.`
+					: `${executor}, successfully quick muted ${target} for \`${formattedDuration}\`.`;
+
+			if (purgeResult) {
+				const entries = purgeResult.entries ?? [];
+				const attachment = QuickActionUtils._mapLogEntriesToFile(entries);
+				const components: ActionRowBuilder<ButtonBuilder>[] = [];
+
+				if (purgeResult.logUrl) {
+					const button = new ButtonBuilder()
+						.setLabel("Open In Browser")
+						.setStyle(ButtonStyle.Link)
+						.setURL(purgeResult.logUrl);
+
+					const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+					components.push(row);
 				}
-			])
-			.setTimestamp();
 
-		if (purgeResult?.ok && purgeResult.deleted > 0) {
-			embed.addFields({
-				name: "Messages Purged",
-				value: `${purgeResult.deleted} ${inflect(purgeResult.deleted, "message")}${purgeResult.failed > 0 ? ` (${purgeResult.failed} failed)` : ""}${purgeResult.logUrl ? `- [View Deleted Messages](${purgeResult.logUrl})` : ""}`
-			});
-		}
-
-		const logWebhook = new WebhookClient({ url: quickMuteGuildConfig.webhook_url });
-
-		const content =
-			purgeResult && purgeResult.deleted > 0
-				? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} in ${message.channel}.`
-				: `${executor}, successfully quick muted ${target} for \`${formattedDuration}\`.`;
-
-		if (purgeResult) {
-			const entries = purgeResult.entries ?? [];
-			const attachment = QuickActionUtils._mapLogEntriesToFile(entries);
-			const components: ActionRowBuilder<ButtonBuilder>[] = [];
-
-			if (purgeResult.logUrl) {
-				const button = new ButtonBuilder()
-					.setLabel("Open In Browser")
-					.setStyle(ButtonStyle.Link)
-					.setURL(purgeResult.logUrl);
-
-				const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-				components.push(row);
+				return Promise.all([
+					logWebhook.send({ embeds: [embed] }).catch(() => null),
+					resultWebhook
+						.send({
+							content,
+							components,
+							files: [attachment]
+						})
+						.catch(() => null)
+				]);
 			}
 
 			return Promise.all([
 				logWebhook.send({ embeds: [embed] }).catch(() => null),
-				resultWebhook
-					.send({
-						content,
-						components,
-						files: [attachment]
-					})
-					.catch(() => null)
+				resultWebhook.send({ content }).catch(() => null)
 			]);
+		} catch {
+			quickMuteActionLocks.delete(message.author.id);
+		} finally {
+			quickMuteActionLocks.delete(message.author.id);
 		}
-
-		return Promise.all([
-			logWebhook.send({ embeds: [embed] }).catch(() => null),
-			resultWebhook.send({ content }).catch(() => null)
-		]);
 	}
 
 	/**
@@ -246,118 +252,127 @@ export default class QuickActionUtils {
 	}): Promise<unknown> {
 		const { user, message, reaction, config } = data;
 
-		const quickPurgeGuildConfig = config.getQuickPurgesConfig();
-		if (!quickPurgeGuildConfig) return;
+		if (quickPurgeActionLocks.has(message.author.id)) return;
+		quickPurgeActionLocks.add(message.author.id);
 
-		const executor = await message.guild.members.fetch(user.id).catch(() => null);
-		if (!executor) return;
+		try {
+			const quickPurgeGuildConfig = config.getQuickPurgesConfig();
+			if (!quickPurgeGuildConfig) return;
 
-		// Prevent people who had access to quick purges but lost it from executing quick purges.
-		if (!config.hasPermission(executor, "UseQuickPurge")) return;
+			const executor = await message.guild.members.fetch(user.id).catch(() => null);
+			if (!executor) return;
 
-		const channelScoping = parseChannelScoping(quickPurgeGuildConfig.channel_scoping);
-		if (!channelInScope(message.channel, channelScoping)) return;
+			// Prevent people who had access to quick purges but lost it from executing quick purges.
+			if (!config.hasPermission(executor, "UseQuickPurge")) return;
 
-		const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
-		if (!reactionIdentifier) return;
+			const channelScoping = parseChannelScoping(quickPurgeGuildConfig.channel_scoping);
+			if (!channelInScope(message.channel, channelScoping)) return;
 
-		const quickPurgeConfig = await prisma.quickPurge.findUnique({
-			where: {
-				user_id_guild_id_reaction: {
-					user_id: user.id,
-					guild_id: message.guildId,
-					reaction: reactionIdentifier
+			const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
+			if (!reactionIdentifier) return;
+
+			const quickPurgeConfig = await prisma.quickPurge.findUnique({
+				where: {
+					user_id_guild_id_reaction: {
+						user_id: user.id,
+						guild_id: message.guildId,
+						reaction: reactionIdentifier
+					}
 				}
+			});
+
+			if (!quickPurgeConfig) return;
+
+			const target = await message.guild.members.fetch(message.author.id).catch(() => null);
+			if (!target) return;
+
+			const resultWebhook = new WebhookClient({ url: quickPurgeGuildConfig.result_webhook_url });
+
+			if (!message.channel.permissionsFor(executor).has("ManageMessages")) {
+				return temporaryReply(resultWebhook, {
+					content: `${executor}, you do not have permission to manage messages in ${message.channel}.`
+				});
 			}
-		});
 
-		if (!quickPurgeConfig) return;
+			if (!executor.guild.members.me!.permissions.has("ManageMessages")) {
+				return temporaryReply(resultWebhook, {
+					content: `${executor}, I do not have permission to manage messages in ${message.channel}, which is required to purge messages.`
+				});
+			}
 
-		const target = await message.guild.members.fetch(message.author.id).catch(() => null);
-		if (!target) return;
+			const purgeAmount = Math.min(quickPurgeConfig.purge_amount, quickPurgeGuildConfig.max_limit);
 
-		const resultWebhook = new WebhookClient({ url: quickPurgeGuildConfig.result_webhook_url });
-
-		if (!message.channel.permissionsFor(executor).has("ManageMessages")) {
-			return temporaryReply(resultWebhook, {
-				content: `${executor}, you do not have permission to manage messages in ${message.channel}.`
+			const purgeResult = await QuickActionUtils._executePurge({
+				channel: message.channel as TextChannel,
+				authorId: message.author.id,
+				triggerMessageId: message.id,
+				amount: purgeAmount
 			});
+
+			if (!purgeResult.ok || purgeResult.deleted === 0) {
+				return temporaryReply(resultWebhook, {
+					content: `${executor}, failed to quick purge messages for ${target}: ${purgeResult.message}`
+				});
+			}
+
+			const entries = purgeResult.entries ?? [];
+			const attachment = QuickActionUtils._mapLogEntriesToFile(entries);
+			const components: ActionRowBuilder<ButtonBuilder>[] = [];
+			const hasteURL = purgeResult.logUrl ?? null;
+
+			const content = `${executor}, successfully purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} from ${target} in ${message.channel}.`;
+
+			const embed = new EmbedBuilder()
+				.setAuthor({ name: "Quick Purge Executed" })
+				.setThumbnail(target.user.displayAvatarURL({ size: 64 }))
+				.setColor(Colors.Blue)
+				.setFields([
+					{
+						name: "Target",
+						value: userMentionWithId(target.id)
+					},
+					{
+						name: "Executor",
+						value: userMentionWithId(executor.id)
+					},
+					{
+						name: "Channel",
+						value: `<#${message.channel.id}>`
+					},
+					{
+						name: "Purge Result",
+						value: `${purgeResult.deleted} ${inflect(purgeResult.deleted, "message")}${purgeResult.failed > 0 ? ` (${purgeResult.failed} failed)` : ""}${hasteURL ? ` - [View Deleted Messages](${hasteURL})` : ""}`
+					}
+				])
+				.setTimestamp();
+
+			if (hasteURL) {
+				const button = new ButtonBuilder()
+					.setLabel("Open In Browser")
+					.setStyle(ButtonStyle.Link)
+					.setURL(hasteURL);
+
+				const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+				components.push(row);
+			}
+
+			const logWebhook = new WebhookClient({ url: quickPurgeGuildConfig.webhook_url });
+
+			return Promise.all([
+				logWebhook.send({ embeds: [embed] }).catch(() => null),
+				resultWebhook
+					.send({
+						content,
+						components,
+						files: [attachment]
+					})
+					.catch(() => null)
+			]);
+		} catch {
+			quickPurgeActionLocks.delete(message.author.id);
+		} finally {
+			quickPurgeActionLocks.delete(message.author.id);
 		}
-
-		if (!executor.guild.members.me!.permissions.has("ManageMessages")) {
-			return temporaryReply(resultWebhook, {
-				content: `${executor}, I do not have permission to manage messages in ${message.channel}, which is required to purge messages.`
-			});
-		}
-
-		const purgeAmount = Math.min(quickPurgeConfig.purge_amount, quickPurgeGuildConfig.max_limit);
-
-		const purgeResult = await QuickActionUtils._executePurge({
-			channel: message.channel as TextChannel,
-			authorId: message.author.id,
-			triggerMessageId: message.id,
-			amount: purgeAmount
-		});
-
-		if (!purgeResult.ok || purgeResult.deleted === 0) {
-			return temporaryReply(resultWebhook, {
-				content: `${executor}, failed to quick purge messages for ${target}: ${purgeResult.message}`
-			});
-		}
-
-		const entries = purgeResult.entries ?? [];
-		const attachment = QuickActionUtils._mapLogEntriesToFile(entries);
-		const components: ActionRowBuilder<ButtonBuilder>[] = [];
-		const hasteURL = purgeResult.logUrl ?? null;
-
-		const content = `${executor}, successfully purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} from ${target} in ${message.channel}.`;
-
-		const embed = new EmbedBuilder()
-			.setAuthor({ name: "Quick Purge Executed" })
-			.setThumbnail(target.user.displayAvatarURL({ size: 64 }))
-			.setColor(Colors.Blue)
-			.setFields([
-				{
-					name: "Target",
-					value: userMentionWithId(target.id)
-				},
-				{
-					name: "Executor",
-					value: userMentionWithId(executor.id)
-				},
-				{
-					name: "Channel",
-					value: `<#${message.channel.id}>`
-				},
-				{
-					name: "Purge Result",
-					value: `${purgeResult.deleted} ${inflect(purgeResult.deleted, "message")}${purgeResult.failed > 0 ? ` (${purgeResult.failed} failed)` : ""}${hasteURL ? ` - [View Deleted Messages](${hasteURL})` : ""}`
-				}
-			])
-			.setTimestamp();
-
-		if (hasteURL) {
-			const button = new ButtonBuilder()
-				.setLabel("Open In Browser")
-				.setStyle(ButtonStyle.Link)
-				.setURL(hasteURL);
-
-			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-			components.push(row);
-		}
-
-		const logWebhook = new WebhookClient({ url: quickPurgeGuildConfig.webhook_url });
-
-		return Promise.all([
-			logWebhook.send({ embeds: [embed] }).catch(() => null),
-			resultWebhook
-				.send({
-					content,
-					components,
-					files: [attachment]
-				})
-				.catch(() => null)
-		]);
 	}
 
 	/**
@@ -706,3 +721,12 @@ export async function temporaryReply(webhook: WebhookClient, options: WebhookMes
 		await webhook.deleteMessage(message.id).catch(() => null);
 	}, 7500);
 }
+
+type QuickPurgeResult = {
+	ok: boolean;
+	deleted: number;
+	failed: number;
+	message?: string;
+	entries?: string[];
+	logUrl?: string;
+};
