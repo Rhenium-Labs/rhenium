@@ -17,6 +17,7 @@ import { sleep } from "#utils/index.js";
 import { PrismaClient } from "#prisma/client.js";
 
 import Logger from "#utils/Logger.js";
+import GlobalConfig from "#managers/config/GlobalConfig.js";
 import StrafeStryker from "#structures/Client.js";
 import CommandManager from "#managers/commands/CommandManager.js";
 import ComponentManager from "#managers/components/ComponentManager.js";
@@ -37,6 +38,9 @@ export const kv = open<Object, string>({
 });
 
 async function main(): Promise<void> {
+	// Cache global configuration.
+	await GlobalConfig.cache();
+
 	// Cache commands.
 	await CommandManager.cache();
 

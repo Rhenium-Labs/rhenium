@@ -18,3 +18,6 @@ dist
 
 # Sentry Config File
 .sentryclirc
+
+# Config files
+cfg.global.yml

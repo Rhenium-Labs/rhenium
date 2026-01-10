@@ -4,11 +4,11 @@ import ms from "ms";
 import util from "node:util";
 
 import { hastebin } from "#utils/index.js";
-import { DEVELOPER_IDS } from "#utils/Constants.js";
 
 import type { MessageReplyData } from "#utils/Types.js";
 
 import Command from "#managers/commands/Command.js";
+import GlobalConfig from "#managers/config/GlobalConfig.js";
 import ArgumentParser from "#managers/commands/ArgParser.js";
 
 export default class Eval extends Command {
@@ -26,7 +26,7 @@ export default class Eval extends Command {
 	}
 
 	public async messageRun(message: Message<true>, args: ArgumentParser): Promise<MessageReplyData | null> {
-		if (!DEVELOPER_IDS.includes(message.author.id)) return null;
+		if (!GlobalConfig.isDeveloper(message.author.id)) return null;
 
 		if (args.finished) {
 			return { error: "You must provide a string of code to evaluate." };

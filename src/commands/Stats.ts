@@ -2,10 +2,10 @@ import { EmbedBuilder, type Message } from "discord.js";
 
 import ms from "ms";
 
-import { DEVELOPER_IDS } from "#utils/Constants.js";
 import type { MessageReplyData } from "#utils/Types.js";
 
 import Command from "#managers/commands/Command.js";
+import GlobalConfig from "#managers/config/GlobalConfig.js";
 
 export default class Stats extends Command {
 	public constructor() {
@@ -17,7 +17,7 @@ export default class Stats extends Command {
 	}
 
 	public async messageRun(message: Message<true>): Promise<MessageReplyData | null> {
-		if (!DEVELOPER_IDS.includes(message.author.id)) {
+		if (!GlobalConfig.isDeveloper(message.author.id)) {
 			return null;
 		}
 

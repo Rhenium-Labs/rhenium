@@ -1,4 +1,5 @@
 import { GatewayIntentBits, Partials } from "discord.js";
+import z from "zod";
 
 /**
  * Gateway intents used by SS.
@@ -29,15 +30,6 @@ export const CLIENT_PARTIALS: readonly Partials[] = [
 ];
 
 /**
- * List of developer IDs.
- */
-
-export const DEVELOPER_IDS: readonly string[] = [
-	"746055295314165862", // @cobaltorum
-	"389504173714046976" // @spidermat
-];
-
-/**
  * Regex patterns for matching Discord emojis.
  */
 
@@ -49,6 +41,15 @@ export const DISCORD_EMOJI_REGEX: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+)
 
 export const UNICODE_EMOJI_REGEX: Readonly<RegExp> =
 	/(?:\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?(?:\u200D(?:\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?))*)/gu;
+
+/** Zod regex schema for validating cron expressions. */
+// Format: "*/5 * * * *" (every 5 minutes) */
+
+export const ZOD_CRON_REGEX = z
+	.string()
+	.regex(
+		/^(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)|((((\d+,)+\d+|([\d*]+[/-]\d+)|\d+|\*) ?){5,7})$/gm
+	);
 
 /** Date format options for log entries. */
 export const LOG_DATE_FORMAT: Intl.DateTimeFormatOptions = {

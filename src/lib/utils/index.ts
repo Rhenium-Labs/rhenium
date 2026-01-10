@@ -1,11 +1,53 @@
 import type { Emoji, GuildBasedChannel, GuildMember, Snowflake } from "discord.js";
+import { CronJob, CronJobParams } from "cron";
+import { cron } from "@sentry/node";
 
 import ms, { type StringValue } from "ms";
+import fs from "node:fs";
+import YAML from "yaml";
 
 import { client } from "#root/index.js";
 import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants.js";
 
 import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types.js";
+import Logger from "./Logger.js";
+
+/**
+ * Reads a YAML file from the given path and returns the parsed content.
+ *
+ * @param path The path to the YAML file.
+ * @returns The parsed content of the YAML file.
+ */
+export function readYamlFile<T>(path: string): T {
+	const content = fs.readFileSync(path, "utf-8");
+	return YAML.parse(content) as T;
+}
+
+/**
+ * Starts a Sentry-instrumented cron job.
+ *
+ * @param options Options for the cron job.
+ * @returns void
+ */
+export function startCronJob(options: CronJobOptions): void {
+	const { monitorSlug, cronTime, onTick } = options;
+
+	const instrumentedCronJob = cron.instrumentCron(CronJob, monitorSlug);
+
+	instrumentedCronJob
+		.from({
+			cronTime,
+			timeZone: "GMT",
+			onTick: async () => {
+				Logger.custom(monitorSlug, "Running cron job...", { color: "Blue" });
+				await onTick();
+				Logger.custom(monitorSlug, "Successfully ran cron job.", { color: "Green" });
+			}
+		})
+		.start();
+
+	Logger.custom(monitorSlug, `Cron job started: ${cronTime}`, { color: "Orange" });
+}
 
 /**
  * Returns the singular or plural form of a word based on the count.
@@ -349,9 +391,7 @@ export async function getEmojiDisplay(emoji: string, guildId: Snowflake): Promis
 
 /** Represents a validated emoji with optional ID (for custom emojis) and name. */
 type ValidatedEmoji = {
-	/** The emoji's unique ID (only present for custom emojis). */
 	id?: Snowflake;
-	/** The emoji's name (unicode character for standard emojis, custom name for guild emojis). */
 	name: string;
 };
 
@@ -360,4 +400,11 @@ type ChannelScopingParams = {
 	channelId: string;
 	threadId: string | null;
 	categoryId: string | null;
+};
+
+/** Configuration options for starting cron jobs. */
+type CronJobOptions = {
+	monitorSlug: string;
+	cronTime: CronJobParams["cronTime"];
+	onTick: () => Promise<void> | void;
 };

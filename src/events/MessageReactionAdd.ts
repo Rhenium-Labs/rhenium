@@ -16,7 +16,7 @@ export default class MessageReactionAdd extends EventListener {
 		super(Events.MessageReactionAdd);
 	}
 
-	public async onEmit(addedReaction: MessageReaction, user: User): Promise<void> {
+	public async onEmit(addedReaction: MessageReaction, user: User) {
 		const reaction = await MessageReactionAdd._parseReaction(addedReaction);
 		if (!reaction) return;
 
@@ -25,7 +25,7 @@ export default class MessageReactionAdd extends EventListener {
 
 		const config = await ConfigManager.getGuildConfig(message.guild.id);
 
-		await Promise.all([
+		return Promise.all([
 			QuickActionUtils.handleQuickMute({ user, message, reaction, config }),
 			QuickActionUtils.handleQuickPurge({ user, message, reaction, config })
 		]);
