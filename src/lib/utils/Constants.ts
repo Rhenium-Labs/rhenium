@@ -49,3 +49,15 @@ export const DISCORD_EMOJI_REGEX: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+)
 
 export const UNICODE_EMOJI_REGEX: Readonly<RegExp> =
 	/(?:\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?(?:\u200D(?:\p{Extended_Pictographic}(?:\uFE0F|\uFE0E)?))*)/gu;
+
+/** Date format options for log entries. */
+export const LOG_DATE_FORMAT: Intl.DateTimeFormatOptions = {
+	month: "2-digit",
+	day: "2-digit",
+	year: "numeric",
+	hour: "2-digit",
+	minute: "2-digit",
+	second: "2-digit",
+	timeZone: "GMT",
+	hour12: false
+};

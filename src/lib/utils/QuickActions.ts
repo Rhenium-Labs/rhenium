@@ -7,21 +7,29 @@ import {
 	type WebhookMessageCreateOptions,
 	Colors,
 	EmbedBuilder,
-	WebhookClient
+	WebhookClient,
+	StickerFormatType,
+	AttachmentBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	ActionRowBuilder
 } from "discord.js";
 
 import ms from "ms";
 
-import { prisma } from "#root/index.js";
+import { client, prisma } from "#root/index.js";
+import { Message as SerializedMessage } from "#prisma/client.js";
 import {
 	channelInScope,
 	getEmojiIdentifier,
+	hastebin,
 	inflect,
 	parseChannelScoping,
 	sleep,
 	truncate,
 	userMentionWithId
 } from "./index.js";
+import { LOG_DATE_FORMAT } from "./Constants.js";
 import { MessageQueue } from "./Messages.js";
 
 import ModerationUtils from "./Moderation.js";
@@ -47,6 +55,8 @@ export type QuickPurgeResult = {
 	deleted: number;
 	failed: number;
 	message?: string;
+	entries?: string[];
+	logUrl?: string;
 };
 
 export default class QuickActionUtils {
@@ -174,23 +184,50 @@ export default class QuickActionUtils {
 			])
 			.setTimestamp();
 
-		if (purgeResult && purgeResult.deleted > 0) {
+		if (purgeResult?.ok && purgeResult.deleted > 0) {
 			embed.addFields({
 				name: "Messages Purged",
-				value: `${purgeResult.deleted} ${inflect(purgeResult.deleted, "message")}${purgeResult.failed > 0 ? ` (${purgeResult.failed} failed)` : ""}`
+				value: `${purgeResult.deleted} ${inflect(purgeResult.deleted, "message")}${purgeResult.failed > 0 ? ` (${purgeResult.failed} failed)` : ""}${purgeResult.logUrl ? `- [View Deleted Messages](${purgeResult.logUrl})` : ""}`
 			});
 		}
 
 		const logWebhook = new WebhookClient({ url: quickMuteGuildConfig.webhook_url });
 
-		const successMessage =
+		const content =
 			purgeResult && purgeResult.deleted > 0
 				? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} in ${message.channel}.`
 				: `${executor}, successfully quick muted ${target} for \`${formattedDuration}\`.`;
 
+		if (purgeResult) {
+			const entries = purgeResult.entries ?? [];
+			const attachment = QuickActionUtils._mapLogEntriesToFile(entries);
+			const components: ActionRowBuilder<ButtonBuilder>[] = [];
+
+			if (purgeResult.logUrl) {
+				const button = new ButtonBuilder()
+					.setLabel("Open In Browser")
+					.setStyle(ButtonStyle.Link)
+					.setURL(purgeResult.logUrl);
+
+				const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+				components.push(row);
+			}
+
+			return Promise.all([
+				logWebhook.send({ embeds: [embed] }).catch(() => null),
+				resultWebhook
+					.send({
+						content,
+						components,
+						files: [attachment]
+					})
+					.catch(() => null)
+			]);
+		}
+
 		return Promise.all([
 			logWebhook.send({ embeds: [embed] }).catch(() => null),
-			resultWebhook.send({ content: successMessage }).catch(() => null)
+			resultWebhook.send({ content }).catch(() => null)
 		]);
 	}
 
@@ -268,6 +305,13 @@ export default class QuickActionUtils {
 			});
 		}
 
+		const entries = purgeResult.entries ?? [];
+		const attachment = QuickActionUtils._mapLogEntriesToFile(entries);
+		const components: ActionRowBuilder<ButtonBuilder>[] = [];
+		const hasteURL = purgeResult.logUrl ?? null;
+
+		const content = `${executor}, successfully purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} from ${target} in ${message.channel}.`;
+
 		const embed = new EmbedBuilder()
 			.setAuthor({ name: "Quick Purge Executed" })
 			.setThumbnail(target.user.displayAvatarURL({ size: 64 }))
@@ -287,10 +331,20 @@ export default class QuickActionUtils {
 				},
 				{
 					name: "Purge Result",
-					value: `${purgeResult.deleted} ${inflect(purgeResult.deleted, "message")}${purgeResult.failed > 0 ? ` (${purgeResult.failed} failed)` : ""}`
+					value: `${purgeResult.deleted} ${inflect(purgeResult.deleted, "message")}${purgeResult.failed > 0 ? ` (${purgeResult.failed} failed)` : ""}${hasteURL ? ` - [View Deleted Messages](${hasteURL})` : ""}`
 				}
 			])
 			.setTimestamp();
+
+		if (hasteURL) {
+			const button = new ButtonBuilder()
+				.setLabel("Open In Browser")
+				.setStyle(ButtonStyle.Link)
+				.setURL(hasteURL);
+
+			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+			components.push(row);
+		}
 
 		const logWebhook = new WebhookClient({ url: quickPurgeGuildConfig.webhook_url });
 
@@ -298,7 +352,9 @@ export default class QuickActionUtils {
 			logWebhook.send({ embeds: [embed] }).catch(() => null),
 			resultWebhook
 				.send({
-					content: `${executor}, successfully purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} from ${target} in ${message.channel}.`
+					content,
+					components,
+					files: [attachment]
 				})
 				.catch(() => null)
 		]);
@@ -364,12 +420,11 @@ export default class QuickActionUtils {
 				failed += individualResult.failed;
 			}
 
-			await prisma.message.updateMany({
-				where: { id: { in: messageIds } },
-				data: { deleted: true }
-			});
+			const serializedMessages = await MessageQueue.bulkDeleteMessages(messageIds);
+			const entries = await QuickActionUtils._getMessageLogEntries(serializedMessages);
+			const logUrl = (await hastebin(entries.join("\n\n"))) ?? undefined;
 
-			return { ok: true, deleted, failed };
+			return { ok: true, deleted, failed, entries, logUrl };
 		} catch (error) {
 			return {
 				ok: false,
@@ -513,6 +568,125 @@ export default class QuickActionUtils {
 	 */
 	private static _snowflakeToTimestamp(snowflake: Snowflake): number {
 		return Number((BigInt(snowflake) >> 22n) + DISCORD_EPOCH);
+	}
+
+	/**
+	 * Maps log entries to a file attachment.
+	 *
+	 * @param entries The log entries to map.
+	 * @returns The attachment containing the log entries.
+	 */
+
+	private static _mapLogEntriesToFile(entries: string[]): AttachmentBuilder {
+		const buffer = Buffer.from(entries.join("\n\n"), "utf-8");
+		return new AttachmentBuilder(buffer, { name: "log-data.txt" });
+	}
+
+	/**
+	 * Generates log entries for a list of serialized messages.
+	 *
+	 * @param messages The serialized messages to generate log entries for.
+	 * @returns The formatted log entries.
+	 */
+
+	private static async _getMessageLogEntries(messages: SerializedMessage[]): Promise<string[]> {
+		const authorCache = new Map<Snowflake, User | { username: string; id: Snowflake }>();
+		const entries: { entry: string; createdAt: Date }[] = [];
+
+		// Helper function to get or fetch author.
+		const getAuthor = async (authorId: Snowflake) => {
+			const cached = authorCache.get(authorId);
+			if (cached) return cached;
+
+			const author = await client.users.fetch(authorId).catch(() => ({
+				username: "unknown user",
+				id: authorId
+			}));
+
+			authorCache.set(authorId, author);
+			return author;
+		};
+
+		for (const message of messages) {
+			const author = await getAuthor(message.author_id);
+			const mainEntry = await QuickActionUtils._formatMessageLogEntry({
+				author,
+				messageId: message.id,
+				createdAt: message.created_at,
+				stickerId: null,
+				messageContent: message.content
+			});
+
+			const subEntries = [mainEntry];
+
+			// Handle message reference if it exists.
+			if (message.reference_id) {
+				const reference = await MessageQueue.getMessage(message.reference_id);
+
+				if (reference) {
+					const refAuthor = await getAuthor(reference.author_id);
+					const refEntry = await QuickActionUtils._formatMessageLogEntry({
+						author: refAuthor,
+						messageId: reference.id,
+						createdAt: reference.created_at,
+						stickerId: null,
+						messageContent: reference.content
+					});
+					subEntries.unshift(`REF: ${refEntry}`);
+				}
+			}
+
+			entries.push({
+				entry: subEntries.join("\n └── "),
+				createdAt: message.created_at
+			});
+		}
+
+		// Clear cache manually.
+		authorCache.clear();
+
+		const sorted = entries
+			.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+			.map(({ entry }) => entry);
+
+		return sorted;
+	}
+
+	/**
+	 * Formats a single message log entry.
+	 *
+	 * @param data The data for formatting the log entry.
+	 * @returns The formatted log entry string.
+	 */
+
+	private static async _formatMessageLogEntry(data: {
+		createdAt: Date;
+		stickerId: Snowflake | null;
+		messageId: Snowflake;
+		author: User | { username: string; id: Snowflake };
+		messageContent: string | null;
+	}): Promise<string> {
+		const timestamp = data.createdAt.toLocaleString(undefined, LOG_DATE_FORMAT);
+		const author = data.author;
+
+		let content: string | undefined;
+
+		if (data.stickerId) {
+			const sticker = await client.fetchSticker(data.stickerId).catch(() => null);
+
+			if (sticker && sticker.format === StickerFormatType.Lottie) {
+				content = `Lottie Sticker "${sticker.name}": ${data.stickerId}`;
+			} else if (sticker) {
+				content = `Sticker "${sticker.name}": ${sticker.url}`;
+			}
+
+			if (data.messageContent && content) {
+				content = ` | Message Content: ${data.messageContent}`;
+			}
+		}
+
+		content ??= data.messageContent ?? "No message content.";
+		return `[${data.messageId}] [${timestamp}] @${author.username} (${author.id}) - ${content}`;
 	}
 }
 

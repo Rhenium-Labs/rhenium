@@ -7,7 +7,6 @@ import {
 	type PartialGroupDMChannel,
 	type ReplyOptions,
 	type Snowflake,
-	type PartialMessage,
 	codeBlock,
 	DiscordAPIError,
 	escapeCodeBlock,
@@ -63,6 +62,37 @@ export class MessageQueue {
 	}
 
 	/**
+	 * Retrieves message IDs from the cache for purging.
+	 * Returns messages matching the criteria, sorted newest to oldest.
+	 *
+	 * @param data The filter criteria for messages.
+	 * @returns An array of message IDs from the cache.
+	 */
+	public static getMessagesForPurge(data: {
+		channelId: Snowflake;
+		authorId: Snowflake;
+		triggerMessageId: Snowflake;
+		limit: number;
+	}): Snowflake[] {
+		const { channelId, authorId, triggerMessageId, limit } = data;
+
+		// Filter cached messages by channel, author, not deleted, and <= trigger message
+		const matching = MessageQueue._cache.filter(
+			msg =>
+				msg.channel_id === channelId &&
+				msg.author_id === authorId &&
+				!msg.deleted &&
+				msg.id <= triggerMessageId
+		);
+
+		// Sort by ID descending (newest first) and take up to limit
+		return matching
+			.sort((a, b) => (BigInt(b.id) > BigInt(a.id) ? 1 : -1))
+			.map(msg => msg.id)
+			.slice(0, limit);
+	}
+
+	/**
 	 * Mark a message as deleted in the database.
 	 *
 	 * @param id The ID of the message to update.
@@ -89,13 +119,11 @@ export class MessageQueue {
 	/**
 	 * Marks a group of messages as deleted in the database.
 	 *
-	 * @param collection The collection of messages to mark as deleted.
+	 * @param ids The IDs of the messages to update.
 	 * @returns The updated messages.
 	 */
 
-	public static async bulkDeleteMessages(collection: Collection<Snowflake, PartialMessage | Message<true>>) {
-		const ids = Array.from(collection.keys());
-
+	public static async bulkDeleteMessages(ids: Snowflake[]): Promise<SerializedMessage[]> {
 		const messages = MessageQueue._cache.filter(message => ids.includes(message.id) && !message.deleted);
 
 		const deletedMessages = messages.map(message => {
@@ -163,37 +191,6 @@ export class MessageQueue {
 		} else {
 			Logger.info(`Stored ${count} ${inflect(count, "message")}.`);
 		}
-	}
-
-	/**
-	 * Retrieves message IDs from the cache for purging.
-	 * Returns messages matching the criteria, sorted newest to oldest.
-	 *
-	 * @param data The filter criteria for messages.
-	 * @returns An array of message IDs from the cache.
-	 */
-	public static getMessagesForPurge(data: {
-		channelId: Snowflake;
-		authorId: Snowflake;
-		triggerMessageId: Snowflake;
-		limit: number;
-	}): Snowflake[] {
-		const { channelId, authorId, triggerMessageId, limit } = data;
-
-		// Filter cached messages by channel, author, not deleted, and <= trigger message
-		const matching = MessageQueue._cache.filter(
-			msg =>
-				msg.channel_id === channelId &&
-				msg.author_id === authorId &&
-				!msg.deleted &&
-				msg.id <= triggerMessageId
-		);
-
-		// Sort by ID descending (newest first) and take up to limit
-		return matching
-			.sort((a, b) => (BigInt(b.id) > BigInt(a.id) ? 1 : -1))
-			.map(msg => msg.id)
-			.slice(0, limit);
 	}
 
 	/**
