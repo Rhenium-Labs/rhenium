@@ -1,4 +1,5 @@
 import type { Message, Snowflake, TextBasedChannel, TextChannel } from "discord.js";
+import type { Moderation, ModerationMultiModalInput } from "openai/resources/moderations.js";
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
@@ -9,324 +10,28 @@ import {
 	roleMention,
 	WebhookClient
 } from "discord.js";
-
-import Tesseract from "node-tesseract-ocr";
 import { distance } from "closest-match";
 
-import { openAi, prisma } from "#root/index.js";
-import { DetectorMode, type ContentFilterConfig, type Detector } from "#prisma/client.js";
-import { channelInScope, userMentionWithId } from "./index.js";
-import { MediaUtils, type MessageMediaMetadata } from "./Media.js";
-import { MessageQueue } from "./Messages.js";
-import ConfigManager from "#managers/config/ConfigManager.js";
-import Logger from "./Logger.js";
+import Tesseract from "node-tesseract-ocr";
 
-import type { Message as SerializedMessage } from "#prisma/client.js";
-import type { Moderation, ModerationMultiModalInput } from "openai/resources/moderations.js";
+import { openAi, prisma } from "#root/index.js";
+import {
+	ContentFilterStatus,
+	ContentFilterAlert,
+	DetectorMode,
+	type ContentFilterConfig,
+	type Detector,
+	type Message as SerializedMessage
+} from "#prisma/client.js";
+import { channelInScope, userMentionWithId } from "./index.js";
+import { MessageQueue } from "./Messages.js";
 
 import type { ChannelScoping } from "./Types.js";
 
-// ContentFilterStatus enum - will be exported from #prisma/client.js after regeneration
-// For now, define it locally to match schema
-export const ContentFilterStatus = {
-	Pending: "Pending",
-	Resolved: "Resolved",
-	False: "False",
-	Deleted: "Deleted"
-} as const;
-
-export type ContentFilterStatus = (typeof ContentFilterStatus)[keyof typeof ContentFilterStatus];
-
-// ContentFilterAlert type - will be exported from #prisma/client.js after regeneration
-export interface ContentFilterAlert {
-	id: string;
-	guild_id: string;
-	message_id: string;
-	channel_id: string;
-	alert_message_id: string;
-	alert_channel_id: string;
-	offender_id: string;
-	detectors: Detector[];
-	highest_score: number;
-	mod_status: ContentFilterStatus;
-	del_status: ContentFilterStatus;
-	created_at: Date;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const HEURISTIC_WINDOW_SIZE = 30;
-export const MESSAGE_QUEUE_TIME_RANGE = 5000;
-export const MESSAGE_DISTANCE_THRESHOLD = 3;
-export const MESSAGE_PACE_INCREASE_THRESHOLD = 5;
-
-export const HEURISTIC_MEDIUM_SCORE = 0.7;
-export const HEURISTIC_LENIENT_SCORE = 0.8;
-
-export const HEURISTIC_BASE_RISK = 0.05;
-export const HEURISTIC_LENIENT_RISK_INCREASE = 0.3;
-export const HEURISTIC_MEDIUM_RISK_INCREASE = 0.4;
-export const HEURISTIC_STRICT_RISK_INCREASE = 0.5;
-
-export const HEURISTIC_BASE_SCAN_RATE = 10;
-export const HEURISTIC_MAX_SCAN_RATE = 60;
-export const HEURISTIC_MIN_SCAN_RATE = 1;
-export const HEURISTIC_SCAN_WINDOW = 60 * 1000;
-
-export const HEURISTIC_RATE_INCREASE_STEP = 10;
-export const HEURISTIC_RATE_INCREASE_DURATION = 5 * 60 * 1000;
-export const HEURISTIC_RATE_CHANGE_INTERVAL = 10 * 60 * 1000;
-
-export const HEURISTIC_SCORE_THRESHOLD = 5;
-export const HEURISTIC_DEFAULT_TRAFFIC_ESTIMATE = 60;
-export const HEURISTIC_SMOOTHED_FP_ALPHA = 0.1;
-export const HEURISTIC_MIN_SAMPLING_FACTOR = 0.01;
-export const HEURISTIC_LOGGING_SMOOTH_ALPHA = 0.25;
-
-export const HEURISTIC_MAX_BETA_INCREMENT_PER_CALL = 5;
-export const HEURISTIC_BETA_MEAN_MIN = 0.01;
-export const HEURISTIC_BETA_MEAN_MAX = 0.99;
-export const HEURISTIC_BETA_DECAY_HALF_LIFE_MS = 3 * 60 * 60 * 1000;
-
-export const HEURISTIC_SCORE_FP_INFLUENCE = 0.15;
-export const HEURISTIC_USER_RECENT_ALERT_WINDOW_MS = 5 * 60 * 1000;
-export const HEURISTIC_SCORE_USER_ALERT_INFLUENCE = 0.12;
-export const HEURISTIC_SCORE_PRUNE_EPSILON = 0.1;
-
-export const HEURISTIC_PRIORITY_USER_FLAG_THRESHOLD = 2;
-
-export const HEURISTIC_EWMA_MPM_ALPHA = 0.15;
-export const HEURISTIC_EWMA_ALPHA = 0.2;
-
-export const HEURISTIC_PID_BASE_KP = 2.0;
-export const HEURISTIC_PID_BASE_KI = 0.08;
-export const HEURISTIC_PID_BASE_KD = 0.8;
-export const HEURISTIC_PID_KP_MIN = 0.5;
-export const HEURISTIC_PID_KP_MAX = 10;
-export const HEURISTIC_PID_KI_MIN = 0.001;
-export const HEURISTIC_PID_KI_MAX = 1;
-export const HEURISTIC_PID_KD_MIN = 0.01;
-export const HEURISTIC_PID_KD_MAX = 5;
-
-export const HEURISTIC_K_TRAFFIC = 0.6;
-export const HEURISTIC_K_CONF = 0.4;
-
-export const HEURISTIC_DECAY_BASE = 0.92;
-export const HEURISTIC_DECAY_FP_INFLUENCE_FACTOR = 0.5;
-export const HEURISTIC_DECAY_FP_INFLUENCE_MAX = 0.35;
-export const HEURISTIC_DECAY_ALERT_INFLUENCE_PER_ALERT = 0.02;
-export const HEURISTIC_DECAY_ALERT_INFLUENCE_MAX = 0.2;
-export const HEURISTIC_DECAY_MIN = 0.55;
-export const HEURISTIC_DECAY_MAX = 0.98;
-
-export const HEURISTIC_PRIORITY_MULT_FACTOR = 3;
-export const HEURISTIC_PRIORITY_MULT_MAX = 2;
-export const HEURISTIC_RECENT_ALERTS_CAP = 50;
-
-export const HEURISTIC_DYNAMIC_WEIGHT_BASE = 0.6;
-export const HEURISTIC_DYNAMIC_WEIGHT_SEVERITY_MULT = 1.2;
-export const HEURISTIC_DYNAMIC_WEIGHT_MIN = 0.5;
-export const HEURISTIC_DYNAMIC_WEIGHT_MAX = 5;
-
-export const HEURISTIC_RISK_MULTIPLIER_MIN = 0.2;
-export const HEURISTIC_RISK_MULTIPLIER_MAX = 1.0;
-export const HEURISTIC_JITTER_PCT = 0.1;
-export const HEURISTIC_MIN_SCHEDULE_DELAY = 100;
-
-export const HEURISTIC_WINDOW_BASE_MS = 120_000;
-export const HEURISTIC_WINDOW_MIN_MS = 30_000;
-export const HEURISTIC_WINDOW_MAX_MS = 300_000;
-
-export const HEURISTIC_ADAPTIVE_P95_WINDOWS = 10;
-export const HEURISTIC_ADAPTIVE_DECAY_ALPHA = 0.6;
-export const HEURISTIC_TICK_INTERVAL_MS = 100;
-
-export const HEURISTIC_DYNAMIC_WINDOW_MULT_MAX = 4;
-export const HEURISTIC_DYNAMIC_WINDOW_MIN = 10;
-
-export const HEURISTIC_MIN_CANDIDATES = 5;
-export const HEURISTIC_CANDIDATE_TRAFFIC_DIVISOR = 10;
-
-export const HEURISTIC_RATE_DECAY_A = 0.6;
-export const HEURISTIC_RATE_DECAY_B = 0.4;
-export const HEURISTIC_MIN_ABS_CHANGE_FOR_LOG = 10;
-
-export const HEURISTIC_SCAN_DEBOUNCE_MIN = 10_000;
-export const HEURISTIC_SCAN_DEBOUNCE_MAX = 60_000;
-export const HEURISTIC_SCAN_DEBOUNCE_MIN_DELAY = 10_000;
-
-export const HEURISTIC_USER_SCORES_MAX_SIZE = 1000;
-
-export const HEURISTIC_REACTION_REGEX: Readonly<RegExp> = /\p{Lu}{3,11}/u;
-export const DEFAULT_STANDARD_MESSAGE_SCORE = 1;
-export const DEFAULT_REPLY_MESSAGE_SCORE = 1;
-
-export const DEFAULT_INITIAL_DELAY = 2.5 * 60 * 1000;
-export const DEFAULT_RETRY_JITTER = 0.3;
-export const DEFAULT_MAX_RETRIES = 2;
-export const DEFAULT_BACKOFF_FACTOR = 2;
-export const DEFAULT_MAX_DELAY = 5 * 60 * 1000;
-export const DEFAULT_FINAL_DELAY = 10 * 60 * 1000;
-
-// TTL for content filter alerts and logs (24 hours default)
-export const CONTENT_FILTER_ALERT_TTL = 24 * 60 * 60 * 1000;
-export const CONTENT_FILTER_LOG_TTL = 7 * 24 * 60 * 60 * 1000;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types & Interfaces
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface HeuristicMessageData {
-	message: SerializedMessage;
-	score: number;
-}
-
-export interface HeuristicData {
-	standardScore: number;
-	referenceData: HeuristicMessageData[];
-}
-
-export interface ContentPredictionData {
-	content: string;
-	score?: string;
-}
-
-export interface ContentPredictions {
-	data: ContentPredictionData[];
-	detector: Detector | null;
-	content: string[] | null;
-}
-
-export enum ContentFilterFieldNames {
-	ContentFound = "Content found",
-	MessageLink = "Link to message",
-	Offender = "Offender",
-	ResponseTime = "Response time",
-	DelStatus = "Deletion status",
-	ModStatus = "Moderation status",
-	ScanStatus = "Scan status",
-	ScanResults = "Scan results"
-}
-
-export enum ContentFilterButtonNames {
-	Content = "View content",
-	DelMessage = "Delete message",
-	False = "False positive",
-	Resolve = "Resolve"
-}
-
-export enum ScanTypes {
-	Automated = "AUTOMATED SCAN",
-	Heuristic = "HEURISTIC SCAN"
-}
-
-export interface ChannelScanState {
-	scanTimestamps: number[];
-	alertCount: number;
-	scanRate: number;
-	falsePositiveRatio?: number;
-	lastRateLog?: number;
-	ewmaMpm?: number;
-	loggedRateEwma?: number;
-	messageTimestamps?: number[];
-	betaLastUpdate?: number;
-	betaA?: number;
-	betaB?: number;
-	flaggedUsers: Map<Snowflake, number[]>;
-	lastRateIncrease: number;
-	priorityAlertedUsers: Set<Snowflake>;
-	userScores: Map<Snowflake, { score: number; lastScan: number }>;
-}
-
-type PriorityQueueEntry = {
-	userId: Snowflake;
-	channelId: Snowflake;
-	message: Message<true>;
-	risk: number;
-	nextScan: number;
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Utility Classes
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * MinHeap for priority queue management.
- */
-class MinHeap {
-	private heap: PriorityQueueEntry[] = [];
-
-	private compare(a: PriorityQueueEntry, b: PriorityQueueEntry): number {
-		const dt = a.nextScan - b.nextScan;
-		if (dt !== 0) return dt;
-		return b.risk - a.risk;
-	}
-
-	push(entry: PriorityQueueEntry): void {
-		this.heap.push(entry);
-		this.bubbleUp();
-	}
-
-	pop(): PriorityQueueEntry | undefined {
-		if (this.heap.length === 0) return undefined;
-		const top = this.heap[0];
-		const end = this.heap.pop();
-		if (this.heap.length > 0 && end) {
-			this.heap[0] = end;
-			this.sinkDown();
-		}
-		return top;
-	}
-
-	peek(): PriorityQueueEntry | undefined {
-		return this.heap[0];
-	}
-
-	size(): number {
-		return this.heap.length;
-	}
-
-	private bubbleUp(): void {
-		let idx = this.heap.length - 1;
-		const entry = this.heap[idx];
-		while (idx > 0) {
-			const parentIdx = Math.floor((idx - 1) / 2);
-			const parent = this.heap[parentIdx];
-			if (this.compare(entry, parent) >= 0) break;
-			this.heap[parentIdx] = entry;
-			this.heap[idx] = parent;
-			idx = parentIdx;
-		}
-	}
-
-	private sinkDown(): void {
-		let idx = 0;
-		const length = this.heap.length;
-		const entry = this.heap[0];
-		while (true) {
-			const leftIdx = 2 * idx + 1;
-			const rightIdx = 2 * idx + 2;
-			let swap: number | null = null;
-			if (leftIdx < length) {
-				if (this.compare(this.heap[leftIdx], entry) < 0) swap = leftIdx;
-			}
-			if (rightIdx < length) {
-				if (
-					(swap === null && this.compare(this.heap[rightIdx], entry) < 0) ||
-					(swap !== null && this.compare(this.heap[rightIdx], this.heap[leftIdx]) < 0)
-				) {
-					swap = rightIdx;
-				}
-			}
-			if (swap === null) break;
-			this.heap[idx] = this.heap[swap];
-			this.heap[swap] = entry;
-			idx = swap;
-		}
-	}
-}
+import Logger from "./Logger.js";
+import MinimumHeap from "#structures/MinimumHeap.js";
+import MediaUtils, { type MessageMediaMetadata } from "./Media.js";
+import ConfigManager from "#managers/config/ConfigManager.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ContentFilterUtils
@@ -909,7 +614,7 @@ export class HeuristicScanner {
 
 export class AutomatedScanner {
 	private static channelScanState: Map<Snowflake, ChannelScanState> = new Map();
-	private static userPriorityQueue: MinHeap = new MinHeap();
+	private static userPriorityQueue: MinimumHeap = new MinimumHeap();
 	private static tickInterval: NodeJS.Timeout | null = null;
 	private static smoothedFalsePositive: Map<Snowflake, number> = new Map();
 
@@ -1636,7 +1341,7 @@ export class AutomatedScanner {
 // ContentFiltering (Main Class)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export class ContentFiltering {
+export default class ContentFiltering {
 	private static openAiRateLimitedUntil: number | null = null;
 
 	/**
@@ -2069,4 +1774,189 @@ export class ContentFiltering {
 	}
 }
 
-export default ContentFiltering;
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const HEURISTIC_WINDOW_SIZE = 30;
+export const MESSAGE_QUEUE_TIME_RANGE = 5000;
+export const MESSAGE_DISTANCE_THRESHOLD = 3;
+export const MESSAGE_PACE_INCREASE_THRESHOLD = 5;
+
+export const HEURISTIC_MEDIUM_SCORE = 0.7;
+export const HEURISTIC_LENIENT_SCORE = 0.8;
+
+export const HEURISTIC_BASE_RISK = 0.05;
+export const HEURISTIC_LENIENT_RISK_INCREASE = 0.3;
+export const HEURISTIC_MEDIUM_RISK_INCREASE = 0.4;
+export const HEURISTIC_STRICT_RISK_INCREASE = 0.5;
+
+export const HEURISTIC_BASE_SCAN_RATE = 10;
+export const HEURISTIC_MAX_SCAN_RATE = 60;
+export const HEURISTIC_MIN_SCAN_RATE = 1;
+export const HEURISTIC_SCAN_WINDOW = 60 * 1000;
+
+export const HEURISTIC_RATE_INCREASE_STEP = 10;
+export const HEURISTIC_RATE_INCREASE_DURATION = 5 * 60 * 1000;
+export const HEURISTIC_RATE_CHANGE_INTERVAL = 10 * 60 * 1000;
+
+export const HEURISTIC_SCORE_THRESHOLD = 5;
+export const HEURISTIC_DEFAULT_TRAFFIC_ESTIMATE = 60;
+export const HEURISTIC_SMOOTHED_FP_ALPHA = 0.1;
+export const HEURISTIC_MIN_SAMPLING_FACTOR = 0.01;
+export const HEURISTIC_LOGGING_SMOOTH_ALPHA = 0.25;
+
+export const HEURISTIC_MAX_BETA_INCREMENT_PER_CALL = 5;
+export const HEURISTIC_BETA_MEAN_MIN = 0.01;
+export const HEURISTIC_BETA_MEAN_MAX = 0.99;
+export const HEURISTIC_BETA_DECAY_HALF_LIFE_MS = 3 * 60 * 60 * 1000;
+
+export const HEURISTIC_SCORE_FP_INFLUENCE = 0.15;
+export const HEURISTIC_USER_RECENT_ALERT_WINDOW_MS = 5 * 60 * 1000;
+export const HEURISTIC_SCORE_USER_ALERT_INFLUENCE = 0.12;
+export const HEURISTIC_SCORE_PRUNE_EPSILON = 0.1;
+
+export const HEURISTIC_PRIORITY_USER_FLAG_THRESHOLD = 2;
+
+export const HEURISTIC_EWMA_MPM_ALPHA = 0.15;
+export const HEURISTIC_EWMA_ALPHA = 0.2;
+
+export const HEURISTIC_PID_BASE_KP = 2.0;
+export const HEURISTIC_PID_BASE_KI = 0.08;
+export const HEURISTIC_PID_BASE_KD = 0.8;
+export const HEURISTIC_PID_KP_MIN = 0.5;
+export const HEURISTIC_PID_KP_MAX = 10;
+export const HEURISTIC_PID_KI_MIN = 0.001;
+export const HEURISTIC_PID_KI_MAX = 1;
+export const HEURISTIC_PID_KD_MIN = 0.01;
+export const HEURISTIC_PID_KD_MAX = 5;
+
+export const HEURISTIC_K_TRAFFIC = 0.6;
+export const HEURISTIC_K_CONF = 0.4;
+
+export const HEURISTIC_DECAY_BASE = 0.92;
+export const HEURISTIC_DECAY_FP_INFLUENCE_FACTOR = 0.5;
+export const HEURISTIC_DECAY_FP_INFLUENCE_MAX = 0.35;
+export const HEURISTIC_DECAY_ALERT_INFLUENCE_PER_ALERT = 0.02;
+export const HEURISTIC_DECAY_ALERT_INFLUENCE_MAX = 0.2;
+export const HEURISTIC_DECAY_MIN = 0.55;
+export const HEURISTIC_DECAY_MAX = 0.98;
+
+export const HEURISTIC_PRIORITY_MULT_FACTOR = 3;
+export const HEURISTIC_PRIORITY_MULT_MAX = 2;
+export const HEURISTIC_RECENT_ALERTS_CAP = 50;
+
+export const HEURISTIC_DYNAMIC_WEIGHT_BASE = 0.6;
+export const HEURISTIC_DYNAMIC_WEIGHT_SEVERITY_MULT = 1.2;
+export const HEURISTIC_DYNAMIC_WEIGHT_MIN = 0.5;
+export const HEURISTIC_DYNAMIC_WEIGHT_MAX = 5;
+
+export const HEURISTIC_RISK_MULTIPLIER_MIN = 0.2;
+export const HEURISTIC_RISK_MULTIPLIER_MAX = 1.0;
+export const HEURISTIC_JITTER_PCT = 0.1;
+export const HEURISTIC_MIN_SCHEDULE_DELAY = 100;
+
+export const HEURISTIC_WINDOW_BASE_MS = 120_000;
+export const HEURISTIC_WINDOW_MIN_MS = 30_000;
+export const HEURISTIC_WINDOW_MAX_MS = 300_000;
+
+export const HEURISTIC_ADAPTIVE_P95_WINDOWS = 10;
+export const HEURISTIC_ADAPTIVE_DECAY_ALPHA = 0.6;
+export const HEURISTIC_TICK_INTERVAL_MS = 100;
+
+export const HEURISTIC_DYNAMIC_WINDOW_MULT_MAX = 4;
+export const HEURISTIC_DYNAMIC_WINDOW_MIN = 10;
+
+export const HEURISTIC_MIN_CANDIDATES = 5;
+export const HEURISTIC_CANDIDATE_TRAFFIC_DIVISOR = 10;
+
+export const HEURISTIC_RATE_DECAY_A = 0.6;
+export const HEURISTIC_RATE_DECAY_B = 0.4;
+export const HEURISTIC_MIN_ABS_CHANGE_FOR_LOG = 10;
+
+export const HEURISTIC_SCAN_DEBOUNCE_MIN = 10_000;
+export const HEURISTIC_SCAN_DEBOUNCE_MAX = 60_000;
+export const HEURISTIC_SCAN_DEBOUNCE_MIN_DELAY = 10_000;
+
+export const HEURISTIC_USER_SCORES_MAX_SIZE = 1000;
+
+export const HEURISTIC_REACTION_REGEX: Readonly<RegExp> = /\p{Lu}{3,11}/u;
+export const DEFAULT_STANDARD_MESSAGE_SCORE = 1;
+export const DEFAULT_REPLY_MESSAGE_SCORE = 1;
+
+export const DEFAULT_INITIAL_DELAY = 2.5 * 60 * 1000;
+export const DEFAULT_RETRY_JITTER = 0.3;
+export const DEFAULT_MAX_RETRIES = 2;
+export const DEFAULT_BACKOFF_FACTOR = 2;
+export const DEFAULT_MAX_DELAY = 5 * 60 * 1000;
+export const DEFAULT_FINAL_DELAY = 10 * 60 * 1000;
+
+// TTL for content filter alerts and logs (24 hours default)
+export const CONTENT_FILTER_ALERT_TTL = 24 * 60 * 60 * 1000;
+export const CONTENT_FILTER_LOG_TTL = 7 * 24 * 60 * 60 * 1000;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types & Interfaces
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface HeuristicMessageData {
+	message: SerializedMessage;
+	score: number;
+}
+
+export interface HeuristicData {
+	standardScore: number;
+	referenceData: HeuristicMessageData[];
+}
+
+export interface ContentPredictionData {
+	content: string;
+	score?: string;
+}
+
+export interface ContentPredictions {
+	data: ContentPredictionData[];
+	detector: Detector | null;
+	content: string[] | null;
+}
+
+export enum ContentFilterFieldNames {
+	ContentFound = "Content found",
+	MessageLink = "Link to message",
+	Offender = "Offender",
+	ResponseTime = "Response time",
+	DelStatus = "Deletion status",
+	ModStatus = "Moderation status",
+	ScanStatus = "Scan status",
+	ScanResults = "Scan results"
+}
+
+export enum ContentFilterButtonNames {
+	Content = "View content",
+	DelMessage = "Delete message",
+	False = "False positive",
+	Resolve = "Resolve"
+}
+
+export enum ScanTypes {
+	Automated = "AUTOMATED SCAN",
+	Heuristic = "HEURISTIC SCAN"
+}
+
+export interface ChannelScanState {
+	scanTimestamps: number[];
+	alertCount: number;
+	scanRate: number;
+	falsePositiveRatio?: number;
+	lastRateLog?: number;
+	ewmaMpm?: number;
+	loggedRateEwma?: number;
+	messageTimestamps?: number[];
+	betaLastUpdate?: number;
+	betaA?: number;
+	betaB?: number;
+	flaggedUsers: Map<Snowflake, number[]>;
+	lastRateIncrease: number;
+	priorityAlertedUsers: Set<Snowflake>;
+	userScores: Map<Snowflake, { score: number; lastScan: number }>;
+}
