@@ -32,6 +32,7 @@ import Logger from "./Logger.js";
 import MinimumHeap from "#structures/MinimumHeap.js";
 import MediaUtils, { type MessageMediaMetadata } from "./Media.js";
 import ConfigManager from "#managers/config/ConfigManager.js";
+import ms from "ms";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ContentFilterUtils
@@ -40,28 +41,29 @@ import ConfigManager from "#managers/config/ConfigManager.js";
 export class ContentFilterUtils {
 	/**
 	 * Computes the risk score for a message based on its properties.
+	 *
+	 * @param config The content filter configuration.
+	 * @param message The serialized message data.
+	 * @returns The computed risk score.
 	 */
-	static computeMessageRisk(contentFilterConfig: ContentFilterConfig, serializedMessage: SerializedMessage): number {
+	public static computeMessageRisk(config: ContentFilterConfig, message: SerializedMessage): number {
 		const riskIncreaseStep =
-			contentFilterConfig.detector_mode === DetectorMode.Lenient
+			config.detector_mode === DetectorMode.Lenient
 				? HEURISTIC_LENIENT_RISK_INCREASE
-				: contentFilterConfig.detector_mode === DetectorMode.Medium
+				: config.detector_mode === DetectorMode.Medium
 					? HEURISTIC_MEDIUM_RISK_INCREASE
 					: HEURISTIC_STRICT_RISK_INCREASE;
 
 		let risk = HEURISTIC_BASE_RISK;
 
-		if (serializedMessage.attachments.length > 0) risk += riskIncreaseStep;
-		if (serializedMessage.reference_id) risk += riskIncreaseStep;
+		if (message.attachments.length > 0) risk += riskIncreaseStep;
+		if (message.reference_id) risk += riskIncreaseStep;
 
 		return Math.min(risk, 1);
 	}
 
-	/**
-	 * Retries a function with exponential backoff and jitter.
-	 * Useful for handling transient errors in content filtering operations.
-	 */
-	static async retryWithBackoff<T>(
+	/** Retries a function with exponential backoff and jitter. */
+	public static async retryWithBackoff<T>(
 		fn: () => Promise<T>,
 		options?: {
 			maxRetries?: number;
@@ -90,10 +92,12 @@ export class ContentFilterUtils {
 				return await fn();
 			} catch (error) {
 				lastError = error;
+
 				if (onRetry) onRetry(attempt, delay, error);
 				if (attempt === maxRetries - 1) break;
 
 				let sleep = delay;
+
 				if (jitter) {
 					sleep = Math.floor(delay * (1 + Math.random() * DEFAULT_RETRY_JITTER));
 				}
@@ -109,12 +113,15 @@ export class ContentFilterUtils {
 
 	/**
 	 * Gets the minimum score threshold based on detector mode.
+	 *
+	 * @param config The content filter configuration.
+	 * @returns The minimum score threshold.
 	 */
-	static getMinScore(contentFilterConfig: ContentFilterConfig): number {
+	public static getMinScore(config: ContentFilterConfig): number {
 		let base =
-			contentFilterConfig.detector_mode === DetectorMode.Lenient
+			config.detector_mode === DetectorMode.Lenient
 				? HEURISTIC_LENIENT_SCORE
-				: contentFilterConfig.detector_mode === DetectorMode.Medium
+				: config.detector_mode === DetectorMode.Medium
 					? HEURISTIC_MEDIUM_SCORE
 					: 0;
 
@@ -123,20 +130,25 @@ export class ContentFilterUtils {
 
 	/**
 	 * Get the minimum score with channel state adjustments.
+	 *
+	 * @param config The content filter configuration.
+	 * @param state The channel scan state.
+	 * @param authorId The author's user ID.
+	 * @returns The adjusted minimum score threshold.
 	 */
-	static getMinScoreWithState(
-		contentFilterConfig: ContentFilterConfig,
-		channelState: ChannelScanState | null,
+	public static getMinScoreWithState(
+		config: ContentFilterConfig,
+		state: ChannelScanState | null,
 		authorId: Snowflake
 	): number {
-		let base = this.getMinScore(contentFilterConfig);
+		let base = this.getMinScore(config);
 
-		if (channelState) {
-			const smoothedFP = channelState.falsePositiveRatio ?? 0;
+		if (state) {
+			const smoothedFP = state.falsePositiveRatio ?? 0;
 			base += smoothedFP * HEURISTIC_SCORE_FP_INFLUENCE;
 
 			const now = Date.now();
-			const userAlerts: number[] = channelState.flaggedUsers?.get(authorId) ?? [];
+			const userAlerts: number[] = state.flaggedUsers?.get(authorId) ?? [];
 			const recentAlerts = userAlerts.filter(
 				(ts: number) => now - ts <= HEURISTIC_USER_RECENT_ALERT_WINDOW_MS
 			).length;
@@ -147,15 +159,15 @@ export class ContentFilterUtils {
 		return Math.max(0, Math.min(0.99, base));
 	}
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// Database Operations
-	// ─────────────────────────────────────────────────────────────────────────
-
 	/**
-	 * Fetch pending content filter alerts for a guild.
+	 * Fetches pending content filter alerts for a guild, optionally filtered by a creation time threshold.
+	 *
+	 * @param guildId The guild ID.
+	 * @param threshold Optional date to filter alerts created before this time.
+	 * @returns An array of pending ContentFilterAlert records.
 	 */
-	static async fetchPendingAlerts(guildId: Snowflake, threshold?: Date): Promise<ContentFilterAlert[]> {
-		return await prisma.contentFilterAlert.findMany({
+	public static async fetchPendingAlerts(guildId: Snowflake, threshold?: Date): Promise<ContentFilterAlert[]> {
+		return prisma.contentFilterAlert.findMany({
 			where: {
 				guild_id: guildId,
 				mod_status: ContentFilterStatus.Pending,
@@ -169,12 +181,14 @@ export class ContentFilterUtils {
 
 	/**
 	 * Fetches recent content filter alerts for a guild and channel, and computes the false positive ratio.
-	 * @param guildId The guild ID
-	 * @param channelId The channel ID
-	 * @param since Only consider alerts created after this date
-	 * @returns { alerts, falsePositiveRatio, highestScore }
+	 *
+	 * @param guildId The guild ID.
+	 * @param channelId The channel ID.
+	 * @param since Only consider alerts created after this date.
+	 *
+	 * @returns An object containing the alerts, false positive ratio, and highest score.
 	 */
-	static async getRecentAlertsAndFalsePositiveRatio(
+	public static async getRecentAlertsAndFalsePositiveRatio(
 		guildId: string,
 		channelId: string,
 		since: Date
@@ -197,58 +211,72 @@ export class ContentFilterUtils {
 
 	/**
 	 * Check if an alert already exists for a message.
+	 *
+	 * @param messageId The ID of the message to check.
+	 * @returns True if an alert exists, false otherwise.
 	 */
-	static async alertExistsForMessage(messageId: string): Promise<boolean> {
+	public static async alertExistsForMessage(messageId: string): Promise<boolean> {
 		const existing = await prisma.contentFilterAlert.findFirst({
 			where: { message_id: messageId }
 		});
 		return existing !== null;
 	}
 
-	/**
-	 * Delete old content filter alerts.
+	/** Delete old content filter alerts.
+	 *
+	 * @param ttl Time-to-live in milliseconds. Defaults to CONTENT_FILTER_ALERT_TTL.
+	 * @returns The number of deleted alerts.
 	 */
-	static async deleteOldAlerts(ttl: number = CONTENT_FILTER_ALERT_TTL): Promise<number> {
+	public static async deleteOldAlerts(ttl: number = CONTENT_FILTER_ALERT_TTL): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
-		const result = await prisma.contentFilterAlert.deleteMany({
+		const { count } = await prisma.contentFilterAlert.deleteMany({
 			where: {
 				created_at: { lt: threshold }
 			}
 		});
-		return result.count;
+
+		return count;
 	}
 
 	/**
 	 * Delete old content filter logs.
+	 *
+	 * @param ttl Time-to-live in milliseconds. Defaults to CONTENT_FILTER_LOG_TTL.
+	 * @returns The number of deleted logs.
 	 */
-	static async deleteOldContentLogs(ttl: number = CONTENT_FILTER_LOG_TTL): Promise<number> {
+	public static async deleteOldContentLogs(ttl: number = CONTENT_FILTER_LOG_TTL): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
-		const result = await prisma.contentFilterLog.deleteMany({
+		const { count } = await prisma.contentFilterLog.deleteMany({
 			where: {
 				created_at: { lt: threshold }
 			}
 		});
-		return result.count;
+
+		return count;
 	}
 
 	/**
 	 * Handle alert moderation status transitions.
 	 * Returns the final status based on the original status and target action.
+	 *
+	 * @param original The current status of the alert.
+	 * @param target The desired status to transition to.
+	 * @returns The resulting status after applying the transition rules.
 	 */
-	static handleAlertModStatus(
-		originalStatus: ContentFilterStatus,
-		targetStatus: ContentFilterStatus
+	public static handleAlertModStatus(
+		original: ContentFilterStatus,
+		target: ContentFilterStatus
 	): ContentFilterStatus {
-		if (targetStatus === ContentFilterStatus.Resolved) {
-			switch (originalStatus) {
+		if (target === ContentFilterStatus.Resolved) {
+			switch (original) {
 				case ContentFilterStatus.Pending:
 				case ContentFilterStatus.False:
 					return ContentFilterStatus.Resolved;
 				default:
 					return ContentFilterStatus.Pending;
 			}
-		} else if (targetStatus === ContentFilterStatus.False) {
-			switch (originalStatus) {
+		} else if (target === ContentFilterStatus.False) {
+			switch (original) {
 				case ContentFilterStatus.Pending:
 				case ContentFilterStatus.Resolved:
 					return ContentFilterStatus.False;
@@ -257,40 +285,64 @@ export class ContentFilterUtils {
 			}
 		}
 
-		return originalStatus;
+		return original;
 	}
 
 	/**
 	 * Update an alert's mod_status in the database.
+	 *
+	 * @param alertId The ID of the alert to update.
+	 * @param newStatus The new moderation status to set.
+	 * @returns The updated ContentFilterAlert or null if not found.
 	 */
-	static async updateAlertModStatus(alertId: string, newStatus: ContentFilterStatus): Promise<void> {
-		await prisma.contentFilterAlert.update({
-			where: { id: alertId },
-			data: { mod_status: newStatus }
-		});
+	public static async updateAlertModStatus(
+		alertId: string,
+		newStatus: ContentFilterStatus
+	): Promise<ContentFilterAlert | null> {
+		return prisma.contentFilterAlert
+			.update({
+				where: { id: alertId },
+				data: { mod_status: newStatus }
+			})
+			.catch(() => null);
 	}
 
 	/**
 	 * Update an alert's del_status in the database.
+	 *
+	 * @param alertId The ID of the alert to update.
+	 * @param newStatus The new deletion status to set.
+	 * @returns The updated ContentFilterAlert or null if not found.
 	 */
-	static async updateAlertDelStatus(alertId: string, newStatus: ContentFilterStatus): Promise<void> {
-		await prisma.contentFilterAlert.update({
-			where: { id: alertId },
-			data: { del_status: newStatus }
-		});
+	public static async updateAlertDelStatus(
+		alertId: string,
+		newStatus: ContentFilterStatus
+	): Promise<ContentFilterAlert | null> {
+		return prisma.contentFilterAlert
+			.update({
+				where: { id: alertId },
+				data: { del_status: newStatus }
+			})
+			.catch(() => null);
 	}
 
 	/**
 	 * Get an alert by message ID.
+	 *
+	 * @param messageId The ID of the message.
+	 * @returns The ContentFilterAlert or null if not found.
 	 */
 	static async getAlertByMessageId(messageId: string): Promise<ContentFilterAlert | null> {
-		return await prisma.contentFilterAlert.findFirst({
+		return prisma.contentFilterAlert.findFirst({
 			where: { message_id: messageId }
 		});
 	}
 
 	/**
 	 * Get content log by alert ID.
+	 *
+	 * @param alertId The ID of the alert.
+	 * @returns The content log string or null if not found.
 	 */
 	static async getContentLogByAlertId(alertId: string): Promise<string | null> {
 		const log = await prisma.contentFilterLog.findFirst({
@@ -305,34 +357,45 @@ export class ContentFilterUtils {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class HeuristicScanner {
-	// Reserved for future debouncing/scheduling implementation
+	/** Heuristic scanning timers. */
 	private static _scanTimers: Map<Snowflake, NodeJS.Timeout> = new Map();
+
+	/** Last scan timestamps per channel for debouncing. */
 	private static _lastScanTimestamps: Map<Snowflake, number> = new Map();
 
 	/**
 	 * Calculate if chat rate has increased significantly.
+	 *
+	 * @param messages The serialized messages to analyze.
+	 * @returns True if chat rate has increased, false otherwise.
 	 */
-	static calculateChatRateIncrease(serializedMessages: SerializedMessage[]): boolean {
-		const recentMessages = this.getRecentMessages(serializedMessages);
-		const previousMessages = this.getPreviousMessages(serializedMessages);
+	public static calculateChatRateIncrease(messages: SerializedMessage[]): boolean {
+		const recentMessages = this.getRecentMessages(messages);
+		const previousMessages = this.getPreviousMessages(messages);
 
 		return recentMessages.length - previousMessages.length >= MESSAGE_PACE_INCREASE_THRESHOLD;
 	}
 
 	/**
 	 * Get recent messages within the time range.
+	 *
+	 * @param messages The serialized messages to analyze.
+	 * @returns Recent messages within the defined time range.
 	 */
-	static getRecentMessages(serializedMessages: SerializedMessage[]): SerializedMessage[] {
+	static getRecentMessages(messages: SerializedMessage[]): SerializedMessage[] {
 		const now = Date.now();
-		return serializedMessages.filter(m => m.created_at.getTime() >= now - MESSAGE_QUEUE_TIME_RANGE);
+		return messages.filter(m => m.created_at.getTime() >= now - MESSAGE_QUEUE_TIME_RANGE);
 	}
 
 	/**
 	 * Get previous messages from the window before the current time range.
+	 *
+	 * @param messages The serialized messages to analyze.
+	 * @returns Previous messages from the defined time range.
 	 */
-	static getPreviousMessages(serializedMessages: SerializedMessage[]): SerializedMessage[] {
+	public static getPreviousMessages(messages: SerializedMessage[]): SerializedMessage[] {
 		const now = Date.now();
-		return serializedMessages.filter(
+		return messages.filter(
 			m =>
 				m.created_at.getTime() >= now - MESSAGE_QUEUE_TIME_RANGE * 2 &&
 				m.created_at.getTime() < now - MESSAGE_QUEUE_TIME_RANGE
@@ -341,59 +404,77 @@ export class HeuristicScanner {
 
 	/**
 	 * Find messages containing reaction patterns (e.g., uppercase text like "WTF", "OMG").
+	 *
+	 * @param messages The serialized messages to analyze.
+	 * @returns Messages that match reaction patterns.
 	 */
-	static findReactionMessages(serializedMessages: SerializedMessage[]): SerializedMessage[] {
+	public static findReactionMessages(messages: SerializedMessage[]): SerializedMessage[] {
 		const reactionMessages: SerializedMessage[] = [];
-		for (const m of serializedMessages) {
+
+		for (const m of messages) {
 			if (m.content && HEURISTIC_REACTION_REGEX.test(m.content)) {
 				reactionMessages.push(m);
 			}
 		}
+
 		return reactionMessages;
 	}
 
 	/**
 	 * Find matching/similar messages from different authors using string distance.
+	 *
+	 * @param messages The serialized messages to analyze.
+	 * @returns Messages that are similar to others in the set.
 	 */
-	static findMatchingMessages(serializedMessages: SerializedMessage[]): SerializedMessage[] {
+	public static findMatchingMessages(messages: SerializedMessage[]): SerializedMessage[] {
 		const matchingMessages: SerializedMessage[] = [];
-		for (let i = 0; i < serializedMessages.length - 1; i++) {
-			const current = serializedMessages[i];
-			const next = serializedMessages[i + 1];
+
+		for (let i = 0; i < messages.length - 1; i++) {
+			const current = messages[i];
+			const next = messages[i + 1];
+
 			if (current.content && next.content && current.author_id !== next.author_id) {
-				// Use Levenshtein distance - if distance is less than threshold, consider similar
+				// Use Levenshtein distance - if distance is less than threshold, consider similar.
 				const dist = distance(current.content.toLowerCase(), next.content.toLowerCase());
 				const maxLen = Math.max(current.content.length, next.content.length);
 				const similarity = 1 - dist / maxLen;
 
-				// Consider messages similar if 80%+ match or distance <= threshold
+				// Consider messages similar if 80%+ match or distance <= threshold.
 				if (similarity >= 0.8 || dist <= MESSAGE_DISTANCE_THRESHOLD) {
 					matchingMessages.push(current);
 				}
 			}
 		}
+
 		return matchingMessages;
 	}
 
 	/**
 	 * Calculate heuristic scores based on reaction messages, matching messages, and chat rate.
+	 *
+	 * @param reactionMessages Messages identified as reactions.
+	 * @param matchingMessages Messages identified as similar/matching.
+	 * @param chatRateIncreased Whether the chat rate has increased significantly.
 	 */
-	static async calculateHeuristics(
+	public static async calculateHeuristics(
 		reactionMessages: SerializedMessage[],
 		matchingMessages: SerializedMessage[],
 		chatRateIncreased: boolean
 	): Promise<HeuristicData> {
 		const referenceData: HeuristicMessageData[] = [];
+
 		let standardScore: number = DEFAULT_STANDARD_MESSAGE_SCORE;
 
 		for (const message of [...reactionMessages, ...matchingMessages]) {
 			if (message.reference_id) {
 				const idx = referenceData.findIndex(reference => reference.message.id === message.reference_id);
+
 				if (idx !== -1) {
 					referenceData[idx].score++;
 				} else {
-					// Fetch reference message from MessageQueue
+					// Fetch reference message from MessageQueue.
 					const reference = await MessageQueue.getMessage(message.reference_id);
+
 					if (reference) {
 						referenceData.push({ message: reference, score: DEFAULT_REPLY_MESSAGE_SCORE });
 					}
@@ -413,8 +494,14 @@ export class HeuristicScanner {
 
 	/**
 	 * Apply heuristic findings to predictions.
+	 *
+	 * @param predictions The existing content predictions.
+	 * @param reactionMessages Messages identified as reactions.
+	 * @param matchingMessages Messages identified as similar/matching.
+	 * @param chatRateIncreased Whether the chat rate has increased significantly.
+	 * @returns Updated content predictions with heuristic data included.
 	 */
-	static applyHeuristicsToPredictions(
+	public static applyHeuristicsToPredictions(
 		predictions: ContentPredictions[],
 		reactionMessages: SerializedMessage[],
 		matchingMessages: SerializedMessage[],
@@ -431,11 +518,13 @@ export class HeuristicScanner {
 				content: `⚠️ Detected (${reactionMessages.length}) adverse reactions`
 			});
 		}
+
 		if (matchingMessages.length > 0) {
 			heuristicPredictions.data.push({
 				content: `⚠️ Detected (${matchingMessages.length}) similar messages`
 			});
 		}
+
 		if (chatRateIncreased) {
 			heuristicPredictions.data.push({
 				content: `⚠️ Detected increased chat rate`
@@ -452,27 +541,31 @@ export class HeuristicScanner {
 	/**
 	 * Trigger a heuristic scan for a single message.
 	 * Uses per-channel debouncing to avoid excessive scans.
+	 *
+	 * @param message The message to scan.
+	 * @param config The content filter configuration.
+	 * @return void
 	 */
-	static async triggerScan(message: Message<true>, contentFilterConfig: ContentFilterConfig): Promise<void> {
-		if (!contentFilterConfig.enabled) return;
+	public static async triggerScan(message: Message<true>, config: ContentFilterConfig): Promise<void> {
+		if (!config.enabled) return;
 
 		const channel = message.channel as TextChannel;
 		const channelId = channel.id;
 
-		// Check channel scoping
+		// Check channel scoping.
 		const scoping = {
-			include_channels: contentFilterConfig.included_channels ?? [],
-			exclude_channels: contentFilterConfig.excluded_channels ?? []
+			include_channels: config.included_channels ?? [],
+			exclude_channels: config.excluded_channels ?? []
 		};
 		if (!channelInScope(channel, scoping)) return;
 
-		// Access shared channel state from AutomatedScanner
+		// Access shared channel state from AutomatedScanner.
 		const state = AutomatedScanner.getOrInitChannelState(channelId);
 
-		// Use EWMA message-per-minute as chat rate when available
+		// Use EWMA message-per-minute as chat rate when available.
 		const chatRate = Math.max(1, Math.round(state.ewmaMpm ?? HEURISTIC_BASE_SCAN_RATE));
 
-		// Map chatRate [1..20+] to debounce window between configured min/max
+		// Map chatRate [1..20+] to debounce window between configured min/max.
 		let debounceMs = Math.floor(
 			HEURISTIC_SCAN_DEBOUNCE_MIN +
 				(Math.min(chatRate, 20) / 20) * (HEURISTIC_SCAN_DEBOUNCE_MAX - HEURISTIC_SCAN_DEBOUNCE_MIN)
@@ -483,22 +576,25 @@ export class HeuristicScanner {
 		const lastScan = this._lastScanTimestamps.get(channelId) ?? 0;
 		const timeSinceLastScan = now - lastScan;
 
-		// If a timer is already scheduled for this channel, do nothing
+		// If a timer is already scheduled for this channel, do nothing.
 		if (this._scanTimers.has(channelId)) return;
 
 		let delay = debounceMs;
+
 		if (timeSinceLastScan < debounceMs) {
 			delay = debounceMs - timeSinceLastScan;
 		}
 
 		const timer = setTimeout(async () => {
-			// Update last-run timestamp immediately to avoid quick re-schedules
+			// Update last-run timestamp immediately to avoid quick re-schedules.
 			this._lastScanTimestamps.set(channelId, Date.now());
+
 			try {
-				await this._heuristicScan(channel, contentFilterConfig);
+				await this._heuristicScan(channel, config);
 			} catch (err) {
 				Logger.error("Heuristic scheduled scan failed:", err);
 			}
+
 			this._scanTimers.delete(channelId);
 		}, delay);
 
@@ -508,21 +604,18 @@ export class HeuristicScanner {
 	/**
 	 * Perform a heuristic scan on a channel based on recent message activity and content.
 	 */
-	private static async _heuristicScan(
-		channel: TextChannel,
-		contentFilterConfig: ContentFilterConfig
-	): Promise<void> {
-		if (!contentFilterConfig.enabled) return;
+	private static async _heuristicScan(channel: TextChannel, config: ContentFilterConfig): Promise<void> {
+		if (!config.enabled) return;
 
 		const channelId = channel.id;
 		const state = AutomatedScanner.getOrInitChannelState(channelId);
 		const now = Date.now();
 
-		// Update channel timestamps
+		// Update channel timestamps.
 		if (!state.scanTimestamps) state.scanTimestamps = [];
 		state.scanTimestamps.push(now);
 
-		// Dynamic window size based on observed traffic
+		// Dynamic window size based on observed traffic.
 		const traffic = Math.max(1, Math.round(state.ewmaMpm ?? HEURISTIC_BASE_SCAN_RATE));
 		const multiplier = Math.min(
 			HEURISTIC_DYNAMIC_WINDOW_MULT_MAX,
@@ -531,7 +624,7 @@ export class HeuristicScanner {
 		const dynamicWindow = Math.max(HEURISTIC_DYNAMIC_WINDOW_MIN, Math.round(HEURISTIC_WINDOW_SIZE * multiplier));
 		const windowSize = Math.min(dynamicWindow, HEURISTIC_WINDOW_SIZE * HEURISTIC_DYNAMIC_WINDOW_MULT_MAX);
 
-		// Get messages from the queue
+		// Get messages from the queue.
 		const serializedMessages = await MessageQueue.getMessagesForChannel(channelId, windowSize);
 		if (serializedMessages.length === 0) return;
 
@@ -546,7 +639,7 @@ export class HeuristicScanner {
 		const ratio = trafficForThreshold / Math.max(1, scanRate);
 		const dynamicThreshold = Math.max(1, Math.round(HEURISTIC_SCORE_THRESHOLD * Math.sqrt(ratio)));
 
-		// Collect candidate message IDs for scanning
+		// Collect candidate message IDs for scanning.
 		const candidateIds = new Set<Snowflake>();
 
 		if (heur.standardScore >= dynamicThreshold) {
@@ -559,33 +652,29 @@ export class HeuristicScanner {
 			}
 		}
 
-		// Only include referenced messages that meet the threshold
+		// Only include referenced messages that meet the threshold.
 		for (const ref of heur.referenceData) {
 			if (ref.score >= dynamicThreshold) {
 				candidateIds.add(ref.message.id);
 			}
 		}
 
-		// Process each candidate message
+		// Process each candidate message.
 		for (const messageId of candidateIds) {
-			// Check if alert already exists to avoid duplicates
+			// Check if alert already exists to avoid duplicates.
 			const existing = await ContentFilterUtils.alertExistsForMessage(messageId);
 			if (existing) continue;
 
-			// Try to fetch the actual message
+			// Try to fetch the actual message.
 			try {
 				const actualMessage = await channel.messages.fetch(messageId).catch(() => null);
 				if (!actualMessage || !actualMessage.inGuild()) continue;
 
-				// Run detectors
-				const predictions = await ContentFiltering.runDetectors(
-					channel,
-					actualMessage,
-					contentFilterConfig
-				);
+				// Run detectors.
+				const predictions = await ContentFiltering.runDetectors(channel, actualMessage, config);
 
 				if (predictions.length) {
-					// Update predictions with heuristic data
+					// Update predictions with heuristic data.
 					const updatedPredictions = this.applyHeuristicsToPredictions(
 						predictions,
 						reactionMessages,
@@ -593,12 +682,11 @@ export class HeuristicScanner {
 						chatRateIncreased
 					);
 
-					// Create alert
 					await ContentFiltering.createContentFilterAlert(
 						updatedPredictions,
 						ScanTypes.Heuristic,
 						actualMessage,
-						contentFilterConfig
+						config
 					);
 				}
 			} catch (err) {
@@ -613,40 +701,47 @@ export class HeuristicScanner {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class AutomatedScanner {
-	private static channelScanState: Map<Snowflake, ChannelScanState> = new Map();
-	private static userPriorityQueue: MinimumHeap = new MinimumHeap();
-	private static tickInterval: NodeJS.Timeout | null = null;
-	private static smoothedFalsePositive: Map<Snowflake, number> = new Map();
+	/** Channel scan states. */
+	private static _channelScanStates: Map<Snowflake, ChannelScanState> = new Map();
 
+	/** Priority queue for user scans. */
+	private static _userPriorityQueue: MinimumHeap = new MinimumHeap();
+
+	/** Tick interval handle. */
+	private static _tickInterval: NodeJS.Timeout | null = null;
+
+	/** Smoothed false positive ratios per channel. */
+	private static _smoothedFalsePositive: Map<Snowflake, number> = new Map();
+
+	/** Accessors for private static properties. */
 	private static pid = {
 		integral: 0,
 		lastError: 0,
 		lastUpdate: Date.now()
 	};
 
-	/**
-	 * Start the tick loop for processing queued scans.
-	 */
-	static startTickLoop(): void {
-		if (this.tickInterval) return;
-		this.tickInterval = setInterval(() => this.tick(), HEURISTIC_TICK_INTERVAL_MS);
+	/** Start the tick loop for processing queued scans. */
+	public static startTickLoop(): void {
+		if (this._tickInterval) return;
+		this._tickInterval = setInterval(() => this.tick(), HEURISTIC_TICK_INTERVAL_MS);
 	}
 
-	/**
-	 * Stop the tick loop.
-	 */
-	static stopTickLoop(): void {
-		if (this.tickInterval) {
-			clearInterval(this.tickInterval);
-			this.tickInterval = null;
+	/** Stop the tick loop. */
+	public static stopTickLoop(): void {
+		if (this._tickInterval) {
+			clearInterval(this._tickInterval);
+			this._tickInterval = null;
 		}
 	}
 
 	/**
 	 * Get or initialize channel state.
+	 *
+	 * @param channelId The ID of the channel.
+	 * @returns The ChannelScanState for the channel.
 	 */
-	static getOrInitChannelState(channelId: Snowflake): ChannelScanState {
-		let state = this.channelScanState.get(channelId);
+	public static getOrInitChannelState(channelId: Snowflake): ChannelScanState {
+		let state = this._channelScanStates.get(channelId);
 
 		if (!state) {
 			state = {
@@ -666,7 +761,8 @@ export class AutomatedScanner {
 				priorityAlertedUsers: new Set(),
 				userScores: new Map()
 			};
-			this.channelScanState.set(channelId, state);
+
+			this._channelScanStates.set(channelId, state);
 		}
 
 		if (!state.priorityAlertedUsers) state.priorityAlertedUsers = new Set();
@@ -676,21 +772,25 @@ export class AutomatedScanner {
 		return state;
 	}
 
-	/**
-	 * Enqueue a message for scanning.
+	/** Enqueue a message for automated scanning.
+	 *
+	 * @param message The message to enqueue.
+	 * @param config The content filter configuration.
+	 * @param serializedMessage The serialized message data.
 	 */
-	static enqueueForScan(
+	public static enqueueForScan(
 		message: Message<true>,
-		contentFilterConfig: ContentFilterConfig,
+		config: ContentFilterConfig,
 		serializedMessage: SerializedMessage
 	): void {
-		if (!contentFilterConfig.enabled) return;
+		if (!config.enabled) return;
 
 		// Channel scoping check
 		const scoping: ChannelScoping = {
-			include_channels: contentFilterConfig.included_channels ?? [],
-			exclude_channels: contentFilterConfig.excluded_channels ?? []
+			include_channels: config.included_channels ?? [],
+			exclude_channels: config.excluded_channels ?? []
 		};
+
 		if (!channelInScope(message.channel as TextChannel, scoping)) return;
 
 		const now = Date.now();
@@ -701,12 +801,12 @@ export class AutomatedScanner {
 		state.messageTimestamps = state.messageTimestamps.filter((ts: number) => now - ts <= HEURISTIC_SCAN_WINDOW);
 
 		const measuredMpm = state.messageTimestamps.length;
-		state.ewmaMpm = this.ewma(state.ewmaMpm, measuredMpm, HEURISTIC_EWMA_MPM_ALPHA);
+		state.ewmaMpm = this._ewma(state.ewmaMpm, measuredMpm, HEURISTIC_EWMA_MPM_ALPHA);
 
-		const risk = ContentFilterUtils.computeMessageRisk(contentFilterConfig, serializedMessage);
-		const next = this.scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
+		const risk = ContentFilterUtils.computeMessageRisk(config, serializedMessage);
+		const next = this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
 
-		this.userPriorityQueue.push({
+		this._userPriorityQueue.push({
 			userId: message.author.id,
 			channelId: message.channel.id,
 			message,
@@ -715,26 +815,24 @@ export class AutomatedScanner {
 		});
 	}
 
-	/**
-	 * Process queued scans during tick.
-	 */
+	/** Process queued scans during tick. */
 	private static async tick(): Promise<void> {
 		const now = Date.now();
 		const globalRate = Math.min(
 			HEURISTIC_MAX_SCAN_RATE,
-			Math.max(HEURISTIC_BASE_SCAN_RATE, this.aggregateChannelScanRateEstimate())
+			Math.max(HEURISTIC_BASE_SCAN_RATE, this._aggregateChannelScanRateEstimate())
 		);
 		const scansPerSecond = globalRate / 60;
 		const tickDuration = HEURISTIC_TICK_INTERVAL_MS;
 		const allowedScans = Math.max(1, Math.floor(scansPerSecond * (tickDuration / 1000)));
 
 		let processed = 0;
-		while (processed < allowedScans && this.userPriorityQueue.size() > 0) {
-			const entry = this.userPriorityQueue.pop();
+		while (processed < allowedScans && this._userPriorityQueue.size() > 0) {
+			const entry = this._userPriorityQueue.pop();
 			if (!entry) break;
 
 			if (entry.nextScan > now) {
-				this.userPriorityQueue.push(entry);
+				this._userPriorityQueue.push(entry);
 				break;
 			}
 
@@ -757,9 +855,9 @@ export class AutomatedScanner {
 							contentFilterConfig
 						);
 
-						// Update state with predictions
+						// Update state with predictions.
 						const state = this.getOrInitChannelState(entry.channelId);
-						const smoothedFP = this.smoothedFalsePositive.get(entry.channelId) ?? 0;
+						const smoothedFP = this._smoothedFalsePositive.get(entry.channelId) ?? 0;
 						await this.applyPredictionsToState(
 							state,
 							entry.userId,
@@ -769,7 +867,7 @@ export class AutomatedScanner {
 							smoothedFP
 						);
 
-						// Adjust scan rate based on results
+						// Adjust scan rate based on results.
 						this.adjustScanRate(state, now, smoothedFP);
 					}
 				}
@@ -782,9 +880,12 @@ export class AutomatedScanner {
 	}
 
 	/**
-	 * Hook: called when a moderator marks an alert as false (or not).
+	 * Handle moderator feedback to update false positive estimates.
+	 *
+	 * @param channelId The ID of the channel.
+	 * @param wasFalse Whether the alert was marked as false positive.
 	 */
-	static async handleModeratorFeedback(channelId: Snowflake, wasFalse: boolean): Promise<void> {
+	public static async handleModeratorFeedback(channelId: Snowflake, wasFalse: boolean): Promise<void> {
 		const state = this.getOrInitChannelState(channelId);
 
 		const prevA = state.betaA ?? 1;
@@ -798,10 +899,11 @@ export class AutomatedScanner {
 		state.betaA = Math.max(1, prevA * (1 - HEURISTIC_SMOOTHED_FP_ALPHA) + targetA * HEURISTIC_SMOOTHED_FP_ALPHA);
 		state.betaB = Math.max(1, prevB * (1 - HEURISTIC_SMOOTHED_FP_ALPHA) + targetB * HEURISTIC_SMOOTHED_FP_ALPHA);
 
-		const mean = this.betaMean(state);
-		this.smoothedFalsePositive.set(
+		const mean = this._betaMean(state);
+
+		this._smoothedFalsePositive.set(
 			channelId,
-			(this.smoothedFalsePositive.get(channelId) ?? 0) * (1 - HEURISTIC_SMOOTHED_FP_ALPHA) +
+			(this._smoothedFalsePositive.get(channelId) ?? 0) * (1 - HEURISTIC_SMOOTHED_FP_ALPHA) +
 				mean * HEURISTIC_SMOOTHED_FP_ALPHA
 		);
 	}
@@ -809,65 +911,72 @@ export class AutomatedScanner {
 	/**
 	 * Perform a full automated scan on a message.
 	 * Includes duplicate detection, priority user handling, and state updates.
+	 *
+	 * @param channel The text channel of the message.
+	 * @param message The message to scan.
+	 * @param config The content filter configuration.
 	 */
-	static async automatedScan(
+	public static async automatedScan(
 		channel: TextChannel,
 		message: Message<true>,
-		contentFilterConfig: ContentFilterConfig
+		config: ContentFilterConfig
 	): Promise<void> {
-		if (!contentFilterConfig.enabled) return;
+		if (!config.enabled) return;
 
-		// Channel scoping check
+		// Channel scoping check.
 		const scoping = {
-			include_channels: contentFilterConfig.included_channels ?? [],
-			exclude_channels: contentFilterConfig.excluded_channels ?? []
+			include_channels: config.included_channels ?? [],
+			exclude_channels: config.excluded_channels ?? []
 		};
+
 		if (!channelInScope(channel, scoping)) return;
 
 		const now = Date.now();
 
-		// Check if an alert already exists for this message
+		// Check if an alert already exists for this message.
 		const existing = await ContentFilterUtils.alertExistsForMessage(message.id);
 		if (existing) return;
 
-		// Prepare channel state
-		const prep = await this.prepareChannelForScan(channel, message, contentFilterConfig, now);
+		// Prepare channel state.
+		const prep = await this.prepareChannelForScan(channel, message, config, now);
 		if (!prep || !prep.shouldScan) return;
 
 		const { state, smoothed, riskScore } = prep;
 
-		// Run detectors
-		const predictions = await ContentFiltering.runDetectors(channel, message, contentFilterConfig);
+		// Run detectors.
+		const predictions = await ContentFiltering.runDetectors(channel, message, config);
 
 		if (predictions.length > 0) {
-			// Update state with predictions
+			// Update state with predictions.
 			await this.applyPredictionsToState(state, message.author.id, predictions, now, riskScore, smoothed);
 
-			// Create alert
-			await ContentFiltering.createContentFilterAlert(
-				predictions,
-				ScanTypes.Automated,
-				message,
-				contentFilterConfig
-			);
+			// Create alert.
+			await ContentFiltering.createContentFilterAlert(predictions, ScanTypes.Automated, message, config);
 
 			// Adjust scan rate based on results
 			const shouldLog = this.adjustScanRate(state, now, smoothed);
 
 			// Log scan rate changes if verbose
-			if (shouldLog && contentFilterConfig.verbosity === "Verbose") {
-				await this.sendScanRateChangeLog(channel, state.scanRate, contentFilterConfig);
+			if (shouldLog && config.verbosity === "Verbose") {
+				await this.sendScanRateChangeLog(channel, state.scanRate, config);
 			}
 		}
 	}
 
 	/**
 	 * Prepare a channel state for scanning and decide whether to run a scan for the given message.
+	 *
+	 * @param channel The text channel of the message.
+	 * @param message The message to scan.
+	 * @param config The content filter configuration.
+	 * @param now The current timestamp in milliseconds.
+	 * @param options Optional parameters including risk score and force scan flag.
+	 * @returns An object containing the channel state, whether to scan, smoothed false positive ratio, and risk score; or null if scanning is disabled.
 	 */
-	static async prepareChannelForScan(
+	public static async prepareChannelForScan(
 		channel: TextChannel,
 		message: Message<true>,
-		contentFilterConfig: ContentFilterConfig,
+		config: ContentFilterConfig,
 		now: number,
 		options?: { risk?: number; force?: boolean }
 	): Promise<{
@@ -876,7 +985,7 @@ export class AutomatedScanner {
 		smoothed: number;
 		riskScore: number;
 	} | null> {
-		if (!contentFilterConfig.enabled) return null;
+		if (!config.enabled) return null;
 
 		const channelId = channel.id;
 		const state = this.getOrInitChannelState(channelId);
@@ -914,22 +1023,22 @@ export class AutomatedScanner {
 				effectiveRisk = Math.min(1, highestScore / 10);
 			}
 		} catch {
-			// fallback to defaults
+			// Ignore errors and use defaults.
 		}
 
-		const prevSmoothed = this.smoothedFalsePositive.get(channelId) ?? 0;
+		const prevSmoothed = this._smoothedFalsePositive.get(channelId) ?? 0;
 		const smoothed =
 			prevSmoothed * (1 - HEURISTIC_SMOOTHED_FP_ALPHA) + falsePositiveRatio * HEURISTIC_SMOOTHED_FP_ALPHA;
-		this.smoothedFalsePositive.set(channelId, smoothed);
+		this._smoothedFalsePositive.set(channelId, smoothed);
 
-		const decayFinal = this.computeDecayFactor(state, smoothed);
+		const decayFinal = this._computeDecayFactor(state, smoothed);
 		const priorityThresholdFinal = this.computePriorityThreshold(state, smoothed);
 
-		// Read the user entry from userScores
+		// Read the user entry from userScores.
 		const existingEntry = state.userScores.get(message.author.id) ?? { score: 0, lastScan: 0 };
 		let userScore = existingEntry.score;
 
-		// Decay user score if > 0
+		// Decay user score if > 0.
 		if (userScore > 0) {
 			userScore = userScore * decayFinal;
 			existingEntry.score = userScore;
@@ -955,16 +1064,16 @@ export class AutomatedScanner {
 			return { state, shouldScan, smoothed, riskScore };
 		}
 
-		// Mark last scan time for this user
+		// Mark last scan time for this user.
 		const entryToSet = state.userScores.get(message.author.id) ?? { score: 0, lastScan: 0 };
 		entryToSet.lastScan = now;
 		state.userScores.set(message.author.id, entryToSet);
 		state.scanTimestamps.push(now);
 
-		// Priority user alert
-		if (isPriorityUser && contentFilterConfig.verbosity !== "Minimal") {
+		// Priority user alert.
+		if (isPriorityUser && config.verbosity !== "Minimal") {
 			if (!state.priorityAlertedUsers.has(message.author.id)) {
-				await this.sendPriorityUserWarning(message, contentFilterConfig);
+				await this.sendPriorityUserWarning(message, config);
 				state.priorityAlertedUsers.add(message.author.id);
 			}
 		} else if (!isPriorityUser && state.priorityAlertedUsers.has(message.author.id)) {
@@ -974,85 +1083,96 @@ export class AutomatedScanner {
 		return { state, shouldScan, smoothed, riskScore };
 	}
 
-	/**
-	 * Send a priority user warning to the configured webhook.
+	/** Send a priority user warning to the configured webhook.
+	 *
+	 * @param message The message from the priority user.
+	 * @param config The content filter configuration.
 	 */
-	static async sendPriorityUserWarning(
-		message: Message<true>,
-		contentFilterConfig: ContentFilterConfig
-	): Promise<void> {
-		if (!contentFilterConfig.webhook_url) return;
+	public static async sendPriorityUserWarning(message: Message<true>, config: ContentFilterConfig): Promise<any> {
+		if (!config.webhook_url) return;
 
 		const embed = new EmbedBuilder()
 			.setColor(Colors.Orange)
-			.setTitle(`⚠️ ${ScanTypes.Heuristic}: PRIORITY USER ALERT`)
+			.setTitle(`⚠️ ${ScanTypes.Heuristic}: Priority User Alert`)
 			.setDescription(`User ${userMentionWithId(message.author.id)} has been prioritized for scanning.`)
 			.setTimestamp();
 
-		const webhook = new WebhookClient({ url: contentFilterConfig.webhook_url });
-
-		try {
-			await webhook.send({ embeds: [embed] });
-		} catch (error) {
-			Logger.error("Failed to send priority user warning:", error);
-		}
+		const webhook = new WebhookClient({ url: config.webhook_url });
+		return webhook.send({ embeds: [embed] }).catch(() => {});
 	}
 
 	/**
 	 * Send a scan rate change log to the configured webhook.
+	 *
+	 * @param channel The text channel where the scan rate changed.
+	 * @param newRate The new scan rate in messages per minute.
+	 * @param config The content filter configuration.
 	 */
-	static async sendScanRateChangeLog(
+	public static async sendScanRateChangeLog(
 		channel: TextChannel,
 		newRate: number,
-		contentFilterConfig: ContentFilterConfig
-	): Promise<void> {
-		if (!contentFilterConfig.webhook_url) return;
+		config: ContentFilterConfig
+	): Promise<any> {
+		if (!config.webhook_url) return;
 
 		const embed = new EmbedBuilder()
 			.setColor(Colors.Orange)
-			.setTitle(`⚙️ ${ScanTypes.Heuristic}: SCAN RATE CHANGE`)
+			.setTitle(`⚙️ ${ScanTypes.Heuristic}: Scan Rate Change`)
 			.setDescription(
 				`Scan rate for <#${channel.id}> is now \`${newRate}\` message${newRate === 1 ? "" : "s"} per minute.`
 			)
 			.setTimestamp();
 
-		const webhook = new WebhookClient({ url: contentFilterConfig.webhook_url });
-
-		try {
-			await webhook.send({ embeds: [embed] });
-		} catch (error) {
-			Logger.error("Failed to send scan rate change log:", error);
-		}
+		const webhook = new WebhookClient({ url: config.webhook_url });
+		return webhook.send({ embeds: [embed] }).catch(() => {});
 	}
 
 	/**
 	 * Compute dynamic base scan rate from channel EWMA and beta mean.
+	 *
+	 * @param state The channel scan state.
+	 * @returns The computed dynamic base scan rate.
 	 */
-	static getDynamicBaseScanRateForState(state: ChannelScanState): number {
+	public static getDynamicBaseScanRateForState(state: ChannelScanState): number {
 		const ewmaMpm = state.ewmaMpm ?? HEURISTIC_BASE_SCAN_RATE;
-		const beta = this.betaMean(state);
+		const beta = this._betaMean(state);
 
 		const raw = Math.round(
 			HEURISTIC_K_TRAFFIC * ewmaMpm + HEURISTIC_K_CONF * (1 - beta) * HEURISTIC_BASE_SCAN_RATE
 		);
+
 		return Math.max(1, Math.min(HEURISTIC_MAX_SCAN_RATE, raw || HEURISTIC_BASE_SCAN_RATE));
 	}
 
 	/**
 	 * Compute a dynamic weight to add to a user's score after a detection.
+	 *
+	 * @param detectorWeight The base weight of the detector.
+	 * @param severity The severity of the detection (0 to 1).
+	 * @param riskScore The risk score of the message (0 to 1).
+	 * @returns The computed dynamic weight.
 	 */
-	static computeDynamicWeight(detectorWeight: number, severity: number, riskScore: number): number {
+	public static computeDynamicWeight(detectorWeight: number, severity: number, riskScore: number): number {
 		const w =
 			detectorWeight *
 			(HEURISTIC_DYNAMIC_WEIGHT_BASE + severity * HEURISTIC_DYNAMIC_WEIGHT_SEVERITY_MULT) *
 			(1 + Math.min(1, riskScore));
+
 		return Math.max(HEURISTIC_DYNAMIC_WEIGHT_MIN, Math.min(HEURISTIC_DYNAMIC_WEIGHT_MAX, w));
 	}
 
 	/**
 	 * Centralized helper to apply prediction results to channel state.
+	 *
+	 * @param state The channel scan state.
+	 * @param authorId The ID of the message author.
+	 * @param predictions The content predictions from detectors.
+	 * @param now The current timestamp in milliseconds.
+	 * @param riskScore The risk score of the message (0 to 1).
+	 * @param smoothedFalsePositive The smoothed false positive ratio for the channel.
+	 * @returns void
 	 */
-	static async applyPredictionsToState(
+	public static async applyPredictionsToState(
 		state: ChannelScanState,
 		authorId: Snowflake,
 		predictions: ContentPredictions[],
@@ -1068,30 +1188,37 @@ export class AutomatedScanner {
 		const updatedTimestamps = (state.flaggedUsers.get(authorId) || []).filter(
 			(ts: number) => now - ts < HEURISTIC_SCAN_WINDOW
 		);
+
 		updatedTimestamps.push(now);
 		state.flaggedUsers.set(authorId, updatedTimestamps);
 
-		const decayFinal = this.computeDecayFactor(state, smoothedFalsePositive);
+		const decayFinal = this._computeDecayFactor(state, smoothedFalsePositive);
 		const existingEntry = state.userScores.get(authorId) ?? { score: 0, lastScan: 0 };
 		const prevScore = existingEntry.score ?? 0;
 		const detectorWeight = Math.min(3, 1 + predictions.length);
 		const severity = Math.min(1, (predictions.flatMap(p => p.data).length || 1) / 3);
 		const dynamicWeight = this.computeDynamicWeight(detectorWeight, severity, riskScore);
 		const newScore = prevScore * decayFinal + dynamicWeight;
+
 		existingEntry.score = newScore;
 		state.userScores.set(authorId, existingEntry);
-
 		state.falsePositiveRatio = smoothedFalsePositive;
 	}
 
 	/**
 	 * PID controller for scan rate adjustment.
+	 *
+	 * @param state The channel scan state.
+	 * @param now The current timestamp in milliseconds.
+	 * @param smoothedFalsePositive The smoothed false positive ratio for the channel.
+	 * @returns Whether the scan rate change should be logged.
 	 */
-	static adjustScanRate(state: ChannelScanState, now: number, smoothedFalsePositive = 0): boolean {
-		// Decay beta priors toward uninformative prior over time
+	public static adjustScanRate(state: ChannelScanState, now: number, smoothedFalsePositive = 0): boolean {
+		// Decay beta priors toward uninformative prior over time.
 		try {
 			const last = state.betaLastUpdate ?? now;
 			const dt = Math.max(0, now - last);
+
 			if (dt > 0) {
 				const decayFactor = Math.exp(-Math.LN2 * (dt / Math.max(1, HEURISTIC_BETA_DECAY_HALF_LIFE_MS)));
 				state.betaA = Math.max(1, (state.betaA ?? 1) * decayFactor);
@@ -1099,10 +1226,10 @@ export class AutomatedScanner {
 				state.betaLastUpdate = now;
 			}
 		} catch {
-			// ignore decay errors
+			// Ignore decay errors.
 		}
 
-		const beta = this.betaMean(state);
+		const beta = this._betaMean(state);
 		const ewmaMpm = Math.max(1, Math.round(state.ewmaMpm ?? HEURISTIC_BASE_SCAN_RATE));
 
 		const trafficScale = 1 + Math.min(2, Math.log10(1 + ewmaMpm) * 0.25);
@@ -1123,7 +1250,7 @@ export class AutomatedScanner {
 		const baseRate = this.getDynamicBaseScanRateForState(state);
 		const minRate = Math.max(HEURISTIC_MIN_SCAN_RATE, baseRate);
 
-		const adaptiveThreshold = this.estimateAdaptiveThreshold(state.scanTimestamps ?? [], now);
+		const adaptiveThreshold = this._estimateAdaptiveThreshold(state.scanTimestamps ?? [], now);
 
 		const error = state.alertCount - adaptiveThreshold;
 		const nowMs = now;
@@ -1188,13 +1315,18 @@ export class AutomatedScanner {
 
 	/**
 	 * Cleanup old timestamps and user scores.
+	 *
+	 * @param state The channel scan state.
+	 * @param now The current timestamp in milliseconds.
+	 * @param ttl The time-to-live for user scores in milliseconds.
 	 */
-	static cleanupOldTimestamps(state: ChannelScanState, now: number, ttl: number): void {
+	public static cleanupOldTimestamps(state: ChannelScanState, now: number, ttl: number): void {
 		state.scanTimestamps = state.scanTimestamps.filter((ts: number) => now - ts < HEURISTIC_SCAN_WINDOW);
 
 		if (state.flaggedUsers) {
 			for (const [userId, timestamps] of state.flaggedUsers.entries()) {
 				const pruned = timestamps.filter((ts: number) => now - ts < HEURISTIC_SCAN_WINDOW);
+
 				if (pruned.length > 0) {
 					state.flaggedUsers.set(userId, pruned);
 				} else {
@@ -1206,6 +1338,7 @@ export class AutomatedScanner {
 		if (state.userScores) {
 			for (const [userId, entry] of state.userScores.entries()) {
 				const lastScan = entry?.lastScan ?? 0;
+
 				if ((entry.score ?? 0) <= HEURISTIC_SCORE_PRUNE_EPSILON && now - lastScan > HEURISTIC_SCAN_WINDOW) {
 					state.userScores.delete(userId);
 				}
@@ -1213,6 +1346,7 @@ export class AutomatedScanner {
 
 			for (const [userId, entry] of state.userScores.entries()) {
 				const lastScan = entry?.lastScan ?? 0;
+
 				if (now - lastScan > ttl) {
 					state.userScores.delete(userId);
 				}
@@ -1225,6 +1359,7 @@ export class AutomatedScanner {
 				candidates.sort((a, b) => a[1] - b[1]);
 
 				const target = Math.floor(HEURISTIC_USER_SCORES_MAX_SIZE * 0.9);
+
 				let idx = 0;
 				while (state.userScores.size > target && idx < candidates.length) {
 					const userId = candidates[idx][0];
@@ -1235,11 +1370,7 @@ export class AutomatedScanner {
 		}
 	}
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// Private Helpers
-	// ─────────────────────────────────────────────────────────────────────────
-
-	private static scheduleNextScan(now: number, scanRate: number, risk: number, observedTraffic?: number): number {
+	private static _scheduleNextScan(now: number, scanRate: number, risk: number, observedTraffic?: number): number {
 		const effective = Math.min(scanRate, observedTraffic ?? scanRate);
 		const msgsPerMinute = Math.max(HEURISTIC_MIN_SCAN_RATE, Math.round(effective));
 		const baseInterval = HEURISTIC_SCAN_WINDOW / msgsPerMinute;
@@ -1255,25 +1386,25 @@ export class AutomatedScanner {
 		return now + Math.max(HEURISTIC_MIN_SCHEDULE_DELAY, Math.floor(baseInterval * multiplier)) + jitter;
 	}
 
-	private static ewma(prev: number | undefined, value: number, alpha = HEURISTIC_EWMA_ALPHA): number {
+	private static _ewma(prev: number | undefined, value: number, alpha = HEURISTIC_EWMA_ALPHA): number {
 		if (prev === undefined || prev === null) return value;
 		return prev * (1 - alpha) + value * alpha;
 	}
 
-	private static betaMean(state: ChannelScanState): number {
+	private static _betaMean(state: ChannelScanState): number {
 		const a = state.betaA ?? 1;
 		const b = state.betaB ?? 1;
 		const mean = a / (a + b);
 		return Math.max(HEURISTIC_BETA_MEAN_MIN, Math.min(HEURISTIC_BETA_MEAN_MAX, mean));
 	}
 
-	private static aggregateChannelScanRateEstimate(): number {
-		if (this.channelScanState.size === 0) return HEURISTIC_BASE_SCAN_RATE;
+	private static _aggregateChannelScanRateEstimate(): number {
+		if (this._channelScanStates.size === 0) return HEURISTIC_BASE_SCAN_RATE;
 
 		let total = 0;
 		let count = 0;
 
-		for (const [, s] of this.channelScanState.entries()) {
+		for (const [, s] of this._channelScanStates.entries()) {
 			total += this.getDynamicBaseScanRateForState(s) ?? HEURISTIC_BASE_SCAN_RATE;
 			count++;
 		}
@@ -1281,32 +1412,39 @@ export class AutomatedScanner {
 		return Math.max(HEURISTIC_BASE_SCAN_RATE, Math.round(total / Math.max(1, count)));
 	}
 
-	private static computeDecayFactor(state: ChannelScanState, smoothedFalsePositive: number): number {
+	private static _computeDecayFactor(state: ChannelScanState, smoothedFalsePositive: number): number {
 		const base = HEURISTIC_DECAY_BASE;
 		const fpInfluence = Math.min(
 			HEURISTIC_DECAY_FP_INFLUENCE_MAX,
 			smoothedFalsePositive * HEURISTIC_DECAY_FP_INFLUENCE_FACTOR
 		);
+
 		const alertInfluence = Math.min(
 			HEURISTIC_DECAY_ALERT_INFLUENCE_MAX,
 			(state.alertCount || 0) * HEURISTIC_DECAY_ALERT_INFLUENCE_PER_ALERT
 		);
+
 		return Math.max(HEURISTIC_DECAY_MIN, Math.min(HEURISTIC_DECAY_MAX, base - fpInfluence - alertInfluence));
 	}
 
 	/**
 	 * Compute a dynamic priority threshold (how many score units to become a priority user).
+	 *
+	 * @param state The channel scan state.
+	 * @param smoothedFalsePositive The smoothed false positive ratio for the channel.
+	 * @returns The computed priority threshold.
 	 */
-	static computePriorityThreshold(state: ChannelScanState, smoothedFalsePositive: number): number {
+	public static computePriorityThreshold(state: ChannelScanState, smoothedFalsePositive: number): number {
 		const base = HEURISTIC_PRIORITY_USER_FLAG_THRESHOLD || 2;
 		const multiplier =
 			1 + Math.min(HEURISTIC_PRIORITY_MULT_MAX, smoothedFalsePositive * HEURISTIC_PRIORITY_MULT_FACTOR);
 		const recentAlerts = state.scanTimestamps ? state.scanTimestamps.length : 0;
 		const recentInfluence = Math.max(0, 1 - Math.min(0.5, recentAlerts / HEURISTIC_RECENT_ALERTS_CAP));
+
 		return Math.max(1, Math.ceil(base * multiplier * recentInfluence));
 	}
 
-	private static estimateAdaptiveThreshold(timestamps: number[], now: number): number {
+	private static _estimateAdaptiveThreshold(timestamps: number[], now: number): number {
 		if (!timestamps || timestamps.length === 0) return 1;
 
 		const alpha = Math.max(0, Math.min(1, HEURISTIC_ADAPTIVE_DECAY_ALPHA));
@@ -1324,6 +1462,7 @@ export class AutomatedScanner {
 
 		const entries = Array.from(hist.entries()).sort((a, b) => a[0] - b[0]);
 		const target = totalWeight * 0.95;
+
 		let cumsum = 0;
 		let p95 = 0;
 
@@ -1337,29 +1476,29 @@ export class AutomatedScanner {
 	}
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ContentFiltering (Main Class)
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default class ContentFiltering {
+	/** OpenAI rate limit in milliseconds. */
 	private static openAiRateLimitedUntil: number | null = null;
 
 	/**
 	 * Creates a content filter alert and sends it to the configured webhook.
+	 *
+	 * @param predictions The content predictions from detectors.
+	 * @param scanType The type of scan that triggered the alert.
+	 * @param message The message that triggered the alert.
+	 * @param config The content filter configuration.
 	 */
-	static async createContentFilterAlert(
+	public static async createContentFilterAlert(
 		predictions: ContentPredictions[],
 		scanType: ScanTypes,
 		message: Message<true>,
-		contentFilterConfig: ContentFilterConfig
+		config: ContentFilterConfig
 	): Promise<void> {
-		if (!contentFilterConfig.webhook_url) {
-			Logger.warn("Content filter alert skipped: No webhook URL configured.");
-			return;
-		}
+		if (!config.webhook_url) return;
 
-		// Calculate highest score and collect detectors used
+		// Calculate highest score and collect detectors used.
 		let highestScore = 0;
+
 		const detectorsUsed: Detector[] = [];
 		const problematicContent: string[] = [];
 
@@ -1367,9 +1506,11 @@ export default class ContentFiltering {
 			if (prediction.detector && !detectorsUsed.includes(prediction.detector)) {
 				detectorsUsed.push(prediction.detector);
 			}
+
 			if (prediction.content) {
 				problematicContent.push(...prediction.content);
 			}
+
 			for (const data of prediction.data) {
 				if (data.score) {
 					const score = parseFloat(data.score);
@@ -1380,6 +1521,7 @@ export default class ContentFiltering {
 
 		// Build scan results
 		const scanResults: string[] = [];
+
 		for (const prediction of predictions) {
 			const detectorLabel = prediction.detector ? `[${prediction.detector}]` : "[HEURISTIC]";
 			for (const data of prediction.data) {
@@ -1396,7 +1538,7 @@ export default class ContentFiltering {
 			.setThumbnail(message.author.displayAvatarURL())
 			.setTimestamp();
 
-		// Add fields based on verbosity
+		// Add fields based on verbosity.
 		const fields: Array<{ name: string; value: string; inline?: boolean }> = [];
 
 		fields.push({
@@ -1411,30 +1553,29 @@ export default class ContentFiltering {
 			inline: true
 		});
 
-		// Add response time
-		const responseTime = Date.now() - message.createdTimestamp;
 		fields.push({
 			name: ContentFilterFieldNames.ResponseTime,
-			value: `${responseTime}ms`,
+			value: ms(Date.now() - message.createdTimestamp, { long: true }),
 			inline: true
 		});
 
 		// Add status fields
 		fields.push({
 			name: ContentFilterFieldNames.DelStatus,
-			value: "⏳ Pending",
+			value: "Pending...",
 			inline: true
 		});
 
 		fields.push({
 			name: ContentFilterFieldNames.ModStatus,
-			value: "⏳ Pending",
+			value: "Pending...",
 			inline: true
 		});
 
-		// For Verbose/Medium verbosity, include scan results
-		if (contentFilterConfig.verbosity !== "Minimal" && scanResults.length > 0) {
+		// For Verbose/Medium verbosity, include scan results.
+		if (config.verbosity !== "Minimal" && scanResults.length > 0) {
 			const resultsStr = scanResults.slice(0, 10).join("\n");
+
 			fields.push({
 				name: ContentFilterFieldNames.ScanResults,
 				value: resultsStr.length > 1024 ? resultsStr.slice(0, 1021) + "..." : resultsStr
@@ -1443,7 +1584,6 @@ export default class ContentFiltering {
 
 		embed.addFields(fields);
 
-		// Create action buttons
 		const deleteButton = new ButtonBuilder()
 			.setLabel(ContentFilterButtonNames.DelMessage)
 			.setStyle(ButtonStyle.Danger)
@@ -1471,64 +1611,55 @@ export default class ContentFiltering {
 			viewContentButton
 		);
 
-		// Notify roles if configured
 		const notificationContent =
-			contentFilterConfig.notify_roles.length > 0
-				? contentFilterConfig.notify_roles.map(r => roleMention(r)).join(", ")
-				: undefined;
+			config.notify_roles.length > 0 ? config.notify_roles.map(r => roleMention(r)).join(", ") : undefined;
 
-		// Send via webhook
-		const webhook = new WebhookClient({ url: contentFilterConfig.webhook_url });
+		const webhook = new WebhookClient({ url: config.webhook_url });
 
 		let alertMessageId: string | undefined;
 		let alertChannelId: string | undefined;
 
-		try {
-			const alertMessage = await webhook.send({
+		const alertMessage = await webhook
+			.send({
 				content: notificationContent,
 				embeds: [embed],
 				components: [actionRow],
 				allowedMentions: { parse: ["roles"] }
-			});
+			})
+			.catch(() => null);
 
-			// webhook.send returns APIMessage which has id and channel_id
-			alertMessageId = alertMessage.id;
-			alertChannelId = alertMessage.channel_id;
-		} catch (error) {
-			Logger.error("Failed to send content filter alert:", error);
+		if (!alertMessage) {
 			return;
 		}
 
-		// Store alert in database
-		try {
-			const alert = await prisma.contentFilterAlert.create({
+		alertMessageId = alertMessage.id;
+		alertChannelId = alertMessage.channel_id;
+
+		const alert = await prisma.contentFilterAlert.create({
+			data: {
+				guild_id: message.guildId,
+				message_id: message.id,
+				channel_id: message.channelId,
+				alert_message_id: alertMessageId,
+				alert_channel_id: alertChannelId,
+				offender_id: message.author.id,
+				detectors: detectorsUsed,
+				highest_score: highestScore,
+				mod_status: ContentFilterStatus.Pending,
+				del_status: ContentFilterStatus.Pending
+			}
+		});
+
+		// Store flagged content for viewing later.
+		if (problematicContent.length > 0) {
+			const contentStr = problematicContent.join("\n---\n");
+			await prisma.contentFilterLog.create({
 				data: {
 					guild_id: message.guildId,
-					message_id: message.id,
-					channel_id: message.channelId,
-					alert_message_id: alertMessageId,
-					alert_channel_id: alertChannelId,
-					offender_id: message.author.id,
-					detectors: detectorsUsed,
-					highest_score: highestScore,
-					mod_status: ContentFilterStatus.Pending,
-					del_status: ContentFilterStatus.Pending
+					alert_id: alert.id,
+					content: contentStr
 				}
 			});
-
-			// Store flagged content for viewing later
-			if (problematicContent.length > 0) {
-				const contentStr = problematicContent.join("\n---\n");
-				await prisma.contentFilterLog.create({
-					data: {
-						guild_id: message.guildId,
-						alert_id: alert.id,
-						content: contentStr
-					}
-				});
-			}
-		} catch (error) {
-			Logger.error("Failed to store content filter alert in database:", error);
 		}
 
 		// Update channel state for tracking
@@ -1539,18 +1670,23 @@ export default class ContentFiltering {
 
 	/**
 	 * Scan a message using the specified detector.
+	 *
+	 * @param message The message to scan.
+	 * @param detector The detector to use (NSFW, OCR, TEXT).
+	 * @param config The content filter configuration.
+	 * @returns The content predictions or null if no issues found.
 	 */
-	static async scanMessage(
+	public static async scanMessage(
 		message: Message<true>,
 		detector: Detector,
-		contentFilterConfig: ContentFilterConfig
+		config: ContentFilterConfig
 	): Promise<ContentPredictions | null> {
 		const predictionData: ContentPredictionData[] = [];
 		const problematicContent: string[] = [];
 
 		switch (detector) {
 			case "NSFW": {
-				// Serialize and process media from the message
+				// Serialize and process media from the message.
 				const media = await MediaUtils.serializeMedia(message, { validate: true });
 				if (!media) break;
 
@@ -1560,18 +1696,19 @@ export default class ContentFiltering {
 				const processedMedia = await MediaUtils.processMedia(allMedia);
 				if (processedMedia.length === 0) break;
 
-				// Build multi-modal input for OpenAI
+				// Build multi-modal input for OpenAI.
 				const multiModalInput = MediaUtils.serializeMultiModalInput(processedMedia);
-				const results = await this.openAiScan(multiModalInput, contentFilterConfig, message);
+				const results = await this.openAiScan(multiModalInput, config, message);
 				predictionData.push(...results);
 
 				if (results.length > 0) {
 					problematicContent.push("[Media content flagged]");
 				}
+
 				break;
 			}
 			case "OCR": {
-				// Serialize and process media from the message
+				// Serialize and process media from the message.
 				const media = await MediaUtils.serializeMedia(message, { validate: true });
 				if (!media) break;
 
@@ -1582,15 +1719,17 @@ export default class ContentFiltering {
 				if (processedMedia.length === 0) break;
 
 				// Run OCR on each processed frame
-				const ocrResults = await this.runOcrScan(processedMedia, contentFilterConfig);
+				const ocrResults = await this._runOcrScan(processedMedia, config);
 				predictionData.push(...ocrResults.predictions);
 				problematicContent.push(...ocrResults.content);
+
 				break;
 			}
 			case "TEXT": {
 				if (message.content && message.content.length > 0) {
-					const results = await this.openAiScan(message.content, contentFilterConfig, message);
+					const results = await this.openAiScan(message.content, config, message);
 					predictionData.push(...results);
+
 					if (results.length > 0) {
 						problematicContent.push(message.content);
 					}
@@ -1604,24 +1743,28 @@ export default class ContentFiltering {
 
 	/**
 	 * Run OCR scan on processed media.
+	 *
+	 * @param media The processed media metadata.
+	 * @param config The content filter configuration.
+	 * @return The OCR scan predictions and matched content.
 	 */
-	private static async runOcrScan(
+	private static async _runOcrScan(
 		media: MessageMediaMetadata[],
-		contentFilterConfig: ContentFilterConfig
+		config: ContentFilterConfig
 	): Promise<{ predictions: ContentPredictionData[]; content: string[] }> {
 		const predictions: ContentPredictionData[] = [];
 		const matchedContent: string[] = [];
 
-		const keywords = contentFilterConfig.ocr_filter_keywords ?? [];
-		const regexPatterns = contentFilterConfig.ocr_filter_regex ?? [];
+		const keywords = config.ocr_filter_keywords ?? [];
+		const regexPatterns = config.ocr_filter_regex ?? [];
 
-		// Compile regex patterns
+		// Compile regex patterns.
 		const compiledRegex: RegExp[] = [];
 		for (const pattern of regexPatterns) {
 			try {
 				compiledRegex.push(new RegExp(pattern, "gi"));
 			} catch {
-				Logger.warn(`Invalid OCR regex pattern: ${pattern}`);
+				// Invalid regex, skip.
 			}
 		}
 
@@ -1629,39 +1772,39 @@ export default class ContentFiltering {
 			if (!metadata.base64) continue;
 
 			try {
-				// Convert base64 to buffer for Tesseract
+				// Convert base64 to buffer for Tesseract.
 				const buffer = Buffer.from(metadata.base64, "base64");
 
-				// node-tesseract-ocr returns the text directly as a string
+				// node-tesseract-ocr returns the text directly as a string.
 				const text = await Tesseract.recognize(buffer, {
 					lang: "eng"
 				});
 
 				const textLower = text.toLowerCase();
 
-				// Check keywords
+				// Check keywords.
 				for (const keyword of keywords) {
 					if (textLower.includes(keyword.toLowerCase())) {
 						predictions.push({
-							content: `⚠️ OCR: Found keyword "${keyword}"`
+							content: `OCR: Found keyword "${keyword}"`
 						});
 						matchedContent.push(keyword);
 					}
 				}
 
-				// Check regex patterns
+				// Check regex patterns.
 				for (let i = 0; i < compiledRegex.length; i++) {
 					const regex = compiledRegex[i];
 					regex.lastIndex = 0; // Reset for each test
 					if (regex.test(text)) {
 						predictions.push({
-							content: `⚠️ OCR: Matched pattern "${regexPatterns[i]}"`
+							content: `OCR: Matched pattern "${regexPatterns[i]}"`
 						});
 						matchedContent.push(`Pattern: ${regexPatterns[i]}`);
 					}
 				}
 			} catch (error) {
-				Logger.error("OCR scan failed:", error);
+				// Skip OCR errors.
 			}
 		}
 
@@ -1670,10 +1813,15 @@ export default class ContentFiltering {
 
 	/**
 	 * Perform OpenAI moderation scan on content.
+	 *
+	 * @param content The content to scan (text or multi-modal input).
+	 * @param config The content filter configuration.
+	 * @param message The message being scanned (optional).
+	 * @returns The content prediction data.
 	 */
-	static async openAiScan(
+	public static async openAiScan(
 		content: ModerationMultiModalInput[] | string,
-		contentFilterConfig: ContentFilterConfig,
+		config: ContentFilterConfig,
 		message?: Message<true>
 	): Promise<ContentPredictionData[]> {
 		if (this.openAiRateLimitedUntil && Date.now() < this.openAiRateLimitedUntil) {
@@ -1682,11 +1830,11 @@ export default class ContentFiltering {
 
 		const minScore = message
 			? ContentFilterUtils.getMinScoreWithState(
-					contentFilterConfig,
+					config,
 					AutomatedScanner.getOrInitChannelState(message.channelId),
 					message.author.id
 				)
-			: ContentFilterUtils.getMinScore(contentFilterConfig);
+			: ContentFilterUtils.getMinScore(config);
 
 		try {
 			const results: Moderation[] = await ContentFilterUtils.retryWithBackoff(
@@ -1717,8 +1865,12 @@ export default class ContentFiltering {
 
 	/**
 	 * Parse OpenAI moderation results into prediction data.
+	 *
+	 * @param results The OpenAI moderation results.
+	 * @param minScore The minimum score threshold for flagging.
+	 * @returns The content prediction data.
 	 */
-	static parseOpenAiModerationResults(results: Moderation[], minScore: number): ContentPredictionData[] {
+	public static parseOpenAiModerationResults(results: Moderation[], minScore: number): ContentPredictionData[] {
 		const predictions: ContentPredictionData[] = [];
 
 		for (const result of results) {
@@ -1740,11 +1892,16 @@ export default class ContentFiltering {
 
 	/**
 	 * Run all enabled detectors on a message.
+	 *
+	 * @param _channel The channel where the message was sent.
+	 * @param message The message to scan.
+	 * @param config The content filter configuration.
+	 * @returns An array of content predictions from all detectors.
 	 */
-	static async runDetectors(
+	public static async runDetectors(
 		_channel: TextBasedChannel,
 		message: Message<true>,
-		contentFilterConfig: ContentFilterConfig
+		config: ContentFilterConfig
 	): Promise<ContentPredictions[]> {
 		const predictions: ContentPredictions[] = [];
 
@@ -1752,10 +1909,10 @@ export default class ContentFiltering {
 		if (message.author.bot) return predictions;
 
 		// Check if the author has immune roles
-		if (contentFilterConfig.immune_roles && contentFilterConfig.immune_roles.length > 0) {
+		if (config.immune_roles && config.immune_roles.length > 0) {
 			try {
 				const member = await message.guild.members.fetch(message.author.id).catch(() => null);
-				if (member && member.roles.cache.hasAny(...contentFilterConfig.immune_roles)) {
+				if (member && member.roles.cache.hasAny(...config.immune_roles)) {
 					return predictions;
 				}
 			} catch {
@@ -1764,8 +1921,8 @@ export default class ContentFiltering {
 		}
 
 		await Promise.all(
-			contentFilterConfig.detectors.map(async detector => {
-				const prediction = await this.scanMessage(message, detector, contentFilterConfig);
+			config.detectors.map(async detector => {
+				const prediction = await this.scanMessage(message, detector, config);
 				if (prediction) predictions.push(prediction);
 			})
 		);

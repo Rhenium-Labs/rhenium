@@ -1,40 +1,30 @@
 import { type ButtonInteraction, Colors, EmbedBuilder, MessageFlags, ComponentType } from "discord.js";
 
-import Component from "#managers/components/Component.js";
-import GuildConfig from "#managers/config/GuildConfig.js";
-import {
-	AutomatedScanner,
-	ContentFilterUtils,
-	ContentFilterFieldNames,
-	ContentFilterStatus
-} from "#utils/ContentFilter.js";
 import { hastebin, userMentionWithId } from "#utils/index.js";
+import { AutomatedScanner, ContentFilterUtils, ContentFilterFieldNames } from "#utils/ContentFilter.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
+
+import Component from "#managers/components/Component.js";
+import GuildConfig from "#managers/config/GuildConfig.js";
+import { ContentFilterStatus } from "#prisma/enums.js";
 
 // Status display helpers
 const getStatusDisplay = (status: ContentFilterStatus): string => {
 	switch (status) {
 		case ContentFilterStatus.Pending:
-			return "⏳ Pending";
+			return "Pending...";
 		case ContentFilterStatus.Resolved:
-			return "✅ Resolved";
+			return "Resolved";
 		case ContentFilterStatus.False:
-			return "❌ False Positive";
+			return "False Positive";
 		case ContentFilterStatus.Deleted:
-			return "🗑️ Deleted";
+			return "Deleted";
 		default:
-			return "⏳ Pending";
+			return "Pending...";
 	}
 };
 
-/**
- * Handles content filter alert buttons:
- * - cf-delete-{messageId}-{channelId} - Delete the flagged message
- * - cf-resolve-{messageId} - Mark the alert as resolved
- * - cf-false-{channelId} - Mark as false positive
- * - cf-content-{messageId} - View the message content
- */
 export default class ContentFilterButton extends Component {
 	public constructor() {
 		super({ matches: /^cf-(delete|resolve|false|content)-[\d-]+$/m });
@@ -55,24 +45,27 @@ export default class ContentFilterButton extends Component {
 
 		switch (action) {
 			case "delete": {
-				return this.handleDelete(interaction, parts);
+				return this._handleDelete(interaction, parts);
 			}
 			case "resolve": {
-				return this.handleResolve(interaction, parts);
+				return this._handleResolve(interaction, parts);
 			}
 			case "false": {
-				return this.handleFalsePositive(interaction, parts);
+				return this._handleFalsePositive(interaction, parts);
 			}
 			case "content": {
-				return this.handleViewContent(interaction, parts);
+				return this._handleViewContent(interaction, parts);
 			}
 		}
 	}
 
 	/**
 	 * Handle the delete message action.
+	 *
+	 * @param interaction The button interaction.
+	 * @param parts The custom ID parts.
 	 */
-	private async handleDelete(
+	private async _handleDelete(
 		interaction: ButtonInteraction<"cached">,
 		parts: string[]
 	): Promise<InteractionReplyData | null> {
@@ -85,31 +78,35 @@ export default class ContentFilterButton extends Component {
 		const alert = await ContentFilterUtils.getAlertByMessageId(messageId);
 
 		const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+
 		if (!channel || !channel.isTextBased()) {
 			return { error: "Could not find the channel containing the flagged message." };
 		}
 
 		const message = await channel.messages.fetch(messageId).catch(() => null);
+
 		if (!message) {
 			// Message already deleted - update alert status
 			if (alert) {
 				await ContentFilterUtils.updateAlertDelStatus(alert.id, ContentFilterStatus.Deleted);
 			}
+
 			return { error: "The flagged message no longer exists or was already deleted." };
 		}
 
 		const deleted = await message.delete().catch(() => null);
+
 		if (!deleted) {
 			return { error: "Failed to delete the message. I may lack permissions." };
 		}
 
-		// Update alert status in database
+		// Update alert status in database.
 		if (alert) {
 			await ContentFilterUtils.updateAlertDelStatus(alert.id, ContentFilterStatus.Deleted);
 			await ContentFilterUtils.updateAlertModStatus(alert.id, ContentFilterStatus.Resolved);
 		}
 
-		// Update the original embed to show it was handled
+		// Update the original embed to show it was handled.
 		const embed = EmbedBuilder.from(interaction.message.embeds[0] ?? {}).setColor(Colors.Green);
 
 		// Update status fields
@@ -145,8 +142,11 @@ export default class ContentFilterButton extends Component {
 
 	/**
 	 * Handle the resolve action (dismiss without deleting).
+	 *
+	 * @param interaction The button interaction.
+	 * @param parts The custom ID parts.
 	 */
-	private async handleResolve(
+	private async _handleResolve(
 		interaction: ButtonInteraction<"cached">,
 		parts: string[]
 	): Promise<InteractionReplyData | null> {
@@ -198,8 +198,11 @@ export default class ContentFilterButton extends Component {
 
 	/**
 	 * Handle the false positive action.
+	 *
+	 * @param interaction The button interaction.
+	 * @param parts The custom ID parts.
 	 */
-	private async handleFalsePositive(
+	private async _handleFalsePositive(
 		interaction: ButtonInteraction<"cached">,
 		parts: string[]
 	): Promise<InteractionReplyData | null> {
@@ -265,8 +268,11 @@ export default class ContentFilterButton extends Component {
 
 	/**
 	 * Handle viewing the message content.
+	 *
+	 * @param interaction The button interaction.
+	 * @param parts The custom ID parts.
 	 */
-	private async handleViewContent(
+	private async _handleViewContent(
 		interaction: ButtonInteraction<"cached">,
 		parts: string[]
 	): Promise<InteractionReplyData | null> {

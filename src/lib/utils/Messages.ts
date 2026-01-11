@@ -101,7 +101,6 @@ export class MessageQueue {
 	 * @returns An array of serialized messages.
 	 */
 	public static async getMessagesForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
-		// Get messages from cache for this channel
 		const cachedMessages = MessageQueue._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
 
 		// Get messages from database
@@ -114,7 +113,7 @@ export class MessageQueue {
 			take: limit
 		});
 
-		// Merge and deduplicate (cache takes priority)
+		// Merge and deduplicate (cache takes priority).
 		const messageMap = new Map<Snowflake, SerializedMessage>();
 
 		for (const msg of dbMessages) {
@@ -125,7 +124,7 @@ export class MessageQueue {
 			messageMap.set(id, msg);
 		}
 
-		// Sort by created_at descending and limit
+		// Sort by created_at descending and limit.
 		return Array.from(messageMap.values())
 			.sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
 			.slice(0, limit);
