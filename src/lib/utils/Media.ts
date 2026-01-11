@@ -4,7 +4,7 @@ import { PassThrough } from "stream";
 import sharp from "sharp";
 import ffmpeg from "fluent-ffmpeg";
 
-import { DISCORD_EMOJI_REGEX } from "./Constants.js";
+import { DISCORD_EMOJI_REGEX_GLOBAL } from "./Constants.js";
 
 import Logger from "./Logger.js";
 
@@ -20,7 +20,7 @@ export default class MediaUtils {
 		message: Message,
 		options: { validate: boolean }
 	): Promise<MessageMediaMetadata[] | null> {
-		const emojis = [...message.content.matchAll(DISCORD_EMOJI_REGEX)];
+		const emojis = [...message.content.matchAll(DISCORD_EMOJI_REGEX_GLOBAL)];
 		const serialized = await Promise.all(
 			emojis
 				.filter(emoji => emoji.groups?.id)

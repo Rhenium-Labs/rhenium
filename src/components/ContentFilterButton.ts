@@ -1,29 +1,15 @@
 import { type ButtonInteraction, Colors, EmbedBuilder, MessageFlags, ComponentType } from "discord.js";
 
+import { ContentFilterStatus } from "#prisma/enums.js";
+import { ContentFilterFieldNames } from "#cf/Enums.js";
 import { hastebin, userMentionWithId } from "#utils/index.js";
-import { AutomatedScanner, ContentFilterUtils, ContentFilterFieldNames } from "#utils/ContentFilter.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#managers/components/Component.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
-import { ContentFilterStatus } from "#prisma/enums.js";
-
-// Status display helpers
-const getStatusDisplay = (status: ContentFilterStatus): string => {
-	switch (status) {
-		case ContentFilterStatus.Pending:
-			return "Pending...";
-		case ContentFilterStatus.Resolved:
-			return "Resolved";
-		case ContentFilterStatus.False:
-			return "False Positive";
-		case ContentFilterStatus.Deleted:
-			return "Deleted";
-		default:
-			return "Pending...";
-	}
-};
+import ContentFilterUtils from "#utils/ContentFilter.js";
+import AutomatedScanner from "#cf/AutomatedScanner.js";
 
 export default class ContentFilterButton extends Component {
 	public constructor() {
@@ -355,3 +341,19 @@ export default class ContentFilterButton extends Component {
 		};
 	}
 }
+
+/** Status helper. */
+const getStatusDisplay = (status: ContentFilterStatus): string => {
+	switch (status) {
+		case ContentFilterStatus.Pending:
+			return "Pending...";
+		case ContentFilterStatus.Resolved:
+			return "Resolved";
+		case ContentFilterStatus.False:
+			return "False Positive";
+		case ContentFilterStatus.Deleted:
+			return "Deleted";
+		default:
+			return "Pending...";
+	}
+};

@@ -66,6 +66,7 @@
 		"#utils/*": "./dist/lib/utils/*",
 		"#structures/*": "./dist/lib/structures/*",
 		"#managers/*": "./dist/lib/managers/*",
+		"#cf/*": "./dist/lib/content-filtering/*",
 		"#root/*": "./dist/*"
 	}
 }

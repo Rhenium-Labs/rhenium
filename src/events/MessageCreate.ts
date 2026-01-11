@@ -6,9 +6,10 @@ import { MessageQueue } from "#utils/Messages.js";
 import Highlights from "#root/commands/Highlights.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
 import EventListener from "#managers/events/EventListener.js";
-import CommandManager from "#managers/commands/CommandManager.js";
-import { AutomatedScanner, HeuristicScanner } from "#utils/ContentFilter.js";
 import ConfigManager from "#managers/config/ConfigManager.js";
+import CommandManager from "#managers/commands/CommandManager.js";
+import AutomatedScanner from "#cf/AutomatedScanner.js";
+import HeuristicScanner from "#cf/HeuristicScanner.js";
 
 export default class MessageCreate extends EventListener {
 	public constructor() {
