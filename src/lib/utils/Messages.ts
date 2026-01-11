@@ -170,7 +170,7 @@ export class MessageQueue {
 		});
 
 		// Update what's left in the database.
-		if (messages.size !== deletedMessages.length) {
+		if (messages.size !== ids.length) {
 			const updated = await prisma.message.updateManyAndReturn({
 				where: { id: { in: ids } },
 				data: { deleted: true }

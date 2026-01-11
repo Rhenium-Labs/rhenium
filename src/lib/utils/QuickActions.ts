@@ -399,7 +399,7 @@ export default class QuickActionUtils {
 			});
 
 			if (messageIds.length === 0) {
-				return { ok: true, deleted: 0, failed: 0, message: "No messages found to purge." };
+				return { ok: true, deleted: 0, failed: 0, message: "No messages found to purge.", entries: [] };
 			}
 
 			const now = Date.now();
@@ -445,6 +445,7 @@ export default class QuickActionUtils {
 				ok: false,
 				deleted: 0,
 				failed: amount,
+				entries: [],
 				message: "An unexpected error occurred during the purge."
 			};
 		}
@@ -647,6 +648,7 @@ export default class QuickActionUtils {
 						stickerId: null,
 						messageContent: reference.content
 					});
+
 					subEntries.unshift(`REF: ${refEntry}`);
 				}
 			}
@@ -726,7 +728,7 @@ type QuickPurgeResult = {
 	ok: boolean;
 	deleted: number;
 	failed: number;
+	entries: string[];
 	message?: string;
-	entries?: string[];
 	logUrl?: string;
 };
