@@ -368,6 +368,8 @@ export const ModelName = {
 	MessageReportConfig: "MessageReportConfig",
 	BanRequestConfig: "BanRequestConfig",
 	ContentFilterConfig: "ContentFilterConfig",
+	ContentFilterAlert: "ContentFilterAlert",
+	ContentFilterLog: "ContentFilterLog",
 	BanRequest: "BanRequest",
 	TemporaryBan: "TemporaryBan",
 	MessageReport: "MessageReport",
@@ -407,6 +409,8 @@ export type TypeMap<
 			| "messageReportConfig"
 			| "banRequestConfig"
 			| "contentFilterConfig"
+			| "contentFilterAlert"
+			| "contentFilterLog"
 			| "banRequest"
 			| "temporaryBan"
 			| "messageReport"
@@ -795,6 +799,156 @@ export type TypeMap<
 					result:
 						| runtime.Types.Utils.Optional<Prisma.ContentFilterConfigCountAggregateOutputType>
 						| number;
+				};
+			};
+		};
+		ContentFilterAlert: {
+			payload: Prisma.$ContentFilterAlertPayload<ExtArgs>;
+			fields: Prisma.ContentFilterAlertFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.ContentFilterAlertFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.ContentFilterAlertFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>;
+				};
+				findFirst: {
+					args: Prisma.ContentFilterAlertFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.ContentFilterAlertFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>;
+				};
+				findMany: {
+					args: Prisma.ContentFilterAlertFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>[];
+				};
+				create: {
+					args: Prisma.ContentFilterAlertCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>;
+				};
+				createMany: {
+					args: Prisma.ContentFilterAlertCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.ContentFilterAlertCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>[];
+				};
+				delete: {
+					args: Prisma.ContentFilterAlertDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>;
+				};
+				update: {
+					args: Prisma.ContentFilterAlertUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>;
+				};
+				deleteMany: {
+					args: Prisma.ContentFilterAlertDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.ContentFilterAlertUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.ContentFilterAlertUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>[];
+				};
+				upsert: {
+					args: Prisma.ContentFilterAlertUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterAlertPayload>;
+				};
+				aggregate: {
+					args: Prisma.ContentFilterAlertAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateContentFilterAlert>;
+				};
+				groupBy: {
+					args: Prisma.ContentFilterAlertGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.ContentFilterAlertGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.ContentFilterAlertCountArgs<ExtArgs>;
+					result:
+						| runtime.Types.Utils.Optional<Prisma.ContentFilterAlertCountAggregateOutputType>
+						| number;
+				};
+			};
+		};
+		ContentFilterLog: {
+			payload: Prisma.$ContentFilterLogPayload<ExtArgs>;
+			fields: Prisma.ContentFilterLogFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.ContentFilterLogFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.ContentFilterLogFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>;
+				};
+				findFirst: {
+					args: Prisma.ContentFilterLogFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.ContentFilterLogFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>;
+				};
+				findMany: {
+					args: Prisma.ContentFilterLogFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>[];
+				};
+				create: {
+					args: Prisma.ContentFilterLogCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>;
+				};
+				createMany: {
+					args: Prisma.ContentFilterLogCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.ContentFilterLogCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>[];
+				};
+				delete: {
+					args: Prisma.ContentFilterLogDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>;
+				};
+				update: {
+					args: Prisma.ContentFilterLogUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>;
+				};
+				deleteMany: {
+					args: Prisma.ContentFilterLogDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.ContentFilterLogUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.ContentFilterLogUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>[];
+				};
+				upsert: {
+					args: Prisma.ContentFilterLogUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterLogPayload>;
+				};
+				aggregate: {
+					args: Prisma.ContentFilterLogAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateContentFilterLog>;
+				};
+				groupBy: {
+					args: Prisma.ContentFilterLogGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.ContentFilterLogGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.ContentFilterLogCountArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.ContentFilterLogCountAggregateOutputType> | number;
 				};
 			};
 		};
@@ -1940,6 +2094,35 @@ export const ContentFilterConfigScalarFieldEnum = {
 export type ContentFilterConfigScalarFieldEnum =
 	(typeof ContentFilterConfigScalarFieldEnum)[keyof typeof ContentFilterConfigScalarFieldEnum];
 
+export const ContentFilterAlertScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	message_id: "message_id",
+	channel_id: "channel_id",
+	alert_message_id: "alert_message_id",
+	alert_channel_id: "alert_channel_id",
+	offender_id: "offender_id",
+	detectors: "detectors",
+	highest_score: "highest_score",
+	mod_status: "mod_status",
+	del_status: "del_status",
+	created_at: "created_at"
+} as const;
+
+export type ContentFilterAlertScalarFieldEnum =
+	(typeof ContentFilterAlertScalarFieldEnum)[keyof typeof ContentFilterAlertScalarFieldEnum];
+
+export const ContentFilterLogScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	alert_id: "alert_id",
+	content: "content",
+	created_at: "created_at"
+} as const;
+
+export type ContentFilterLogScalarFieldEnum =
+	(typeof ContentFilterLogScalarFieldEnum)[keyof typeof ContentFilterLogScalarFieldEnum];
+
 export const BanRequestScalarFieldEnum = {
 	id: "id",
 	guild_id: "guild_id",
@@ -2194,6 +2377,29 @@ export type ListEnumContentFilterVerbosityFieldRefInput<$PrismaModel> = FieldRef
 >;
 
 /**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float">;
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float[]">;
+
+/**
+ * Reference to a field of type 'ContentFilterStatus'
+ */
+export type EnumContentFilterStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "ContentFilterStatus">;
+
+/**
+ * Reference to a field of type 'ContentFilterStatus[]'
+ */
+export type ListEnumContentFilterStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+	$PrismaModel,
+	"ContentFilterStatus[]"
+>;
+
+/**
  * Reference to a field of type 'RequestStatus'
  */
 export type EnumRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "RequestStatus">;
@@ -2232,16 +2438,6 @@ export type ListEnumUserPermissionFieldRefInput<$PrismaModel> = FieldRefInputTyp
  * Reference to a field of type 'UserPermission'
  */
 export type EnumUserPermissionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "UserPermission">;
-
-/**
- * Reference to a field of type 'Float'
- */
-export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float">;
-
-/**
- * Reference to a field of type 'Float[]'
- */
-export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float[]">;
 
 /**
  * Batch Payload for updateMany & deleteMany & createMany
@@ -2350,6 +2546,8 @@ export type GlobalOmitConfig = {
 	messageReportConfig?: Prisma.MessageReportConfigOmit;
 	banRequestConfig?: Prisma.BanRequestConfigOmit;
 	contentFilterConfig?: Prisma.ContentFilterConfigOmit;
+	contentFilterAlert?: Prisma.ContentFilterAlertOmit;
+	contentFilterLog?: Prisma.ContentFilterLogOmit;
 	banRequest?: Prisma.BanRequestOmit;
 	temporaryBan?: Prisma.TemporaryBanOmit;
 	messageReport?: Prisma.MessageReportOmit;

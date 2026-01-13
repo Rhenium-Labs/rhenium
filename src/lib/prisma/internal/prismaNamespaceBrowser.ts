@@ -53,6 +53,8 @@ export const ModelName = {
 	MessageReportConfig: "MessageReportConfig",
 	BanRequestConfig: "BanRequestConfig",
 	ContentFilterConfig: "ContentFilterConfig",
+	ContentFilterAlert: "ContentFilterAlert",
+	ContentFilterLog: "ContentFilterLog",
 	BanRequest: "BanRequest",
 	TemporaryBan: "TemporaryBan",
 	MessageReport: "MessageReport",
@@ -145,6 +147,35 @@ export const ContentFilterConfigScalarFieldEnum = {
 
 export type ContentFilterConfigScalarFieldEnum =
 	(typeof ContentFilterConfigScalarFieldEnum)[keyof typeof ContentFilterConfigScalarFieldEnum];
+
+export const ContentFilterAlertScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	message_id: "message_id",
+	channel_id: "channel_id",
+	alert_message_id: "alert_message_id",
+	alert_channel_id: "alert_channel_id",
+	offender_id: "offender_id",
+	detectors: "detectors",
+	highest_score: "highest_score",
+	mod_status: "mod_status",
+	del_status: "del_status",
+	created_at: "created_at"
+} as const;
+
+export type ContentFilterAlertScalarFieldEnum =
+	(typeof ContentFilterAlertScalarFieldEnum)[keyof typeof ContentFilterAlertScalarFieldEnum];
+
+export const ContentFilterLogScalarFieldEnum = {
+	id: "id",
+	guild_id: "guild_id",
+	alert_id: "alert_id",
+	content: "content",
+	created_at: "created_at"
+} as const;
+
+export type ContentFilterLogScalarFieldEnum =
+	(typeof ContentFilterLogScalarFieldEnum)[keyof typeof ContentFilterLogScalarFieldEnum];
 
 export const BanRequestScalarFieldEnum = {
 	id: "id",

@@ -6,7 +6,10 @@ import { MessageQueue } from "#utils/Messages.js";
 import Highlights from "#root/commands/Highlights.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
 import EventListener from "#managers/events/EventListener.js";
+import ConfigManager from "#managers/config/ConfigManager.js";
 import CommandManager from "#managers/commands/CommandManager.js";
+import AutomatedScanner from "#cf/AutomatedScanner.js";
+import HeuristicScanner from "#cf/HeuristicScanner.js";
 
 export default class MessageCreate extends EventListener {
 	public constructor() {
@@ -27,10 +30,15 @@ export default class MessageCreate extends EventListener {
 			return;
 		}
 
+		const config = await ConfigManager.getGuildConfig(message.guild.id);
+		const serializedMessage = MessageQueue.serializeMessage(message);
+
 		return Promise.all([
 			MessageQueue.queue(message),
 			Highlights.highlightMessage(message),
-			CommandManager.handleMessageCommand(message)
+			CommandManager.handleMessageCommand(message),
+			AutomatedScanner.enqueueForScan(message, config.data.content_filter, serializedMessage),
+			HeuristicScanner.triggerScan(message, config.data.content_filter)
 		]);
 	}
 }

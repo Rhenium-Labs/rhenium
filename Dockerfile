@@ -2,9 +2,12 @@ FROM node:24.12.0 AS base
 WORKDIR /ssv3
 
 # Install bun
-RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl unzip
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
+
+# Install Ffmpeg, openssl, and tesseract.
+RUN apt-get update && apt-get install -y ffmpeg openssl tesseract-ocr && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 FROM base AS install
