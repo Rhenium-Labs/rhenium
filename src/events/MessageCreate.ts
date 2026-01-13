@@ -20,6 +20,9 @@ export default class MessageCreate extends EventListener {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author.bot || message.webhookId || message.system) return;
 
+  // Queue messages regardless of whitelist status.
+  MessageQueue.queue(message);
+
 		const whitelist = await KvCache.getWhitelistStatus(message.guild.id);
 
 		if (!whitelist) {
@@ -34,7 +37,6 @@ export default class MessageCreate extends EventListener {
 		const serializedMessage = MessageQueue.serializeMessage(message);
 
 		return Promise.all([
-			MessageQueue.queue(message),
 			Highlights.highlightMessage(message),
 			CommandManager.handleMessageCommand(message),
 			AutomatedScanner.enqueueForScan(message, config.data.content_filter, serializedMessage),
