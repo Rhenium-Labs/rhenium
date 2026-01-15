@@ -26,23 +26,45 @@ export default class Stats extends Command {
 		const processUptime = Math.round(Math.floor(process.uptime() * 1000));
 		const processUptimeStr = ms(processUptime, { long: true });
 
+		// Client Uptime.
+		const clientUptime = Math.round(Math.floor(this.client.uptime));
+		const clientUptimeStr = ms(clientUptime, { long: true });
+
 		// Memory Usage.
 		const memoryUsage = process.memoryUsage();
 		const rss = (memoryUsage.rss / 1024 / 1024).toFixed(0);
 		const heapUsed = (memoryUsage.heapUsed / 1024 / 1024).toFixed(0);
 		const heapTotal = (memoryUsage.heapTotal / 1024 / 1024).toFixed(0);
 
-		// Cached Data.
-		const cachedUsers = this.client.users.cache.size;
-		const cachedBots = this.client.users.cache.filter(user => user.bot).size;
-		const cachedGuilds = this.client.guilds.cache.size;
-		const cachedChannels = this.client.channels.cache.size;
-		const cachedMessages = MessageQueue.size;
+		// Cache.
+		const { guilds, users, channels } = this.client;
+
+		// Database Size.
+		const dbSizeQuery = await this.prisma.$queryRaw<DatabaseSizeResult[]>`
+                SELECT pg_database_size(current_database()) / (1024 * 1024) as size_in_mb
+                FROM pg_database
+                WHERE datname = current_database()
+                LIMIT 1
+            `;
+		const dbSize = dbSizeQuery[0].size_in_mb;
+
+		// Message Count.
+		const messageCount = await this.prisma.message.count();
 
 		const embed = new EmbedBuilder()
 			.setColor("NotQuiteBlack")
 			.setAuthor({ name: this.client.user.username, iconURL: this.client.user.displayAvatarURL() })
 			.setFields([
+				{
+					name: "Heartbeat",
+					value: `${this.client.ws.ping}ms`,
+					inline: true
+				},
+				{
+					name: "Client Uptime",
+					value: clientUptimeStr,
+					inline: true
+				},
 				{
 					name: "Process Uptime",
 					value: processUptimeStr,
@@ -54,23 +76,13 @@ export default class Stats extends Command {
 					inline: true
 				},
 				{
-					name: "Cached Users",
-					value: `${cachedUsers} (${cachedBots} bots)`,
+					name: "Cached Entities",
+					value: `${users.cache.size} Users / ${guilds.cache.size} Guilds / ${channels.cache.size} Channels / ${MessageQueue.size} Messages`,
 					inline: true
 				},
 				{
-					name: "Cached Guilds",
-					value: `${cachedGuilds}`,
-					inline: true
-				},
-				{
-					name: "Cached Channels",
-					value: `${cachedChannels}`,
-					inline: true
-				},
-				{
-					name: "Cached Messages",
-					value: `${cachedMessages}`,
+					name: "Database Summary",
+					value: `${dbSize} MB / ${messageCount} Messages`,
 					inline: true
 				}
 			])
@@ -79,4 +91,8 @@ export default class Stats extends Command {
 
 		return { embeds: [embed] };
 	}
+}
+
+interface DatabaseSizeResult {
+	size_in_mb: number;
 }
