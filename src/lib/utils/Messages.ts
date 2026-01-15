@@ -34,6 +34,11 @@ export class MessageQueue {
 	 */
 	private static readonly _cache = new Collection<Snowflake, SerializedMessage>();
 
+	/** Returns the number of messages currently in the queue. */
+	public static get size(): number {
+		return MessageQueue._cache.size;
+	}
+
 	/**
 	 * Queues a message to be added to the database.
 	 * @param message The message to queue.
