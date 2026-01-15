@@ -1,4 +1,4 @@
-import { Client, Options } from "discord.js";
+import { Client, Options, Sweepers } from "discord.js";
 import { CLIENT_INTENTS, CLIENT_PARTIALS } from "#utils/Constants.js";
 
 /**
@@ -40,6 +40,15 @@ export default class StrafeStryker extends Client<true> {
 				ApplicationCommandManager: Infinity,
 				BaseGuildEmojiManager: Infinity
 			}),
+			sweepers: {
+				users: {
+					interval: 3600,
+					filter: Sweepers.filterByLifetime({
+						lifetime: 1800,
+						excludeFromSweep: user => user.id === this.user.id
+					})
+				}
+			},
 			allowedMentions: { parse: [] }
 		});
 	}

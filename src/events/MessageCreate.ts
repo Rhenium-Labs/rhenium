@@ -20,8 +20,8 @@ export default class MessageCreate extends EventListener {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author.bot || message.webhookId || message.system) return;
 
-  // Queue messages regardless of whitelist status.
-  MessageQueue.queue(message);
+		// Queue messages regardless of whitelist status.
+		MessageQueue.queue(message);
 
 		const whitelist = await KvCache.getWhitelistStatus(message.guild.id);
 
