@@ -1,6 +1,7 @@
 import { Events, type Guild } from "discord.js";
 
 import EventListener from "#managers/events/EventListener.js";
+import ConfigManager from "#managers/config/ConfigManager.js";
 
 export default class GuildCreate extends EventListener {
 	public constructor() {
@@ -8,10 +9,7 @@ export default class GuildCreate extends EventListener {
 	}
 
 	public async onEmit(guild: Guild) {
-		return this.prisma.guild.upsert({
-			where: { id: guild.id },
-			create: { id: guild.id },
-			update: {}
-		});
+		// Compute and cache the guild configuration.
+		await ConfigManager.compute(guild.id);
 	}
 }

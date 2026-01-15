@@ -31,7 +31,7 @@ export default class ConfigManager {
 		let config = this._cache.get(guildId);
 
 		if (!config) {
-			config = await this._compute(guildId);
+			config = await this.compute(guildId);
 			this._cache.set(guildId, config);
 		}
 
@@ -84,7 +84,7 @@ export default class ConfigManager {
 	 * @returns The computed GuildConfig.
 	 */
 
-	private static async _compute(guildId: string): Promise<GuildConfig> {
+	public static async compute(guildId: string): Promise<GuildConfig> {
 		// Upsert a guild first or all subsequent upserts will fail due to foreign key constraints.
 
 		await prisma.guild.upsert({
