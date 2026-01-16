@@ -16,7 +16,7 @@ import safe from "safe-regex";
 
 import { client, prisma } from "#root/index.js";
 import { formatMessageContent } from "#utils/Messages.js";
-import { channelInScope, inflect, parseChannelScoping } from "#utils/index.js";
+import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
@@ -688,7 +688,8 @@ export default class Highlights extends Command {
 		});
 
 		const patternCount = highlights?.patterns.length ?? 0;
-		const patterns = highlights?.patterns.map(pattern => `\`${pattern}\``).join("\n") || "None";
+		const rawPatterns = highlights?.patterns.map(pattern => `\`${pattern}\``).join("\n") || "None";
+
 		const blacklistedUsers = highlights?.user_blacklist.map(id => `<@${id}>`).join("\n") || "None";
 
 		const [includedChannels, excludedChannels] = highlights?.channel_scoping.reduce<[string[], string[]]>(
@@ -699,6 +700,15 @@ export default class Highlights extends Command {
 			},
 			[[], []]
 		) ?? [[], []];
+
+		let patterns: string;
+
+		if (rawPatterns.length > 1024) {
+			const hastebinUrl = (await hastebin(rawPatterns, "ts")) as string;
+			patterns = truncate(`[View Full List](${hastebinUrl})`, 1024);
+		} else {
+			patterns = rawPatterns;
+		}
 
 		const embed = new EmbedBuilder()
 			.setColor(Colors.Blue)
@@ -722,7 +732,7 @@ export default class Highlights extends Command {
 					inline: true
 				},
 				{
-					name: `Blacklisted Users (${highlights?.user_blacklist.length})`,
+					name: `Blacklisted Users (${highlights?.user_blacklist.length ?? 0})`,
 					value: blacklistedUsers,
 					inline: true
 				}
