@@ -18,6 +18,6 @@ Since the public bot requires whitelist approval & has limited capacity, we've m
 
 See the [Contributing Guide](./CONTRIBUTING.md) to get started.
 
-## 📄 License
+## License
 
 Rhenium is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International** license. For full details, see the [LICENSE](./LICENSE) file.
