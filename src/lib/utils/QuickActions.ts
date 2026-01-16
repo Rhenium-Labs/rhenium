@@ -390,17 +390,21 @@ export default class QuickActionUtils {
 	}): Promise<QuickPurgeResult> {
 		const { channel, authorId, triggerMessageId, amount } = data;
 
-		try {
-			const messageIds = await QuickActionUtils._fetchPurgeableMessages({
-				channelId: channel.id,
-				authorId,
-				triggerMessageId,
-				limit: amount
-			});
+		const messageIds = await QuickActionUtils._fetchPurgeableMessages({
+			channelId: channel.id,
+			authorId,
+			triggerMessageId,
+			limit: amount
+		});
 
+		try {
 			if (messageIds.length === 0) {
 				return { ok: true, deleted: 0, failed: 0, message: "No messages found to purge.", entries: [] };
 			}
+
+			// Add message IDs to exclusion set before deleting to prevent
+			// duplicate handling from MessageDelete/MessageBulkDelete events.
+			MessageQueue.addPurgeExclusions(messageIds);
 
 			const now = Date.now();
 			const bulkDeletableIds: Snowflake[] = [];
@@ -439,8 +443,14 @@ export default class QuickActionUtils {
 			const entries = await QuickActionUtils._getMessageLogEntries(serializedMessages);
 			const logUrl = (await hastebin(entries.join("\n\n"))) ?? undefined;
 
+			// Remove exclusions after purge execution is complete.
+			MessageQueue.removePurgeExclusions(messageIds);
+
 			return { ok: true, deleted, failed, entries, logUrl };
 		} catch (error) {
+			// Make sure to clean up exclusions even on error.
+			MessageQueue.removePurgeExclusions(messageIds);
+
 			return {
 				ok: false,
 				deleted: 0,

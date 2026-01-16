@@ -34,9 +34,41 @@ export class MessageQueue {
 	 */
 	private static readonly _cache = new Collection<Snowflake, SerializedMessage>();
 
+	/**
+	 * Set of message IDs currently being purged. Used to prevent duplicate
+	 * delete operations when Discord emits MessageDelete/MessageBulkDelete events
+	 * for messages that are already being handled by a purge action.
+	 */
+	public static readonly purgeExclusions = new Set<Snowflake>();
+
 	/** Returns the number of messages currently in the queue. */
 	public static get size(): number {
 		return MessageQueue._cache.size;
+	}
+
+	/**
+	 * Adds message IDs to the purge exclusion set.
+	 * Messages in this set will be ignored by deleteMessage and bulkDeleteMessages.
+	 *
+	 * @param ids The message IDs to exclude.
+	 */
+	public static addPurgeExclusions(ids: Snowflake[]): void {
+		for (const id of ids) {
+			MessageQueue.purgeExclusions.add(id);
+		}
+	}
+
+	/**
+	 * Removes message IDs from the purge exclusion set.
+	 *
+	 * @param ids The message IDs to remove from exclusions.
+	 */
+	public static removePurgeExclusions(ids: Snowflake[]): void {
+		if (ids.length === 0) return;
+
+		for (const id of ids) {
+			MessageQueue.purgeExclusions.delete(id);
+		}
 	}
 
 	/**
