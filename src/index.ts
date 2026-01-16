@@ -21,14 +21,14 @@ import { MessageQueue } from "#utils/Messages.js";
 import { PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
 
 import Logger from "#utils/Logger.js";
+import Rhenium from "#structures/Client.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
-import StrafeStryker from "#structures/Client.js";
 import CommandManager from "#managers/commands/CommandManager.js";
 import ComponentManager from "#managers/components/ComponentManager.js";
 import EventListenerManager from "#managers/events/EventListenerManager.js";
 
 /** The Discord client instance. */
-export const client = new StrafeStryker();
+export const client = new Rhenium();
 
 /** The Prisma client instance. */
 export const prisma = new PrismaClient({

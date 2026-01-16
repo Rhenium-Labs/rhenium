@@ -1,10 +1,10 @@
 services:
      bot:
-          container_name: ssv3_bot
+          container_name: rhenium
           build:
                context: .
                dockerfile: Dockerfile
           env_file:
                - .env
           volumes:
-               - ./cfg.global.yml:/ssv3/cfg.global.yml
+               - ./cfg.global.yml:/rhenium/cfg.global.yml

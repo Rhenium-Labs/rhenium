@@ -8,11 +8,7 @@ import { CLIENT_INTENTS, CLIENT_PARTIALS } from "#utils/Constants.js";
  * The client is configured to use privileged intents which you must enable in the Discord Developer Portal.
  */
 
-export default class StrafeStryker extends Client<true> {
-	/**
-	 * Constructs a new StrafeStryker client.
-	 */
-
+export default class Rhenium extends Client<true> {
 	public constructor() {
 		super({
 			intents: CLIENT_INTENTS,

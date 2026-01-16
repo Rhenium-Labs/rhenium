@@ -1,5 +1,5 @@
 FROM node:24.12.0 AS base
-WORKDIR /ssv3
+WORKDIR /rhenium
 
 # Install bun
 RUN apt-get update && apt-get install -y curl unzip
@@ -17,16 +17,16 @@ RUN bun install --frozen-lockfile
 # Build the project
 FROM base AS build
 COPY . .
-COPY --from=install /ssv3/node_modules node_modules
+COPY --from=install /rhenium/node_modules node_modules
 RUN bun run compile
 
 # Final stage
 FROM base AS release
-COPY --from=build /ssv3/node_modules ./node_modules
-COPY --from=install /ssv3/package.json ./package.json
-COPY --from=build /ssv3/dist ./dist
-COPY --from=build /ssv3/src ./src
-COPY --from=build /ssv3/prisma ./prisma
-COPY --from=build /ssv3/tests ./tests
+COPY --from=build /rhenium/node_modules ./node_modules
+COPY --from=install /rhenium/package.json ./package.json
+COPY --from=build /rhenium/dist ./dist
+COPY --from=build /rhenium/src ./src
+COPY --from=build /rhenium/prisma ./prisma
+COPY --from=build /rhenium/tests ./tests
 
 CMD ["bun", "start"]
