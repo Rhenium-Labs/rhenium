@@ -38,6 +38,7 @@ export default class Stats extends Command {
 
 		// Cache.
 		const { guilds, users, channels } = this.client;
+		const members = guilds.cache.reduce((acc, guild) => acc + guild.members.cache.size, 0);
 
 		// Database Size.
 		const dbSizeQuery = await this.prisma.$queryRaw<DatabaseSizeResult[]>`
@@ -77,7 +78,7 @@ export default class Stats extends Command {
 				},
 				{
 					name: "Cached Entities",
-					value: `${users.cache.size} Users / ${guilds.cache.size} Guilds / ${channels.cache.size} Channels / ${MessageQueue.size} Messages`,
+					value: `${users.cache.size} Users / ${guilds.cache.size} Guilds / ${channels.cache.size} Channels / ${members} Members / ${MessageQueue.size} Messages`,
 					inline: true
 				},
 				{
