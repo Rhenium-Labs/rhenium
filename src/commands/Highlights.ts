@@ -28,8 +28,12 @@ import ConfigManager from "#managers/config/ConfigManager.js";
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
 
-/** Cache for compiled highlight regex patterns. */
+/** Cache for compiled highlight regex patterns with LRU tracking. */
 const compiledRegexCache = new Map<string, RegExp>();
+const regexCacheOrder: string[] = [];
+
+/** Maximum size of the regex cache. */
+const REGEX_CACHE_MAX_SIZE = 100;
 
 export default class Highlights extends Command {
 	public constructor() {
@@ -310,9 +314,6 @@ export default class Highlights extends Command {
 				])
 				.setTimestamp();
 
-			// Periodically clean up all caches.
-			Highlights._cleanupRegexCache();
-
 			return user?.send({ embeds: [embed] }).catch(() => null);
 		}
 	}
@@ -320,22 +321,37 @@ export default class Highlights extends Command {
 	private static _getRegex(pattern: string): RegExp {
 		let regex = compiledRegexCache.get(pattern);
 
-		if (!regex) {
-			const isAsciiWord = /^[\w*]+$/.test(pattern);
-			const regexPattern = pattern.replaceAll("*", "(\\n|\\r|.)*");
-			const parsedPattern = isAsciiWord ? `\\b(${regexPattern})\\b` : `(${regexPattern})`;
-
-			regex = new RegExp(parsedPattern, "i");
-			compiledRegexCache.set(pattern, regex);
+		if (regex) {
+			// Move to end of order (most recently used)
+			const idx = regexCacheOrder.indexOf(pattern);
+			if (idx !== -1) {
+				regexCacheOrder.splice(idx, 1);
+			}
+			regexCacheOrder.push(pattern);
+			return regex;
 		}
+
+		const isAsciiWord = /^[\w*]+$/.test(pattern);
+		const regexPattern = pattern.replaceAll("*", "(\\n|\\r|.)*");
+		const parsedPattern = isAsciiWord ? `\\b(${regexPattern})\\b` : `(${regexPattern})`;
+
+		regex = new RegExp(parsedPattern, "i");
+		compiledRegexCache.set(pattern, regex);
+		regexCacheOrder.push(pattern);
+
+		// Enforce max size with LRU eviction
+		Highlights._cleanupRegexCache();
 
 		return regex;
 	}
 
 	private static _cleanupRegexCache(): void {
-		if (compiledRegexCache.size > 1000) {
-			const keys = [...compiledRegexCache.keys()].slice(0, compiledRegexCache.size - 500);
-			keys.forEach(key => compiledRegexCache.delete(key));
+		while (compiledRegexCache.size > REGEX_CACHE_MAX_SIZE && regexCacheOrder.length > 0) {
+			const oldest = regexCacheOrder.shift();
+
+			if (oldest) {
+				compiledRegexCache.delete(oldest);
+			}
 		}
 	}
 

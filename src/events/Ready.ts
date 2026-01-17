@@ -3,6 +3,8 @@ import { Events } from "discord.js";
 import Logger from "#utils/Logger.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
 import EventListener from "#managers/events/EventListener.js";
+import AutomatedScanner from "#cf/AutomatedScanner.js";
+import HeuristicScanner from "#cf/HeuristicScanner.js";
 
 export default class Ready extends EventListener {
 	public constructor() {
@@ -13,6 +15,8 @@ export default class Ready extends EventListener {
 		Logger.success(`Logged in as ${this.client.user?.tag}!`);
 
 		return Promise.all([
+			AutomatedScanner.startTickLoop(),
+			HeuristicScanner.startCleanupInterval(),
 			GlobalConfig.startMessageReportDisregardCronJob(),
 			GlobalConfig.startMessageRetentionCronJobs()
 		]);

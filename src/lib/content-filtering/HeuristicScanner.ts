@@ -14,12 +14,75 @@ import ContentFilter from "./ContentFilter.js";
 import AutomatedScanner from "./AutomatedScanner.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 
+/** Maximum number of channels to track timers for. */
+const MAX_TIMER_CHANNELS = 100;
+
+/** Time after which a timestamp entry is considered stale (10 minutes). */
+const TIMESTAMP_TTL_MS = 10 * 60 * 1000;
+
 export default class HeuristicScanner {
 	/** Heuristic scanning timers. */
 	private static _scanTimers: Map<Snowflake, NodeJS.Timeout> = new Map();
 
 	/** Last scan timestamps per channel for debouncing. */
 	private static _lastScanTimestamps: Map<Snowflake, number> = new Map();
+
+	/** Cleanup interval for stale timestamps. */
+	private static _cleanupInterval: NodeJS.Timeout | null = null;
+
+	/** Start the cleanup interval. */
+	public static startCleanupInterval(): void {
+		if (this._cleanupInterval) return;
+
+		this._cleanupInterval = setInterval(() => this._pruneStaleEntries(), 5 * 60 * 1000);
+		this._cleanupInterval.unref();
+	}
+
+	/** Stop the cleanup interval and clear all timers. */
+	public static stopCleanupInterval(): void {
+		if (this._cleanupInterval) {
+			clearInterval(this._cleanupInterval);
+			this._cleanupInterval = null;
+		}
+
+		// Clear all pending scan timers
+		for (const timer of this._scanTimers.values()) {
+			clearTimeout(timer);
+		}
+
+		this._scanTimers.clear();
+		this._lastScanTimestamps.clear();
+	}
+
+	/** Remove stale entries from tracking maps. */
+	private static _pruneStaleEntries(): void {
+		const now = Date.now();
+		const cutoff = now - TIMESTAMP_TTL_MS;
+
+		// Prune old timestamps
+		for (const [channelId, timestamp] of this._lastScanTimestamps) {
+			if (timestamp < cutoff) {
+				this._lastScanTimestamps.delete(channelId);
+			}
+		}
+
+		// Enforce max size with LRU eviction
+		if (this._lastScanTimestamps.size > MAX_TIMER_CHANNELS) {
+			const entries = Array.from(this._lastScanTimestamps.entries()).sort((a, b) => a[1] - b[1]); // Sort by oldest first
+
+			const toRemove = entries.slice(0, this._lastScanTimestamps.size - MAX_TIMER_CHANNELS);
+
+			for (const [channelId] of toRemove) {
+				this._lastScanTimestamps.delete(channelId);
+				const timer = this._scanTimers.get(channelId);
+
+				if (timer) {
+					clearTimeout(timer);
+					this._scanTimers.delete(channelId);
+				}
+			}
+		}
+	}
 
 	/**
 	 * Calculate if chat rate has increased significantly.

@@ -8,21 +8,34 @@ import { channelInScope, userMentionWithId } from "#utils/index.js";
 import type { ChannelScanState, ContentPredictions } from "./Types.js";
 import type { Message as SerializedMessage, ContentFilterConfig } from "#prisma/client.js";
 
+import { client } from "#root/index.js";
 import Logger from "#utils/Logger.js";
 import MinimumHeap from "#structures/MinimumHeap.js";
 import ContentFilter from "./ContentFilter.js";
 import ConfigManager from "#managers/config/ConfigManager.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 
+/** Maximum number of channel states to keep in memory. */
+const MAX_CHANNEL_STATES = 100;
+
+/** Time after which inactive channel states are pruned (1 hour). */
+const CHANNEL_STATE_TTL_MS = 60 * 60 * 1000;
+
 export default class AutomatedScanner {
-	/** Channel scan states. */
+	/** Channel scan states with last activity timestamps. */
 	private static _channelScanStates: Map<Snowflake, ChannelScanState> = new Map();
+
+	/** Tracks last activity time per channel for cleanup. */
+	private static _channelLastActivity: Map<Snowflake, number> = new Map();
 
 	/** Priority queue for user scans. */
 	private static _userPriorityQueue: MinimumHeap = new MinimumHeap();
 
 	/** Tick interval handle. */
 	private static _tickInterval: NodeJS.Timeout | null = null;
+
+	/** Channel state cleanup interval handle. */
+	private static _cleanupInterval: NodeJS.Timeout | null = null;
 
 	/** Smoothed false positive ratios per channel. */
 	private static _smoothedFalsePositive: Map<Snowflake, number> = new Map();
@@ -37,7 +50,13 @@ export default class AutomatedScanner {
 	/** Start the tick loop for processing queued scans. */
 	public static startTickLoop(): void {
 		if (this._tickInterval) return;
+
 		this._tickInterval = setInterval(() => this.tick(), CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS);
+
+		// Start cleanup interval to prune inactive channel states
+		if (!this._cleanupInterval) {
+			this._cleanupInterval = setInterval(() => this.pruneInactiveChannelStates(), 5 * 60 * 1000);
+		}
 	}
 
 	/** Stop the tick loop. */
@@ -45,6 +64,38 @@ export default class AutomatedScanner {
 		if (this._tickInterval) {
 			clearInterval(this._tickInterval);
 			this._tickInterval = null;
+		}
+
+		if (this._cleanupInterval) {
+			clearInterval(this._cleanupInterval);
+			this._cleanupInterval = null;
+		}
+	}
+
+	/** Prune inactive channel states to prevent memory leaks. */
+	private static pruneInactiveChannelStates(): void {
+		const now = Date.now();
+		const cutoff = now - CHANNEL_STATE_TTL_MS;
+
+		for (const [channelId, lastActivity] of this._channelLastActivity) {
+			if (lastActivity < cutoff) {
+				this._channelScanStates.delete(channelId);
+				this._channelLastActivity.delete(channelId);
+				this._smoothedFalsePositive.delete(channelId);
+			}
+		}
+
+		// Also enforce max size limit using LRU eviction
+		if (this._channelScanStates.size > MAX_CHANNEL_STATES) {
+			const entries = Array.from(this._channelLastActivity.entries()).sort((a, b) => a[1] - b[1]); // Sort by oldest first
+
+			const toRemove = entries.slice(0, this._channelScanStates.size - MAX_CHANNEL_STATES);
+
+			for (const [channelId] of toRemove) {
+				this._channelScanStates.delete(channelId);
+				this._channelLastActivity.delete(channelId);
+				this._smoothedFalsePositive.delete(channelId);
+			}
 		}
 	}
 
@@ -55,6 +106,8 @@ export default class AutomatedScanner {
 	 * @returns The ChannelScanState for the channel.
 	 */
 	public static getOrInitChannelState(channelId: Snowflake): ChannelScanState {
+		// Update last activity timestamp
+		this._channelLastActivity.set(channelId, Date.now());
 		let state = this._channelScanStates.get(channelId);
 
 		if (!state) {
@@ -87,6 +140,7 @@ export default class AutomatedScanner {
 	}
 
 	/** Enqueue a message for automated scanning.
+	 * Stores only IDs to minimize memory usage.
 	 *
 	 * @param message The message to enqueue.
 	 * @param config The content filter configuration.
@@ -122,12 +176,15 @@ export default class AutomatedScanner {
 		const risk = ContentFilterUtils.computeMessageRisk(config, serializedMessage);
 		const next = this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
 
+		// Store only IDs, not the full message object like geniusly done before.
 		this._userPriorityQueue.push({
 			userId: message.author.id,
 			channelId: message.channel.id,
-			message,
+			messageId: message.id,
+			guildId: message.guildId,
 			risk,
-			nextScan: next
+			nextScan: next,
+			enqueuedAt: now
 		});
 	}
 
@@ -143,6 +200,7 @@ export default class AutomatedScanner {
 		const allowedScans = Math.max(1, Math.floor(scansPerSecond * (tickDuration / 1000)));
 
 		let processed = 0;
+
 		while (processed < allowedScans && this._userPriorityQueue.size() > 0) {
 			const entry = this._userPriorityQueue.pop();
 			if (!entry) break;
@@ -153,13 +211,28 @@ export default class AutomatedScanner {
 			}
 
 			try {
-				const guildConfig = await ConfigManager.getGuildConfig(entry.message.guildId);
+				// Get channel from cache.
+				const channel = client.channels.cache.get(entry.channelId) ?? null;
+
+				if (!channel || !channel.isTextBased() || channel.isDMBased()) {
+					processed++;
+					continue;
+				}
+
+				const message = await (channel as TextChannel).messages.fetch(entry.messageId).catch(() => null);
+
+				if (!message || !message.inGuild()) {
+					processed++;
+					continue;
+				}
+
+				const guildConfig = await ConfigManager.getGuildConfig(entry.guildId);
 				const contentFilterConfig = guildConfig.getContentFilterConfig();
 
 				if (contentFilterConfig) {
 					const predictions = await ContentFilter.runDetectors(
-						entry.message.channel,
-						entry.message,
+						channel as TextChannel,
+						message,
 						contentFilterConfig
 					);
 
@@ -167,7 +240,7 @@ export default class AutomatedScanner {
 						await ContentFilter.createContentFilterAlert(
 							predictions,
 							ScanTypes.Automated,
-							entry.message,
+							message,
 							contentFilterConfig
 						);
 

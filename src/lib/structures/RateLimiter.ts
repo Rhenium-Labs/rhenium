@@ -1,4 +1,16 @@
+/** Maximum entries in the rate limiter cache before forced pruning. */
+const MAX_RATE_LIMITER_ENTRIES = 100;
+
+/** Auto-prune interval in milliseconds (1 minute). */
+const PRUNE_INTERVAL_MS = 60 * 1000;
+
 export default class RateLimiter {
+	/** Global registry of all rate limiters for cleanup. */
+	private static readonly _instances: Set<RateLimiter> = new Set();
+
+	/** Global prune interval handle. */
+	private static _globalPruneInterval: NodeJS.Timeout | null = null;
+
 	/**
 	 * The maximum number of requests allowed per window.
 	 */
@@ -22,6 +34,32 @@ export default class RateLimiter {
 	public constructor(limit: number, window: number) {
 		this._limit = limit;
 		this._window = window;
+
+		// Register this instance for cleanup
+		RateLimiter._instances.add(this);
+
+		// Start global prune interval if not already running
+		if (!RateLimiter._globalPruneInterval) {
+			RateLimiter._globalPruneInterval = setInterval(() => {
+				RateLimiter.pruneAll();
+			}, PRUNE_INTERVAL_MS);
+
+			// Allow the process to exit even with interval running
+			RateLimiter._globalPruneInterval.unref();
+		}
+	}
+
+	/** Prune all registered rate limiters. */
+	private static pruneAll(): void {
+		for (const instance of RateLimiter._instances) {
+			instance.prune();
+		}
+	}
+
+	/** Unregister this rate limiter instance. */
+	public destroy(): void {
+		RateLimiter._instances.delete(this);
+		this._cache.clear();
 	}
 
 	/**
@@ -107,13 +145,24 @@ export default class RateLimiter {
 
 	/**
 	 * Remove expired entries from the cache.
-	 * Call this periodically to prevent memory leaks.
+	 * Also enforces max size limit.
 	 */
 	public prune(): void {
 		const now = performance.now();
 
+		// First, remove all expired entries
 		for (const [key, entry] of this._cache) {
 			if (now - entry.windowStart >= this._window) {
+				this._cache.delete(key);
+			}
+		}
+
+		// If still over max size, remove oldest entries
+		if (this._cache.size > MAX_RATE_LIMITER_ENTRIES) {
+			const entries = Array.from(this._cache.entries()).sort((a, b) => a[1].windowStart - b[1].windowStart);
+
+			const toRemove = entries.slice(0, this._cache.size - MAX_RATE_LIMITER_ENTRIES);
+			for (const [key] of toRemove) {
 				this._cache.delete(key);
 			}
 		}
