@@ -18,7 +18,7 @@ import {
 import ms from "ms";
 
 import { client, prisma } from "#root/index.js";
-import { capitalize, userMentionWithId } from "./index.js";
+import { userMentionWithId } from "./index.js";
 import { RequestStatus, type BanRequest, type BanRequestConfig } from "#prisma/client.js";
 
 import type { InteractionReplyData } from "./Types.js";
@@ -145,7 +145,7 @@ export default class BanRequestUtils {
 		request: BanRequest;
 		reviewReason: string | null;
 	}): Promise<InteractionReplyData> {
-		const { interaction, action, request, reviewReason } = data;
+		const { interaction, action, request, reviewReason, config } = data;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -154,22 +154,29 @@ export default class BanRequestUtils {
 
 		switch (action) {
 			case BanRequestAction.Disregard: {
-				if (targetMember && request.target_muted_automatically) {
+				if (request.target_muted_automatically) {
 					await targetMember
-						.timeout(null, `[${request.id}] Automatic unmute after ban request disregard`)
+						?.timeout(null, `[${request.id}] Automatic unmute after ban request disregard`)
 						.catch(() => null);
 				}
 
-				await prisma.banRequest.update({
-					where: { id: request.id },
-					data: {
-						resolved_by: interaction.user.id,
-						resolved_at: new Date(),
-						status: RequestStatus.Disregarded
-					}
-				});
-
-				await interaction.message?.delete().catch(() => null);
+				Promise.all([
+					BanRequestUtils._log({
+						config,
+						action,
+						interaction,
+						reason: reviewReason
+					}),
+					prisma.banRequest.update({
+						where: { id: request.id },
+						data: {
+							resolved_by: interaction.user.id,
+							resolved_at: new Date(),
+							status: RequestStatus.Disregarded
+						}
+					}),
+					interaction.message?.delete().catch(() => null)
+				]);
 
 				return {
 					content: `Successfully disregarded the ban request for ${userMention(request.target_id)} - ID \`${request.id}\``
@@ -214,17 +221,15 @@ export default class BanRequestUtils {
 
 				Promise.all([
 					BanRequestUtils._notify({
-						webhook_url: data.config.webhook_url,
-						target_id: request.target_id,
-						requested_by: request.requested_by,
+						webhook_url: config.decision_webhook_url,
 						reviewReason,
-						action
+						action,
+						request
 					}),
 					BanRequestUtils._log({
-						config: data.config,
-						request: data.request,
-						action: "accepted",
-						reviewedBy: interaction.user,
+						config,
+						action,
+						interaction,
 						reason: reviewReason
 					}),
 					prisma.banRequest.update({
@@ -252,17 +257,15 @@ export default class BanRequestUtils {
 
 				Promise.all([
 					BanRequestUtils._notify({
-						webhook_url: data.config.webhook_url,
-						target_id: request.target_id,
-						requested_by: request.requested_by,
+						webhook_url: config.decision_webhook_url,
 						reviewReason,
-						action
+						action,
+						request
 					}),
 					BanRequestUtils._log({
-						config: data.config,
-						request: data.request,
-						action: "denied",
-						reviewedBy: interaction.user,
+						config,
+						action,
+						interaction,
 						reason: reviewReason
 					}),
 					prisma.banRequest.update({
@@ -292,18 +295,17 @@ export default class BanRequestUtils {
 
 	private static async _notify(data: {
 		webhook_url: string | null;
-		target_id: string;
-		requested_by: string;
 		reviewReason: string | null;
-		action: Exclude<BanRequestAction, "disregard">;
+		action: Exclude<BanRequestAction, "Disregard">;
+		request: BanRequest;
 	}): Promise<APIMessage | null> {
-		const { webhook_url, requested_by, reviewReason, action, target_id } = data;
+		const { webhook_url, reviewReason, action, request } = data;
 
 		if (!webhook_url) return null;
 
 		const formattedReason = reviewReason ? reviewReason.replaceAll("`", "") : null;
-		const content = `${userMention(requested_by)}, your ban request against ${userMentionWithId(
-			target_id
+		const content = `${userMention(request.requested_by)}, your ban request against ${userMentionWithId(
+			request.target_id
 		)} has been ${action === BanRequestAction.Accept ? "accepted" : "denied"}${formattedReason ? ` - ${formattedReason}` : "."}`;
 
 		return new WebhookClient({ url: webhook_url })
@@ -320,26 +322,23 @@ export default class BanRequestUtils {
 
 	private static async _log(data: {
 		config: BanRequestConfig;
-		request: BanRequest;
-		action: "accepted" | "denied";
-		reviewedBy: User;
+		action: BanRequestAction;
+		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 		reason: string | null;
-	}): Promise<void> {
-		const { config, request, action, reviewedBy, reason } = data;
+	}): Promise<APIMessage | null> {
+		const { config, action, interaction, reason } = data;
 
-		if (!config.webhook_url) return;
+		if (!config.log_webhook_url) return null;
 
-		const embed = new EmbedBuilder()
-			.setColor(action === "accepted" ? Colors.Green : Colors.Red)
-			.setAuthor({ name: `Ban Request ${capitalize(action)}` })
-			.setFields([
-				{ name: "Target", value: userMentionWithId(request.target_id) },
-				{ name: "Requested By", value: userMentionWithId(request.requested_by) },
-				{ name: "Request Reason", value: request.reason }
-			])
+		const color = BanRequestColors[action];
+		const pastTenseAction = PastTenseBanRequestAction[action];
+
+		const embed = new EmbedBuilder(interaction.message!.embeds[0].data)
+			.setColor(color)
+			.setAuthor({ name: `Ban Request ${pastTenseAction}` })
 			.setFooter({
-				text: `Reviewed by @${reviewedBy.username} (${reviewedBy.id})`,
-				iconURL: reviewedBy.displayAvatarURL()
+				text: `Reviewed by @${interaction.user.username} (${interaction.user.id})`,
+				iconURL: interaction.user.displayAvatarURL()
 			})
 			.setTimestamp();
 
@@ -347,16 +346,27 @@ export default class BanRequestUtils {
 			embed.addFields({ name: "Reviewer Reason", value: reason });
 		}
 
-		await new WebhookClient({ url: config.webhook_url })
+		return new WebhookClient({ url: config.log_webhook_url })
 			.send({ embeds: [embed], allowedMentions: { parse: [] } })
 			.catch(() => null);
-		return;
 	}
 }
 
+const BanRequestColors = {
+	Deny: Colors.Red,
+	Accept: Colors.Green,
+	Disregard: Colors.NotQuiteBlack
+} as const;
+
+const PastTenseBanRequestAction = {
+	Deny: "Denied",
+	Accept: "Accepted",
+	Disregard: "Disregarded"
+} as const;
+
 export const BanRequestAction = {
-	Accept: "accept",
-	Deny: "deny",
-	Disregard: "disregard"
+	Deny: "Deny",
+	Accept: "Accept",
+	Disregard: "Disregard"
 } as const;
 export type BanRequestAction = (typeof BanRequestAction)[keyof typeof BanRequestAction];

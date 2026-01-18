@@ -150,6 +150,20 @@ export default class Config extends Command {
 							]
 						},
 						{
+							name: ConfigSubcommand.SetLogChannel,
+							description: "Set the channel where message report logs will be sent.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel to set as the log channel.",
+									type: ApplicationCommandOptionType.Channel,
+									channel_types: [ChannelType.GuildText],
+									required: true
+								}
+							]
+						},
+						{
 							name: ConfigSubcommand.AddImmuneRole,
 							description: "Add a role to the message report immune roles.",
 							type: ApplicationCommandOptionType.Subcommand,
@@ -241,6 +255,20 @@ export default class Config extends Command {
 									name: "value",
 									description: "Set to true to enable, false to disable.",
 									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.SetLogChannel,
+							description: "Set the channel where ban request logs will be sent.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel to set as the log channel.",
+									type: ApplicationCommandOptionType.Channel,
+									channel_types: [ChannelType.GuildText],
 									required: true
 								}
 							]
@@ -630,6 +658,8 @@ export default class Config extends Command {
 				this._toggleReports(interaction, config),
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.SetReviewChannel}`]: () =>
 				this._setReportReviewChannel(interaction, config),
+			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.SetLogChannel}`]: () =>
+				this._setReportLogChannel(interaction, config),
 
 			// Ban Requests Group
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.Toggle}`]: () =>
@@ -638,6 +668,8 @@ export default class Config extends Command {
 				this._setRequestReviewChannel(interaction, config),
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.SetDecisionChannel}`]: () =>
 				this._setRequestDecisionChannel(interaction, config),
+			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.SetLogChannel}`]: () =>
+				this._setRequestLogChannel(interaction, config),
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.AutomaticallyTimeout}`]: () =>
 				this._toggleAutomaticallyTimeout(interaction, config),
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.AddImmuneRole}`]: () =>
@@ -1712,6 +1744,65 @@ export default class Config extends Command {
 		}
 	}
 
+	private async _setReportLogChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
+		const config = configClass.data.message_reports;
+
+		const webhooks = await interaction.guild.fetchWebhooks();
+		const webhook = webhooks.find(wh => wh.url === config.log_webhook_url);
+
+		if (webhook) {
+			if (webhook.channelId === channel.id) {
+				return {
+					error: `The log channel is already set to ${channel}.`
+				};
+			}
+
+			const set = await webhook
+				.edit({
+					channel: channel.id,
+					avatar: this.client.user.displayAvatarURL(),
+					name: this.client.user.username
+				})
+				.catch(() => null);
+
+			if (!set) {
+				return { error: "Failed to move the existing webhook to the specified channel." };
+			}
+
+			return {
+				content: `Successfully moved the log channel webhook to ${channel}.`
+			};
+		} else {
+			const newWebhook = await channel
+				.createWebhook({
+					name: this.client.user.username,
+					avatar: this.client.user.displayAvatarURL()
+				})
+				.catch(() => null);
+
+			if (!newWebhook) {
+				return { error: "Failed to create a webhook in the specified channel." };
+			}
+
+			await this.prisma.messageReportConfig.update({
+				where: { id: interaction.guild.id },
+				data: { log_webhook_url: newWebhook.url }
+			});
+
+			await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
+				log_webhook_url: newWebhook.url
+			});
+
+			return {
+				content: `Successfully set the log channel to ${channel}.`
+			};
+		}
+	}
+
 	private async _toggleRequests(
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
@@ -1880,6 +1971,65 @@ export default class Config extends Command {
 
 			return {
 				content: `Successfully set the decision channel to ${channel}.`
+			};
+		}
+	}
+
+	private async _setRequestLogChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
+		const config = configClass.data.ban_requests;
+
+		const webhooks = await interaction.guild.fetchWebhooks();
+		const webhook = webhooks.find(wh => wh.url === config.log_webhook_url);
+
+		if (webhook) {
+			if (webhook.channelId === channel.id) {
+				return {
+					error: `The log channel is already set to ${channel}.`
+				};
+			}
+
+			const set = await webhook
+				.edit({
+					channel: channel.id,
+					avatar: this.client.user.displayAvatarURL(),
+					name: this.client.user.username
+				})
+				.catch(() => null);
+
+			if (!set) {
+				return { error: "Failed to move the existing webhook to the specified channel." };
+			}
+
+			return {
+				content: `Successfully moved the log channel webhook to ${channel}.`
+			};
+		} else {
+			const newWebhook = await channel
+				.createWebhook({
+					name: this.client.user.username,
+					avatar: this.client.user.displayAvatarURL()
+				})
+				.catch(() => null);
+
+			if (!newWebhook) {
+				return { error: "Failed to create a webhook in the specified channel." };
+			}
+
+			await this.prisma.banRequestConfig.update({
+				where: { id: interaction.guild.id },
+				data: { log_webhook_url: newWebhook.url }
+			});
+
+			await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
+				log_webhook_url: newWebhook.url
+			});
+
+			return {
+				content: `Successfully set the log channel to ${channel}.`
 			};
 		}
 	}

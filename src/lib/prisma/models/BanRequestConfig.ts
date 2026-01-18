@@ -27,6 +27,7 @@ export type BanRequestConfigMinAggregateOutputType = {
 	id: string | null;
 	enabled: boolean | null;
 	webhook_url: string | null;
+	log_webhook_url: string | null;
 	decision_webhook_url: string | null;
 	automatically_timeout: boolean | null;
 	enforce_submission_reason: boolean | null;
@@ -38,6 +39,7 @@ export type BanRequestConfigMaxAggregateOutputType = {
 	id: string | null;
 	enabled: boolean | null;
 	webhook_url: string | null;
+	log_webhook_url: string | null;
 	decision_webhook_url: string | null;
 	automatically_timeout: boolean | null;
 	enforce_submission_reason: boolean | null;
@@ -49,6 +51,7 @@ export type BanRequestConfigCountAggregateOutputType = {
 	id: number;
 	enabled: number;
 	webhook_url: number;
+	log_webhook_url: number;
 	decision_webhook_url: number;
 	automatically_timeout: number;
 	immune_roles: number;
@@ -63,6 +66,7 @@ export type BanRequestConfigMinAggregateInputType = {
 	id?: true;
 	enabled?: true;
 	webhook_url?: true;
+	log_webhook_url?: true;
 	decision_webhook_url?: true;
 	automatically_timeout?: true;
 	enforce_submission_reason?: true;
@@ -74,6 +78,7 @@ export type BanRequestConfigMaxAggregateInputType = {
 	id?: true;
 	enabled?: true;
 	webhook_url?: true;
+	log_webhook_url?: true;
 	decision_webhook_url?: true;
 	automatically_timeout?: true;
 	enforce_submission_reason?: true;
@@ -85,6 +90,7 @@ export type BanRequestConfigCountAggregateInputType = {
 	id?: true;
 	enabled?: true;
 	webhook_url?: true;
+	log_webhook_url?: true;
 	decision_webhook_url?: true;
 	automatically_timeout?: true;
 	immune_roles?: true;
@@ -174,6 +180,7 @@ export type BanRequestConfigGroupByOutputType = {
 	id: string;
 	enabled: boolean;
 	webhook_url: string | null;
+	log_webhook_url: string | null;
 	decision_webhook_url: string | null;
 	automatically_timeout: boolean;
 	immune_roles: string[];
@@ -205,6 +212,7 @@ export type BanRequestConfigWhereInput = {
 	id?: Prisma.StringFilter<"BanRequestConfig"> | string;
 	enabled?: Prisma.BoolFilter<"BanRequestConfig"> | boolean;
 	webhook_url?: Prisma.StringNullableFilter<"BanRequestConfig"> | string | null;
+	log_webhook_url?: Prisma.StringNullableFilter<"BanRequestConfig"> | string | null;
 	decision_webhook_url?: Prisma.StringNullableFilter<"BanRequestConfig"> | string | null;
 	automatically_timeout?: Prisma.BoolFilter<"BanRequestConfig"> | boolean;
 	immune_roles?: Prisma.StringNullableListFilter<"BanRequestConfig">;
@@ -219,6 +227,7 @@ export type BanRequestConfigOrderByWithRelationInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
 	decision_webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
 	automatically_timeout?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
@@ -237,6 +246,7 @@ export type BanRequestConfigWhereUniqueInput = Prisma.AtLeast<
 		NOT?: Prisma.BanRequestConfigWhereInput | Prisma.BanRequestConfigWhereInput[];
 		enabled?: Prisma.BoolFilter<"BanRequestConfig"> | boolean;
 		webhook_url?: Prisma.StringNullableFilter<"BanRequestConfig"> | string | null;
+		log_webhook_url?: Prisma.StringNullableFilter<"BanRequestConfig"> | string | null;
 		decision_webhook_url?: Prisma.StringNullableFilter<"BanRequestConfig"> | string | null;
 		automatically_timeout?: Prisma.BoolFilter<"BanRequestConfig"> | boolean;
 		immune_roles?: Prisma.StringNullableListFilter<"BanRequestConfig">;
@@ -253,6 +263,7 @@ export type BanRequestConfigOrderByWithAggregationInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
 	decision_webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
 	automatically_timeout?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
@@ -276,6 +287,7 @@ export type BanRequestConfigScalarWhereWithAggregatesInput = {
 	id?: Prisma.StringWithAggregatesFilter<"BanRequestConfig"> | string;
 	enabled?: Prisma.BoolWithAggregatesFilter<"BanRequestConfig"> | boolean;
 	webhook_url?: Prisma.StringNullableWithAggregatesFilter<"BanRequestConfig"> | string | null;
+	log_webhook_url?: Prisma.StringNullableWithAggregatesFilter<"BanRequestConfig"> | string | null;
 	decision_webhook_url?: Prisma.StringNullableWithAggregatesFilter<"BanRequestConfig"> | string | null;
 	automatically_timeout?: Prisma.BoolWithAggregatesFilter<"BanRequestConfig"> | boolean;
 	immune_roles?: Prisma.StringNullableListFilter<"BanRequestConfig">;
@@ -288,6 +300,7 @@ export type BanRequestConfigScalarWhereWithAggregatesInput = {
 export type BanRequestConfigCreateInput = {
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	decision_webhook_url?: string | null;
 	automatically_timeout?: boolean;
 	immune_roles?: Prisma.BanRequestConfigCreateimmune_rolesInput | string[];
@@ -302,6 +315,7 @@ export type BanRequestConfigUncheckedCreateInput = {
 	id: string;
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	decision_webhook_url?: string | null;
 	automatically_timeout?: boolean;
 	immune_roles?: Prisma.BanRequestConfigCreateimmune_rolesInput | string[];
@@ -314,6 +328,7 @@ export type BanRequestConfigUncheckedCreateInput = {
 export type BanRequestConfigUpdateInput = {
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	decision_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	automatically_timeout?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	immune_roles?: Prisma.BanRequestConfigUpdateimmune_rolesInput | string[];
@@ -328,6 +343,7 @@ export type BanRequestConfigUncheckedUpdateInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	decision_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	automatically_timeout?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	immune_roles?: Prisma.BanRequestConfigUpdateimmune_rolesInput | string[];
@@ -341,6 +357,7 @@ export type BanRequestConfigCreateManyInput = {
 	id: string;
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	decision_webhook_url?: string | null;
 	automatically_timeout?: boolean;
 	immune_roles?: Prisma.BanRequestConfigCreateimmune_rolesInput | string[];
@@ -353,6 +370,7 @@ export type BanRequestConfigCreateManyInput = {
 export type BanRequestConfigUpdateManyMutationInput = {
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	decision_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	automatically_timeout?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	immune_roles?: Prisma.BanRequestConfigUpdateimmune_rolesInput | string[];
@@ -366,6 +384,7 @@ export type BanRequestConfigUncheckedUpdateManyInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	decision_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	automatically_timeout?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	immune_roles?: Prisma.BanRequestConfigUpdateimmune_rolesInput | string[];
@@ -384,6 +403,7 @@ export type BanRequestConfigCountOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrder;
 	decision_webhook_url?: Prisma.SortOrder;
 	automatically_timeout?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
@@ -397,6 +417,7 @@ export type BanRequestConfigMaxOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrder;
 	decision_webhook_url?: Prisma.SortOrder;
 	automatically_timeout?: Prisma.SortOrder;
 	enforce_submission_reason?: Prisma.SortOrder;
@@ -408,6 +429,7 @@ export type BanRequestConfigMinOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrder;
 	decision_webhook_url?: Prisma.SortOrder;
 	automatically_timeout?: Prisma.SortOrder;
 	enforce_submission_reason?: Prisma.SortOrder;
@@ -492,6 +514,7 @@ export type BanRequestConfigUpdatenotify_rolesInput = {
 export type BanRequestConfigCreateWithoutGuildInput = {
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	decision_webhook_url?: string | null;
 	automatically_timeout?: boolean;
 	immune_roles?: Prisma.BanRequestConfigCreateimmune_rolesInput | string[];
@@ -504,6 +527,7 @@ export type BanRequestConfigCreateWithoutGuildInput = {
 export type BanRequestConfigUncheckedCreateWithoutGuildInput = {
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	decision_webhook_url?: string | null;
 	automatically_timeout?: boolean;
 	immune_roles?: Prisma.BanRequestConfigCreateimmune_rolesInput | string[];
@@ -544,6 +568,7 @@ export type BanRequestConfigUpdateToOneWithWhereWithoutGuildInput = {
 export type BanRequestConfigUpdateWithoutGuildInput = {
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	decision_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	automatically_timeout?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	immune_roles?: Prisma.BanRequestConfigUpdateimmune_rolesInput | string[];
@@ -556,6 +581,7 @@ export type BanRequestConfigUpdateWithoutGuildInput = {
 export type BanRequestConfigUncheckedUpdateWithoutGuildInput = {
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	decision_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	automatically_timeout?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	immune_roles?: Prisma.BanRequestConfigUpdateimmune_rolesInput | string[];
@@ -572,6 +598,7 @@ export type BanRequestConfigSelect<
 		id?: boolean;
 		enabled?: boolean;
 		webhook_url?: boolean;
+		log_webhook_url?: boolean;
 		decision_webhook_url?: boolean;
 		automatically_timeout?: boolean;
 		immune_roles?: boolean;
@@ -591,6 +618,7 @@ export type BanRequestConfigSelectCreateManyAndReturn<
 		id?: boolean;
 		enabled?: boolean;
 		webhook_url?: boolean;
+		log_webhook_url?: boolean;
 		decision_webhook_url?: boolean;
 		automatically_timeout?: boolean;
 		immune_roles?: boolean;
@@ -610,6 +638,7 @@ export type BanRequestConfigSelectUpdateManyAndReturn<
 		id?: boolean;
 		enabled?: boolean;
 		webhook_url?: boolean;
+		log_webhook_url?: boolean;
 		decision_webhook_url?: boolean;
 		automatically_timeout?: boolean;
 		immune_roles?: boolean;
@@ -626,6 +655,7 @@ export type BanRequestConfigSelectScalar = {
 	id?: boolean;
 	enabled?: boolean;
 	webhook_url?: boolean;
+	log_webhook_url?: boolean;
 	decision_webhook_url?: boolean;
 	automatically_timeout?: boolean;
 	immune_roles?: boolean;
@@ -641,6 +671,7 @@ export type BanRequestConfigOmit<
 	| "id"
 	| "enabled"
 	| "webhook_url"
+	| "log_webhook_url"
 	| "decision_webhook_url"
 	| "automatically_timeout"
 	| "immune_roles"
@@ -678,6 +709,7 @@ export type $BanRequestConfigPayload<
 			id: string;
 			enabled: boolean;
 			webhook_url: string | null;
+			log_webhook_url: string | null;
 			decision_webhook_url: string | null;
 			automatically_timeout: boolean;
 			immune_roles: string[];
@@ -1236,6 +1268,7 @@ export interface BanRequestConfigFieldRefs {
 	readonly id: Prisma.FieldRef<"BanRequestConfig", "String">;
 	readonly enabled: Prisma.FieldRef<"BanRequestConfig", "Boolean">;
 	readonly webhook_url: Prisma.FieldRef<"BanRequestConfig", "String">;
+	readonly log_webhook_url: Prisma.FieldRef<"BanRequestConfig", "String">;
 	readonly decision_webhook_url: Prisma.FieldRef<"BanRequestConfig", "String">;
 	readonly automatically_timeout: Prisma.FieldRef<"BanRequestConfig", "Boolean">;
 	readonly immune_roles: Prisma.FieldRef<"BanRequestConfig", "String[]">;

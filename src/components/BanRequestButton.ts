@@ -1,6 +1,6 @@
 import { type ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 
-import { userMentionWithId } from "#utils/index.js";
+import { capitalize, userMentionWithId } from "#utils/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#managers/components/Component.js";
@@ -28,7 +28,7 @@ export default class BanRequestButton extends Component {
 			return { error: "Ban requests are not configured for this server." };
 		}
 
-		const action = interaction.customId.split("-")[2] as BanRequestAction;
+		const action = capitalize(interaction.customId.split("-")[2]) as BanRequestAction;
 		const request = await this.prisma.banRequest.findUnique({
 			where: { id: interaction.message.id, guild_id: interaction.guild.id }
 		});
@@ -73,7 +73,7 @@ export default class BanRequestButton extends Component {
 /**
  * Builds a modal for collecting a reason for the ban request action.
  */
-function buildReasonModal(requestId: string, action: "accept" | "deny"): ModalBuilder {
+function buildReasonModal(requestId: string, action: BanRequestAction): ModalBuilder {
 	const reasonInput = new TextInputBuilder()
 		.setCustomId("reason")
 		.setStyle(TextInputStyle.Paragraph)
@@ -84,7 +84,7 @@ function buildReasonModal(requestId: string, action: "accept" | "deny"): ModalBu
 	const reasonLabel = new LabelBuilder().setLabel("Reason").setTextInputComponent(reasonInput);
 
 	return new ModalBuilder()
-		.setCustomId(`ban-request-${action}-${requestId}`)
-		.setTitle(`${action === "accept" ? "Accept" : "Deny"} Ban Request`)
+		.setCustomId(`ban-request-${action.toLowerCase()}-${requestId}`)
+		.setTitle(`${action} Ban Request`)
 		.addLabelComponents(reasonLabel);
 }

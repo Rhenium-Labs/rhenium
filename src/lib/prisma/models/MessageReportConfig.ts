@@ -37,6 +37,7 @@ export type MessageReportConfigMinAggregateOutputType = {
 	id: string | null;
 	enabled: boolean | null;
 	webhook_url: string | null;
+	log_webhook_url: string | null;
 	auto_disregard_after: bigint | null;
 	enforce_member_in_guild: boolean | null;
 };
@@ -45,6 +46,7 @@ export type MessageReportConfigMaxAggregateOutputType = {
 	id: string | null;
 	enabled: boolean | null;
 	webhook_url: string | null;
+	log_webhook_url: string | null;
 	auto_disregard_after: bigint | null;
 	enforce_member_in_guild: boolean | null;
 };
@@ -53,6 +55,7 @@ export type MessageReportConfigCountAggregateOutputType = {
 	id: number;
 	enabled: number;
 	webhook_url: number;
+	log_webhook_url: number;
 	auto_disregard_after: number;
 	immune_roles: number;
 	notify_roles: number;
@@ -73,6 +76,7 @@ export type MessageReportConfigMinAggregateInputType = {
 	id?: true;
 	enabled?: true;
 	webhook_url?: true;
+	log_webhook_url?: true;
 	auto_disregard_after?: true;
 	enforce_member_in_guild?: true;
 };
@@ -81,6 +85,7 @@ export type MessageReportConfigMaxAggregateInputType = {
 	id?: true;
 	enabled?: true;
 	webhook_url?: true;
+	log_webhook_url?: true;
 	auto_disregard_after?: true;
 	enforce_member_in_guild?: true;
 };
@@ -89,6 +94,7 @@ export type MessageReportConfigCountAggregateInputType = {
 	id?: true;
 	enabled?: true;
 	webhook_url?: true;
+	log_webhook_url?: true;
 	auto_disregard_after?: true;
 	immune_roles?: true;
 	notify_roles?: true;
@@ -192,6 +198,7 @@ export type MessageReportConfigGroupByOutputType = {
 	id: string;
 	enabled: boolean;
 	webhook_url: string | null;
+	log_webhook_url: string | null;
 	auto_disregard_after: bigint;
 	immune_roles: string[];
 	notify_roles: string[];
@@ -223,6 +230,7 @@ export type MessageReportConfigWhereInput = {
 	id?: Prisma.StringFilter<"MessageReportConfig"> | string;
 	enabled?: Prisma.BoolFilter<"MessageReportConfig"> | boolean;
 	webhook_url?: Prisma.StringNullableFilter<"MessageReportConfig"> | string | null;
+	log_webhook_url?: Prisma.StringNullableFilter<"MessageReportConfig"> | string | null;
 	auto_disregard_after?: Prisma.BigIntFilter<"MessageReportConfig"> | bigint | number;
 	immune_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 	notify_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
@@ -235,6 +243,7 @@ export type MessageReportConfigOrderByWithRelationInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
 	auto_disregard_after?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
@@ -251,6 +260,7 @@ export type MessageReportConfigWhereUniqueInput = Prisma.AtLeast<
 		NOT?: Prisma.MessageReportConfigWhereInput | Prisma.MessageReportConfigWhereInput[];
 		enabled?: Prisma.BoolFilter<"MessageReportConfig"> | boolean;
 		webhook_url?: Prisma.StringNullableFilter<"MessageReportConfig"> | string | null;
+		log_webhook_url?: Prisma.StringNullableFilter<"MessageReportConfig"> | string | null;
 		auto_disregard_after?: Prisma.BigIntFilter<"MessageReportConfig"> | bigint | number;
 		immune_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 		notify_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
@@ -265,6 +275,7 @@ export type MessageReportConfigOrderByWithAggregationInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrderInput | Prisma.SortOrder;
 	auto_disregard_after?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
@@ -288,6 +299,7 @@ export type MessageReportConfigScalarWhereWithAggregatesInput = {
 	id?: Prisma.StringWithAggregatesFilter<"MessageReportConfig"> | string;
 	enabled?: Prisma.BoolWithAggregatesFilter<"MessageReportConfig"> | boolean;
 	webhook_url?: Prisma.StringNullableWithAggregatesFilter<"MessageReportConfig"> | string | null;
+	log_webhook_url?: Prisma.StringNullableWithAggregatesFilter<"MessageReportConfig"> | string | null;
 	auto_disregard_after?: Prisma.BigIntWithAggregatesFilter<"MessageReportConfig"> | bigint | number;
 	immune_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 	notify_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
@@ -298,6 +310,7 @@ export type MessageReportConfigScalarWhereWithAggregatesInput = {
 export type MessageReportConfigCreateInput = {
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	auto_disregard_after?: bigint | number;
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
@@ -310,6 +323,7 @@ export type MessageReportConfigUncheckedCreateInput = {
 	id: string;
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	auto_disregard_after?: bigint | number;
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
@@ -320,6 +334,7 @@ export type MessageReportConfigUncheckedCreateInput = {
 export type MessageReportConfigUpdateInput = {
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	auto_disregard_after?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
@@ -332,6 +347,7 @@ export type MessageReportConfigUncheckedUpdateInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	auto_disregard_after?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
@@ -343,6 +359,7 @@ export type MessageReportConfigCreateManyInput = {
 	id: string;
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	auto_disregard_after?: bigint | number;
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
@@ -353,6 +370,7 @@ export type MessageReportConfigCreateManyInput = {
 export type MessageReportConfigUpdateManyMutationInput = {
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	auto_disregard_after?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
@@ -364,6 +382,7 @@ export type MessageReportConfigUncheckedUpdateManyInput = {
 	id?: Prisma.StringFieldUpdateOperationsInput | string;
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	auto_disregard_after?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
@@ -388,6 +407,7 @@ export type MessageReportConfigCountOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrder;
 	auto_disregard_after?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
@@ -403,6 +423,7 @@ export type MessageReportConfigMaxOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrder;
 	auto_disregard_after?: Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
 };
@@ -411,6 +432,7 @@ export type MessageReportConfigMinOrderByAggregateInput = {
 	id?: Prisma.SortOrder;
 	enabled?: Prisma.SortOrder;
 	webhook_url?: Prisma.SortOrder;
+	log_webhook_url?: Prisma.SortOrder;
 	auto_disregard_after?: Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
 };
@@ -521,6 +543,7 @@ export type MessageReportConfigUpdateblacklisted_usersInput = {
 export type MessageReportConfigCreateWithoutGuildInput = {
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	auto_disregard_after?: bigint | number;
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
@@ -531,6 +554,7 @@ export type MessageReportConfigCreateWithoutGuildInput = {
 export type MessageReportConfigUncheckedCreateWithoutGuildInput = {
 	enabled?: boolean;
 	webhook_url?: string | null;
+	log_webhook_url?: string | null;
 	auto_disregard_after?: bigint | number;
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
@@ -569,6 +593,7 @@ export type MessageReportConfigUpdateToOneWithWhereWithoutGuildInput = {
 export type MessageReportConfigUpdateWithoutGuildInput = {
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	auto_disregard_after?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
@@ -579,6 +604,7 @@ export type MessageReportConfigUpdateWithoutGuildInput = {
 export type MessageReportConfigUncheckedUpdateWithoutGuildInput = {
 	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	log_webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	auto_disregard_after?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
@@ -593,6 +619,7 @@ export type MessageReportConfigSelect<
 		id?: boolean;
 		enabled?: boolean;
 		webhook_url?: boolean;
+		log_webhook_url?: boolean;
 		auto_disregard_after?: boolean;
 		immune_roles?: boolean;
 		notify_roles?: boolean;
@@ -610,6 +637,7 @@ export type MessageReportConfigSelectCreateManyAndReturn<
 		id?: boolean;
 		enabled?: boolean;
 		webhook_url?: boolean;
+		log_webhook_url?: boolean;
 		auto_disregard_after?: boolean;
 		immune_roles?: boolean;
 		notify_roles?: boolean;
@@ -627,6 +655,7 @@ export type MessageReportConfigSelectUpdateManyAndReturn<
 		id?: boolean;
 		enabled?: boolean;
 		webhook_url?: boolean;
+		log_webhook_url?: boolean;
 		auto_disregard_after?: boolean;
 		immune_roles?: boolean;
 		notify_roles?: boolean;
@@ -641,6 +670,7 @@ export type MessageReportConfigSelectScalar = {
 	id?: boolean;
 	enabled?: boolean;
 	webhook_url?: boolean;
+	log_webhook_url?: boolean;
 	auto_disregard_after?: boolean;
 	immune_roles?: boolean;
 	notify_roles?: boolean;
@@ -654,6 +684,7 @@ export type MessageReportConfigOmit<
 	| "id"
 	| "enabled"
 	| "webhook_url"
+	| "log_webhook_url"
 	| "auto_disregard_after"
 	| "immune_roles"
 	| "notify_roles"
@@ -689,6 +720,7 @@ export type $MessageReportConfigPayload<
 			id: string;
 			enabled: boolean;
 			webhook_url: string | null;
+			log_webhook_url: string | null;
 			auto_disregard_after: bigint;
 			immune_roles: string[];
 			notify_roles: string[];
@@ -1248,6 +1280,7 @@ export interface MessageReportConfigFieldRefs {
 	readonly id: Prisma.FieldRef<"MessageReportConfig", "String">;
 	readonly enabled: Prisma.FieldRef<"MessageReportConfig", "Boolean">;
 	readonly webhook_url: Prisma.FieldRef<"MessageReportConfig", "String">;
+	readonly log_webhook_url: Prisma.FieldRef<"MessageReportConfig", "String">;
 	readonly auto_disregard_after: Prisma.FieldRef<"MessageReportConfig", "BigInt">;
 	readonly immune_roles: Prisma.FieldRef<"MessageReportConfig", "String[]">;
 	readonly notify_roles: Prisma.FieldRef<"MessageReportConfig", "String[]">;

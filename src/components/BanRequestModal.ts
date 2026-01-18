@@ -1,9 +1,11 @@
 import type { ModalSubmitInteraction } from "discord.js";
+
+import { capitalize } from "#utils/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#managers/components/Component.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
-import BanRequestUtils from "#utils/BanRequests.js";
+import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
 
 const AUTO_DELETE_DELAY = 7000;
 
@@ -22,7 +24,7 @@ export default class BanRequestModal extends Component {
 			return { error: "Ban requests are not configured for this server." };
 		}
 
-		const action = interaction.customId.split("-")[2] as "accept" | "deny";
+		const action = capitalize(interaction.customId.split("-")[2]) as BanRequestAction;
 		const requestId = interaction.customId.split("-")[3];
 
 		const request = await this.prisma.banRequest.findUnique({

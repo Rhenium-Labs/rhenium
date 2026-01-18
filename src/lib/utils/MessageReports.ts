@@ -11,7 +11,8 @@ import {
 	WebhookClient,
 	ButtonInteraction,
 	ComponentType,
-	MessageFlags
+	MessageFlags,
+	APIMessage
 } from "discord.js";
 
 import { prisma } from "#root/index.js";
@@ -185,17 +186,19 @@ export default class MessageReportUtils {
 
 	public static async handle(data: {
 		interaction: ButtonInteraction<"cached">;
+		config: MessageReportConfig;
 		action: MessageReportAction;
 		report: MessageReport;
 	}): Promise<InteractionReplyData | null> {
-		const { interaction, action, report } = data;
+		const { interaction, action, report, config } = data;
 
-		await interaction.deferUpdate();
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		switch (action) {
 			case MessageReportAction.Resolve: {
 				await Promise.all([
-					MessageReportUtils._update({
+					MessageReportUtils._log({
+						config,
 						action,
 						interaction
 					}),
@@ -206,20 +209,19 @@ export default class MessageReportUtils {
 							resolved_at: new Date(),
 							status: "Resolved"
 						}
-					})
+					}),
+					interaction.message.delete().catch(() => null)
 				]);
 
-				await interaction.followUp({
-					content: `Successfully resolved message report - ID \`#${report.id}\`.`,
-					flags: [MessageFlags.Ephemeral]
-				});
-
-				return null;
+				return {
+					content: `Successfully resolved message report - ID \`#${report.id}\`.`
+				};
 			}
 
 			case MessageReportAction.Disregard: {
 				await Promise.all([
-					MessageReportUtils._update({
+					MessageReportUtils._log({
+						config,
 						action,
 						interaction
 					}),
@@ -230,31 +232,32 @@ export default class MessageReportUtils {
 							resolved_at: new Date(),
 							status: "Disregarded"
 						}
-					})
+					}),
+					interaction.message.delete().catch(() => null)
 				]);
 
-				await interaction.followUp({
-					content: `Successfully disregarded message report - ID \`#${report.id}\`.`,
-					flags: [MessageFlags.Ephemeral]
-				});
-
-				return null;
+				return {
+					content: `Successfully disregarded message report - ID \`#${report.id}\`.`
+				};
 			}
 		}
 	}
 
 	/**
-	 * Updates the message report log.
+	 * Logs the action taken on a message report to the configured log webhook.
 	 *
-	 * @param data The log update data.
-	 * @returns void
+	 * @param data The log data.
+	 * @returns The sent API message or null if logging failed.
 	 */
 
-	private static async _update(data: {
+	private static async _log(data: {
+		config: MessageReportConfig;
 		action: MessageReportAction;
 		interaction: ButtonInteraction<"cached">;
-	}): Promise<void> {
-		const { action, interaction } = data;
+	}): Promise<APIMessage | null> {
+		const { action, interaction, config } = data;
+
+		if (!config.log_webhook_url) return null;
 
 		const components = interaction.message.components!.filter(c => c.type === ComponentType.ActionRow);
 		const hasDeleteRefButton = components.find(c =>
@@ -272,9 +275,11 @@ export default class MessageReportUtils {
 			})
 			.setTimestamp();
 
-		const embeds = hasDeleteRefButton ? [interaction.message.embeds[0], embed] : [embed];
-		await interaction.editReply({ content: undefined, embeds, components: [] });
-		return;
+		return new WebhookClient({ url: config.log_webhook_url })
+			.send({
+				embeds: hasDeleteRefButton ? [interaction.message.embeds[0], embed] : [embed]
+			})
+			.catch(() => null);
 	}
 }
 

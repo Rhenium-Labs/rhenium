@@ -88,6 +88,7 @@ model MessageReportConfig {
   // Whether message reporting is enabled.
   enabled              Boolean @default(false)
   webhook_url          String?
+  log_webhook_url      String?
   auto_disregard_after BigInt  @default(0)
 
   immune_roles      String[] @default([])
@@ -106,6 +107,7 @@ model BanRequestConfig {
   enabled Boolean @default(false)
 
   webhook_url           String?
+  log_webhook_url       String?
   decision_webhook_url  String?
   automatically_timeout Boolean @default(false)
 
