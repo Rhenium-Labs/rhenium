@@ -7,7 +7,9 @@ import type {
 	HighlightConfig,
 	MessageReportConfig,
 	PermissionScope,
+	QuickMuteChannelScoping,
 	QuickMuteConfig,
+	QuickPurgeChannelScoping,
 	QuickPurgeConfig
 } from "#prisma/client.js";
 
@@ -155,8 +157,8 @@ export default class ConfigManager {
 type ConfigFeatureMap = {
 	message_reports: MessageReportConfig;
 	ban_requests: BanRequestConfig;
-	quick_mutes: QuickMuteConfig;
-	quick_purges: QuickPurgeConfig;
+	quick_mutes: QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] };
+	quick_purges: QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] };
 	highlights: HighlightConfig;
 	content_filter: ContentFilterConfig;
 	permission_scopes: PermissionScope[];
