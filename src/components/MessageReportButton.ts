@@ -47,11 +47,6 @@ export default class MessageReportButton extends Component {
 			};
 		}
 
-		return MessageReportUtils.handle({
-			interaction,
-			config,
-			action,
-			report
-		});
+		return MessageReportUtils.handle({ interaction, action, report });
 	}
 }

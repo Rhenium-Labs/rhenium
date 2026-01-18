@@ -10,7 +10,8 @@ import {
 	roleMention,
 	WebhookClient,
 	ButtonInteraction,
-	ComponentType
+	ComponentType,
+	MessageFlags
 } from "discord.js";
 
 import { prisma } from "#root/index.js";
@@ -184,17 +185,17 @@ export default class MessageReportUtils {
 
 	public static async handle(data: {
 		interaction: ButtonInteraction<"cached">;
-		config: MessageReportConfig;
 		action: MessageReportAction;
 		report: MessageReport;
-	}): Promise<InteractionReplyData> {
-		const { interaction, config, action, report } = data;
+	}): Promise<InteractionReplyData | null> {
+		const { interaction, action, report } = data;
+
+		await interaction.deferUpdate();
 
 		switch (action) {
 			case MessageReportAction.Resolve: {
 				await Promise.all([
-					MessageReportUtils._log({
-						config,
+					MessageReportUtils._update({
 						action,
 						interaction
 					}),
@@ -205,19 +206,20 @@ export default class MessageReportUtils {
 							resolved_at: new Date(),
 							status: "Resolved"
 						}
-					}),
-					interaction.message.delete().catch(() => null)
+					})
 				]);
 
-				return {
-					content: `Successfully resolved message report - ID \`#${report.id}\`.`
-				};
+				await interaction.followUp({
+					content: `Successfully resolved message report - ID \`#${report.id}\`.`,
+					flags: [MessageFlags.Ephemeral]
+				});
+
+				return null;
 			}
 
 			case MessageReportAction.Disregard: {
 				await Promise.all([
-					MessageReportUtils._log({
-						config,
+					MessageReportUtils._update({
 						action,
 						interaction
 					}),
@@ -228,32 +230,31 @@ export default class MessageReportUtils {
 							resolved_at: new Date(),
 							status: "Disregarded"
 						}
-					}),
-					interaction.message.delete().catch(() => null)
+					})
 				]);
 
-				return {
-					content: `Successfully disregarded message report - ID \`#${report.id}\`.`
-				};
+				await interaction.followUp({
+					content: `Successfully disregarded message report - ID \`#${report.id}\`.`,
+					flags: [MessageFlags.Ephemeral]
+				});
+
+				return null;
 			}
 		}
 	}
 
 	/**
-	 * Sends a log message to the specified webhook.
+	 * Updates the message report log.
 	 *
-	 * @param data The log data.
-	 * @returns A promise that resolves when the log is sent.
+	 * @param data The log update data.
+	 * @returns void
 	 */
 
-	private static async _log(data: {
-		config: MessageReportConfig;
+	private static async _update(data: {
 		action: MessageReportAction;
 		interaction: ButtonInteraction<"cached">;
 	}): Promise<void> {
-		const { config, action, interaction } = data;
-
-		if (!config.webhook_url) return;
+		const { action, interaction } = data;
 
 		const components = interaction.message.components!.filter(c => c.type === ComponentType.ActionRow);
 		const hasDeleteRefButton = components.find(c =>
@@ -271,9 +272,8 @@ export default class MessageReportUtils {
 			})
 			.setTimestamp();
 
-		await new WebhookClient({ url: config.webhook_url! })
-			.send({ embeds: [embed], allowedMentions: { parse: [] } })
-			.catch(() => null);
+		const embeds = hasDeleteRefButton ? [interaction.message.embeds[0], embed] : [embed];
+		await interaction.editReply({ content: undefined, embeds, components: [] });
 		return;
 	}
 }
