@@ -432,6 +432,34 @@ export default class Config extends Command {
 							name: ConfigSubcommand.ListChannelScopings,
 							description: "List all quick purge channel scopes.",
 							type: ApplicationCommandOptionType.Subcommand
+						},
+						{
+							name: ConfigSubcommand.SetLogChannel,
+							description: "Set the channel where quick purge logs will be sent.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel to set as the log channel.",
+									type: ApplicationCommandOptionType.Channel,
+									channel_types: [ChannelType.GuildText],
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.SetResultChannel,
+							description: "Set the channel where quick purge results will be sent.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel to set as the result channel.",
+									type: ApplicationCommandOptionType.Channel,
+									channel_types: [ChannelType.GuildText],
+									required: true
+								}
+							]
 						}
 					]
 				},
@@ -496,6 +524,34 @@ export default class Config extends Command {
 							name: ConfigSubcommand.ListChannelScopings,
 							description: "List all quick mute channel scopes.",
 							type: ApplicationCommandOptionType.Subcommand
+						},
+						{
+							name: ConfigSubcommand.SetLogChannel,
+							description: "Set the channel where quick mute logs will be sent.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel to set as the log channel.",
+									type: ApplicationCommandOptionType.Channel,
+									channel_types: [ChannelType.GuildText],
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.SetResultChannel,
+							description: "Set the channel where quick mute results will be sent.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel to set as the result channel.",
+									type: ApplicationCommandOptionType.Channel,
+									channel_types: [ChannelType.GuildText],
+									required: true
+								}
+							]
 						}
 					]
 				}
@@ -518,6 +574,10 @@ export default class Config extends Command {
 				this._setMaxHighlightPatterns(interaction, config),
 
 			// Quick Mutes Group
+			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetLogChannel}`]: () =>
+				this._setQuickMuteLogChannel(interaction, config),
+			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetResultChannel}`]: () =>
+				this._setQuickMuteResultChannel(interaction, config),
 			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetPurgeLimit}`]: () =>
 				this._setQuickMutePurgeLimit(interaction, config),
 			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.AddChannelScoping}`]: () =>
@@ -528,6 +588,10 @@ export default class Config extends Command {
 				this._listQuickMuteChannelScopings(interaction, config),
 
 			// Quick Purges Group
+			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetLogChannel}`]: () =>
+				this._setQuickPurgeLogChannel(interaction, config),
+			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetResultChannel}`]: () =>
+				this._setQuickPurgeResultChannel(interaction, config),
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetLimit}`]: () =>
 				this._setQuickPurgeLimit(interaction, config),
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.AddChannelScoping}`]: () =>
@@ -592,6 +656,242 @@ export default class Config extends Command {
 
 		const handler = handlers[`${subcommandGroup}:${subcommand}`];
 		return handler ? handler() : { error: "Unknown subcommand." };
+	}
+
+	private async _setQuickPurgeLogChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
+		const config = configClass.data.quick_purges;
+
+		const webhooks = await interaction.guild.fetchWebhooks();
+		const webhook = webhooks.find(wh => wh.url === config.webhook_url);
+
+		if (webhook) {
+			if (webhook.channelId === channel.id) {
+				return {
+					error: `The quick purge log channel is already set to ${channel}.`
+				};
+			}
+
+			const set = await webhook
+				.edit({
+					channel: channel.id,
+					avatar: this.client.user.displayAvatarURL(),
+					name: this.client.user.username
+				})
+				.catch(() => null);
+
+			if (!set) {
+				return { error: "Failed to move the existing webhook to the specified channel." };
+			}
+
+			return {
+				content: `Successfully moved the quick purge log channel webhook to ${channel}.`
+			};
+		} else {
+			const newWebhook = await channel
+				.createWebhook({
+					name: this.client.user.username,
+					avatar: this.client.user.displayAvatarURL()
+				})
+				.catch(() => null);
+
+			if (!newWebhook) {
+				return { error: "Failed to create a webhook in the specified channel." };
+			}
+
+			await this.prisma.quickPurgeConfig.update({
+				where: { id: interaction.guild.id },
+				data: { webhook_url: newWebhook.url }
+			});
+
+			await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
+				webhook_url: newWebhook.url
+			});
+
+			return {
+				content: `Successfully set the quick purge log channel to ${channel}.`
+			};
+		}
+	}
+
+	private async _setQuickPurgeResultChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
+		const config = configClass.data.quick_purges;
+
+		const webhooks = await interaction.guild.fetchWebhooks();
+		const webhook = webhooks.find(wh => wh.url === config.result_webhook_url);
+
+		if (webhook) {
+			if (webhook.channelId === channel.id) {
+				return {
+					error: `The quick purge result channel is already set to ${channel}.`
+				};
+			}
+
+			const set = await webhook
+				.edit({
+					channel: channel.id,
+					avatar: this.client.user.displayAvatarURL(),
+					name: this.client.user.username
+				})
+				.catch(() => null);
+
+			if (!set) {
+				return { error: "Failed to move the existing webhook to the specified channel." };
+			}
+
+			return {
+				content: `Successfully moved the quick purge result channel webhook to ${channel}.`
+			};
+		} else {
+			const newWebhook = await channel
+				.createWebhook({
+					name: this.client.user.username,
+					avatar: this.client.user.displayAvatarURL()
+				})
+				.catch(() => null);
+
+			if (!newWebhook) {
+				return { error: "Failed to create a webhook in the specified channel." };
+			}
+
+			await this.prisma.quickPurgeConfig.update({
+				where: { id: interaction.guild.id },
+				data: { result_webhook_url: newWebhook.url }
+			});
+
+			await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
+				result_webhook_url: newWebhook.url
+			});
+
+			return {
+				content: `Successfully set the quick purge result channel to ${channel}.`
+			};
+		}
+	}
+
+	private async _setQuickMuteLogChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
+		const config = configClass.data.quick_mutes;
+
+		const webhooks = await interaction.guild.fetchWebhooks();
+		const webhook = webhooks.find(wh => wh.url === config.webhook_url);
+
+		if (webhook) {
+			if (webhook.channelId === channel.id) {
+				return {
+					error: `The quick mute log channel is already set to ${channel}.`
+				};
+			}
+
+			const set = await webhook
+				.edit({
+					channel: channel.id,
+					avatar: this.client.user.displayAvatarURL(),
+					name: this.client.user.username
+				})
+				.catch(() => null);
+
+			if (!set) {
+				return { error: "Failed to move the existing webhook to the specified channel." };
+			}
+
+			return {
+				content: `Successfully moved the quick mute log channel webhook to ${channel}.`
+			};
+		} else {
+			const newWebhook = await channel
+				.createWebhook({
+					name: this.client.user.username,
+					avatar: this.client.user.displayAvatarURL()
+				})
+				.catch(() => null);
+
+			if (!newWebhook) {
+				return { error: "Failed to create a webhook in the specified channel." };
+			}
+
+			await this.prisma.quickMuteConfig.update({
+				where: { id: interaction.guild.id },
+				data: { webhook_url: newWebhook.url }
+			});
+
+			await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
+				webhook_url: newWebhook.url
+			});
+
+			return {
+				content: `Successfully set the quick mute log channel to ${channel}.`
+			};
+		}
+	}
+
+	private async _setQuickMuteResultChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
+		const config = configClass.data.quick_mutes;
+
+		const webhooks = await interaction.guild.fetchWebhooks();
+		const webhook = webhooks.find(wh => wh.url === config.result_webhook_url);
+
+		if (webhook) {
+			if (webhook.channelId === channel.id) {
+				return {
+					error: `The quick mute result channel is already set to ${channel}.`
+				};
+			}
+
+			const set = await webhook
+				.edit({
+					channel: channel.id,
+					avatar: this.client.user.displayAvatarURL(),
+					name: this.client.user.username
+				})
+				.catch(() => null);
+
+			if (!set) {
+				return { error: "Failed to move the existing webhook to the specified channel." };
+			}
+
+			return {
+				content: `Successfully moved the quick mute result channel webhook to ${channel}.`
+			};
+		} else {
+			const newWebhook = await channel
+				.createWebhook({
+					name: this.client.user.username,
+					avatar: this.client.user.displayAvatarURL()
+				})
+				.catch(() => null);
+
+			if (!newWebhook) {
+				return { error: "Failed to create a webhook in the specified channel." };
+			}
+
+			await this.prisma.quickMuteConfig.update({
+				where: { id: interaction.guild.id },
+				data: { result_webhook_url: newWebhook.url }
+			});
+
+			await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
+				result_webhook_url: newWebhook.url
+			});
+
+			return {
+				content: `Successfully set the quick mute result channel to ${channel}.`
+			};
+		}
 	}
 
 	private async _setQuickMutePurgeLimit(
@@ -1794,6 +2094,8 @@ const ConfigSubcommand = {
 	SetMaxPatterns: "set-max-patterns",
 	SetLimit: "set-limit",
 	SetPurgeLimit: "set-purge-limit",
+	SetLogChannel: "set-log-channel",
+	SetResultChannel: "set-result-channel",
 	AutomaticallyTimeout: "automatically-timeout",
 	AddChannelScoping: "add-channel-scoping",
 	RemoveChannelScoping: "remove-channel-scoping",
