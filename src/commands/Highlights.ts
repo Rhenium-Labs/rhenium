@@ -240,8 +240,10 @@ export default class Highlights extends Command {
 	/** Highlights a message if it matches any user's highlight patterns. */
 	public static async highlightMessage(message: Message<true>) {
 		const guildId = message.guild.id;
-
 		const config = await ConfigManager.getGuildConfig(guildId);
+
+		if (!config.data.highlights.enabled) return;
+
 		const highlights = await prisma.highlight.findMany({
 			where: { guild_id: guildId },
 			select: {

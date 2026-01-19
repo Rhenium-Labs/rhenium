@@ -384,6 +384,19 @@ export default class Config extends Command {
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
+							name: ConfigSubcommand.Toggle,
+							description: "Enable or disable message highlights.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "value",
+									description: "Set to true to enable, false to disable.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
+						{
 							name: ConfigSubcommand.SetMaxPatterns,
 							description: "Set the maximum number of highlight patterns allowed per user.",
 							type: ApplicationCommandOptionType.Subcommand,
@@ -405,6 +418,19 @@ export default class Config extends Command {
 					description: "Manage quick purge settings.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
+						{
+							name: ConfigSubcommand.Toggle,
+							description: "Enable or disable quick purges.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "value",
+									description: "Set to true to enable, false to disable.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
 						{
 							name: ConfigSubcommand.SetLimit,
 							description: "Set the maximum number of messages that can be purged at once.",
@@ -496,6 +522,19 @@ export default class Config extends Command {
 					description: "Manage quick mute settings.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
+						{
+							name: ConfigSubcommand.Toggle,
+							description: "Enable or disable quick mutes.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "value",
+									description: "Set to true to enable, false to disable.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
 						{
 							name: ConfigSubcommand.SetPurgeLimit,
 							description:
@@ -600,8 +639,12 @@ export default class Config extends Command {
 			// Highlights Group
 			[`${ConfigSubcommandGroup.Highlights}:${ConfigSubcommand.SetMaxPatterns}`]: () =>
 				this._setMaxHighlightPatterns(interaction, config),
+			[`${ConfigSubcommandGroup.Highlights}:${ConfigSubcommand.Toggle}`]: () =>
+				this._toggleHighlights(interaction, config),
 
 			// Quick Mutes Group
+			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.Toggle}`]: () =>
+				this._toggleQuickMutes(interaction, config),
 			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetLogChannel}`]: () =>
 				this._setQuickMuteLogChannel(interaction, config),
 			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetResultChannel}`]: () =>
@@ -616,6 +659,8 @@ export default class Config extends Command {
 				this._listQuickMuteChannelScopings(interaction, config),
 
 			// Quick Purges Group
+			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.Toggle}`]: () =>
+				this._toggleQuickPurges(interaction, config),
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetLogChannel}`]: () =>
 				this._setQuickPurgeLogChannel(interaction, config),
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetResultChannel}`]: () =>
@@ -688,6 +733,87 @@ export default class Config extends Command {
 
 		const handler = handlers[`${subcommandGroup}:${subcommand}`];
 		return handler ? handler() : { error: "Unknown subcommand." };
+	}
+
+	private async _toggleQuickMutes(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const enable = interaction.options.getBoolean("value", true);
+		const current = configClass.data.quick_mutes.enabled;
+
+		if (enable === current) {
+			return {
+				error: `Quick mutes are already ${enable ? "enabled" : "disabled"}.`
+			};
+		}
+
+		await this.prisma.quickMuteConfig.update({
+			where: { id: interaction.guild.id },
+			data: { enabled: enable }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
+			enabled: enable
+		});
+
+		return {
+			content: `Successfully ${enable ? "enabled" : "disabled"} quick mutes.`
+		};
+	}
+
+	private async _toggleQuickPurges(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const enable = interaction.options.getBoolean("value", true);
+		const current = configClass.data.quick_purges.enabled;
+
+		if (enable === current) {
+			return {
+				error: `Quick purges are already ${enable ? "enabled" : "disabled"}.`
+			};
+		}
+
+		await this.prisma.quickPurgeConfig.update({
+			where: { id: interaction.guild.id },
+			data: { enabled: enable }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
+			enabled: enable
+		});
+
+		return {
+			content: `Successfully ${enable ? "enabled" : "disabled"} quick purges.`
+		};
+	}
+
+	private async _toggleHighlights(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const enable = interaction.options.getBoolean("value", true);
+		const current = configClass.data.highlights.enabled;
+
+		if (enable === current) {
+			return {
+				error: `Highlights are already ${enable ? "enabled" : "disabled"}.`
+			};
+		}
+
+		await this.prisma.highlightConfig.update({
+			where: { id: interaction.guild.id },
+			data: { enabled: enable }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "highlights", {
+			enabled: enable
+		});
+
+		return {
+			content: `Successfully ${enable ? "enabled" : "disabled"} highlights.`
+		};
 	}
 
 	private async _setQuickPurgeLogChannel(
