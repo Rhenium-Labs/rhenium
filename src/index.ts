@@ -9,8 +9,7 @@ import {
 	nodeContextIntegration,
 	consoleLoggingIntegration,
 	postgresIntegration,
-	onUncaughtExceptionIntegration,
-	onUnhandledRejectionIntegration
+	captureException
 } from "@sentry/node";
 import { open } from "lmdb";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -81,9 +80,7 @@ async function main(): Promise<void> {
 			consoleIntegration(),
 			consoleLoggingIntegration(),
 			prismaIntegration(),
-			postgresIntegration(),
-			onUncaughtExceptionIntegration(),
-			onUnhandledRejectionIntegration()
+			postgresIntegration()
 		]
 	});
 
@@ -109,4 +106,16 @@ PROCESS_EXIT_EVENTS.forEach(event => {
 				process.exit(0);
 			});
 	});
+});
+
+/** Global exception and rejection handlers. */
+
+process.on("uncaughtException", error => {
+	const sentryId = captureException(error);
+	Logger.tracable(sentryId, error);
+});
+
+process.on("unhandledRejection", reason => {
+	const sentryId = captureException(reason);
+	Logger.tracable(sentryId, reason);
 });
