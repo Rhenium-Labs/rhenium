@@ -91,9 +91,10 @@ model MessageReportConfig {
   log_webhook_url      String?
   auto_disregard_after BigInt  @default(0)
 
-  immune_roles      String[] @default([])
-  notify_roles      String[] @default([])
-  blacklisted_users String[] @default([])
+  immune_roles       String[] @default([])
+  notify_roles       String[] @default([])
+  blacklisted_users  String[] @default([])
+  placeholder_reason String?
 
   enforce_member_in_guild Boolean @default(true)
 

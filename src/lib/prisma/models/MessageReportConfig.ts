@@ -39,6 +39,7 @@ export type MessageReportConfigMinAggregateOutputType = {
 	webhook_url: string | null;
 	log_webhook_url: string | null;
 	auto_disregard_after: bigint | null;
+	placeholder_reason: string | null;
 	enforce_member_in_guild: boolean | null;
 };
 
@@ -48,6 +49,7 @@ export type MessageReportConfigMaxAggregateOutputType = {
 	webhook_url: string | null;
 	log_webhook_url: string | null;
 	auto_disregard_after: bigint | null;
+	placeholder_reason: string | null;
 	enforce_member_in_guild: boolean | null;
 };
 
@@ -60,6 +62,7 @@ export type MessageReportConfigCountAggregateOutputType = {
 	immune_roles: number;
 	notify_roles: number;
 	blacklisted_users: number;
+	placeholder_reason: number;
 	enforce_member_in_guild: number;
 	_all: number;
 };
@@ -78,6 +81,7 @@ export type MessageReportConfigMinAggregateInputType = {
 	webhook_url?: true;
 	log_webhook_url?: true;
 	auto_disregard_after?: true;
+	placeholder_reason?: true;
 	enforce_member_in_guild?: true;
 };
 
@@ -87,6 +91,7 @@ export type MessageReportConfigMaxAggregateInputType = {
 	webhook_url?: true;
 	log_webhook_url?: true;
 	auto_disregard_after?: true;
+	placeholder_reason?: true;
 	enforce_member_in_guild?: true;
 };
 
@@ -99,6 +104,7 @@ export type MessageReportConfigCountAggregateInputType = {
 	immune_roles?: true;
 	notify_roles?: true;
 	blacklisted_users?: true;
+	placeholder_reason?: true;
 	enforce_member_in_guild?: true;
 	_all?: true;
 };
@@ -203,6 +209,7 @@ export type MessageReportConfigGroupByOutputType = {
 	immune_roles: string[];
 	notify_roles: string[];
 	blacklisted_users: string[];
+	placeholder_reason: string | null;
 	enforce_member_in_guild: boolean;
 	_count: MessageReportConfigCountAggregateOutputType | null;
 	_avg: MessageReportConfigAvgAggregateOutputType | null;
@@ -235,6 +242,7 @@ export type MessageReportConfigWhereInput = {
 	immune_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 	notify_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 	blacklisted_users?: Prisma.StringNullableListFilter<"MessageReportConfig">;
+	placeholder_reason?: Prisma.StringNullableFilter<"MessageReportConfig"> | string | null;
 	enforce_member_in_guild?: Prisma.BoolFilter<"MessageReportConfig"> | boolean;
 	guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 };
@@ -248,6 +256,7 @@ export type MessageReportConfigOrderByWithRelationInput = {
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
 	blacklisted_users?: Prisma.SortOrder;
+	placeholder_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
 	guild?: Prisma.GuildOrderByWithRelationInput;
 };
@@ -265,6 +274,7 @@ export type MessageReportConfigWhereUniqueInput = Prisma.AtLeast<
 		immune_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 		notify_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 		blacklisted_users?: Prisma.StringNullableListFilter<"MessageReportConfig">;
+		placeholder_reason?: Prisma.StringNullableFilter<"MessageReportConfig"> | string | null;
 		enforce_member_in_guild?: Prisma.BoolFilter<"MessageReportConfig"> | boolean;
 		guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 	},
@@ -280,6 +290,7 @@ export type MessageReportConfigOrderByWithAggregationInput = {
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
 	blacklisted_users?: Prisma.SortOrder;
+	placeholder_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
 	_count?: Prisma.MessageReportConfigCountOrderByAggregateInput;
 	_avg?: Prisma.MessageReportConfigAvgOrderByAggregateInput;
@@ -304,6 +315,7 @@ export type MessageReportConfigScalarWhereWithAggregatesInput = {
 	immune_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 	notify_roles?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 	blacklisted_users?: Prisma.StringNullableListFilter<"MessageReportConfig">;
+	placeholder_reason?: Prisma.StringNullableWithAggregatesFilter<"MessageReportConfig"> | string | null;
 	enforce_member_in_guild?: Prisma.BoolWithAggregatesFilter<"MessageReportConfig"> | boolean;
 };
 
@@ -315,6 +327,7 @@ export type MessageReportConfigCreateInput = {
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
+	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
 	guild: Prisma.GuildCreateNestedOneWithoutMessage_report_configInput;
 };
@@ -328,6 +341,7 @@ export type MessageReportConfigUncheckedCreateInput = {
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
+	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
 };
 
@@ -339,6 +353,7 @@ export type MessageReportConfigUpdateInput = {
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
+	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	guild?: Prisma.GuildUpdateOneRequiredWithoutMessage_report_configNestedInput;
 };
@@ -352,6 +367,7 @@ export type MessageReportConfigUncheckedUpdateInput = {
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
+	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
@@ -364,6 +380,7 @@ export type MessageReportConfigCreateManyInput = {
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
+	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
 };
 
@@ -375,6 +392,7 @@ export type MessageReportConfigUpdateManyMutationInput = {
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
+	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
@@ -387,6 +405,7 @@ export type MessageReportConfigUncheckedUpdateManyInput = {
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
+	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
@@ -412,6 +431,7 @@ export type MessageReportConfigCountOrderByAggregateInput = {
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
 	blacklisted_users?: Prisma.SortOrder;
+	placeholder_reason?: Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
 };
 
@@ -425,6 +445,7 @@ export type MessageReportConfigMaxOrderByAggregateInput = {
 	webhook_url?: Prisma.SortOrder;
 	log_webhook_url?: Prisma.SortOrder;
 	auto_disregard_after?: Prisma.SortOrder;
+	placeholder_reason?: Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
 };
 
@@ -434,6 +455,7 @@ export type MessageReportConfigMinOrderByAggregateInput = {
 	webhook_url?: Prisma.SortOrder;
 	log_webhook_url?: Prisma.SortOrder;
 	auto_disregard_after?: Prisma.SortOrder;
+	placeholder_reason?: Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
 };
 
@@ -548,6 +570,7 @@ export type MessageReportConfigCreateWithoutGuildInput = {
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
+	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
 };
 
@@ -559,6 +582,7 @@ export type MessageReportConfigUncheckedCreateWithoutGuildInput = {
 	immune_roles?: Prisma.MessageReportConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigCreatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
+	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
 };
 
@@ -598,6 +622,7 @@ export type MessageReportConfigUpdateWithoutGuildInput = {
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
+	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
@@ -609,6 +634,7 @@ export type MessageReportConfigUncheckedUpdateWithoutGuildInput = {
 	immune_roles?: Prisma.MessageReportConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.MessageReportConfigUpdatenotify_rolesInput | string[];
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
+	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
@@ -624,6 +650,7 @@ export type MessageReportConfigSelect<
 		immune_roles?: boolean;
 		notify_roles?: boolean;
 		blacklisted_users?: boolean;
+		placeholder_reason?: boolean;
 		enforce_member_in_guild?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
@@ -642,6 +669,7 @@ export type MessageReportConfigSelectCreateManyAndReturn<
 		immune_roles?: boolean;
 		notify_roles?: boolean;
 		blacklisted_users?: boolean;
+		placeholder_reason?: boolean;
 		enforce_member_in_guild?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
@@ -660,6 +688,7 @@ export type MessageReportConfigSelectUpdateManyAndReturn<
 		immune_roles?: boolean;
 		notify_roles?: boolean;
 		blacklisted_users?: boolean;
+		placeholder_reason?: boolean;
 		enforce_member_in_guild?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
@@ -675,6 +704,7 @@ export type MessageReportConfigSelectScalar = {
 	immune_roles?: boolean;
 	notify_roles?: boolean;
 	blacklisted_users?: boolean;
+	placeholder_reason?: boolean;
 	enforce_member_in_guild?: boolean;
 };
 
@@ -689,6 +719,7 @@ export type MessageReportConfigOmit<
 	| "immune_roles"
 	| "notify_roles"
 	| "blacklisted_users"
+	| "placeholder_reason"
 	| "enforce_member_in_guild",
 	ExtArgs["result"]["messageReportConfig"]
 >;
@@ -725,6 +756,7 @@ export type $MessageReportConfigPayload<
 			immune_roles: string[];
 			notify_roles: string[];
 			blacklisted_users: string[];
+			placeholder_reason: string | null;
 			enforce_member_in_guild: boolean;
 		},
 		ExtArgs["result"]["messageReportConfig"]
@@ -1285,6 +1317,7 @@ export interface MessageReportConfigFieldRefs {
 	readonly immune_roles: Prisma.FieldRef<"MessageReportConfig", "String[]">;
 	readonly notify_roles: Prisma.FieldRef<"MessageReportConfig", "String[]">;
 	readonly blacklisted_users: Prisma.FieldRef<"MessageReportConfig", "String[]">;
+	readonly placeholder_reason: Prisma.FieldRef<"MessageReportConfig", "String">;
 	readonly enforce_member_in_guild: Prisma.FieldRef<"MessageReportConfig", "Boolean">;
 }
 

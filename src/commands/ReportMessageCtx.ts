@@ -51,9 +51,9 @@ export default class ReportMessageCtx extends Command {
 		const targetUser = interaction.targetMessage.author;
 		const targetMember = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
 
-		if (message.author.bot || message.webhookId) {
+		if (message.author.bot || message.webhookId || message.system) {
 			return {
-				error: "You cannot report messages sent by bots or webhooks."
+				error: "You cannot report bot, webhook, or system messages."
 			};
 		}
 
@@ -110,6 +110,10 @@ export default class ReportMessageCtx extends Command {
 			.setMaxLength(1024)
 			.setMinLength(1)
 			.setRequired(true);
+
+		if (config.placeholder_reason) {
+			reasonInput.setValue(config.placeholder_reason);
+		}
 
 		// prettier-ignore
 		const reasonLabel = new LabelBuilder()

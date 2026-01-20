@@ -150,6 +150,21 @@ export default class Config extends Command {
 							]
 						},
 						{
+							name: ConfigSubcommand.SetDefaultReason,
+							description: "Set the default reason for message reports.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "reason",
+									description: "The default reason to set. Use 'none' to clear.",
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									max_length: 1024,
+									min_length: 1
+								}
+							]
+						},
+						{
 							name: ConfigSubcommand.SetLogChannel,
 							description: "Set the channel where message report logs will be sent.",
 							type: ApplicationCommandOptionType.Subcommand,
@@ -689,6 +704,8 @@ export default class Config extends Command {
 			// Message Reports Group
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.AddImmuneRole}`]: () =>
 				this._addReportsImmuneRole(interaction, config),
+			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.SetDefaultReason}`]: () =>
+				this._setReportsDefaultReason(interaction, config),
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.RemoveImmuneRole}`]: () =>
 				this._removeReportsImmuneRole(interaction, config),
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.ListImmuneRoles}`]: () =>
@@ -1625,6 +1642,35 @@ export default class Config extends Command {
 		};
 	}
 
+	private async _setReportsDefaultReason(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const rawReason = interaction.options.getString("reason", true);
+		const config = configClass.data.message_reports;
+
+		if (config.placeholder_reason === rawReason) {
+			return {
+				error: `The default reason for message reports is already set to: ${rawReason}`
+			};
+		}
+
+		const reason = rawReason.toLowerCase() === "none" ? null : rawReason;
+
+		await this.prisma.messageReportConfig.update({
+			where: { id: interaction.guild.id },
+			data: { placeholder_reason: reason }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
+			placeholder_reason: reason
+		});
+
+		return {
+			content: `Successfully ${reason ? "set" : "cleared"} the default reason for message reports.`
+		};
+	}
+
 	private async _addReportsImmuneRole(
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
@@ -2372,6 +2418,7 @@ const ConfigSubcommand = {
 	SetPurgeLimit: "set-purge-limit",
 	SetLogChannel: "set-log-channel",
 	SetResultChannel: "set-result-channel",
+	SetDefaultReason: "set-default-reason",
 	AutomaticallyTimeout: "automatically-timeout",
 	AddChannelScoping: "add-channel-scoping",
 	RemoveChannelScoping: "remove-channel-scoping",

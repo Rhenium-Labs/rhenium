@@ -1,4 +1,4 @@
-import type { Message, ModalSubmitInteraction, TextBasedChannel } from "discord.js";
+import { MessageFlags, type Message, type ModalSubmitInteraction, type TextBasedChannel } from "discord.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Component from "#managers/components/Component.js";
@@ -15,6 +15,8 @@ export default class ReportMessage extends Component {
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.getMessageReportsConfig();
+
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		if (!config) {
 			return { error: "Message reports have not been configured on this server." };
