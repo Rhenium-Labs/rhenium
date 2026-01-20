@@ -212,10 +212,16 @@ export default class BanRequestUtils {
 				}
 
 				if (expiresAt) {
+					const data = {
+						guild_id: interaction.guild.id,
+						target_id: target.id,
+						expires_at: expiresAt
+					};
+
 					await prisma.temporaryBan.upsert({
 						where: { guild_id_target_id: { guild_id: interaction.guild.id, target_id: target.id } },
-						create: { guild_id: interaction.guild.id, target_id: target.id, expires_at: expiresAt },
-						update: { expires_at: expiresAt }
+						create: data,
+						update: data
 					});
 				}
 
@@ -306,7 +312,7 @@ export default class BanRequestUtils {
 		const formattedReason = reviewReason ? reviewReason.replaceAll("`", "") : null;
 		const content = `${userMention(request.requested_by)}, your ban request against ${userMentionWithId(
 			request.target_id
-		)} has been ${action === BanRequestAction.Accept ? "accepted" : "denied"}${formattedReason ? ` - ${formattedReason}` : "."}`;
+		)} has been ${PastTenseBanRequestAction[action].toLowerCase()}${formattedReason ? ` - ${formattedReason}` : "."}`;
 
 		return new WebhookClient({ url: webhook_url })
 			.send({ content, allowedMentions: { parse: ["users"] } })

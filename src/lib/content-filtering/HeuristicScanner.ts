@@ -271,7 +271,7 @@ export default class HeuristicScanner {
 	 * @return void
 	 */
 	public static async triggerScan(message: DiscordMessage<true>, config: ContentFilterConfig): Promise<void> {
-		if (!config.enabled) return;
+		if (!config.enabled || !config.webhook_url) return;
 
 		const channel = message.channel as TextChannel;
 		const channelId = channel.id;
@@ -331,7 +331,7 @@ export default class HeuristicScanner {
 	 * Perform a heuristic scan on a channel based on recent message activity and content.
 	 */
 	private static async _heuristicScan(channel: TextChannel, config: ContentFilterConfig): Promise<void> {
-		if (!config.enabled) return;
+		if (!config.enabled || !config.webhook_url) return;
 
 		const channelId = channel.id;
 		const state = AutomatedScanner.getOrInitChannelState(channelId);

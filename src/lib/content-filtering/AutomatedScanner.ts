@@ -151,7 +151,7 @@ export default class AutomatedScanner {
 		config: ContentFilterConfig,
 		serializedMessage: SerializedMessage
 	): void {
-		if (!config.enabled) return;
+		if (!config.enabled || !config.webhook_url) return;
 
 		// Channel scoping check
 		const scoping: ChannelScoping = {
@@ -318,7 +318,7 @@ export default class AutomatedScanner {
 		message: Message<true>,
 		config: ContentFilterConfig
 	): Promise<void> {
-		if (!config.enabled) return;
+		if (!config.enabled || !config.webhook_url) return;
 
 		// Channel scoping check.
 		const scoping = {
@@ -382,7 +382,7 @@ export default class AutomatedScanner {
 		smoothed: number;
 		riskScore: number;
 	} | null> {
-		if (!config.enabled) return null;
+		if (!config.enabled || !config.webhook_url) return null;
 
 		const channelId = channel.id;
 		const state = this.getOrInitChannelState(channelId);

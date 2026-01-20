@@ -46,7 +46,7 @@ export default class ContentFilter {
 		message: Message<true>,
 		config: ContentFilterConfig
 	): Promise<void> {
-		if (!config.webhook_url) return;
+		if (!config.enabled || !config.webhook_url) return;
 
 		// Calculate highest score and collect detectors used.
 		let highestScore = 0;
