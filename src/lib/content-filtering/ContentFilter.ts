@@ -250,13 +250,10 @@ export default class ContentFilter {
 
 				// Build multi-modal input for OpenAI.
 				const multiModalInput = MediaUtils.serializeMultiModalInput(processedMedia);
-				const results = await this.openAiScan(multiModalInput, config, message);
-				predictionData.push(...results);
 
-				if (results.length > 0) {
-					problematicContent.push("[Media content flagged]");
-				}
-
+				for (const item of multiModalInput)
+					predictionData.push(...(await this.openAiScan([item], config, message)));
+				problematicContent.push(...allMedia.map(metadata => metadata.url!));
 				break;
 			}
 			case "OCR": {
