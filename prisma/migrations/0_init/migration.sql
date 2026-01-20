@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "RequestStatus" AS ENUM ('AutoResolved', 'Pending', 'Disregarded', 'Accepted', 'Denied');
 
@@ -44,6 +47,7 @@ CREATE TABLE "MessageReportConfig" (
     "immune_roles" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "notify_roles" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "blacklisted_users" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "placeholder_reason" TEXT,
     "enforce_member_in_guild" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "MessageReportConfig_pkey" PRIMARY KEY ("id")
@@ -342,3 +346,4 @@ ALTER TABLE "Message" ADD CONSTRAINT "Message_guild_id_fkey" FOREIGN KEY ("guild
 
 -- AddForeignKey
 ALTER TABLE "PermissionScope" ADD CONSTRAINT "PermissionScope_guild_id_fkey" FOREIGN KEY ("guild_id") REFERENCES "Guild"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
