@@ -51,8 +51,6 @@ export type ContentFilterConfigCountAggregateOutputType = {
 	verbosity: number;
 	immune_roles: number;
 	notify_roles: number;
-	included_channels: number;
-	excluded_channels: number;
 	ocr_filter_keywords: number;
 	ocr_filter_regex: number;
 	_all: number;
@@ -86,8 +84,6 @@ export type ContentFilterConfigCountAggregateInputType = {
 	verbosity?: true;
 	immune_roles?: true;
 	notify_roles?: true;
-	included_channels?: true;
-	excluded_channels?: true;
 	ocr_filter_keywords?: true;
 	ocr_filter_regex?: true;
 	_all?: true;
@@ -180,8 +176,6 @@ export type ContentFilterConfigGroupByOutputType = {
 	verbosity: $Enums.ContentFilterVerbosity;
 	immune_roles: string[];
 	notify_roles: string[];
-	included_channels: string[];
-	excluded_channels: string[];
 	ocr_filter_keywords: string[];
 	ocr_filter_regex: string[];
 	_count: ContentFilterConfigCountAggregateOutputType | null;
@@ -214,10 +208,9 @@ export type ContentFilterConfigWhereInput = {
 	verbosity?: Prisma.EnumContentFilterVerbosityFilter<"ContentFilterConfig"> | $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 	notify_roles?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
-	included_channels?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
-	excluded_channels?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 	ocr_filter_keywords?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 	ocr_filter_regex?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
+	channel_scoping?: Prisma.ContentFilterChannelScopingListRelationFilter;
 	guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 };
 
@@ -231,10 +224,9 @@ export type ContentFilterConfigOrderByWithRelationInput = {
 	verbosity?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
-	included_channels?: Prisma.SortOrder;
-	excluded_channels?: Prisma.SortOrder;
 	ocr_filter_keywords?: Prisma.SortOrder;
 	ocr_filter_regex?: Prisma.SortOrder;
+	channel_scoping?: Prisma.ContentFilterChannelScopingOrderByRelationAggregateInput;
 	guild?: Prisma.GuildOrderByWithRelationInput;
 };
 
@@ -252,10 +244,9 @@ export type ContentFilterConfigWhereUniqueInput = Prisma.AtLeast<
 		verbosity?: Prisma.EnumContentFilterVerbosityFilter<"ContentFilterConfig"> | $Enums.ContentFilterVerbosity;
 		immune_roles?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 		notify_roles?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
-		included_channels?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
-		excluded_channels?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 		ocr_filter_keywords?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 		ocr_filter_regex?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
+		channel_scoping?: Prisma.ContentFilterChannelScopingListRelationFilter;
 		guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 	},
 	"id"
@@ -271,8 +262,6 @@ export type ContentFilterConfigOrderByWithAggregationInput = {
 	verbosity?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
-	included_channels?: Prisma.SortOrder;
-	excluded_channels?: Prisma.SortOrder;
 	ocr_filter_keywords?: Prisma.SortOrder;
 	ocr_filter_regex?: Prisma.SortOrder;
 	_count?: Prisma.ContentFilterConfigCountOrderByAggregateInput;
@@ -299,8 +288,6 @@ export type ContentFilterConfigScalarWhereWithAggregatesInput = {
 		| $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 	notify_roles?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
-	included_channels?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
-	excluded_channels?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 	ocr_filter_keywords?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 	ocr_filter_regex?: Prisma.StringNullableListFilter<"ContentFilterConfig">;
 };
@@ -314,10 +301,9 @@ export type ContentFilterConfigCreateInput = {
 	verbosity?: $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigCreatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigCreateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigCreateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigCreateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigCreateocr_filter_regexInput | string[];
+	channel_scoping?: Prisma.ContentFilterChannelScopingCreateNestedManyWithoutContent_filter_configInput;
 	guild: Prisma.GuildCreateNestedOneWithoutContent_filter_configInput;
 };
 
@@ -331,10 +317,9 @@ export type ContentFilterConfigUncheckedCreateInput = {
 	verbosity?: $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigCreatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigCreateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigCreateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigCreateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigCreateocr_filter_regexInput | string[];
+	channel_scoping?: Prisma.ContentFilterChannelScopingUncheckedCreateNestedManyWithoutContent_filter_configInput;
 };
 
 export type ContentFilterConfigUpdateInput = {
@@ -346,10 +331,9 @@ export type ContentFilterConfigUpdateInput = {
 	verbosity?: Prisma.EnumContentFilterVerbosityFieldUpdateOperationsInput | $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigUpdatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigUpdateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigUpdateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigUpdateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigUpdateocr_filter_regexInput | string[];
+	channel_scoping?: Prisma.ContentFilterChannelScopingUpdateManyWithoutContent_filter_configNestedInput;
 	guild?: Prisma.GuildUpdateOneRequiredWithoutContent_filter_configNestedInput;
 };
 
@@ -363,10 +347,9 @@ export type ContentFilterConfigUncheckedUpdateInput = {
 	verbosity?: Prisma.EnumContentFilterVerbosityFieldUpdateOperationsInput | $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigUpdatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigUpdateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigUpdateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigUpdateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigUpdateocr_filter_regexInput | string[];
+	channel_scoping?: Prisma.ContentFilterChannelScopingUncheckedUpdateManyWithoutContent_filter_configNestedInput;
 };
 
 export type ContentFilterConfigCreateManyInput = {
@@ -379,8 +362,6 @@ export type ContentFilterConfigCreateManyInput = {
 	verbosity?: $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigCreatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigCreateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigCreateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigCreateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigCreateocr_filter_regexInput | string[];
 };
@@ -394,8 +375,6 @@ export type ContentFilterConfigUpdateManyMutationInput = {
 	verbosity?: Prisma.EnumContentFilterVerbosityFieldUpdateOperationsInput | $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigUpdatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigUpdateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigUpdateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigUpdateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigUpdateocr_filter_regexInput | string[];
 };
@@ -410,8 +389,6 @@ export type ContentFilterConfigUncheckedUpdateManyInput = {
 	verbosity?: Prisma.EnumContentFilterVerbosityFieldUpdateOperationsInput | $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigUpdatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigUpdateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigUpdateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigUpdateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigUpdateocr_filter_regexInput | string[];
 };
@@ -439,8 +416,6 @@ export type ContentFilterConfigCountOrderByAggregateInput = {
 	verbosity?: Prisma.SortOrder;
 	immune_roles?: Prisma.SortOrder;
 	notify_roles?: Prisma.SortOrder;
-	included_channels?: Prisma.SortOrder;
-	excluded_channels?: Prisma.SortOrder;
 	ocr_filter_keywords?: Prisma.SortOrder;
 	ocr_filter_regex?: Prisma.SortOrder;
 };
@@ -461,6 +436,11 @@ export type ContentFilterConfigMinOrderByAggregateInput = {
 	webhook_url?: Prisma.SortOrder;
 	detector_mode?: Prisma.SortOrder;
 	verbosity?: Prisma.SortOrder;
+};
+
+export type ContentFilterConfigScalarRelationFilter = {
+	is?: Prisma.ContentFilterConfigWhereInput;
+	isNot?: Prisma.ContentFilterConfigWhereInput;
 };
 
 export type ContentFilterConfigCreateNestedOneWithoutGuildInput = {
@@ -531,14 +511,6 @@ export type ContentFilterConfigCreatenotify_rolesInput = {
 	set: string[];
 };
 
-export type ContentFilterConfigCreateincluded_channelsInput = {
-	set: string[];
-};
-
-export type ContentFilterConfigCreateexcluded_channelsInput = {
-	set: string[];
-};
-
 export type ContentFilterConfigCreateocr_filter_keywordsInput = {
 	set: string[];
 };
@@ -570,16 +542,6 @@ export type ContentFilterConfigUpdatenotify_rolesInput = {
 	push?: string | string[];
 };
 
-export type ContentFilterConfigUpdateincluded_channelsInput = {
-	set?: string[];
-	push?: string | string[];
-};
-
-export type ContentFilterConfigUpdateexcluded_channelsInput = {
-	set?: string[];
-	push?: string | string[];
-};
-
 export type ContentFilterConfigUpdateocr_filter_keywordsInput = {
 	set?: string[];
 	push?: string | string[];
@@ -588,6 +550,32 @@ export type ContentFilterConfigUpdateocr_filter_keywordsInput = {
 export type ContentFilterConfigUpdateocr_filter_regexInput = {
 	set?: string[];
 	push?: string | string[];
+};
+
+export type ContentFilterConfigCreateNestedOneWithoutChannel_scopingInput = {
+	create?: Prisma.XOR<
+		Prisma.ContentFilterConfigCreateWithoutChannel_scopingInput,
+		Prisma.ContentFilterConfigUncheckedCreateWithoutChannel_scopingInput
+	>;
+	connectOrCreate?: Prisma.ContentFilterConfigCreateOrConnectWithoutChannel_scopingInput;
+	connect?: Prisma.ContentFilterConfigWhereUniqueInput;
+};
+
+export type ContentFilterConfigUpdateOneRequiredWithoutChannel_scopingNestedInput = {
+	create?: Prisma.XOR<
+		Prisma.ContentFilterConfigCreateWithoutChannel_scopingInput,
+		Prisma.ContentFilterConfigUncheckedCreateWithoutChannel_scopingInput
+	>;
+	connectOrCreate?: Prisma.ContentFilterConfigCreateOrConnectWithoutChannel_scopingInput;
+	upsert?: Prisma.ContentFilterConfigUpsertWithoutChannel_scopingInput;
+	connect?: Prisma.ContentFilterConfigWhereUniqueInput;
+	update?: Prisma.XOR<
+		Prisma.XOR<
+			Prisma.ContentFilterConfigUpdateToOneWithWhereWithoutChannel_scopingInput,
+			Prisma.ContentFilterConfigUpdateWithoutChannel_scopingInput
+		>,
+		Prisma.ContentFilterConfigUncheckedUpdateWithoutChannel_scopingInput
+	>;
 };
 
 export type ContentFilterConfigCreateWithoutGuildInput = {
@@ -599,10 +587,9 @@ export type ContentFilterConfigCreateWithoutGuildInput = {
 	verbosity?: $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigCreatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigCreateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigCreateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigCreateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigCreateocr_filter_regexInput | string[];
+	channel_scoping?: Prisma.ContentFilterChannelScopingCreateNestedManyWithoutContent_filter_configInput;
 };
 
 export type ContentFilterConfigUncheckedCreateWithoutGuildInput = {
@@ -614,10 +601,9 @@ export type ContentFilterConfigUncheckedCreateWithoutGuildInput = {
 	verbosity?: $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigCreateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigCreatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigCreateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigCreateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigCreateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigCreateocr_filter_regexInput | string[];
+	channel_scoping?: Prisma.ContentFilterChannelScopingUncheckedCreateNestedManyWithoutContent_filter_configInput;
 };
 
 export type ContentFilterConfigCreateOrConnectWithoutGuildInput = {
@@ -657,10 +643,9 @@ export type ContentFilterConfigUpdateWithoutGuildInput = {
 	verbosity?: Prisma.EnumContentFilterVerbosityFieldUpdateOperationsInput | $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigUpdatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigUpdateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigUpdateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigUpdateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigUpdateocr_filter_regexInput | string[];
+	channel_scoping?: Prisma.ContentFilterChannelScopingUpdateManyWithoutContent_filter_configNestedInput;
 };
 
 export type ContentFilterConfigUncheckedUpdateWithoutGuildInput = {
@@ -672,10 +657,128 @@ export type ContentFilterConfigUncheckedUpdateWithoutGuildInput = {
 	verbosity?: Prisma.EnumContentFilterVerbosityFieldUpdateOperationsInput | $Enums.ContentFilterVerbosity;
 	immune_roles?: Prisma.ContentFilterConfigUpdateimmune_rolesInput | string[];
 	notify_roles?: Prisma.ContentFilterConfigUpdatenotify_rolesInput | string[];
-	included_channels?: Prisma.ContentFilterConfigUpdateincluded_channelsInput | string[];
-	excluded_channels?: Prisma.ContentFilterConfigUpdateexcluded_channelsInput | string[];
 	ocr_filter_keywords?: Prisma.ContentFilterConfigUpdateocr_filter_keywordsInput | string[];
 	ocr_filter_regex?: Prisma.ContentFilterConfigUpdateocr_filter_regexInput | string[];
+	channel_scoping?: Prisma.ContentFilterChannelScopingUncheckedUpdateManyWithoutContent_filter_configNestedInput;
+};
+
+export type ContentFilterConfigCreateWithoutChannel_scopingInput = {
+	enabled?: boolean;
+	use_native_automod?: boolean;
+	webhook_url?: string | null;
+	detectors?: Prisma.ContentFilterConfigCreatedetectorsInput | $Enums.Detector[];
+	detector_mode?: $Enums.DetectorMode;
+	verbosity?: $Enums.ContentFilterVerbosity;
+	immune_roles?: Prisma.ContentFilterConfigCreateimmune_rolesInput | string[];
+	notify_roles?: Prisma.ContentFilterConfigCreatenotify_rolesInput | string[];
+	ocr_filter_keywords?: Prisma.ContentFilterConfigCreateocr_filter_keywordsInput | string[];
+	ocr_filter_regex?: Prisma.ContentFilterConfigCreateocr_filter_regexInput | string[];
+	guild: Prisma.GuildCreateNestedOneWithoutContent_filter_configInput;
+};
+
+export type ContentFilterConfigUncheckedCreateWithoutChannel_scopingInput = {
+	id: string;
+	enabled?: boolean;
+	use_native_automod?: boolean;
+	webhook_url?: string | null;
+	detectors?: Prisma.ContentFilterConfigCreatedetectorsInput | $Enums.Detector[];
+	detector_mode?: $Enums.DetectorMode;
+	verbosity?: $Enums.ContentFilterVerbosity;
+	immune_roles?: Prisma.ContentFilterConfigCreateimmune_rolesInput | string[];
+	notify_roles?: Prisma.ContentFilterConfigCreatenotify_rolesInput | string[];
+	ocr_filter_keywords?: Prisma.ContentFilterConfigCreateocr_filter_keywordsInput | string[];
+	ocr_filter_regex?: Prisma.ContentFilterConfigCreateocr_filter_regexInput | string[];
+};
+
+export type ContentFilterConfigCreateOrConnectWithoutChannel_scopingInput = {
+	where: Prisma.ContentFilterConfigWhereUniqueInput;
+	create: Prisma.XOR<
+		Prisma.ContentFilterConfigCreateWithoutChannel_scopingInput,
+		Prisma.ContentFilterConfigUncheckedCreateWithoutChannel_scopingInput
+	>;
+};
+
+export type ContentFilterConfigUpsertWithoutChannel_scopingInput = {
+	update: Prisma.XOR<
+		Prisma.ContentFilterConfigUpdateWithoutChannel_scopingInput,
+		Prisma.ContentFilterConfigUncheckedUpdateWithoutChannel_scopingInput
+	>;
+	create: Prisma.XOR<
+		Prisma.ContentFilterConfigCreateWithoutChannel_scopingInput,
+		Prisma.ContentFilterConfigUncheckedCreateWithoutChannel_scopingInput
+	>;
+	where?: Prisma.ContentFilterConfigWhereInput;
+};
+
+export type ContentFilterConfigUpdateToOneWithWhereWithoutChannel_scopingInput = {
+	where?: Prisma.ContentFilterConfigWhereInput;
+	data: Prisma.XOR<
+		Prisma.ContentFilterConfigUpdateWithoutChannel_scopingInput,
+		Prisma.ContentFilterConfigUncheckedUpdateWithoutChannel_scopingInput
+	>;
+};
+
+export type ContentFilterConfigUpdateWithoutChannel_scopingInput = {
+	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	use_native_automod?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	detectors?: Prisma.ContentFilterConfigUpdatedetectorsInput | $Enums.Detector[];
+	detector_mode?: Prisma.EnumDetectorModeFieldUpdateOperationsInput | $Enums.DetectorMode;
+	verbosity?: Prisma.EnumContentFilterVerbosityFieldUpdateOperationsInput | $Enums.ContentFilterVerbosity;
+	immune_roles?: Prisma.ContentFilterConfigUpdateimmune_rolesInput | string[];
+	notify_roles?: Prisma.ContentFilterConfigUpdatenotify_rolesInput | string[];
+	ocr_filter_keywords?: Prisma.ContentFilterConfigUpdateocr_filter_keywordsInput | string[];
+	ocr_filter_regex?: Prisma.ContentFilterConfigUpdateocr_filter_regexInput | string[];
+	guild?: Prisma.GuildUpdateOneRequiredWithoutContent_filter_configNestedInput;
+};
+
+export type ContentFilterConfigUncheckedUpdateWithoutChannel_scopingInput = {
+	id?: Prisma.StringFieldUpdateOperationsInput | string;
+	enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	use_native_automod?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	webhook_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+	detectors?: Prisma.ContentFilterConfigUpdatedetectorsInput | $Enums.Detector[];
+	detector_mode?: Prisma.EnumDetectorModeFieldUpdateOperationsInput | $Enums.DetectorMode;
+	verbosity?: Prisma.EnumContentFilterVerbosityFieldUpdateOperationsInput | $Enums.ContentFilterVerbosity;
+	immune_roles?: Prisma.ContentFilterConfigUpdateimmune_rolesInput | string[];
+	notify_roles?: Prisma.ContentFilterConfigUpdatenotify_rolesInput | string[];
+	ocr_filter_keywords?: Prisma.ContentFilterConfigUpdateocr_filter_keywordsInput | string[];
+	ocr_filter_regex?: Prisma.ContentFilterConfigUpdateocr_filter_regexInput | string[];
+};
+
+/**
+ * Count Type ContentFilterConfigCountOutputType
+ */
+
+export type ContentFilterConfigCountOutputType = {
+	channel_scoping: number;
+};
+
+export type ContentFilterConfigCountOutputTypeSelect<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	channel_scoping?: boolean | ContentFilterConfigCountOutputTypeCountChannel_scopingArgs;
+};
+
+/**
+ * ContentFilterConfigCountOutputType without action
+ */
+export type ContentFilterConfigCountOutputTypeDefaultArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	/**
+	 * Select specific fields to fetch from the ContentFilterConfigCountOutputType
+	 */
+	select?: Prisma.ContentFilterConfigCountOutputTypeSelect<ExtArgs> | null;
+};
+
+/**
+ * ContentFilterConfigCountOutputType without action
+ */
+export type ContentFilterConfigCountOutputTypeCountChannel_scopingArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	where?: Prisma.ContentFilterChannelScopingWhereInput;
 };
 
 export type ContentFilterConfigSelect<
@@ -691,11 +794,11 @@ export type ContentFilterConfigSelect<
 		verbosity?: boolean;
 		immune_roles?: boolean;
 		notify_roles?: boolean;
-		included_channels?: boolean;
-		excluded_channels?: boolean;
 		ocr_filter_keywords?: boolean;
 		ocr_filter_regex?: boolean;
+		channel_scoping?: boolean | Prisma.ContentFilterConfig$channel_scopingArgs<ExtArgs>;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
+		_count?: boolean | Prisma.ContentFilterConfigCountOutputTypeDefaultArgs<ExtArgs>;
 	},
 	ExtArgs["result"]["contentFilterConfig"]
 >;
@@ -713,8 +816,6 @@ export type ContentFilterConfigSelectCreateManyAndReturn<
 		verbosity?: boolean;
 		immune_roles?: boolean;
 		notify_roles?: boolean;
-		included_channels?: boolean;
-		excluded_channels?: boolean;
 		ocr_filter_keywords?: boolean;
 		ocr_filter_regex?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
@@ -735,8 +836,6 @@ export type ContentFilterConfigSelectUpdateManyAndReturn<
 		verbosity?: boolean;
 		immune_roles?: boolean;
 		notify_roles?: boolean;
-		included_channels?: boolean;
-		excluded_channels?: boolean;
 		ocr_filter_keywords?: boolean;
 		ocr_filter_regex?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
@@ -754,8 +853,6 @@ export type ContentFilterConfigSelectScalar = {
 	verbosity?: boolean;
 	immune_roles?: boolean;
 	notify_roles?: boolean;
-	included_channels?: boolean;
-	excluded_channels?: boolean;
 	ocr_filter_keywords?: boolean;
 	ocr_filter_regex?: boolean;
 };
@@ -772,8 +869,6 @@ export type ContentFilterConfigOmit<
 	| "verbosity"
 	| "immune_roles"
 	| "notify_roles"
-	| "included_channels"
-	| "excluded_channels"
 	| "ocr_filter_keywords"
 	| "ocr_filter_regex",
 	ExtArgs["result"]["contentFilterConfig"]
@@ -781,7 +876,9 @@ export type ContentFilterConfigOmit<
 export type ContentFilterConfigInclude<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > = {
+	channel_scoping?: boolean | Prisma.ContentFilterConfig$channel_scopingArgs<ExtArgs>;
 	guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
+	_count?: boolean | Prisma.ContentFilterConfigCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type ContentFilterConfigIncludeCreateManyAndReturn<
 	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
@@ -799,6 +896,7 @@ export type $ContentFilterConfigPayload<
 > = {
 	name: "ContentFilterConfig";
 	objects: {
+		channel_scoping: Prisma.$ContentFilterChannelScopingPayload<ExtArgs>[];
 		guild: Prisma.$GuildPayload<ExtArgs>;
 	};
 	scalars: runtime.Types.Extensions.GetPayloadResult<
@@ -812,8 +910,6 @@ export type $ContentFilterConfigPayload<
 			verbosity: $Enums.ContentFilterVerbosity;
 			immune_roles: string[];
 			notify_roles: string[];
-			included_channels: string[];
-			excluded_channels: string[];
 			ocr_filter_keywords: string[];
 			ocr_filter_regex: string[];
 		},
@@ -1327,6 +1423,17 @@ export interface Prisma__ContentFilterConfigClient<
 	GlobalOmitOptions = {}
 > extends Prisma.PrismaPromise<T> {
 	readonly [Symbol.toStringTag]: "PrismaPromise";
+	channel_scoping<T extends Prisma.ContentFilterConfig$channel_scopingArgs<ExtArgs> = {}>(
+		args?: Prisma.Subset<T, Prisma.ContentFilterConfig$channel_scopingArgs<ExtArgs>>
+	): Prisma.PrismaPromise<
+		| runtime.Types.Result.GetResult<
+				Prisma.$ContentFilterChannelScopingPayload<ExtArgs>,
+				T,
+				"findMany",
+				GlobalOmitOptions
+		  >
+		| Null
+	>;
 	guild<T extends Prisma.GuildDefaultArgs<ExtArgs> = {}>(
 		args?: Prisma.Subset<T, Prisma.GuildDefaultArgs<ExtArgs>>
 	): Prisma.Prisma__GuildClient<
@@ -1376,8 +1483,6 @@ export interface ContentFilterConfigFieldRefs {
 	readonly verbosity: Prisma.FieldRef<"ContentFilterConfig", "ContentFilterVerbosity">;
 	readonly immune_roles: Prisma.FieldRef<"ContentFilterConfig", "String[]">;
 	readonly notify_roles: Prisma.FieldRef<"ContentFilterConfig", "String[]">;
-	readonly included_channels: Prisma.FieldRef<"ContentFilterConfig", "String[]">;
-	readonly excluded_channels: Prisma.FieldRef<"ContentFilterConfig", "String[]">;
 	readonly ocr_filter_keywords: Prisma.FieldRef<"ContentFilterConfig", "String[]">;
 	readonly ocr_filter_regex: Prisma.FieldRef<"ContentFilterConfig", "String[]">;
 }
@@ -1812,6 +1917,34 @@ export type ContentFilterConfigDeleteManyArgs<
 	 * Limit how many ContentFilterConfigs to delete.
 	 */
 	limit?: number;
+};
+
+/**
+ * ContentFilterConfig.channel_scoping
+ */
+export type ContentFilterConfig$channel_scopingArgs<
+	ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
+> = {
+	/**
+	 * Select specific fields to fetch from the ContentFilterChannelScoping
+	 */
+	select?: Prisma.ContentFilterChannelScopingSelect<ExtArgs> | null;
+	/**
+	 * Omit specific fields from the ContentFilterChannelScoping
+	 */
+	omit?: Prisma.ContentFilterChannelScopingOmit<ExtArgs> | null;
+	/**
+	 * Choose, which related nodes to fetch as well
+	 */
+	include?: Prisma.ContentFilterChannelScopingInclude<ExtArgs> | null;
+	where?: Prisma.ContentFilterChannelScopingWhereInput;
+	orderBy?:
+		| Prisma.ContentFilterChannelScopingOrderByWithRelationInput
+		| Prisma.ContentFilterChannelScopingOrderByWithRelationInput[];
+	cursor?: Prisma.ContentFilterChannelScopingWhereUniqueInput;
+	take?: number;
+	skip?: number;
+	distinct?: Prisma.ContentFilterChannelScopingScalarFieldEnum | Prisma.ContentFilterChannelScopingScalarFieldEnum[];
 };
 
 /**

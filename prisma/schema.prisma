@@ -136,13 +136,23 @@ model ContentFilterConfig {
   immune_roles String[] @default([])
   notify_roles String[] @default([])
 
-  included_channels String[] @default([])
-  excluded_channels String[] @default([])
+  channel_scoping ContentFilterChannelScoping[]
 
   ocr_filter_keywords String[] @default([])
   ocr_filter_regex    String[] @default([])
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model ContentFilterChannelScoping {
+  guild_id   String
+  channel_id String
+  /// Include [`0`] or Exclude [`1`]
+  type       Int
+
+  content_filter_config ContentFilterConfig @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@id([guild_id, channel_id])
 }
 
 model ContentFilterAlert {

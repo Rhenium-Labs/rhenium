@@ -4,9 +4,9 @@ import type { Snowflake, TextChannel, Message as DiscordMessage } from "discord.
 import { ScanTypes } from "./Enums.js";
 import { MessageQueue } from "#utils/Messages.js";
 import { CF_CONSTANTS } from "#utils/Constants.js";
-import { channelInScope } from "#utils/index.js";
+import { channelInScope, parseChannelScoping } from "#utils/index.js";
 
-import type { ContentFilterConfig, Message } from "#prisma/client.js";
+import type { ContentFilterChannelScoping, ContentFilterConfig, Message } from "#prisma/client.js";
 import type { ContentPredictions, HeuristicData, HeuristicMessageData } from "./Types.js";
 
 import Logger from "#utils/Logger.js";
@@ -270,18 +270,17 @@ export default class HeuristicScanner {
 	 * @param config The content filter configuration.
 	 * @return void
 	 */
-	public static async triggerScan(message: DiscordMessage<true>, config: ContentFilterConfig): Promise<void> {
+	public static async triggerScan(
+		message: DiscordMessage<true>,
+		config: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] }
+	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
 		const channel = message.channel as TextChannel;
 		const channelId = channel.id;
 
 		// Check channel scoping.
-		const scoping = {
-			include_channels: config.included_channels ?? [],
-			exclude_channels: config.excluded_channels ?? []
-		};
-
+		const scoping = parseChannelScoping(config.channel_scoping);
 		if (!channelInScope(channel, scoping)) return;
 
 		// Access shared channel state from AutomatedScanner.

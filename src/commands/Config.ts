@@ -39,7 +39,7 @@ export default class Config extends Command {
 			options: [
 				{
 					name: ConfigSubcommandGroup.Permissions,
-					description: "Manage permission scopes.",
+					description: "Permission scopes.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
@@ -49,13 +49,13 @@ export default class Config extends Command {
 							options: [
 								{
 									name: "role",
-									description: "The role to create the scope for.",
+									description: "The role associated with the scope.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								},
 								{
 									name: "permission",
-									description: "The permission to assign to the scope.",
+									description: "Base permission to assign.",
 									type: ApplicationCommandOptionType.String,
 									required: true,
 									choices: Object.values(UserPermission).map(permission => ({
@@ -67,7 +67,7 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.Delete,
-							description: "Delete an existing permission scope.",
+							description: "Delete a permission scope.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -84,8 +84,8 @@ export default class Config extends Command {
 							type: ApplicationCommandOptionType.Subcommand
 						},
 						{
-							name: ConfigSubcommand.GrantPermission,
-							description: "Add a permission to an existing scope.",
+							name: ConfigSubcommand.Grant,
+							description: "Add a permission to a scope.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -96,7 +96,7 @@ export default class Config extends Command {
 								},
 								{
 									name: "permission",
-									description: "The permission to add to the scope.",
+									description: "The permission.",
 									type: ApplicationCommandOptionType.String,
 									required: true,
 									choices: Object.values(UserPermission).map(permission => ({
@@ -107,8 +107,8 @@ export default class Config extends Command {
 							]
 						},
 						{
-							name: ConfigSubcommand.RevokePermission,
-							description: "Remove a permission from an existing scope.",
+							name: ConfigSubcommand.Revoke,
+							description: "Remove a permission from a scope.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -119,7 +119,7 @@ export default class Config extends Command {
 								},
 								{
 									name: "permission",
-									description: "The permission to remove from the scope.",
+									description: "The permission.",
 									type: ApplicationCommandOptionType.String,
 									required: true,
 									choices: Object.values(UserPermission).map(permission => ({
@@ -133,7 +133,7 @@ export default class Config extends Command {
 				},
 				{
 					name: ConfigSubcommandGroup.Reports,
-					description: "Manage message report settings.",
+					description: "Message report settings.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
@@ -143,7 +143,7 @@ export default class Config extends Command {
 							options: [
 								{
 									name: "value",
-									description: "Set to true to enable, false to disable.",
+									description: "True to enable, false to disable.",
 									type: ApplicationCommandOptionType.Boolean,
 									required: true
 								}
@@ -151,12 +151,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetDefaultReason,
-							description: "Set the default reason for message reports.",
+							description: "Set a default reason for reports.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "reason",
-									description: "The default reason to set. Use 'none' to clear.",
+									description: "Reason to set. Use 'none' to clear.",
 									type: ApplicationCommandOptionType.String,
 									required: true,
 									max_length: 1024,
@@ -166,12 +166,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetLogChannel,
-							description: "Set the channel where message report logs will be sent.",
+							description: "Set the log channel for reports.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the log channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
@@ -180,12 +180,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.AddImmuneRole,
-							description: "Add a role to the message report immune roles.",
+							description: "Make a role immune to reports.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "role",
-									description: "The role to add as immune.",
+									description: "The role.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								}
@@ -193,12 +193,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.RemoveImmuneRole,
-							description: "Remove a role from the message report immune roles.",
+							description: "Remove a role from report immunity.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "role",
-									description: "The role to remove from immune roles.",
+									description: "The role.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								}
@@ -206,17 +206,17 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.ListImmuneRoles,
-							description: "List all message report immune roles.",
+							description: "List all report immune roles.",
 							type: ApplicationCommandOptionType.Subcommand
 						},
 						{
 							name: ConfigSubcommand.AddNotifyRole,
-							description: "Add a role to be notified on message reports.",
+							description: "Add a role to be notified for new reports.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "role",
-									description: "The role to add for notifications.",
+									description: "The role.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								}
@@ -224,12 +224,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.RemoveNotifyRole,
-							description: "Remove a role from message report notifications.",
+							description: "Remove a role from report notifications.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "role",
-									description: "The role to remove from notifications.",
+									description: "The role.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								}
@@ -237,17 +237,17 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.ListNotifyRoles,
-							description: "List all roles notified on message reports.",
+							description: "List all roles notified on reports.",
 							type: ApplicationCommandOptionType.Subcommand
 						},
 						{
 							name: ConfigSubcommand.SetReviewChannel,
-							description: "Set the channel where new reports will be sent for review.",
+							description: "Set the review channel for new reports.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the review channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
@@ -258,7 +258,7 @@ export default class Config extends Command {
 				},
 				{
 					name: ConfigSubcommandGroup.Requests,
-					description: "Manage ban requests.",
+					description: "Ban request settings.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
@@ -268,7 +268,7 @@ export default class Config extends Command {
 							options: [
 								{
 									name: "value",
-									description: "Set to true to enable, false to disable.",
+									description: "True to enable, false to disable.",
 									type: ApplicationCommandOptionType.Boolean,
 									required: true
 								}
@@ -276,12 +276,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetLogChannel,
-							description: "Set the channel where ban request logs will be sent.",
+							description: "Set the log channel for ban requests.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the log channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
@@ -290,12 +290,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetReviewChannel,
-							description: "Set the channel where new ban requests will be sent for review.",
+							description: "Set the review channel for ban requests.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the review channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
@@ -304,12 +304,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetDecisionChannel,
-							description: "Set the channel where ban request decisions will be communicated.",
+							description: "Set the decision channel for ban requests.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the decision channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
@@ -318,17 +318,17 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.ListNotifyRoles,
-							description: "List all roles notified on ban request creation.",
+							description: "List all roles notified on ban request submission.",
 							type: ApplicationCommandOptionType.Subcommand
 						},
 						{
 							name: ConfigSubcommand.AddNotifyRole,
-							description: "Add a role to be notified on ban request creation.",
+							description: "Add a role to be notified on ban request submission.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "role",
-									description: "The role to add for notifications.",
+									description: "The role.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								}
@@ -341,7 +341,7 @@ export default class Config extends Command {
 							options: [
 								{
 									name: "role",
-									description: "The role to remove from notifications.",
+									description: "The role.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								}
@@ -354,12 +354,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.AddImmuneRole,
-							description: "Add a role to the ban request immune roles.",
+							description: "Make a role immune to ban requests.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "role",
-									description: "The role to add as immune.",
+									description: "The role.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								}
@@ -367,12 +367,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.RemoveImmuneRole,
-							description: "Remove a role from the ban request immune roles.",
+							description: "Remove a role from ban request immunity.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "role",
-									description: "The role to remove from immune roles.",
+									description: "The role.",
 									type: ApplicationCommandOptionType.Role,
 									required: true
 								}
@@ -380,12 +380,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.AutomaticallyTimeout,
-							description: "Enable or disable automatic timeouts for ban requests.",
+							description: "Toggle automatic timeouts for request targets.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "value",
-									description: "Set to true to enable, false to disable.",
+									description: "True to enable, false to disable.",
 									type: ApplicationCommandOptionType.Boolean,
 									required: true
 								}
@@ -395,17 +395,17 @@ export default class Config extends Command {
 				},
 				{
 					name: ConfigSubcommandGroup.Highlights,
-					description: "Manage highlight settings.",
+					description: "Highlight settings.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
 							name: ConfigSubcommand.Toggle,
-							description: "Enable or disable message highlights.",
+							description: "Toggle message highlights.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "value",
-									description: "Set to true to enable, false to disable.",
+									description: "True to enable, false to disable.",
 									type: ApplicationCommandOptionType.Boolean,
 									required: true
 								}
@@ -413,12 +413,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetMaxPatterns,
-							description: "Set the maximum number of highlight patterns allowed per user.",
+							description: "Set the maximum number of highlight patterns per user.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "amount",
-									description: "The maximum number of highlight patterns per user.",
+									description: "The maximum number of patterns.",
 									type: ApplicationCommandOptionType.Integer,
 									required: true,
 									min_value: 1,
@@ -430,17 +430,17 @@ export default class Config extends Command {
 				},
 				{
 					name: ConfigSubcommandGroup.QuickPurges,
-					description: "Manage quick purge settings.",
+					description: "Quick purge settings.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
 							name: ConfigSubcommand.Toggle,
-							description: "Enable or disable quick purges.",
+							description: "Toggle quick purges.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "value",
-									description: "Set to true to enable, false to disable.",
+									description: "True to enable, false to disable.",
 									type: ApplicationCommandOptionType.Boolean,
 									required: true
 								}
@@ -468,7 +468,7 @@ export default class Config extends Command {
 							options: [
 								{
 									name: "channel",
-									description: "The channel to add.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									required: true
 								},
@@ -491,7 +491,7 @@ export default class Config extends Command {
 							options: [
 								{
 									name: "channel",
-									description: "The channel to remove.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									required: true
 								}
@@ -504,12 +504,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetLogChannel,
-							description: "Set the channel where quick purge logs will be sent.",
+							description: "Set the log channel for quick purges.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the log channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
@@ -518,12 +518,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetResultChannel,
-							description: "Set the channel where quick purge results will be sent.",
+							description: "Set the result channel for quick purges.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the result channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
@@ -534,17 +534,17 @@ export default class Config extends Command {
 				},
 				{
 					name: ConfigSubcommandGroup.QuickMutes,
-					description: "Manage quick mute settings.",
+					description: "Quick mute settings.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
 							name: ConfigSubcommand.Toggle,
-							description: "Enable or disable quick mutes.",
+							description: "Toggle quick mutes.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "value",
-									description: "Set to true to enable, false to disable.",
+									description: "True to enable, false to disable.",
 									type: ApplicationCommandOptionType.Boolean,
 									required: true
 								}
@@ -552,8 +552,7 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetPurgeLimit,
-							description:
-								"Set the maximum number of messages that can be purged at once when quick muting.",
+							description: "Set the maximum number of messages that can be purged at once.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -573,7 +572,7 @@ export default class Config extends Command {
 							options: [
 								{
 									name: "channel",
-									description: "The channel to add.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									required: true
 								},
@@ -596,7 +595,7 @@ export default class Config extends Command {
 							options: [
 								{
 									name: "channel",
-									description: "The channel to remove.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									required: true
 								}
@@ -609,12 +608,12 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetLogChannel,
-							description: "Set the channel where quick mute logs will be sent.",
+							description: "Set the log channel for quick mutes.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the log channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
@@ -623,17 +622,123 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetResultChannel,
-							description: "Set the channel where quick mute results will be sent.",
+							description: "Set the result channel for quick mutes.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
 									name: "channel",
-									description: "The channel to set as the result channel.",
+									description: "The channel.",
 									type: ApplicationCommandOptionType.Channel,
 									channel_types: [ChannelType.GuildText],
 									required: true
 								}
 							]
+						}
+					]
+				},
+				{
+					name: ConfigSubcommandGroup.ContentFilter,
+					description: "Content filter settings.",
+					type: ApplicationCommandOptionType.SubcommandGroup,
+					options: [
+						{
+							name: ConfigSubcommand.Toggle,
+							description: "Toggle the content filter.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "value",
+									description: "True to enable, false to disable.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.SetReviewChannel,
+							description: "Set the channel where new content filter alerts are sent.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel.",
+									type: ApplicationCommandOptionType.Channel,
+									channel_types: [ChannelType.GuildText],
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.AddImmuneRole,
+							description: "Make a role immune to the content filter.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "role",
+									description: "The role.",
+									type: ApplicationCommandOptionType.Role,
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.RemoveImmuneRole,
+							description: "Remove a role from content filter immunity.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "role",
+									description: "The role.",
+									type: ApplicationCommandOptionType.Role,
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.ListImmuneRoles,
+							description: "List all content filter immune roles.",
+							type: ApplicationCommandOptionType.Subcommand
+						},
+						{
+							name: ConfigSubcommand.AddChannelScoping,
+							description: "Add a channel to content filter channel scopes.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel.",
+									type: ApplicationCommandOptionType.Channel,
+									required: true
+								},
+								{
+									name: "type",
+									description: "Include or exclude the content filter in this channel.",
+									type: ApplicationCommandOptionType.Number,
+									required: true,
+									choices: [
+										{ name: "Include", value: 0 },
+										{ name: "Exclude", value: 1 }
+									]
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.RemoveChannelScoping,
+							description: "Remove a channel from content filter channel scopes.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "channel",
+									description: "The channel.",
+									type: ApplicationCommandOptionType.Channel,
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.ListChannelScopings,
+							description: "List all content filter channel scopes.",
+							type: ApplicationCommandOptionType.Subcommand
 						}
 					]
 				}
@@ -696,9 +801,9 @@ export default class Config extends Command {
 				this._deletePermissionScope(interaction, config),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.List}`]: () =>
 				this._listPermissionScopes(interaction, config),
-			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.GrantPermission}`]: () =>
+			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Grant}`]: () =>
 				this._addPermissionToScope(interaction, config),
-			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.RevokePermission}`]: () =>
+			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Revoke}`]: () =>
 				this._removePermissionFromScope(interaction, config),
 
 			// Message Reports Group
@@ -745,11 +850,302 @@ export default class Config extends Command {
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.RemoveNotifyRole}`]: () =>
 				this._removeRequestNotifyRole(interaction, config),
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.ListNotifyRoles}`]: () =>
-				this._listRequestNotifyRoles(interaction, config)
+				this._listRequestNotifyRoles(interaction, config),
+
+			// Content Filter Group
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.Toggle}`]: () =>
+				this._toggleContentFilter(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetReviewChannel}`]: () =>
+				this._setContentFilterReviewChannel(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.AddImmuneRole}`]: () =>
+				this._addContentFilterImmuneRole(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveImmuneRole}`]: () =>
+				this._removeContentFilterImmuneRole(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ListImmuneRoles}`]: () =>
+				this._listContentFilterImmuneRoles(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.AddChannelScoping}`]: () =>
+				this._addContentFilterChannelScoping(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveChannelScoping}`]: () =>
+				this._removeContentFilterChannelScoping(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ListChannelScopings}`]: () =>
+				this._listContentFilterChannelScopings(interaction, config)
 		};
 
 		const handler = handlers[`${subcommandGroup}:${subcommand}`];
 		return handler ? handler() : { error: "Unknown subcommand." };
+	}
+
+	private async _toggleContentFilter(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const enable = interaction.options.getBoolean("value", true);
+		const current = configClass.data.content_filter.enabled;
+
+		if (enable === current) {
+			return {
+				error: `Content filter is already ${enable ? "enabled" : "disabled"}.`
+			};
+		}
+
+		await this.prisma.contentFilterConfig.update({
+			where: { id: interaction.guild.id },
+			data: { enabled: enable }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+			enabled: enable
+		});
+
+		return {
+			content: `Successfully ${enable ? "enabled" : "disabled"} the content filter.`
+		};
+	}
+
+	private async _setContentFilterReviewChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
+		const config = configClass.data.content_filter;
+
+		const webhooks = await interaction.guild.fetchWebhooks();
+		const webhook = webhooks.find(wh => wh.url === config.webhook_url);
+
+		if (webhook) {
+			if (webhook.channelId === channel.id) {
+				return {
+					error: `The content filter review channel is already set to ${channel}.`
+				};
+			}
+
+			const set = await webhook
+				.edit({
+					channel: channel.id,
+					avatar: this.client.user.displayAvatarURL(),
+					name: this.client.user.username
+				})
+				.catch(() => null);
+
+			if (!set) {
+				return { error: "Failed to move the existing webhook to the specified channel." };
+			}
+
+			return {
+				content: `Successfully moved the content filter review channel webhook to ${channel}.`
+			};
+		} else {
+			const newWebhook = await channel
+				.createWebhook({
+					name: this.client.user.username,
+					avatar: this.client.user.displayAvatarURL()
+				})
+				.catch(() => null);
+
+			if (!newWebhook) {
+				return { error: "Failed to create a webhook in the specified channel." };
+			}
+
+			await this.prisma.contentFilterConfig.update({
+				where: { id: interaction.guild.id },
+				data: { webhook_url: newWebhook.url }
+			});
+
+			await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+				webhook_url: newWebhook.url
+			});
+
+			return {
+				content: `Successfully set the content filter review channel to ${channel}.`
+			};
+		}
+	}
+
+	private async _addContentFilterImmuneRole(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const role = interaction.options.getRole("role", true);
+		const config = configClass.data.content_filter;
+
+		if (config.immune_roles.includes(role.id)) {
+			return { error: `${role} is already immune to the content filter.` };
+		}
+
+		const updatedRoles = [...config.immune_roles, role.id];
+
+		await this.prisma.contentFilterConfig.update({
+			where: { id: interaction.guild.id },
+			data: { immune_roles: updatedRoles }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+			immune_roles: updatedRoles
+		});
+
+		return { content: `Successfully added ${role} to content filter immune roles.` };
+	}
+
+	private async _removeContentFilterImmuneRole(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const role = interaction.options.getRole("role", true);
+		const config = configClass.data.content_filter;
+
+		if (!config.immune_roles.includes(role.id)) {
+			return { error: `${role} is not immune to the content filter.` };
+		}
+
+		const updatedRoles = config.immune_roles.filter(r => r !== role.id);
+
+		await this.prisma.contentFilterConfig.update({
+			where: { id: interaction.guild.id },
+			data: { immune_roles: updatedRoles }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+			immune_roles: updatedRoles
+		});
+
+		return { content: `Successfully removed ${role} from content filter immune roles.` };
+	}
+
+	private async _listContentFilterImmuneRoles(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const config = configClass.data.content_filter;
+
+		if (!config.immune_roles.length) {
+			return { content: "There are no immune roles configured for content filter." };
+		}
+
+		const roleMentions = config.immune_roles.map(id => `<@&${id}>`).join("\n");
+
+		const embed = new EmbedBuilder()
+			.setColor(Colors.Blue)
+			.setAuthor({
+				name: `Content Filter Immune Roles in ${interaction.guild.name}`,
+				iconURL: interaction.guild.iconURL() ?? undefined
+			})
+			.setDescription(roleMentions)
+			.setFooter({ text: `Guild ID: ${interaction.guildId}` })
+			.setTimestamp();
+
+		return { embeds: [embed] };
+	}
+
+	private async _addContentFilterChannelScoping(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const config = configClass.data.content_filter;
+		const channel = interaction.options.getChannel("channel", true);
+		const scopeType = interaction.options.getNumber("type", true);
+		const stringifiedType = scopeType === 0 ? "include" : "exclude";
+
+		if (config.channel_scoping.some(s => s.channel_id === channel.id)) {
+			return { error: `The channel ${channel} is already scoped` };
+		}
+
+		const updatedScopings = [
+			...config.channel_scoping,
+			{ guild_id: interaction.guildId, channel_id: channel.id, type: scopeType }
+		];
+
+		await this.prisma.contentFilterConfig.upsert({
+			where: { id: interaction.guild.id },
+			update: {
+				channel_scoping: {
+					create: {
+						channel_id: channel.id,
+						type: scopeType
+					}
+				}
+			},
+			create: {
+				id: interaction.guild.id,
+				channel_scoping: {
+					create: {
+						channel_id: channel.id,
+						type: scopeType
+					}
+				}
+			}
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+			channel_scoping: updatedScopings
+		});
+
+		return {
+			content: `Successfully added the channel ${channel} to content filter channel scoping as an \`${stringifiedType}\` channel.`
+		};
+	}
+
+	private async _removeContentFilterChannelScoping(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const config = configClass.data.content_filter;
+		const channel = interaction.options.getChannel("channel", true);
+
+		if (!config.channel_scoping.some(s => s.channel_id === channel.id)) {
+			return { error: `The channel ${channel} is not scoped.` };
+		}
+
+		const updatedScopings = config.channel_scoping.filter(s => s.channel_id !== channel.id);
+
+		await this.prisma.contentFilterConfig.update({
+			where: { id: interaction.guild.id },
+			data: {
+				channel_scoping: {
+					deleteMany: { channel_id: channel.id }
+				}
+			}
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+			channel_scoping: updatedScopings
+		});
+
+		return {
+			content: `Successfully removed the channel ${channel} from content filter channel scoping.`
+		};
+	}
+
+	private async _listContentFilterChannelScopings(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const config = configClass.data.content_filter;
+		const scopings = config.channel_scoping;
+
+		if (scopings.length === 0) {
+			return { content: "There are no content filter channel scopings configured for this guild." };
+		}
+
+		const description = scopings
+			.map(scope => {
+				const channelMentionStr = `<#${scope.channel_id}>`;
+				const typeStr = scope.type === 0 ? "Include" : "Exclude";
+
+				return `${channelMentionStr}\n└ Type: \`${typeStr}\``;
+			})
+			.join("\n\n");
+
+		const embed = new EmbedBuilder()
+			.setColor(Colors.Blue)
+			.setAuthor({
+				name: `Content Filter Channel Scopings in ${interaction.guild.name}`,
+				iconURL: interaction.guild.iconURL() ?? undefined
+			})
+			.setDescription(description)
+			.setFooter({ text: `Guild ID: ${interaction.guildId}` })
+			.setTimestamp();
+
+		return { embeds: [embed] };
 	}
 
 	private async _toggleQuickMutes(
@@ -2394,12 +2790,13 @@ export default class Config extends Command {
 }
 
 const ConfigSubcommandGroup = {
-	Permissions: "permission-scopes",
+	Permissions: "permissions",
 	Reports: "reports",
 	Requests: "requests",
 	Highlights: "highlights",
 	QuickMutes: "quick-mutes",
-	QuickPurges: "quick-purges"
+	QuickPurges: "quick-purges",
+	ContentFilter: "content-filter"
 } as const;
 type ConfigSubcommandGroup = (typeof ConfigSubcommandGroup)[keyof typeof ConfigSubcommandGroup];
 
@@ -2426,7 +2823,7 @@ const ConfigSubcommand = {
 	Create: "create",
 	Delete: "delete",
 	List: "list",
-	GrantPermission: "grant-permission",
-	RevokePermission: "revoke-permission"
+	Grant: "grant",
+	Revoke: "revoke"
 } as const;
 type ConfigSubcommand = (typeof ConfigSubcommand)[keyof typeof ConfigSubcommand];

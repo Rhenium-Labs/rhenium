@@ -2,11 +2,10 @@ import { Colors, EmbedBuilder, Message, Snowflake, TextChannel, WebhookClient } 
 
 import { ScanTypes } from "./Enums.js";
 import { CF_CONSTANTS } from "#utils/Constants.js";
-import { ChannelScoping } from "#utils/Types.js";
-import { channelInScope, userMentionWithId } from "#utils/index.js";
+import { channelInScope, parseChannelScoping, userMentionWithId } from "#utils/index.js";
 
 import type { ChannelScanState, ContentPredictions } from "./Types.js";
-import type { Message as SerializedMessage, ContentFilterConfig } from "#prisma/client.js";
+import type { Message as SerializedMessage, ContentFilterConfig, ContentFilterChannelScoping } from "#prisma/client.js";
 
 import { client } from "#root/index.js";
 import Logger from "#utils/Logger.js";
@@ -148,17 +147,13 @@ export default class AutomatedScanner {
 	 */
 	public static enqueueForScan(
 		message: Message<true>,
-		config: ContentFilterConfig,
+		config: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] },
 		serializedMessage: SerializedMessage
 	): void {
 		if (!config.enabled || !config.webhook_url) return;
 
 		// Channel scoping check
-		const scoping: ChannelScoping = {
-			include_channels: config.included_channels ?? [],
-			exclude_channels: config.excluded_channels ?? []
-		};
-
+		const scoping = parseChannelScoping(config.channel_scoping);
 		if (!channelInScope(message.channel, scoping)) return;
 
 		const now = Date.now();
@@ -316,16 +311,12 @@ export default class AutomatedScanner {
 	public static async automatedScan(
 		channel: TextChannel,
 		message: Message<true>,
-		config: ContentFilterConfig
+		config: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] }
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
 		// Channel scoping check.
-		const scoping = {
-			include_channels: config.included_channels ?? [],
-			exclude_channels: config.excluded_channels ?? []
-		};
-
+		const scoping = parseChannelScoping(config.channel_scoping);
 		if (!channelInScope(channel, scoping)) return;
 
 		const now = Date.now();

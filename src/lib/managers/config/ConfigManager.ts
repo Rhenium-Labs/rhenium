@@ -3,6 +3,7 @@ import { prisma } from "#root/index.js";
 
 import type {
 	BanRequestConfig,
+	ContentFilterChannelScoping,
 	ContentFilterConfig,
 	HighlightConfig,
 	MessageReportConfig,
@@ -122,11 +123,13 @@ export default class ConfigManager {
 				prisma.highlightConfig.upsert({
 					where: { id: guildId },
 					create: { id: guildId },
+
 					update: {}
 				}),
 				prisma.contentFilterConfig.upsert({
 					where: { id: guildId },
 					create: { id: guildId },
+					include: { channel_scoping: true },
 					update: {}
 				}),
 				prisma.permissionScope.findMany({ where: { guild_id: guildId } })
@@ -145,7 +148,10 @@ export default class ConfigManager {
 				channel_scoping: quickPurges.channel_scoping
 			},
 			highlights: highlights,
-			content_filter: contentFilter,
+			content_filter: {
+				...contentFilter,
+				channel_scoping: contentFilter.channel_scoping
+			},
 			permission_scopes: permissionScopes
 		};
 
@@ -160,7 +166,7 @@ type ConfigFeatureMap = {
 	quick_mutes: QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] };
 	quick_purges: QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] };
 	highlights: HighlightConfig;
-	content_filter: ContentFilterConfig;
+	content_filter: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] };
 	permission_scopes: PermissionScope[];
 };
 

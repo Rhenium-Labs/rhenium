@@ -68,6 +68,11 @@ export type BanRequestConfig = Prisma.BanRequestConfigModel;
  */
 export type ContentFilterConfig = Prisma.ContentFilterConfigModel;
 /**
+ * Model ContentFilterChannelScoping
+ *
+ */
+export type ContentFilterChannelScoping = Prisma.ContentFilterChannelScopingModel;
+/**
  * Model ContentFilterAlert
  *
  */

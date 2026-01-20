@@ -2,6 +2,7 @@ import type { GuildMember } from "discord.js";
 
 import type {
 	BanRequestConfig,
+	ContentFilterChannelScoping,
 	ContentFilterConfig,
 	HighlightConfig,
 	MessageReportConfig,
@@ -165,7 +166,7 @@ export type GuildConfigData = {
 	id: string;
 	message_reports: MessageReportConfig;
 	ban_requests: BanRequestConfig;
-	content_filter: ContentFilterConfig;
+	content_filter: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] };
 	highlights: HighlightConfig;
 	quick_mutes: QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] };
 	quick_purges: QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] };

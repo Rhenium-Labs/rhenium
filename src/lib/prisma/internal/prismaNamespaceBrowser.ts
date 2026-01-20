@@ -53,6 +53,7 @@ export const ModelName = {
 	MessageReportConfig: "MessageReportConfig",
 	BanRequestConfig: "BanRequestConfig",
 	ContentFilterConfig: "ContentFilterConfig",
+	ContentFilterChannelScoping: "ContentFilterChannelScoping",
 	ContentFilterAlert: "ContentFilterAlert",
 	ContentFilterLog: "ContentFilterLog",
 	BanRequest: "BanRequest",
@@ -142,14 +143,21 @@ export const ContentFilterConfigScalarFieldEnum = {
 	verbosity: "verbosity",
 	immune_roles: "immune_roles",
 	notify_roles: "notify_roles",
-	included_channels: "included_channels",
-	excluded_channels: "excluded_channels",
 	ocr_filter_keywords: "ocr_filter_keywords",
 	ocr_filter_regex: "ocr_filter_regex"
 } as const;
 
 export type ContentFilterConfigScalarFieldEnum =
 	(typeof ContentFilterConfigScalarFieldEnum)[keyof typeof ContentFilterConfigScalarFieldEnum];
+
+export const ContentFilterChannelScopingScalarFieldEnum = {
+	guild_id: "guild_id",
+	channel_id: "channel_id",
+	type: "type"
+} as const;
+
+export type ContentFilterChannelScopingScalarFieldEnum =
+	(typeof ContentFilterChannelScopingScalarFieldEnum)[keyof typeof ContentFilterChannelScopingScalarFieldEnum];
 
 export const ContentFilterAlertScalarFieldEnum = {
 	id: "id",

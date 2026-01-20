@@ -368,6 +368,7 @@ export const ModelName = {
 	MessageReportConfig: "MessageReportConfig",
 	BanRequestConfig: "BanRequestConfig",
 	ContentFilterConfig: "ContentFilterConfig",
+	ContentFilterChannelScoping: "ContentFilterChannelScoping",
 	ContentFilterAlert: "ContentFilterAlert",
 	ContentFilterLog: "ContentFilterLog",
 	BanRequest: "BanRequest",
@@ -409,6 +410,7 @@ export type TypeMap<
 			| "messageReportConfig"
 			| "banRequestConfig"
 			| "contentFilterConfig"
+			| "contentFilterChannelScoping"
 			| "contentFilterAlert"
 			| "contentFilterLog"
 			| "banRequest"
@@ -798,6 +800,82 @@ export type TypeMap<
 					args: Prisma.ContentFilterConfigCountArgs<ExtArgs>;
 					result:
 						| runtime.Types.Utils.Optional<Prisma.ContentFilterConfigCountAggregateOutputType>
+						| number;
+				};
+			};
+		};
+		ContentFilterChannelScoping: {
+			payload: Prisma.$ContentFilterChannelScopingPayload<ExtArgs>;
+			fields: Prisma.ContentFilterChannelScopingFieldRefs;
+			operations: {
+				findUnique: {
+					args: Prisma.ContentFilterChannelScopingFindUniqueArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload> | null;
+				};
+				findUniqueOrThrow: {
+					args: Prisma.ContentFilterChannelScopingFindUniqueOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>;
+				};
+				findFirst: {
+					args: Prisma.ContentFilterChannelScopingFindFirstArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload> | null;
+				};
+				findFirstOrThrow: {
+					args: Prisma.ContentFilterChannelScopingFindFirstOrThrowArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>;
+				};
+				findMany: {
+					args: Prisma.ContentFilterChannelScopingFindManyArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>[];
+				};
+				create: {
+					args: Prisma.ContentFilterChannelScopingCreateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>;
+				};
+				createMany: {
+					args: Prisma.ContentFilterChannelScopingCreateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				createManyAndReturn: {
+					args: Prisma.ContentFilterChannelScopingCreateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>[];
+				};
+				delete: {
+					args: Prisma.ContentFilterChannelScopingDeleteArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>;
+				};
+				update: {
+					args: Prisma.ContentFilterChannelScopingUpdateArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>;
+				};
+				deleteMany: {
+					args: Prisma.ContentFilterChannelScopingDeleteManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateMany: {
+					args: Prisma.ContentFilterChannelScopingUpdateManyArgs<ExtArgs>;
+					result: BatchPayload;
+				};
+				updateManyAndReturn: {
+					args: Prisma.ContentFilterChannelScopingUpdateManyAndReturnArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>[];
+				};
+				upsert: {
+					args: Prisma.ContentFilterChannelScopingUpsertArgs<ExtArgs>;
+					result: runtime.Types.Utils.PayloadToResult<Prisma.$ContentFilterChannelScopingPayload>;
+				};
+				aggregate: {
+					args: Prisma.ContentFilterChannelScopingAggregateArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.AggregateContentFilterChannelScoping>;
+				};
+				groupBy: {
+					args: Prisma.ContentFilterChannelScopingGroupByArgs<ExtArgs>;
+					result: runtime.Types.Utils.Optional<Prisma.ContentFilterChannelScopingGroupByOutputType>[];
+				};
+				count: {
+					args: Prisma.ContentFilterChannelScopingCountArgs<ExtArgs>;
+					result:
+						| runtime.Types.Utils.Optional<Prisma.ContentFilterChannelScopingCountAggregateOutputType>
 						| number;
 				};
 			};
@@ -2088,14 +2166,21 @@ export const ContentFilterConfigScalarFieldEnum = {
 	verbosity: "verbosity",
 	immune_roles: "immune_roles",
 	notify_roles: "notify_roles",
-	included_channels: "included_channels",
-	excluded_channels: "excluded_channels",
 	ocr_filter_keywords: "ocr_filter_keywords",
 	ocr_filter_regex: "ocr_filter_regex"
 } as const;
 
 export type ContentFilterConfigScalarFieldEnum =
 	(typeof ContentFilterConfigScalarFieldEnum)[keyof typeof ContentFilterConfigScalarFieldEnum];
+
+export const ContentFilterChannelScopingScalarFieldEnum = {
+	guild_id: "guild_id",
+	channel_id: "channel_id",
+	type: "type"
+} as const;
+
+export type ContentFilterChannelScopingScalarFieldEnum =
+	(typeof ContentFilterChannelScopingScalarFieldEnum)[keyof typeof ContentFilterChannelScopingScalarFieldEnum];
 
 export const ContentFilterAlertScalarFieldEnum = {
 	id: "id",
@@ -2380,6 +2465,16 @@ export type ListEnumContentFilterVerbosityFieldRefInput<$PrismaModel> = FieldRef
 >;
 
 /**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int">;
+
+/**
+ * Reference to a field of type 'Int[]'
+ */
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int[]">;
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Float">;
@@ -2421,16 +2516,6 @@ export type EnumReportStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
  * Reference to a field of type 'ReportStatus[]'
  */
 export type ListEnumReportStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "ReportStatus[]">;
-
-/**
- * Reference to a field of type 'Int'
- */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int">;
-
-/**
- * Reference to a field of type 'Int[]'
- */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, "Int[]">;
 
 /**
  * Reference to a field of type 'UserPermission[]'
@@ -2549,6 +2634,7 @@ export type GlobalOmitConfig = {
 	messageReportConfig?: Prisma.MessageReportConfigOmit;
 	banRequestConfig?: Prisma.BanRequestConfigOmit;
 	contentFilterConfig?: Prisma.ContentFilterConfigOmit;
+	contentFilterChannelScoping?: Prisma.ContentFilterChannelScopingOmit;
 	contentFilterAlert?: Prisma.ContentFilterAlertOmit;
 	contentFilterLog?: Prisma.ContentFilterLogOmit;
 	banRequest?: Prisma.BanRequestOmit;
