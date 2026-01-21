@@ -158,7 +158,7 @@ export default class QuickActionUtils {
 				purgeResult = await QuickActionUtils._executePurge({
 					channel: message.channel as TextChannel,
 					authorId: message.author.id,
-					triggerMessageId: message.id,
+					triggerMessage: message,
 					amount: purgeAmount
 				});
 			} else {
@@ -305,7 +305,7 @@ export default class QuickActionUtils {
 			const purgeResult = await QuickActionUtils._executePurge({
 				channel: message.channel as TextChannel,
 				authorId: message.author.id,
-				triggerMessageId: message.id,
+				triggerMessage: message,
 				amount: purgeAmount
 			});
 
@@ -385,15 +385,15 @@ export default class QuickActionUtils {
 	private static async _executePurge(data: {
 		channel: TextChannel;
 		authorId: Snowflake;
-		triggerMessageId: Snowflake;
+		triggerMessage: Message<true>;
 		amount: number;
 	}): Promise<QuickPurgeResult> {
-		const { channel, authorId, triggerMessageId, amount } = data;
+		const { channel, authorId, triggerMessage, amount } = data;
 
 		const messageIds = await QuickActionUtils._fetchPurgeableMessages({
 			channelId: channel.id,
 			authorId,
-			triggerMessageId,
+			triggerMessageId: triggerMessage.id,
 			limit: amount
 		});
 
@@ -423,6 +423,8 @@ export default class QuickActionUtils {
 
 			let deleted = 0;
 			let failed = 0;
+
+			await triggerMessage.delete().catch(() => null);
 
 			if (bulkDeletableIds.length > 0) {
 				const bulkResult = await QuickActionUtils._bulkDeleteMessages(channel, bulkDeletableIds);
