@@ -252,6 +252,7 @@ export async function processResponse<T extends ResponseType>(type: T, data: Res
 
 			if (error || temporary) {
 				setTimeout(() => {
+					message.delete().catch(() => {});
 					createdMessage.delete().catch(() => {});
 				}, 7500);
 			}
