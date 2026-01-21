@@ -13,7 +13,7 @@ import {
 	roleMention
 } from "discord.js";
 
-import { UserPermission } from "#prisma/enums.js";
+import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#prisma/enums.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#managers/commands/Command.js";
@@ -739,6 +739,63 @@ export default class Config extends Command {
 							name: ConfigSubcommand.ListChannelScopings,
 							description: "List all content filter channel scopes.",
 							type: ApplicationCommandOptionType.Subcommand
+						},
+						{
+							name: ConfigSubcommand.ToggleDetector,
+							description: "Toggle a specific content filter detector.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "detector",
+									description: "The detector.",
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									choices: Object.values(Detector).map(detector => ({
+										name: detector,
+										value: detector
+									}))
+								},
+								{
+									name: "value",
+									description: "True to enable, false to disable.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.SetDetectorMode,
+							description: "Set the mode for content filter detectors.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "mode",
+									description: "The mode.",
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									choices: Object.values(DetectorMode).map(mode => ({
+										name: mode,
+										value: mode
+									}))
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.SetVerbosity,
+							description: "Set the verbosity level for content filter alerts.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "level",
+									description: "The verbosity level.",
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									choices: Object.values(ContentFilterVerbosity).map(level => ({
+										name: level,
+										value: level
+									}))
+								}
+							]
 						}
 					]
 				}
@@ -868,11 +925,97 @@ export default class Config extends Command {
 			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveChannelScoping}`]: () =>
 				this._removeContentFilterChannelScoping(interaction, config),
 			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ListChannelScopings}`]: () =>
-				this._listContentFilterChannelScopings(interaction, config)
+				this._listContentFilterChannelScopings(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ToggleDetector}`]: () =>
+				this._toggleContentFilterDetector(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetDetectorMode}`]: () =>
+				this.setContentFilterDetectorMode(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetVerbosity}`]: () =>
+				this._setContentFilterVerbosity(interaction, config)
 		};
 
 		const handler = handlers[`${subcommandGroup}:${subcommand}`];
 		return handler ? handler() : { error: "Unknown subcommand." };
+	}
+
+	private async setContentFilterDetectorMode(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const mode = interaction.options.getString("mode", true) as DetectorMode;
+		const currentMode = configClass.data.content_filter.detector_mode;
+
+		if (mode === currentMode) {
+			return { error: `Content filter detector mode is already set to ${mode}.` };
+		}
+
+		await this.prisma.contentFilterConfig.update({
+			where: { id: interaction.guild.id },
+			data: { detector_mode: mode }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+			detector_mode: mode
+		});
+
+		return { content: `Successfully set content filter detector mode to ${mode}.` };
+	}
+
+	private async _setContentFilterVerbosity(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const level = interaction.options.getString("level", true) as ContentFilterVerbosity;
+		const currentLevel = configClass.data.content_filter.verbosity;
+
+		if (level === currentLevel) {
+			return { error: `Content filter verbosity is already set to ${level}.` };
+		}
+
+		await this.prisma.contentFilterConfig.update({
+			where: { id: interaction.guild.id },
+			data: { verbosity: level }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+			verbosity: level
+		});
+
+		return { content: `Successfully set content filter verbosity to ${level}.` };
+	}
+
+	private async _toggleContentFilterDetector(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const detector = interaction.options.getString("detector", true) as Detector;
+		const enable = interaction.options.getBoolean("value", true);
+		const currentDetectors = configClass.data.content_filter.detectors;
+
+		if (enable && currentDetectors.includes(detector)) {
+			return { error: `The ${detector} detector is already enabled.` };
+		}
+
+		if (!enable && !currentDetectors.includes(detector)) {
+			return { error: `The ${detector} detector is already disabled.` };
+		}
+
+		const updatedDetectors = enable
+			? [...currentDetectors, detector]
+			: currentDetectors.filter(d => d !== detector);
+
+		await this.prisma.contentFilterConfig.update({
+			where: { id: interaction.guild.id },
+			data: { detectors: updatedDetectors }
+		});
+
+		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
+			detectors: updatedDetectors
+		});
+
+		return {
+			content: `Successfully ${enable ? "enabled" : "disabled"} the ${detector} detector.`
+		};
 	}
 
 	private async _toggleContentFilter(
@@ -2802,6 +2945,9 @@ type ConfigSubcommandGroup = (typeof ConfigSubcommandGroup)[keyof typeof ConfigS
 
 const ConfigSubcommand = {
 	Toggle: "toggle",
+	ToggleDetector: "toggle-detector",
+	SetDetectorMode: "set-detector-mode",
+	SetVerbosity: "set-verbosity",
 	AddImmuneRole: "add-immune-role",
 	RemoveImmuneRole: "remove-immune-role",
 	ListImmuneRoles: "list-immune-roles",
