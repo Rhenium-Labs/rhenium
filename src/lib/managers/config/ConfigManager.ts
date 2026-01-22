@@ -79,6 +79,94 @@ export default class ConfigManager {
 	}
 
 	/**
+	 * Recomputes a specific feature of the guild configuration and updates the cache.
+	 * This is more efficient than calling compute() when only one feature needs to be refreshed.
+	 *
+	 * @param guildId The ID of the guild.
+	 * @param feature The feature key to recompute.
+	 * @returns void
+	 */
+	public static async recomputeFeature(guildId: string, feature: ConfigFeature): Promise<void> {
+		const config = this._cache.get(guildId);
+
+		if (!config) {
+			return;
+		}
+
+		let featureData: ConfigFeatureMap[ConfigFeature];
+
+		switch (feature) {
+			case "message_reports":
+				featureData = await prisma.messageReportConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					update: {}
+				});
+				break;
+
+			case "ban_requests":
+				featureData = await prisma.banRequestConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					update: {}
+				});
+				break;
+
+			case "quick_mutes": {
+				const result = await prisma.quickMuteConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					include: { channel_scoping: true },
+					update: {}
+				});
+				featureData = { ...result, channel_scoping: result.channel_scoping };
+				break;
+			}
+
+			case "quick_purges": {
+				const result = await prisma.quickPurgeConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					include: { channel_scoping: true },
+					update: {}
+				});
+				featureData = { ...result, channel_scoping: result.channel_scoping };
+				break;
+			}
+
+			case "highlights":
+				featureData = await prisma.highlightConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					update: {}
+				});
+				break;
+
+			case "content_filter": {
+				const result = await prisma.contentFilterConfig.upsert({
+					where: { id: guildId },
+					create: { id: guildId },
+					include: { channel_scoping: true },
+					update: {}
+				});
+				featureData = { ...result, channel_scoping: result.channel_scoping };
+				break;
+			}
+
+			case "permission_scopes":
+				featureData = await prisma.permissionScope.findMany({ where: { guild_id: guildId } });
+				break;
+		}
+
+		const updatedData: GuildConfigData = {
+			...config.data,
+			[feature]: featureData
+		};
+
+		this._cache.set(guildId, new GuildConfig(updatedData));
+	}
+
+	/**
 	 * Computes a config for the guild and stores it in the cache.
 	 *
 	 * ⚠️ This method performs a lot of batched database queries and isn't intended to be called frequently. Use the .get method to retrieve cached configs instead.
@@ -181,3 +269,4 @@ export const ConfigKeys = {
 	ContentFilter: "content_filter",
 	PermissionScopes: "permission_scopes"
 } as const;
+export type ConfigKeys = (typeof ConfigKeys)[keyof typeof ConfigKeys];

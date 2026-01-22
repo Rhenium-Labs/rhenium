@@ -18,6 +18,7 @@ import { sleep } from "#utils/index.js";
 import { PrismaClient } from "#prisma/client.js";
 import { MessageQueue } from "#utils/Messages.js";
 import { PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
+import { initCacheInvalidator } from "#utils/Prisma.js";
 
 import Logger from "#utils/Logger.js";
 import Rhenium from "#structures/Client.js";
@@ -32,7 +33,7 @@ export const client = new Rhenium();
 /** The Prisma client instance. */
 export const prisma = new PrismaClient({
 	adapter: new PrismaPg({ connectionString: process.env.PG_URL })
-});
+}).$extends(initCacheInvalidator());
 
 /** LMDB KV. */
 export const kv = open<Object, string>({

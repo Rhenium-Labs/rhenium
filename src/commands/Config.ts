@@ -954,10 +954,6 @@ export default class Config extends Command {
 			data: { detector_mode: mode }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-			detector_mode: mode
-		});
-
 		return { content: `Successfully set content filter detector mode to ${mode}.` };
 	}
 
@@ -975,10 +971,6 @@ export default class Config extends Command {
 		await this.prisma.contentFilterConfig.update({
 			where: { id: interaction.guild.id },
 			data: { verbosity: level }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-			verbosity: level
 		});
 
 		return { content: `Successfully set content filter verbosity to ${level}.` };
@@ -1009,10 +1001,6 @@ export default class Config extends Command {
 			data: { detectors: updatedDetectors }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-			detectors: updatedDetectors
-		});
-
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} the ${detector} detector.`
 		};
@@ -1034,10 +1022,6 @@ export default class Config extends Command {
 		await this.prisma.contentFilterConfig.update({
 			where: { id: interaction.guild.id },
 			data: { enabled: enable }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-			enabled: enable
 		});
 
 		return {
@@ -1094,10 +1078,6 @@ export default class Config extends Command {
 				data: { webhook_url: newWebhook.url }
 			});
 
-			await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-				webhook_url: newWebhook.url
-			});
-
 			return {
 				content: `Successfully set the content filter review channel to ${channel}.`
 			};
@@ -1122,10 +1102,6 @@ export default class Config extends Command {
 			data: { immune_roles: updatedRoles }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-			immune_roles: updatedRoles
-		});
-
 		return { content: `Successfully added ${role} to content filter immune roles.` };
 	}
 
@@ -1145,10 +1121,6 @@ export default class Config extends Command {
 		await this.prisma.contentFilterConfig.update({
 			where: { id: interaction.guild.id },
 			data: { immune_roles: updatedRoles }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-			immune_roles: updatedRoles
 		});
 
 		return { content: `Successfully removed ${role} from content filter immune roles.` };
@@ -1192,34 +1164,12 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
-		const updatedScopings = [
-			...config.channel_scoping,
-			{ guild_id: interaction.guildId, channel_id: channel.id, type: scopeType }
-		];
-
-		await this.prisma.contentFilterConfig.upsert({
-			where: { id: interaction.guild.id },
-			update: {
-				channel_scoping: {
-					create: {
-						channel_id: channel.id,
-						type: scopeType
-					}
-				}
-			},
-			create: {
-				id: interaction.guild.id,
-				channel_scoping: {
-					create: {
-						channel_id: channel.id,
-						type: scopeType
-					}
-				}
+		await this.prisma.contentFilterChannelScoping.create({
+			data: {
+				guild_id: interaction.guildId,
+				channel_id: channel.id,
+				type: scopeType
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-			channel_scoping: updatedScopings
 		});
 
 		return {
@@ -1238,19 +1188,8 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
-		const updatedScopings = config.channel_scoping.filter(s => s.channel_id !== channel.id);
-
-		await this.prisma.contentFilterConfig.update({
-			where: { id: interaction.guild.id },
-			data: {
-				channel_scoping: {
-					deleteMany: { channel_id: channel.id }
-				}
-			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "content_filter", {
-			channel_scoping: updatedScopings
+		await this.prisma.contentFilterChannelScoping.deleteMany({
+			where: { guild_id: interaction.guildId, channel_id: channel.id }
 		});
 
 		return {
@@ -1309,10 +1248,6 @@ export default class Config extends Command {
 			data: { enabled: enable }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
-			enabled: enable
-		});
-
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} quick mutes.`
 		};
@@ -1336,10 +1271,6 @@ export default class Config extends Command {
 			data: { enabled: enable }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
-			enabled: enable
-		});
-
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} quick purges.`
 		};
@@ -1361,10 +1292,6 @@ export default class Config extends Command {
 		await this.prisma.highlightConfig.update({
 			where: { id: interaction.guild.id },
 			data: { enabled: enable }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "highlights", {
-			enabled: enable
 		});
 
 		return {
@@ -1419,10 +1346,6 @@ export default class Config extends Command {
 			await this.prisma.quickPurgeConfig.update({
 				where: { id: interaction.guild.id },
 				data: { webhook_url: newWebhook.url }
-			});
-
-			await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
-				webhook_url: newWebhook.url
 			});
 
 			return {
@@ -1480,10 +1403,6 @@ export default class Config extends Command {
 				data: { result_webhook_url: newWebhook.url }
 			});
 
-			await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
-				result_webhook_url: newWebhook.url
-			});
-
 			return {
 				content: `Successfully set the quick purge result channel to ${channel}.`
 			};
@@ -1537,10 +1456,6 @@ export default class Config extends Command {
 			await this.prisma.quickMuteConfig.update({
 				where: { id: interaction.guild.id },
 				data: { webhook_url: newWebhook.url }
-			});
-
-			await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
-				webhook_url: newWebhook.url
 			});
 
 			return {
@@ -1598,10 +1513,6 @@ export default class Config extends Command {
 				data: { result_webhook_url: newWebhook.url }
 			});
 
-			await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
-				result_webhook_url: newWebhook.url
-			});
-
 			return {
 				content: `Successfully set the quick mute result channel to ${channel}.`
 			};
@@ -1626,10 +1537,6 @@ export default class Config extends Command {
 			data: { purge_limit: amount }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
-			purge_limit: amount
-		});
-
 		return {
 			content: `Successfully set the quick mute purge limit to ${amount}.`
 		};
@@ -1648,34 +1555,12 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
-		const updatedScopings = [
-			...config.channel_scoping,
-			{ guild_id: interaction.guildId, channel_id: channel.id, type: scopeType }
-		];
-
-		await this.prisma.quickMuteConfig.upsert({
-			where: { id: interaction.guild.id },
-			update: {
-				channel_scoping: {
-					create: {
-						channel_id: channel.id,
-						type: scopeType
-					}
-				}
-			},
-			create: {
-				id: interaction.guild.id,
-				channel_scoping: {
-					create: {
-						channel_id: channel.id,
-						type: scopeType
-					}
-				}
+		await this.prisma.quickMuteChannelScoping.create({
+			data: {
+				guild_id: interaction.guildId,
+				channel_id: channel.id,
+				type: scopeType
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
-			channel_scoping: updatedScopings
 		});
 
 		return {
@@ -1696,19 +1581,11 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
-		const updatedScopings = config.channel_scoping.filter(s => s.channel_id !== channel.id);
-
-		await this.prisma.quickMuteChannelScoping.delete({
+		await this.prisma.quickMuteChannelScoping.deleteMany({
 			where: {
-				guild_id_channel_id: {
-					guild_id: interaction.guildId,
-					channel_id: channel.id
-				}
+				guild_id: interaction.guildId,
+				channel_id: channel.id
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_mutes", {
-			channel_scoping: updatedScopings
 		});
 
 		return {
@@ -1769,10 +1646,6 @@ export default class Config extends Command {
 			data: { max_limit: amount }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
-			max_limit: amount
-		});
-
 		return {
 			content: `Successfully set the quick purge limit to ${amount}.`
 		};
@@ -1791,34 +1664,12 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
-		const updatedScopings = [
-			...config.channel_scoping,
-			{ guild_id: interaction.guildId, channel_id: channel.id, type: scopeType }
-		];
-
-		await this.prisma.quickPurgeConfig.upsert({
-			where: { id: interaction.guild.id },
-			update: {
-				channel_scoping: {
-					create: {
-						channel_id: channel.id,
-						type: scopeType
-					}
-				}
-			},
-			create: {
-				id: interaction.guild.id,
-				channel_scoping: {
-					create: {
-						channel_id: channel.id,
-						type: scopeType
-					}
-				}
+		await this.prisma.quickPurgeChannelScoping.create({
+			data: {
+				guild_id: interaction.guildId,
+				channel_id: channel.id,
+				type: scopeType
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
-			channel_scoping: updatedScopings
 		});
 
 		return {
@@ -1839,19 +1690,11 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
-		const updatedScopings = config.channel_scoping.filter(s => s.channel_id !== channel.id);
-
-		await this.prisma.quickPurgeChannelScoping.delete({
+		await this.prisma.quickPurgeChannelScoping.deleteMany({
 			where: {
-				guild_id_channel_id: {
-					guild_id: interaction.guildId,
-					channel_id: channel.id
-				}
+				guild_id: interaction.guildId,
+				channel_id: channel.id
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "quick_purges", {
-			channel_scoping: updatedScopings
 		});
 
 		return {
@@ -1910,10 +1753,6 @@ export default class Config extends Command {
 		await this.prisma.highlightConfig.update({
 			where: { id: interaction.guild.id },
 			data: { max_patterns: amount }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "highlights", {
-			max_patterns: amount
 		});
 
 		return {
@@ -2172,10 +2011,6 @@ export default class Config extends Command {
 			data: { enabled: value }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
-			enabled: value
-		});
-
 		return {
 			content: `Successfully ${value ? "enabled" : "disabled"} message reports.`
 		};
@@ -2201,10 +2036,6 @@ export default class Config extends Command {
 			data: { placeholder_reason: reason }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
-			placeholder_reason: reason
-		});
-
 		return {
 			content: `Successfully ${reason ? "set" : "cleared"} the default reason for message reports.`
 		};
@@ -2227,15 +2058,9 @@ export default class Config extends Command {
 			return { error: `The role ${role} is already an immune role.` };
 		}
 
-		const updatedImmuneRoles = [...config.immune_roles, role.id];
-
 		await this.prisma.messageReportConfig.update({
 			where: { id: interaction.guild.id },
 			data: { immune_roles: { push: role.id } }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
-			immune_roles: updatedImmuneRoles
 		});
 
 		return {
@@ -2267,10 +2092,6 @@ export default class Config extends Command {
 			data: {
 				immune_roles: updatedImmuneRoles
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
-			immune_roles: updatedImmuneRoles
 		});
 
 		return {
@@ -2320,15 +2141,9 @@ export default class Config extends Command {
 			return { error: `The role ${role} is already a notify role.` };
 		}
 
-		const updatedNotifyRoles = [...config.notify_roles, role.id];
-
 		await this.prisma.messageReportConfig.update({
 			where: { id: interaction.guild.id },
 			data: { notify_roles: { push: role.id } }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
-			notify_roles: updatedNotifyRoles
 		});
 
 		return {
@@ -2360,10 +2175,6 @@ export default class Config extends Command {
 			data: {
 				notify_roles: updatedNotifyRoles
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
-			notify_roles: updatedNotifyRoles
 		});
 
 		return {
@@ -2445,10 +2256,6 @@ export default class Config extends Command {
 				data: { webhook_url: newWebhook.url }
 			});
 
-			await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
-				webhook_url: newWebhook.url
-			});
-
 			return {
 				content: `Successfully set the review channel to ${channel}.`
 			};
@@ -2504,10 +2311,6 @@ export default class Config extends Command {
 				data: { log_webhook_url: newWebhook.url }
 			});
 
-			await ConfigManager.updateCachedConfig(interaction.guildId, "message_reports", {
-				log_webhook_url: newWebhook.url
-			});
-
 			return {
 				content: `Successfully set the log channel to ${channel}.`
 			};
@@ -2532,10 +2335,6 @@ export default class Config extends Command {
 			data: { enabled: value }
 		});
 
-		await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-			enabled: value
-		});
-
 		return {
 			content: `Successfully ${value ? "enabled" : "disabled"} ban requests.`
 		};
@@ -2557,10 +2356,6 @@ export default class Config extends Command {
 		await this.prisma.banRequestConfig.update({
 			where: { id: interaction.guild.id },
 			data: { automatically_timeout: value }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-			automatically_timeout: value
 		});
 
 		return {
@@ -2615,10 +2410,6 @@ export default class Config extends Command {
 			await this.prisma.banRequestConfig.update({
 				where: { id: interaction.guild.id },
 				data: { webhook_url: newWebhook.url }
-			});
-
-			await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-				webhook_url: newWebhook.url
 			});
 
 			return {
@@ -2676,10 +2467,6 @@ export default class Config extends Command {
 				data: { decision_webhook_url: newWebhook.url }
 			});
 
-			await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-				decision_webhook_url: newWebhook.url
-			});
-
 			return {
 				content: `Successfully set the decision channel to ${channel}.`
 			};
@@ -2735,10 +2522,6 @@ export default class Config extends Command {
 				data: { log_webhook_url: newWebhook.url }
 			});
 
-			await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-				log_webhook_url: newWebhook.url
-			});
-
 			return {
 				content: `Successfully set the log channel to ${channel}.`
 			};
@@ -2787,15 +2570,9 @@ export default class Config extends Command {
 			return { error: `The role ${role} is already a notify role.` };
 		}
 
-		const updatedNotifyRoles = [...config.notify_roles, role.id];
-
 		await this.prisma.banRequestConfig.update({
 			where: { id: interaction.guild.id },
 			data: { notify_roles: { push: role.id } }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-			notify_roles: updatedNotifyRoles
 		});
 
 		return {
@@ -2827,10 +2604,6 @@ export default class Config extends Command {
 			data: {
 				notify_roles: updatedNotifyRoles
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-			notify_roles: updatedNotifyRoles
 		});
 
 		return {
@@ -2880,15 +2653,9 @@ export default class Config extends Command {
 			return { error: `The role ${role} is already an immune role.` };
 		}
 
-		const updatedImmuneRoles = [...config.immune_roles, role.id];
-
 		await this.prisma.banRequestConfig.update({
 			where: { id: interaction.guild.id },
 			data: { immune_roles: { push: role.id } }
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-			immune_roles: updatedImmuneRoles
 		});
 
 		return {
@@ -2920,10 +2687,6 @@ export default class Config extends Command {
 			data: {
 				immune_roles: updatedImmuneRoles
 			}
-		});
-
-		await ConfigManager.updateCachedConfig(interaction.guildId, "ban_requests", {
-			immune_roles: updatedImmuneRoles
 		});
 
 		return {
