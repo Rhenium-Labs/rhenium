@@ -93,14 +93,13 @@ export default class ReportMessageCtx extends Command {
 			where: {
 				guild_id: interaction.guild.id,
 				message_id: message.id,
-				reported_by: interaction.user.id,
 				status: ReportStatus.Pending
 			}
 		});
 
 		if (report) {
 			return {
-				error: "You have already reported this message and it is still pending review."
+				content: `Successfully bumped report submission for ${targetUser}'s message - ID \`#${report.id}\``
 			};
 		}
 
