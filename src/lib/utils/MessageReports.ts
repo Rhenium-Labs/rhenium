@@ -2,6 +2,11 @@ import {
 	type User,
 	type Message,
 	type ModalSubmitInteraction,
+	type ButtonInteraction,
+	type APIMessage,
+	type MessageContextMenuCommandInteraction,
+	type APIActionRowComponent,
+	type APIButtonComponentWithCustomId,
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
@@ -9,10 +14,8 @@ import {
 	EmbedBuilder,
 	roleMention,
 	WebhookClient,
-	ButtonInteraction,
 	ComponentType,
-	MessageFlags,
-	APIMessage
+	MessageFlags
 } from "discord.js";
 
 import { prisma } from "#root/index.js";
@@ -175,6 +178,56 @@ export default class MessageReportUtils {
 		return {
 			content: `Successfully submitted a report for ${author}'s message - ID \`#${log.id}\``
 		};
+	}
+
+	/**
+	 * Bumps an existing message report submission to include the new reporter.
+	 *
+	 * @param data The bump submission data.
+	 * @returns The sent API message or null if bumping failed.
+	 */
+
+	public static async bumpSubmission(data: {
+		interaction: MessageContextMenuCommandInteraction<"cached">;
+		config: MessageReportConfig;
+		report: MessageReport;
+	}): Promise<APIMessage | null> {
+		const { interaction, report, config } = data;
+
+		if (!config.enabled || !config.webhook_url) return null;
+
+		const webhook = new WebhookClient({ url: config.webhook_url });
+		const message = await webhook.fetchMessage(report.id).catch(() => null);
+
+		if (!message) return null;
+
+		const components = (message.components?.filter(c => c.type === ComponentType.ActionRow) ??
+			[]) as APIActionRowComponent<APIButtonComponentWithCustomId>[];
+		const hasReferenceEmbed = components
+			.flatMap(row => row.components)
+			.some(btn => btn.custom_id?.startsWith("delete-reference-report-message"));
+
+		const embed = message.embeds.at(hasReferenceEmbed ? 1 : 0);
+		const currentValue = embed?.fields?.find(field => {
+			return field.name === "Reported By";
+		})?.value;
+
+		if (!embed || !currentValue) return null;
+		// Prevent duplicate mentions.
+		if (currentValue.includes(interaction.user.id)) return null;
+
+		const updatedEmbed = EmbedBuilder.from(embed)
+			.spliceFields(0, 1, {
+				name: "Reported By",
+				value: `${currentValue}\n${userMentionWithId(interaction.user.id)}`
+			})
+			.setTimestamp();
+
+		return webhook
+			.editMessage(message.id, {
+				embeds: hasReferenceEmbed ? [message.embeds[0], updatedEmbed] : [updatedEmbed]
+			})
+			.catch(() => null);
 	}
 
 	/**

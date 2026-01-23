@@ -13,6 +13,7 @@ import type { InteractionReplyData } from "#utils/Types.js";
 
 import Command from "#managers/commands/Command.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
+import MessageReportUtils from "#utils/MessageReports.js";
 
 export default class ReportMessageCtx extends Command {
 	public constructor() {
@@ -98,6 +99,18 @@ export default class ReportMessageCtx extends Command {
 		});
 
 		if (report) {
+			if (report.reported_by === interaction.user.id) {
+				return {
+					error: "You have already reported this message."
+				};
+			}
+
+			void MessageReportUtils.bumpSubmission({
+				interaction,
+				config,
+				report
+			});
+
 			return {
 				content: `Successfully bumped report submission for ${targetUser}'s message - ID \`#${report.id}\``
 			};
