@@ -15,7 +15,7 @@ import {
 	roleMention,
 	WebhookClient,
 	ComponentType,
-	MessageFlags
+	MessageFlags,
 } from "discord.js";
 
 import { prisma } from "#root/index.js";
@@ -46,6 +46,13 @@ export default class MessageReportUtils {
 		const croppedContent = cropLines(messageContent, 5);
 		const stickerId = message.stickers.first()?.id ?? null;
 
+		const formattedContent = await formatMessageContent({
+			url: message.url,
+			content: croppedContent,
+			stickerId: stickerId,
+			createdAt: message.createdAt
+		});
+
 		const embed = new EmbedBuilder()
 			.setAuthor({ name: "New Message Report" })
 			.setColor(Colors.Blue)
@@ -65,7 +72,7 @@ export default class MessageReportUtils {
 				},
 				{
 					name: "Message Content",
-					value: await formatMessageContent(croppedContent, stickerId, message.url)
+					value: formattedContent
 				}
 			])
 			.setTimestamp();
@@ -78,6 +85,14 @@ export default class MessageReportUtils {
 		if (reference) {
 			const referenceContent = cleanMessageContent(reference.content, reference.channel);
 			const croppedReferenceContent = cropLines(referenceContent, 5);
+			const stickerId = reference.stickers.first()?.id ?? null;
+
+			const formattedReferenceContent = await formatMessageContent({
+				url: reference.url,
+				content: croppedReferenceContent,
+				stickerId: stickerId,
+				createdAt: reference.createdAt
+			});
 
 			const referenceEmbed = new EmbedBuilder()
 				.setAuthor({ name: "Message Reference" })
@@ -89,11 +104,7 @@ export default class MessageReportUtils {
 					},
 					{
 						name: "Reference Content",
-						value: await formatMessageContent(
-							croppedReferenceContent,
-							reference.stickers.first()?.id ?? null,
-							reference.url
-						)
+						value: formattedReferenceContent
 					}
 				])
 				.setTimestamp();

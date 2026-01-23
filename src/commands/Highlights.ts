@@ -296,7 +296,12 @@ export default class Highlights extends Command {
 			if (!ratelimiter.limit(`${highlight.user_id}:${messageAuthorId}`).success) continue;
 
 			const user = await client.users.fetch(highlight.user_id).catch(() => null);
-			const formattedContent = await formatMessageContent(message.content, null, message.url);
+			const formattedContent = await formatMessageContent({
+				url: message.url,
+				content: message.content,
+				stickerId: null,
+				createdAt: message.createdAt
+			});
 
 			const embed = new EmbedBuilder()
 				.setColor(Colors.Blue)

@@ -424,17 +424,24 @@ async function trySend(message: Message, payload: MessagePayload) {
  * @param content The message content.
  * @param stickerId The sticker ID.
  * @param url The message URL.
- * @param includeUrl Whether to include the URL in the formatted content.
+ * @param options Additional formatting options.
  * @returns The formatted message content.
  */
 
-export async function formatMessageContent(
-	content: string | null,
-	stickerId: string | null,
-	url: string | null,
-	includeUrl: boolean = true
-): Promise<string> {
+export async function formatMessageContent(data: {
+	url: string | null;
+	content: string | null;
+	stickerId: string | null;
+	createdAt?: Date;
+	includeUrl?: boolean;
+}): Promise<string> {
+	const { url, content, stickerId, createdAt, includeUrl = true } = data;
 	const parts: string[] = [];
+
+	if (createdAt) {
+		const timestamp = Math.floor(createdAt.getTime() / 1000);
+		parts.push(`Sent on <t:${timestamp}:f>`);
+	}
 
 	if (url && includeUrl) {
 		parts.push(hyperlink("Jump to message", url));
@@ -458,12 +465,12 @@ export async function formatMessageContent(
 
 	const escapedContent = escapeCodeBlock(content);
 
-	if (escapedContent.length > 1024) {
+	if (escapedContent.length > 900) {
 		const hastebinUrl = await hastebin(escapedContent, "txt");
 		return prefix + separator + hyperlink("View full content", hastebinUrl!);
 	}
 
-	const maxContentLength = Math.max(0, 1000 - prefix.length);
+	const maxContentLength = Math.max(0, 900 - prefix.length);
 	return prefix + codeBlock(truncate(escapedContent, maxContentLength));
 }
 
