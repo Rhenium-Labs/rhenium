@@ -2470,10 +2470,10 @@
 		],
 
 		"zod": [
-			"zod@4.3.5",
+			"zod@4.3.6",
 			"",
 			{},
-			"sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g=="
+			"sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="
 		],
 
 		"zod-validation-error": [
