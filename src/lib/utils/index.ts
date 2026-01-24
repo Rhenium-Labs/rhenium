@@ -190,9 +190,9 @@ export async function hastebin(data: unknown, ext = "js"): Promise<string | null
 export function parseChannelScoping(scoping: RawChannelScoping[]): ChannelScoping {
 	return scoping.reduce<ChannelScoping>(
 		(acc, item) => {
-			if (item.type === 1) {
+			if (item.type === 0) {
 				acc.include_channels.push(item.channel_id);
-			} else if (item.type === 2) {
+			} else if (item.type === 1) {
 				acc.exclude_channels.push(item.channel_id);
 			}
 			return acc;
