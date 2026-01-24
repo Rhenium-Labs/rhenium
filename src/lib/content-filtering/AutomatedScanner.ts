@@ -489,7 +489,10 @@ export default class AutomatedScanner {
 			.setTimestamp();
 
 		const webhook = new WebhookClient({ url: config.webhook_url });
-		return webhook.send({ embeds: [embed] }).catch(() => {});
+		return webhook
+			.send({ embeds: [embed] })
+			.then(() => webhook.destroy())
+			.catch(() => {});
 	}
 
 	/**
@@ -515,7 +518,10 @@ export default class AutomatedScanner {
 			.setTimestamp();
 
 		const webhook = new WebhookClient({ url: config.webhook_url });
-		return webhook.send({ embeds: [embed] }).catch(() => {});
+		return webhook
+			.send({ embeds: [embed] })
+			.catch(() => {})
+			.then(() => webhook.destroy());
 	}
 
 	/**

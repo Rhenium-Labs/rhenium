@@ -218,6 +218,8 @@ export default class ContentFilter {
 		const state = AutomatedScanner.getOrInitChannelState(message.channelId);
 		state.alertCount++;
 		state.scanTimestamps.push(Date.now());
+
+		return webhook.destroy();
 	}
 
 	/**

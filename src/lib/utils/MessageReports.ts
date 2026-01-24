@@ -3,7 +3,6 @@ import {
 	type Message,
 	type ModalSubmitInteraction,
 	type ButtonInteraction,
-	type APIMessage,
 	type MessageContextMenuCommandInteraction,
 	type APIActionRowComponent,
 	type APIButtonComponentWithCustomId,
@@ -15,7 +14,7 @@ import {
 	roleMention,
 	WebhookClient,
 	ComponentType,
-	MessageFlags,
+	MessageFlags
 } from "discord.js";
 
 import { prisma } from "#root/index.js";
@@ -186,6 +185,8 @@ export default class MessageReportUtils {
 			}
 		});
 
+		webhook.destroy();
+
 		return {
 			content: `Successfully submitted a report for ${author}'s message - ID \`#${log.id}\``
 		};
@@ -202,7 +203,7 @@ export default class MessageReportUtils {
 		interaction: MessageContextMenuCommandInteraction<"cached">;
 		config: MessageReportConfig;
 		report: MessageReport;
-	}): Promise<APIMessage | null> {
+	}): Promise<any> {
 		const { interaction, report, config } = data;
 
 		if (!config.enabled || !config.webhook_url) return null;
@@ -238,7 +239,8 @@ export default class MessageReportUtils {
 			.editMessage(message.id, {
 				embeds: hasReferenceEmbed ? [message.embeds[0], updatedEmbed] : [updatedEmbed]
 			})
-			.catch(() => null);
+			.catch(() => null)
+			.then(() => webhook.destroy());
 	}
 
 	/**
@@ -318,7 +320,7 @@ export default class MessageReportUtils {
 		config: MessageReportConfig;
 		action: MessageReportAction;
 		interaction: ButtonInteraction<"cached">;
-	}): Promise<APIMessage | null> {
+	}): Promise<any> {
 		const { action, interaction, config } = data;
 
 		if (!config.log_webhook_url) return null;
@@ -339,11 +341,12 @@ export default class MessageReportUtils {
 			})
 			.setTimestamp();
 
-		return new WebhookClient({ url: config.log_webhook_url })
-			.send({
-				embeds: hasDeleteRefButton ? [interaction.message.embeds[0], embed] : [embed]
-			})
-			.catch(() => null);
+		const webhook = new WebhookClient({ url: config.log_webhook_url });
+
+		return webhook
+			.send({ embeds: hasDeleteRefButton ? [interaction.message.embeds[0], embed] : [embed] })
+			.catch(() => null)
+			.then(() => webhook.destroy());
 	}
 }
 

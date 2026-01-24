@@ -229,7 +229,10 @@ export default class QuickActionUtils {
 			return Promise.all([
 				logWebhook.send({ embeds: [embed] }).catch(() => null),
 				resultWebhook.send({ content }).catch(() => null)
-			]);
+			]).then(() => {
+				logWebhook.destroy();
+				resultWebhook.destroy();
+			});
 		} catch {
 			quickMuteActionLocks.delete(message.author.id);
 		} finally {
@@ -360,14 +363,11 @@ export default class QuickActionUtils {
 
 			return Promise.all([
 				logWebhook.send({ embeds: [embed] }).catch(() => null),
-				resultWebhook
-					.send({
-						content,
-						components,
-						files: [attachment]
-					})
-					.catch(() => null)
-			]);
+				resultWebhook.send({ content, components, files: [attachment] }).catch(() => null)
+			]).then(() => {
+				logWebhook.destroy();
+				resultWebhook.destroy();
+			});
 		} catch {
 			quickPurgeActionLocks.delete(message.author.id);
 		} finally {

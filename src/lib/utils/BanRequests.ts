@@ -1,7 +1,6 @@
 import {
 	type User,
 	type GuildMember,
-	type APIMessage,
 	type ButtonInteraction,
 	type ModalSubmitInteraction,
 	ActionRowBuilder,
@@ -125,6 +124,8 @@ export default class BanRequestUtils {
 				reason
 			}
 		});
+
+		webhook.destroy();
 
 		return {
 			content: `Successfully submitted a ban request for ${target} - ID \`${log.id}\`.`
@@ -304,7 +305,7 @@ export default class BanRequestUtils {
 		reviewReason: string | null;
 		action: Exclude<BanRequestAction, "Disregard">;
 		request: BanRequest;
-	}): Promise<APIMessage | null> {
+	}): Promise<any> {
 		const { webhook_url, reviewReason, action, request } = data;
 
 		if (!webhook_url) return null;
@@ -314,9 +315,11 @@ export default class BanRequestUtils {
 			request.target_id
 		)} has been ${PastTenseBanRequestAction[action].toLowerCase()}${formattedReason ? ` - ${formattedReason}` : "."}`;
 
-		return new WebhookClient({ url: webhook_url })
+		const webhook = new WebhookClient({ url: webhook_url });
+		return webhook
 			.send({ content, allowedMentions: { parse: ["users"] } })
-			.catch(() => null);
+			.catch(() => null)
+			.then(() => webhook.destroy());
 	}
 
 	/**
@@ -331,7 +334,7 @@ export default class BanRequestUtils {
 		action: BanRequestAction;
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 		reason: string | null;
-	}): Promise<APIMessage | null> {
+	}): Promise<any> {
 		const { config, action, interaction, reason } = data;
 
 		if (!config.log_webhook_url) return null;
@@ -352,9 +355,11 @@ export default class BanRequestUtils {
 			embed.addFields({ name: "Reviewer Reason", value: reason });
 		}
 
-		return new WebhookClient({ url: config.log_webhook_url })
+		const webhook = new WebhookClient({ url: config.log_webhook_url });
+		return webhook
 			.send({ embeds: [embed], allowedMentions: { parse: [] } })
-			.catch(() => null);
+			.catch(() => null)
+			.then(() => webhook.destroy());
 	}
 }
 
