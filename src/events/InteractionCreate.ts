@@ -2,18 +2,15 @@ import { type Interaction, Events } from "discord.js";
 import { captureException } from "@sentry/node";
 
 import { KvCache } from "#utils/KvCache.js";
+import { ApplyOptions, EventListener } from "#rhenium";
 
 import Logger from "#utils/Logger.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
-import EventListener from "#managers/events/EventListener.js";
-import CommandManager from "#managers/commands/CommandManager.js";
-import ComponentManager from "#managers/components/ComponentManager.js";
 
+@ApplyOptions<EventListener.Options>({
+	event: Events.InteractionCreate
+})
 export default class InteractionCreate extends EventListener {
-	public constructor() {
-		super(Events.InteractionCreate);
-	}
-
 	public async onEmit(interaction: Interaction): Promise<void> {
 		if (!interaction.inCachedGuild()) return;
 
@@ -27,12 +24,12 @@ export default class InteractionCreate extends EventListener {
 
 		try {
 			if (interaction.isCommand()) {
-				await CommandManager.handleApplicationCommand(interaction);
+				await this.client.stores.get("commands").handleApplicationCommand(interaction);
 				return;
 			}
 
 			if (interaction.isMessageComponent() || interaction.isModalSubmit()) {
-				await ComponentManager.handleComponent(interaction);
+				await this.client.stores.get("components").handleComponent(interaction);
 				return;
 			}
 		} catch (error) {

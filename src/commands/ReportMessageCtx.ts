@@ -1,6 +1,4 @@
 import {
-	type MessageContextMenuCommandInteraction,
-	type ApplicationCommandData,
 	ApplicationCommandType,
 	LabelBuilder,
 	ModalBuilder,
@@ -10,21 +8,18 @@ import {
 } from "discord.js";
 
 import { ReportStatus } from "#prisma/enums.js";
+import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import MessageReportUtils from "#utils/MessageReports.js";
 
+@ApplyOptions<Command.Options>({
+	name: "Report Message",
+	description: "Report a message to the server moderators."
+})
 export default class ReportMessageCtx extends Command {
-	public constructor() {
-		super({
-			name: "Report Message",
-			description: "Report a message to the server moderators."
-		});
-	}
-
-	public register(): ApplicationCommandData {
+	public register(): Command.Data {
 		return {
 			name: this.name,
 			type: ApplicationCommandType.Message
@@ -32,7 +27,7 @@ export default class ReportMessageCtx extends Command {
 	}
 
 	public async interactionRun(
-		interaction: MessageContextMenuCommandInteraction<"cached">,
+		interaction: Command.MessageCtxInteraction,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData | null> {
 		const config = configClass.getMessageReportsConfig();

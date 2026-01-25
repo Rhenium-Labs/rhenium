@@ -1,27 +1,23 @@
 import {
-	type ApplicationCommandData,
-	type ChatInputCommandInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
 	InteractionContextType,
 	PermissionFlagsBits
 } from "discord.js";
+
+import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import ConfigManager, { ConfigKeys } from "#managers/config/ConfigManager.js";
 
+@ApplyOptions<Command.Options>({
+	name: "reports",
+	description: "Manage the report system."
+})
 export default class Reports extends Command {
-	public constructor() {
-		super({
-			name: "reports",
-			description: "Manage the report system."
-		});
-	}
-
-	public register(): ApplicationCommandData {
+	public register(): Command.Data {
 		return {
 			name: this.name,
 			description: this.description,
@@ -61,7 +57,7 @@ export default class Reports extends Command {
 	}
 
 	public async interactionRun(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.ChatInputCmdInteraction,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const subcommand = interaction.options.getSubcommand(true);

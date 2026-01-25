@@ -9,15 +9,14 @@ import {
 	PermissionFlagsBits,
 	userMention
 } from "discord.js";
+
+import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Component from "#managers/components/Component.js";
-
+@ApplyOptions<Component.Options>({
+	id: { matches: /^delete-(original|reference)-report-message-\d{17,19}-\d{17,19}$/m }
+})
 export default class DeleteReportMessage extends Component {
-	public constructor() {
-		super({ matches: /^delete-(original|reference)-report-message-\d{17,19}-\d{17,19}$/m });
-	}
-
 	public async run(interaction: ButtonInteraction<"cached">): Promise<InteractionReplyData | null> {
 		const type = interaction.customId.split("-")[1] as "original" | "reference";
 		const channelId = interaction.customId.split("-")[4];
@@ -74,15 +73,13 @@ export default class DeleteReportMessage extends Component {
 		const components = this._getUpdatedComponents(interaction.message.components, type);
 		const embeds = this._getUpdatedEmbeds(interaction.message.embeds, interaction.user.id, type);
 
-		await Promise.all([
-			await interaction.editReply({ embeds, components }),
-			await interaction.followUp({
+		return Promise.all([
+			interaction.editReply({ embeds, components }),
+			interaction.followUp({
 				content: `Successfully deleted message \`${messageId}\` in ${channel}.`,
 				flags: MessageFlags.Ephemeral
 			})
-		]);
-
-		return null;
+		]).then(() => null);
 	}
 
 	/**

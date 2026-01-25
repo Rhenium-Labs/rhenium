@@ -1,19 +1,18 @@
 import type { ButtonInteraction } from "discord.js";
 
 import { userMentionWithId } from "#utils/index.js";
+import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Component from "#managers/components/Component.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import MessageReportUtils, { type MessageReportAction } from "#utils/MessageReports.js";
 
 const AUTO_DELETE_DELAY = 7000;
 
+@ApplyOptions<Component.Options>({
+	id: { matches: /^message-report-(resolve|disregard)$/m }
+})
 export default class MessageReportButton extends Component {
-	public constructor() {
-		super({ matches: /^message-report-(resolve|disregard)$/m });
-	}
-
 	public async run(
 		interaction: ButtonInteraction<"cached">,
 		configClass: GuildConfig

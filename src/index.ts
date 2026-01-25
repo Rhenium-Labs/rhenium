@@ -15,20 +15,28 @@ import { open } from "lmdb";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { sleep } from "#utils/index.js";
+import { Rhenium } from "#rhenium";
 import { PrismaClient } from "#prisma/client.js";
 import { MessageQueue } from "#utils/Messages.js";
-import { PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
 import { initCacheInvalidator } from "#utils/Prisma.js";
+import { CLIENT_CACHE_OPTIONS, CLIENT_INTENTS, CLIENT_PARTIALS, PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
 
 import Logger from "#utils/Logger.js";
-import Rhenium from "#structures/Client.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
-import CommandManager from "#managers/commands/CommandManager.js";
-import ComponentManager from "#managers/components/ComponentManager.js";
-import EventListenerManager from "#managers/events/EventListenerManager.js";
 
 /** The Discord client instance. */
-export const client = new Rhenium();
+export const client = new Rhenium({
+	intents: CLIENT_INTENTS,
+	partials: CLIENT_PARTIALS,
+	makeCache: CLIENT_CACHE_OPTIONS,
+	sweepers: {
+		users: {
+			interval: 3600,
+			filter: () => () => true // Sweeps everything.
+		}
+	},
+	allowedMentions: { parse: [] }
+});
 
 /** The Prisma client instance. */
 export const prisma = new PrismaClient({
@@ -50,14 +58,8 @@ async function main(): Promise<void> {
 	// Cache global configuration.
 	await GlobalConfig.cache();
 
-	// Cache commands.
-	await CommandManager.cache();
-
-	// Cache components.
-	await ComponentManager.cache();
-
-	// Mount event listeners.
-	await EventListenerManager.mount();
+	// Load pieces.
+	await client.loadPieces();
 
 	// Connect to the database.
 	try {
@@ -90,7 +92,7 @@ async function main(): Promise<void> {
 
 	// Wait for the client to stabilize, then register application commands.
 	await sleep(2000);
-	await CommandManager.register();
+	await client.stores.get("commands").register();
 }
 
 void main();

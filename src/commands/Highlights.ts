@@ -1,5 +1,4 @@
 import {
-	type ApplicationCommandData,
 	type ChatInputCommandInteraction,
 	type Message,
 	ApplicationCommandOptionType,
@@ -16,11 +15,11 @@ import safe from "safe-regex";
 
 import { client, prisma } from "#root/index.js";
 import { formatMessageContent } from "#utils/Messages.js";
+import { ApplyOptions, Command } from "#rhenium";
 import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import RateLimiter from "#structures/RateLimiter.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import ConfigManager from "#managers/config/ConfigManager.js";
@@ -35,15 +34,12 @@ const regexCacheOrder: string[] = [];
 /** Maximum size of the regex cache. */
 const REGEX_CACHE_MAX_SIZE = 100;
 
+@ApplyOptions<Command.Options>({
+	name: "highlights",
+	description: "Manage your message highlights."
+})
 export default class Highlights extends Command {
-	public constructor() {
-		super({
-			name: "highlights",
-			description: "Manage your message highlights."
-		});
-	}
-
-	public register(): ApplicationCommandData {
+	public register(): Command.Data {
 		return {
 			name: this.name,
 			description: this.description,

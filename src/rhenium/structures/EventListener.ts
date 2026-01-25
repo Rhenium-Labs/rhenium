@@ -1,7 +1,12 @@
-import { type Awaitable, Events } from "discord.js";
+import { Piece } from "@sapphire/pieces";
+import { Awaitable, Events } from "discord.js";
+
 import { client, prisma } from "#root/index.js";
 
-export default abstract class EventListener {
+export abstract class EventListener<Options extends EventListener.Options = EventListener.Options> extends Piece<
+	Options,
+	"events"
+> {
 	/**
 	 * The client this listener is attached to.
 	 */
@@ -29,14 +34,16 @@ export default abstract class EventListener {
 	/**
 	 * Constructs a new event listener.
 	 *
-	 * @param event The event this listener listens to.
-	 * @param once Whether this listener should only run once.
+	 * @param context The loader context.
+	 * @param options The event listener options.
 	 * @returns The constructed event listener.
 	 */
 
-	public constructor(event: Events | string, once = false) {
-		this.event = event;
-		this.once = once;
+	public constructor(context: Piece.LoaderContext<"events">, options: Options = {} as Options) {
+		super(context, options);
+
+		this.event = options.event;
+		this.once = options.once ?? false;
 	}
 
 	/**
@@ -47,4 +54,13 @@ export default abstract class EventListener {
 	 */
 
 	public abstract onEmit(...args: unknown[]): Awaitable<unknown>;
+}
+
+interface EventListenerOptions extends Piece.Options {
+	event: Events | string;
+	once?: boolean;
+}
+
+export namespace EventListener {
+	export type Options = EventListenerOptions;
 }
