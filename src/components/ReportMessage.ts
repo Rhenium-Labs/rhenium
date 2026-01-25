@@ -1,15 +1,15 @@
 import { MessageFlags, type Message, type ModalSubmitInteraction, type TextBasedChannel } from "discord.js";
+
+import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Component from "#managers/components/Component.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import MessageReportUtils from "#utils/MessageReports.js";
 
+@ApplyOptions<Component.Options>({
+	id: { matches: /^report-message-\d{17,19}-\d{17,19}$/m }
+})
 export default class ReportMessage extends Component {
-	public constructor() {
-		super({ matches: /^report-message-\d{17,19}-\d{17,19}$/m });
-	}
-
 	public async run(
 		interaction: ModalSubmitInteraction<"cached">,
 		configClass: GuildConfig

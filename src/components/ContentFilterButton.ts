@@ -1,21 +1,20 @@
 import { type ButtonInteraction, Colors, EmbedBuilder, MessageFlags, ComponentType } from "discord.js";
 
 import { ContentFilterStatus } from "#prisma/enums.js";
+import { ApplyOptions, Component } from "#rhenium";
 import { ContentFilterFieldNames } from "#cf/Enums.js";
 import { hastebin, userMentionWithId } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Component from "#managers/components/Component.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 
+@ApplyOptions<Component.Options>({
+	id: { matches: /^cf-(delete|resolve|false|content)-[\d-]+$/m }
+})
 export default class ContentFilterButton extends Component {
-	public constructor() {
-		super({ matches: /^cf-(delete|resolve|false|content)-[\d-]+$/m });
-	}
-
 	public async run(
 		interaction: ButtonInteraction<"cached">,
 		configClass: GuildConfig

@@ -9,16 +9,16 @@ import {
 	WebhookClient
 } from "discord.js";
 
+import { ApplyOptions, EventListener } from "#rhenium";
+
 import ConfigManager from "#managers/config/ConfigManager.js";
-import EventListener from "#managers/events/EventListener.js";
 
 const CONCURRENCY_LIMIT = 3;
 
+@ApplyOptions<EventListener.Options>({
+	event: Events.GuildBanAdd
+})
 export default class GuildBanAdd extends EventListener {
-	public constructor() {
-		super(Events.GuildBanAdd);
-	}
-
 	public onEmit(ban: GuildBan) {
 		return Promise.all([this._resolveReports(ban), this._resolveRequests(ban)]);
 	}

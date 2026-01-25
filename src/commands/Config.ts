@@ -1,5 +1,4 @@
 import {
-	type ApplicationCommandData,
 	type ChatInputCommandInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
@@ -13,22 +12,19 @@ import {
 	roleMention
 } from "discord.js";
 
+import { ApplyOptions, Command } from "#rhenium";
 import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#prisma/enums.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import ConfigManager from "#managers/config/ConfigManager.js";
 
+@ApplyOptions<Command.Options>({
+	name: "config",
+	description: "Manage the guild configuration."
+})
 export default class Config extends Command {
-	public constructor() {
-		super({
-			name: "config",
-			description: "Manage the guild configuration."
-		});
-	}
-
-	public register(): ApplicationCommandData {
+	public register(): Command.Data {
 		return {
 			name: this.name,
 			description: this.description,

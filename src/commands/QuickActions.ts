@@ -1,6 +1,5 @@
 import {
 	type ChatInputCommandInteraction,
-	type ApplicationCommandData,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -23,20 +22,17 @@ import {
 	validateEmoji
 } from "#utils/index.js";
 
+import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 
+@ApplyOptions<Command.Options>({
+	name: "quick",
+	description: "Manage your quick action reactions."
+})
 export default class QuickActions extends Command {
-	public constructor() {
-		super({
-			name: "quick",
-			description: "Manage your quick action reactions."
-		});
-	}
-
-	public register(): ApplicationCommandData {
+	public register(): Command.Data {
 		return {
 			name: this.name,
 			description: this.description,

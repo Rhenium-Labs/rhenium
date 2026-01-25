@@ -1,24 +1,20 @@
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Colors, type Message } from "discord.js";
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Colors } from "discord.js";
 
 import { kv } from "#root/index.js";
 import { hastebin } from "#utils/index.js";
+import { ApplyOptions, Command } from "#rhenium";
 
 import type { MessageReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
-import ArgumentParser from "#managers/commands/ArgParser.js";
 
+@ApplyOptions<Command.Options>({
+	name: "whitelist",
+	aliases: ["wl"],
+	description: "Manage the guild whitelists."
+})
 export default class Whitelist extends Command {
-	public constructor() {
-		super({
-			name: "whitelist",
-			aliases: ["wl"],
-			description: "Manage the guild whitelists."
-		});
-	}
-
-	public async messageRun(message: Message<true>, args: ArgumentParser): Promise<MessageReplyData> {
+	public async messageRun(message: Command.Message, args: Command.Args): Promise<MessageReplyData> {
 		if (!GlobalConfig.isDeveloper(message.author.id)) {
 			return { error: "You do not have permission to use this command." };
 		}

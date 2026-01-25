@@ -1,13 +1,12 @@
 import { Events, type PartialMessage } from "discord.js";
+
 import { MessageQueue } from "#utils/Messages.js";
+import { ApplyOptions, EventListener } from "#rhenium";
 
-import EventListener from "#managers/events/EventListener.js";
-
+@ApplyOptions<EventListener.Options>({
+	event: Events.MessageDelete
+})
 export default class MessageDelete extends EventListener {
-	public constructor() {
-		super(Events.MessageDelete);
-	}
-
 	public async onEmit(message: PartialMessage<true>): Promise<any> {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author?.bot || message.webhookId || message.system) return;

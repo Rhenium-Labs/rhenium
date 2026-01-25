@@ -1,6 +1,4 @@
 import {
-	type ChatInputCommandInteraction,
-	type ApplicationCommandData,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -11,23 +9,21 @@ import {
 
 import ms, { type StringValue } from "ms";
 
+import { ApplyOptions, Command } from "#rhenium";
 import { parseDurationString, validateDuration } from "#utils/index.js";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import BanRequestUtils from "#utils/BanRequests.js";
 import ModerationUtils from "#utils/Moderation.js";
 
+@ApplyOptions<Command.Options>({
+	name: "request",
+	description: "Request a moderation action."
+})
 export default class Request extends Command {
-	public constructor() {
-		super({
-			name: "request",
-			description: "Request a moderation action."
-		});
-	}
-
-	public register(): ApplicationCommandData {
+	public register(): Command.Data {
 		return {
 			name: this.name,
 			description: this.description,
@@ -68,7 +64,7 @@ export default class Request extends Command {
 	}
 
 	public async interactionRun(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.ChatInputCmdInteraction,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.getBanRequestsConfig();

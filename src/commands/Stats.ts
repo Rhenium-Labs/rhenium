@@ -1,23 +1,20 @@
-import { EmbedBuilder, type Message } from "discord.js";
+import { EmbedBuilder } from "discord.js";
 
 import ms from "ms";
 
 import { MessageQueue } from "#utils/Messages.js";
+import { ApplyOptions, Command } from "#rhenium";
 import type { MessageReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
 
+@ApplyOptions<Command.Options>({
+	name: "stats",
+	aliases: ["proc", "process"],
+	description: "Get information about the current process."
+})
 export default class Stats extends Command {
-	public constructor() {
-		super({
-			name: "stats",
-			aliases: ["proc", "process"],
-			description: "Get information about the current process."
-		});
-	}
-
-	public async messageRun(message: Message<true>): Promise<MessageReplyData | null> {
+	public async messageRun(message: Command.Message): Promise<MessageReplyData | null> {
 		if (!GlobalConfig.isDeveloper(message.author.id)) {
 			return null;
 		}

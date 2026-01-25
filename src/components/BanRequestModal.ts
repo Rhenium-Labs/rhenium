@@ -1,19 +1,18 @@
 import type { ModalSubmitInteraction } from "discord.js";
 
 import { capitalize } from "#utils/index.js";
+import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import Component from "#managers/components/Component.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
 import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
 
 const AUTO_DELETE_DELAY = 7000;
 
+@ApplyOptions<Component.Options>({
+	id: { matches: /^ban-request-(accept|deny)-\d{17,19}$/m }
+})
 export default class BanRequestModal extends Component {
-	public constructor() {
-		super({ matches: /^ban-request-(accept|deny)-\d{17,19}$/m });
-	}
-
 	public async run(
 		interaction: ModalSubmitInteraction<"cached">,
 		configClass: GuildConfig

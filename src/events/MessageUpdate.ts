@@ -1,13 +1,12 @@
 import { Events, type Message, type PartialMessage } from "discord.js";
+
+import { ApplyOptions, EventListener } from "#rhenium";
 import { cleanMessageContent, MessageQueue } from "#utils/Messages.js";
 
-import EventListener from "#managers/events/EventListener.js";
-
+@ApplyOptions<EventListener.Options>({
+	event: Events.MessageUpdate
+})
 export default class MessageUpdate extends EventListener {
-	public constructor() {
-		super(Events.MessageUpdate);
-	}
-
 	public async onEmit(_: PartialMessage<true>, newMessage: Message<true>): Promise<any> {
 		// Ignore bot messages, webhooks, and system messages.
 		if (newMessage.author.bot || newMessage.webhookId || newMessage.system) return;

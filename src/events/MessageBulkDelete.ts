@@ -1,13 +1,12 @@
 import { Events, type Collection, type PartialMessage, type Snowflake } from "discord.js";
+
 import { MessageQueue } from "#utils/Messages.js";
+import { ApplyOptions, EventListener } from "#rhenium";
 
-import EventListener from "#managers/events/EventListener.js";
-
+@ApplyOptions<EventListener.Options>({
+	event: Events.MessageBulkDelete
+})
 export default class MessageBulkDelete extends EventListener {
-	public constructor() {
-		super(Events.MessageBulkDelete);
-	}
-
 	public async onEmit(deletedMessages: Collection<Snowflake, PartialMessage<true>>): Promise<any> {
 		const messageIds = deletedMessages
 			.filter(message => !(message.author?.bot || message.webhookId || message.system))

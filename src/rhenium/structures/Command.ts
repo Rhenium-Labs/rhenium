@@ -1,15 +1,25 @@
-import { type IUnorderedStrategy, ArgumentStream, Lexer, Parser } from "@sapphire/lexure";
-import type { ApplicationCommandData, Awaitable, CommandInteraction, Message } from "discord.js";
+import { AliasPiece } from "@sapphire/pieces";
+import { ArgumentStream, type IUnorderedStrategy, Lexer, Parser } from "@sapphire/lexure";
+import type {
+	ApplicationCommandData,
+	Awaitable,
+	ChatInputCommandInteraction,
+	CommandInteraction,
+	Message as DjsMessage,
+	MessageContextMenuCommandInteraction
+} from "discord.js";
 
 import { client, prisma } from "#root/index.js";
-
 import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
-import FlagStrategy from "#structures/FlagStrategy.js";
 import GuildConfig from "#managers/config/GuildConfig.js";
-import ArgumentParser from "./ArgParser.js";
+import FlagStrategy from "./FlagStrategy.js";
+import ArgumentParser from "./ArgumentParser.js";
 
-export default abstract class Command {
+export abstract class Command<Options extends Command.Options = Command.Options> extends AliasPiece<
+	Options,
+	"commands"
+> {
 	/**
 	 * The client this command belongs to.
 	 */
@@ -21,18 +31,6 @@ export default abstract class Command {
 	 */
 
 	public prisma = prisma;
-
-	/**
-	 * The name of the command.
-	 */
-
-	public readonly name: string;
-
-	/**
-	 * The aliases of the command.
-	 */
-
-	public readonly aliases: string[];
 
 	/**
 	 * The description of the command.
@@ -55,19 +53,18 @@ export default abstract class Command {
 	/**
 	 * Constructs a new command instance.
 	 *
+	 * @param context The command context.
 	 * @param options The command options.
 	 * @return The constructed command instance.
 	 */
 
-	public constructor(options: CommandOptions) {
-		const { name, aliases, description, flags } = options;
+	public constructor(context: AliasPiece.LoaderContext<"commands">, options: Options = {} as Options) {
+		const name = options.name ?? context.name;
+		super(context, { ...options, name });
 
-		this.name = name;
-		this.aliases = aliases ?? [];
-		this.description = description;
-
+		this.description = options.description;
 		this.lexer = new Lexer({ quotes: [] });
-		this.strategy = new FlagStrategy(Command._getStrategyOptions(flags ?? []));
+		this.strategy = new FlagStrategy(Command._getStrategyOptions(options.flags ?? []));
 	}
 
 	/**
@@ -78,7 +75,7 @@ export default abstract class Command {
 	 * @param parameters The parameters passed to the command.
 	 */
 
-	public getArgumentParser(message: Message<true>, parameters: string): ArgumentParser {
+	public getArgumentParser(message: DjsMessage<true>, parameters: string): ArgumentParser {
 		const parser = new Parser(this.strategy);
 		const stream = new ArgumentStream(parser.run(this.lexer.run(parameters)));
 		return new ArgumentParser(message, stream);
@@ -114,7 +111,7 @@ export default abstract class Command {
 	 */
 
 	public messageRun?(
-		message: Message<true>,
+		message: DjsMessage<true>,
 		args: ArgumentParser,
 		config: GuildConfig
 	): Awaitable<MessageReplyData | null>;
@@ -126,7 +123,7 @@ export default abstract class Command {
 	 * @returns An object containing the flags and options.
 	 */
 
-	private static _getStrategyOptions(flags: FlagsArray): { flags: string[]; options: string[] } {
+	private static _getStrategyOptions(flags: CommandFlag[]): { flags: string[]; options: string[] } {
 		return flags.reduce<{ flags: string[]; options: string[] }>(
 			(acc, flag) => {
 				const destination = flag.acceptsValue ? acc.options : acc.flags;
@@ -138,11 +135,24 @@ export default abstract class Command {
 	}
 }
 
-export type CommandOptions = {
+/** Options for constructing a Command instance. */
+interface CommandOptions extends AliasPiece.Options {
 	name: string;
-	aliases?: string[];
 	description: string;
-	flags?: FlagsArray;
-};
+	flags?: CommandFlag[];
+}
 
-type FlagsArray = { keys: string[]; acceptsValue: boolean }[];
+/** Represents a command flag or option. */
+interface CommandFlag {
+	keys: string[];
+	acceptsValue: boolean;
+}
+
+export namespace Command {
+	export type Data = ApplicationCommandData;
+	export type Options = CommandOptions;
+	export type Args = ArgumentParser;
+	export type Message = DjsMessage<true>;
+	export type ChatInputCmdInteraction = ChatInputCommandInteraction<"cached">;
+	export type MessageCtxInteraction = MessageContextMenuCommandInteraction<"cached">;
+}

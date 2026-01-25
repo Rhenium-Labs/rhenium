@@ -7,15 +7,15 @@ import {
 	type PartialMessageReaction
 } from "discord.js";
 
+import { ApplyOptions, EventListener } from "#rhenium";
+
 import QuickActionUtils from "#utils/QuickActions.js";
-import EventListener from "#managers/events/EventListener.js";
 import ConfigManager from "#managers/config/ConfigManager.js";
 
+@ApplyOptions<EventListener.Options>({
+	event: Events.MessageReactionAdd
+})
 export default class MessageReactionAdd extends EventListener {
-	public constructor() {
-		super(Events.MessageReactionAdd);
-	}
-
 	public async onEmit(addedReaction: MessageReaction, user: User) {
 		const reaction = await MessageReactionAdd._parseReaction(addedReaction);
 		if (!reaction) return;

@@ -1,8 +1,8 @@
-import { GatewayIntentBits, Partials } from "discord.js";
+import { GatewayIntentBits, Options, Partials } from "discord.js";
 import z from "zod";
 
 /**
- * Gateway intents used by SS.
+ * Gateway intents used by Rhenium.
  * Among these intents are privileged ones. You'll need to enable `Server Members Intent` and `Message Content Intent`.
  *
  * @see https://discord.com/developers/docs/topics/gateway#gateway-intents
@@ -19,7 +19,7 @@ export const CLIENT_INTENTS: readonly GatewayIntentBits[] = [
 ];
 
 /**
- * Partials used by SS.
+ * Partials used by Rhenium.
  * These explicitly define which partial structures the client will receive.
  */
 
@@ -29,6 +29,33 @@ export const CLIENT_PARTIALS: readonly Partials[] = [
 	Partials.Reaction,
 	Partials.GuildMember
 ];
+
+/**
+ * Cache options for Rhenium.
+ */
+export const CLIENT_CACHE_OPTIONS = Options.cacheWithLimits({
+	GuildBanManager: 0,
+	GuildEmojiManager: Infinity,
+	GuildStickerManager: 0,
+	GuildMemberManager: Infinity,
+	GuildTextThreadManager: 0,
+	GuildForumThreadManager: 0,
+	GuildInviteManager: 0,
+	GuildScheduledEventManager: 0,
+	GuildMessageManager: 0,
+
+	ThreadMemberManager: 0,
+	VoiceStateManager: 0,
+	StageInstanceManager: 0,
+	ThreadManager: 0,
+	ReactionManager: 0,
+	ReactionUserManager: 0,
+	MessageManager: 0,
+
+	UserManager: Infinity,
+	ApplicationCommandManager: Infinity,
+	BaseGuildEmojiManager: Infinity
+});
 
 /**
  * Regex patterns for matching Discord emojis.

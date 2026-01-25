@@ -1,31 +1,26 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, codeBlock, type Message } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, codeBlock } from "discord.js";
 
 import ms from "ms";
 import util from "node:util";
 
 import { hastebin } from "#utils/index.js";
-
+import { ApplyOptions, Command } from "#rhenium";
 import type { MessageReplyData } from "#utils/Types.js";
 
-import Command from "#managers/commands/Command.js";
 import GlobalConfig from "#managers/config/GlobalConfig.js";
-import ArgumentParser from "#managers/commands/ArgParser.js";
 
+@ApplyOptions<Command.Options>({
+	name: "eval",
+	aliases: ["evaluate", "execute", "run", "ev", "e"],
+	description: "Evaluate arbitrary JavaScript code.",
+	flags: [
+		{ keys: ["depth", "d"], acceptsValue: true },
+		{ keys: ["async", "a"], acceptsValue: false },
+		{ keys: ["silent", "s"], acceptsValue: false }
+	]
+})
 export default class Eval extends Command {
-	public constructor() {
-		super({
-			name: "eval",
-			aliases: ["evaluate", "execute", "run", "ev", "e"],
-			description: "Evaluate arbitrary JavaScript code.",
-			flags: [
-				{ keys: ["depth", "d"], acceptsValue: true },
-				{ keys: ["async", "a"], acceptsValue: false },
-				{ keys: ["silent", "s"], acceptsValue: false }
-			]
-		});
-	}
-
-	public async messageRun(message: Message<true>, args: ArgumentParser): Promise<MessageReplyData | null> {
+	public async messageRun(message: Command.Message, args: Command.Args): Promise<MessageReplyData | null> {
 		if (!GlobalConfig.isDeveloper(message.author.id)) return null;
 
 		if (args.finished) {
