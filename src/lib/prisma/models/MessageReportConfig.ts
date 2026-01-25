@@ -41,6 +41,7 @@ export type MessageReportConfigMinAggregateOutputType = {
 	auto_disregard_after: bigint | null;
 	placeholder_reason: string | null;
 	enforce_member_in_guild: boolean | null;
+	enforce_report_reason: boolean | null;
 };
 
 export type MessageReportConfigMaxAggregateOutputType = {
@@ -51,6 +52,7 @@ export type MessageReportConfigMaxAggregateOutputType = {
 	auto_disregard_after: bigint | null;
 	placeholder_reason: string | null;
 	enforce_member_in_guild: boolean | null;
+	enforce_report_reason: boolean | null;
 };
 
 export type MessageReportConfigCountAggregateOutputType = {
@@ -64,6 +66,7 @@ export type MessageReportConfigCountAggregateOutputType = {
 	blacklisted_users: number;
 	placeholder_reason: number;
 	enforce_member_in_guild: number;
+	enforce_report_reason: number;
 	_all: number;
 };
 
@@ -83,6 +86,7 @@ export type MessageReportConfigMinAggregateInputType = {
 	auto_disregard_after?: true;
 	placeholder_reason?: true;
 	enforce_member_in_guild?: true;
+	enforce_report_reason?: true;
 };
 
 export type MessageReportConfigMaxAggregateInputType = {
@@ -93,6 +97,7 @@ export type MessageReportConfigMaxAggregateInputType = {
 	auto_disregard_after?: true;
 	placeholder_reason?: true;
 	enforce_member_in_guild?: true;
+	enforce_report_reason?: true;
 };
 
 export type MessageReportConfigCountAggregateInputType = {
@@ -106,6 +111,7 @@ export type MessageReportConfigCountAggregateInputType = {
 	blacklisted_users?: true;
 	placeholder_reason?: true;
 	enforce_member_in_guild?: true;
+	enforce_report_reason?: true;
 	_all?: true;
 };
 
@@ -211,6 +217,7 @@ export type MessageReportConfigGroupByOutputType = {
 	blacklisted_users: string[];
 	placeholder_reason: string | null;
 	enforce_member_in_guild: boolean;
+	enforce_report_reason: boolean;
 	_count: MessageReportConfigCountAggregateOutputType | null;
 	_avg: MessageReportConfigAvgAggregateOutputType | null;
 	_sum: MessageReportConfigSumAggregateOutputType | null;
@@ -244,6 +251,7 @@ export type MessageReportConfigWhereInput = {
 	blacklisted_users?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 	placeholder_reason?: Prisma.StringNullableFilter<"MessageReportConfig"> | string | null;
 	enforce_member_in_guild?: Prisma.BoolFilter<"MessageReportConfig"> | boolean;
+	enforce_report_reason?: Prisma.BoolFilter<"MessageReportConfig"> | boolean;
 	guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 };
 
@@ -258,6 +266,7 @@ export type MessageReportConfigOrderByWithRelationInput = {
 	blacklisted_users?: Prisma.SortOrder;
 	placeholder_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
+	enforce_report_reason?: Prisma.SortOrder;
 	guild?: Prisma.GuildOrderByWithRelationInput;
 };
 
@@ -276,6 +285,7 @@ export type MessageReportConfigWhereUniqueInput = Prisma.AtLeast<
 		blacklisted_users?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 		placeholder_reason?: Prisma.StringNullableFilter<"MessageReportConfig"> | string | null;
 		enforce_member_in_guild?: Prisma.BoolFilter<"MessageReportConfig"> | boolean;
+		enforce_report_reason?: Prisma.BoolFilter<"MessageReportConfig"> | boolean;
 		guild?: Prisma.XOR<Prisma.GuildScalarRelationFilter, Prisma.GuildWhereInput>;
 	},
 	"id"
@@ -292,6 +302,7 @@ export type MessageReportConfigOrderByWithAggregationInput = {
 	blacklisted_users?: Prisma.SortOrder;
 	placeholder_reason?: Prisma.SortOrderInput | Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
+	enforce_report_reason?: Prisma.SortOrder;
 	_count?: Prisma.MessageReportConfigCountOrderByAggregateInput;
 	_avg?: Prisma.MessageReportConfigAvgOrderByAggregateInput;
 	_max?: Prisma.MessageReportConfigMaxOrderByAggregateInput;
@@ -317,6 +328,7 @@ export type MessageReportConfigScalarWhereWithAggregatesInput = {
 	blacklisted_users?: Prisma.StringNullableListFilter<"MessageReportConfig">;
 	placeholder_reason?: Prisma.StringNullableWithAggregatesFilter<"MessageReportConfig"> | string | null;
 	enforce_member_in_guild?: Prisma.BoolWithAggregatesFilter<"MessageReportConfig"> | boolean;
+	enforce_report_reason?: Prisma.BoolWithAggregatesFilter<"MessageReportConfig"> | boolean;
 };
 
 export type MessageReportConfigCreateInput = {
@@ -329,6 +341,7 @@ export type MessageReportConfigCreateInput = {
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
 	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
+	enforce_report_reason?: boolean;
 	guild: Prisma.GuildCreateNestedOneWithoutMessage_report_configInput;
 };
 
@@ -343,6 +356,7 @@ export type MessageReportConfigUncheckedCreateInput = {
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
 	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
+	enforce_report_reason?: boolean;
 };
 
 export type MessageReportConfigUpdateInput = {
@@ -355,6 +369,7 @@ export type MessageReportConfigUpdateInput = {
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
 	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	enforce_report_reason?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 	guild?: Prisma.GuildUpdateOneRequiredWithoutMessage_report_configNestedInput;
 };
 
@@ -369,6 +384,7 @@ export type MessageReportConfigUncheckedUpdateInput = {
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
 	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	enforce_report_reason?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type MessageReportConfigCreateManyInput = {
@@ -382,6 +398,7 @@ export type MessageReportConfigCreateManyInput = {
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
 	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
+	enforce_report_reason?: boolean;
 };
 
 export type MessageReportConfigUpdateManyMutationInput = {
@@ -394,6 +411,7 @@ export type MessageReportConfigUpdateManyMutationInput = {
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
 	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	enforce_report_reason?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type MessageReportConfigUncheckedUpdateManyInput = {
@@ -407,6 +425,7 @@ export type MessageReportConfigUncheckedUpdateManyInput = {
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
 	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	enforce_report_reason?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type MessageReportConfigNullableScalarRelationFilter = {
@@ -433,6 +452,7 @@ export type MessageReportConfigCountOrderByAggregateInput = {
 	blacklisted_users?: Prisma.SortOrder;
 	placeholder_reason?: Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
+	enforce_report_reason?: Prisma.SortOrder;
 };
 
 export type MessageReportConfigAvgOrderByAggregateInput = {
@@ -447,6 +467,7 @@ export type MessageReportConfigMaxOrderByAggregateInput = {
 	auto_disregard_after?: Prisma.SortOrder;
 	placeholder_reason?: Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
+	enforce_report_reason?: Prisma.SortOrder;
 };
 
 export type MessageReportConfigMinOrderByAggregateInput = {
@@ -457,6 +478,7 @@ export type MessageReportConfigMinOrderByAggregateInput = {
 	auto_disregard_after?: Prisma.SortOrder;
 	placeholder_reason?: Prisma.SortOrder;
 	enforce_member_in_guild?: Prisma.SortOrder;
+	enforce_report_reason?: Prisma.SortOrder;
 };
 
 export type MessageReportConfigSumOrderByAggregateInput = {
@@ -572,6 +594,7 @@ export type MessageReportConfigCreateWithoutGuildInput = {
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
 	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
+	enforce_report_reason?: boolean;
 };
 
 export type MessageReportConfigUncheckedCreateWithoutGuildInput = {
@@ -584,6 +607,7 @@ export type MessageReportConfigUncheckedCreateWithoutGuildInput = {
 	blacklisted_users?: Prisma.MessageReportConfigCreateblacklisted_usersInput | string[];
 	placeholder_reason?: string | null;
 	enforce_member_in_guild?: boolean;
+	enforce_report_reason?: boolean;
 };
 
 export type MessageReportConfigCreateOrConnectWithoutGuildInput = {
@@ -624,6 +648,7 @@ export type MessageReportConfigUpdateWithoutGuildInput = {
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
 	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	enforce_report_reason?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type MessageReportConfigUncheckedUpdateWithoutGuildInput = {
@@ -636,6 +661,7 @@ export type MessageReportConfigUncheckedUpdateWithoutGuildInput = {
 	blacklisted_users?: Prisma.MessageReportConfigUpdateblacklisted_usersInput | string[];
 	placeholder_reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
 	enforce_member_in_guild?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+	enforce_report_reason?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type MessageReportConfigSelect<
@@ -652,6 +678,7 @@ export type MessageReportConfigSelect<
 		blacklisted_users?: boolean;
 		placeholder_reason?: boolean;
 		enforce_member_in_guild?: boolean;
+		enforce_report_reason?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
 	ExtArgs["result"]["messageReportConfig"]
@@ -671,6 +698,7 @@ export type MessageReportConfigSelectCreateManyAndReturn<
 		blacklisted_users?: boolean;
 		placeholder_reason?: boolean;
 		enforce_member_in_guild?: boolean;
+		enforce_report_reason?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
 	ExtArgs["result"]["messageReportConfig"]
@@ -690,6 +718,7 @@ export type MessageReportConfigSelectUpdateManyAndReturn<
 		blacklisted_users?: boolean;
 		placeholder_reason?: boolean;
 		enforce_member_in_guild?: boolean;
+		enforce_report_reason?: boolean;
 		guild?: boolean | Prisma.GuildDefaultArgs<ExtArgs>;
 	},
 	ExtArgs["result"]["messageReportConfig"]
@@ -706,6 +735,7 @@ export type MessageReportConfigSelectScalar = {
 	blacklisted_users?: boolean;
 	placeholder_reason?: boolean;
 	enforce_member_in_guild?: boolean;
+	enforce_report_reason?: boolean;
 };
 
 export type MessageReportConfigOmit<
@@ -720,7 +750,8 @@ export type MessageReportConfigOmit<
 	| "notify_roles"
 	| "blacklisted_users"
 	| "placeholder_reason"
-	| "enforce_member_in_guild",
+	| "enforce_member_in_guild"
+	| "enforce_report_reason",
 	ExtArgs["result"]["messageReportConfig"]
 >;
 export type MessageReportConfigInclude<
@@ -758,6 +789,7 @@ export type $MessageReportConfigPayload<
 			blacklisted_users: string[];
 			placeholder_reason: string | null;
 			enforce_member_in_guild: boolean;
+			enforce_report_reason: boolean;
 		},
 		ExtArgs["result"]["messageReportConfig"]
 	>;
@@ -1319,6 +1351,7 @@ export interface MessageReportConfigFieldRefs {
 	readonly blacklisted_users: Prisma.FieldRef<"MessageReportConfig", "String[]">;
 	readonly placeholder_reason: Prisma.FieldRef<"MessageReportConfig", "String">;
 	readonly enforce_member_in_guild: Prisma.FieldRef<"MessageReportConfig", "Boolean">;
+	readonly enforce_report_reason: Prisma.FieldRef<"MessageReportConfig", "Boolean">;
 }
 
 // Custom InputTypes

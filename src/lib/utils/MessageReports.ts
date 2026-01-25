@@ -33,7 +33,7 @@ export default class MessageReportUtils {
 	 */
 
 	public static async create(data: {
-		interaction: ModalSubmitInteraction<"cached">;
+		interaction: ModalSubmitInteraction<"cached"> | MessageContextMenuCommandInteraction<"cached">;
 		config: MessageReportConfig;
 		author: User;
 		message: Message<true>;

@@ -97,6 +97,7 @@ model MessageReportConfig {
   placeholder_reason String?
 
   enforce_member_in_guild Boolean @default(true)
+  enforce_report_reason   Boolean @default(false)
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
 }

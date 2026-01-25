@@ -165,6 +165,19 @@ export default class Config extends Command {
 							]
 						},
 						{
+							name: ConfigSubcommand.EnforceReason,
+							description: "Enforce reporters to provide a reason when reporting messages.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "value",
+									description: "True to enforce, false to not enforce.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
+						{
 							name: ConfigSubcommand.SetLogChannel,
 							description: "Set the log channel for reports.",
 							type: ApplicationCommandOptionType.Subcommand,
@@ -864,6 +877,8 @@ export default class Config extends Command {
 				this._removePermissionFromScope(interaction, config),
 
 			// Message Reports Group
+			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.EnforceReason}`]: () =>
+				this._toggleReportsEnforceReason(interaction, config),
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.AddImmuneRole}`]: () =>
 				this._addReportsImmuneRole(interaction, config),
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.SetDefaultReason}`]: () =>
@@ -2041,6 +2056,29 @@ export default class Config extends Command {
 		};
 	}
 
+	private async _toggleReportsEnforceReason(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const value = interaction.options.getBoolean("value", true);
+		const config = configClass.data.message_reports;
+
+		if (config.enforce_report_reason === value) {
+			return {
+				error: `Message report reason enforcement is already ${value ? "enabled" : "disabled"}.`
+			};
+		}
+
+		await this.prisma.messageReportConfig.update({
+			where: { id: interaction.guild.id },
+			data: { enforce_report_reason: value }
+		});
+
+		return {
+			content: `Successfully ${value ? "enabled" : "disabled"} message report reason enforcement.`
+		};
+	}
+
 	private async _addReportsImmuneRole(
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
@@ -2729,6 +2767,7 @@ const ConfigSubcommand = {
 	AddChannelScoping: "add-channel-scoping",
 	RemoveChannelScoping: "remove-channel-scoping",
 	ListChannelScopings: "list-channel-scoping",
+	EnforceReason: "enforce-reason",
 	Create: "create",
 	Delete: "delete",
 	List: "list",

@@ -5,7 +5,8 @@ import {
 	LabelBuilder,
 	ModalBuilder,
 	TextInputBuilder,
-	TextInputStyle
+	TextInputStyle,
+	MessageFlags
 } from "discord.js";
 
 import { ReportStatus } from "#prisma/enums.js";
@@ -35,6 +36,10 @@ export default class ReportMessageCtx extends Command {
 		configClass: GuildConfig
 	): Promise<InteractionReplyData | null> {
 		const config = configClass.getMessageReportsConfig();
+
+		if (!config?.enforce_report_reason) {
+			await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+		}
 
 		if (!config) {
 			return {
@@ -114,6 +119,16 @@ export default class ReportMessageCtx extends Command {
 			return {
 				content: `Successfully bumped report submission for ${targetUser}'s message - ID \`#${report.id}\``
 			};
+		}
+
+		if (!config.enforce_report_reason) {
+			return MessageReportUtils.create({
+				author: message.author,
+				interaction,
+				config,
+				message,
+				reason: config.placeholder_reason ?? "No reason provided."
+			});
 		}
 
 		const reasonInput = new TextInputBuilder()

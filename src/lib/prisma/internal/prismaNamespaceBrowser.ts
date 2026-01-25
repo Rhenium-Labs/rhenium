@@ -110,7 +110,8 @@ export const MessageReportConfigScalarFieldEnum = {
 	notify_roles: "notify_roles",
 	blacklisted_users: "blacklisted_users",
 	placeholder_reason: "placeholder_reason",
-	enforce_member_in_guild: "enforce_member_in_guild"
+	enforce_member_in_guild: "enforce_member_in_guild",
+	enforce_report_reason: "enforce_report_reason"
 } as const;
 
 export type MessageReportConfigScalarFieldEnum =
