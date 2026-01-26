@@ -195,11 +195,11 @@ export default class QuickActionUtils {
 			const logWebhook = new WebhookClient({ url: quickMuteGuildConfig.webhook_url });
 
 			const content =
-				purgeResult && purgeResult.deleted > 0
+				purgeResult?.ok && purgeResult.deleted > 0
 					? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} in ${message.channel}.`
 					: `${executor}, successfully quick muted ${target} for \`${formattedDuration}\`.`;
 
-			if (purgeResult) {
+			if (purgeResult?.ok && purgeResult.deleted > 0) {
 				const entries = purgeResult.entries ?? [];
 				const attachment = QuickActionUtils._mapLogEntriesToFile(entries);
 				const components: ActionRowBuilder<ButtonBuilder>[] = [];
