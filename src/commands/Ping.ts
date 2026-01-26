@@ -18,7 +18,7 @@ export default class Ping extends Command {
 		};
 	}
 
-	public async interactionRun(interaction: Command.ChatInputCmdInteraction): Promise<InteractionReplyData> {
+	public async interactionRun(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
 		const start = performance.now();
 		await interaction.deferReply();
 		const end = performance.now();

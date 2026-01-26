@@ -1,5 +1,3 @@
-import type { ModalSubmitInteraction } from "discord.js";
-
 import { capitalize } from "#utils/index.js";
 import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
@@ -14,7 +12,7 @@ const AUTO_DELETE_DELAY = 7000;
 })
 export default class BanRequestModal extends Component {
 	public async run(
-		interaction: ModalSubmitInteraction<"cached">,
+		interaction: Component.Interaction<"modalSubmit">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData | null> {
 		const config = configClass.getBanRequestsConfig();

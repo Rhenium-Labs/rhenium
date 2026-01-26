@@ -1,6 +1,5 @@
 import {
 	type APIEmbed,
-	type ButtonInteraction,
 	type GuildTextBasedChannel,
 	type TopLevelComponent,
 	ComponentType,
@@ -17,7 +16,7 @@ import type { InteractionReplyData } from "#utils/Types.js";
 	id: { matches: /^delete-(original|reference)-report-message-\d{17,19}-\d{17,19}$/m }
 })
 export default class DeleteReportMessage extends Component {
-	public async run(interaction: ButtonInteraction<"cached">): Promise<InteractionReplyData | null> {
+	public async run(interaction: Component.Interaction<"button">): Promise<InteractionReplyData | null> {
 		const type = interaction.customId.split("-")[1] as "original" | "reference";
 		const channelId = interaction.customId.split("-")[4];
 		const messageId = interaction.customId.split("-")[5];

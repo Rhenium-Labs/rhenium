@@ -1,4 +1,4 @@
-import { type ButtonInteraction, Colors, EmbedBuilder, time } from "discord.js";
+import { Colors, EmbedBuilder, time } from "discord.js";
 
 import { inflect } from "#utils/index.js";
 import { ApplyOptions, Component } from "#rhenium";
@@ -8,7 +8,7 @@ import type { InteractionReplyData } from "#utils/Types.js";
 	id: { matches: /^user-info-\d{17,19}$/m }
 })
 export default class UserInfo extends Component {
-	public async run(interaction: ButtonInteraction<"cached">): Promise<InteractionReplyData> {
+	public async run(interaction: Component.Interaction<"button">): Promise<InteractionReplyData> {
 		const targetId = interaction.customId.split("-")[2];
 		const targetUser = await interaction.client.users.fetch(targetId).catch(() => null);
 

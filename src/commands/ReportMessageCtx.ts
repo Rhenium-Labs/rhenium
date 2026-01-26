@@ -27,7 +27,7 @@ export default class ReportMessageCtx extends Command {
 	}
 
 	public async interactionRun(
-		interaction: Command.MessageCtxInteraction,
+		interaction: Command.Interaction<"messageContextMenu">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData | null> {
 		const config = configClass.getMessageReportsConfig();

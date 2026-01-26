@@ -57,7 +57,7 @@ export default class Reports extends Command {
 	}
 
 	public async interactionRun(
-		interaction: Command.ChatInputCmdInteraction,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const subcommand = interaction.options.getSubcommand(true);

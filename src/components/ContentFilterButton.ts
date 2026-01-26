@@ -1,4 +1,4 @@
-import { type ButtonInteraction, Colors, EmbedBuilder, MessageFlags, ComponentType } from "discord.js";
+import { Colors, EmbedBuilder, MessageFlags, ComponentType } from "discord.js";
 
 import { ContentFilterStatus } from "#prisma/enums.js";
 import { ApplyOptions, Component } from "#rhenium";
@@ -16,7 +16,7 @@ import AutomatedScanner from "#cf/AutomatedScanner.js";
 })
 export default class ContentFilterButton extends Component {
 	public async run(
-		interaction: ButtonInteraction<"cached">,
+		interaction: Component.Interaction<"button">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData | null> {
 		const config = configClass.getContentFilterConfig();
@@ -51,7 +51,7 @@ export default class ContentFilterButton extends Component {
 	 * @param parts The custom ID parts.
 	 */
 	private async _handleDelete(
-		interaction: ButtonInteraction<"cached">,
+		interaction: Component.Interaction<"button">,
 		parts: string[]
 	): Promise<InteractionReplyData | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -132,7 +132,7 @@ export default class ContentFilterButton extends Component {
 	 * @param parts The custom ID parts.
 	 */
 	private async _handleResolve(
-		interaction: ButtonInteraction<"cached">,
+		interaction: Component.Interaction<"button">,
 		parts: string[]
 	): Promise<InteractionReplyData | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -188,7 +188,7 @@ export default class ContentFilterButton extends Component {
 	 * @param parts The custom ID parts.
 	 */
 	private async _handleFalsePositive(
-		interaction: ButtonInteraction<"cached">,
+		interaction: Component.Interaction<"button">,
 		parts: string[]
 	): Promise<InteractionReplyData | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -258,7 +258,7 @@ export default class ContentFilterButton extends Component {
 	 * @param parts The custom ID parts.
 	 */
 	private async _handleViewContent(
-		interaction: ButtonInteraction<"cached">,
+		interaction: Component.Interaction<"button">,
 		parts: string[]
 	): Promise<InteractionReplyData | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });

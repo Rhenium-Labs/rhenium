@@ -1,4 +1,4 @@
-import { MessageFlags, type Message, type ModalSubmitInteraction, type TextBasedChannel } from "discord.js";
+import { MessageFlags, type Message, type TextBasedChannel } from "discord.js";
 
 import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
@@ -11,7 +11,7 @@ import MessageReportUtils from "#utils/MessageReports.js";
 })
 export default class ReportMessage extends Component {
 	public async run(
-		interaction: ModalSubmitInteraction<"cached">,
+		interaction: Component.Interaction<"modalSubmit">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.getMessageReportsConfig();

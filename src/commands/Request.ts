@@ -64,7 +64,7 @@ export default class Request extends Command {
 	}
 
 	public async interactionRun(
-		interaction: Command.ChatInputCmdInteraction,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.getBanRequestsConfig();

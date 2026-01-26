@@ -1,4 +1,4 @@
-import { type ButtonInteraction, LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { LabelBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 
 import { ApplyOptions, Component } from "#rhenium";
 import { capitalize, userMentionWithId } from "#utils/index.js";
@@ -14,7 +14,7 @@ const AUTO_DELETE_DELAY = 7000;
 })
 export default class BanRequestButton extends Component {
 	public async run(
-		interaction: ButtonInteraction<"cached">,
+		interaction: Component.Interaction<"button">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData | null> {
 		const config = configClass.getBanRequestsConfig();

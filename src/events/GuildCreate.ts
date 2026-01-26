@@ -9,6 +9,6 @@ import ConfigManager from "#managers/config/ConfigManager.js";
 export default class GuildCreate extends EventListener {
 	public async onEmit(guild: Guild) {
 		// Compute and cache the guild configuration.
-		await ConfigManager.compute(guild.id);
+		return ConfigManager.getGuildConfig(guild.id);
 	}
 }

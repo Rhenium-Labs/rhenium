@@ -1,8 +1,9 @@
 import { Piece } from "@sapphire/pieces";
-import type { Awaitable, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
+import type { Awaitable, ButtonInteraction, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
 
 import { client, prisma } from "#root/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
+
 import GuildConfig from "#managers/config/GuildConfig.js";
 
 export abstract class Component<Options extends Component.Options = Component.Options> extends Piece<
@@ -98,7 +99,12 @@ export type ComponentCustomID =
 
 export type ComponentInteraction = MessageComponentInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 
+type InteractionGeneric = "button" | "modalSubmit";
+
 export namespace Component {
 	export type CustomID = ComponentCustomID;
 	export type Options = ComponentOptions;
+	export type Interaction<T extends InteractionGeneric> = T extends "button"
+		? ButtonInteraction<"cached">
+		: ModalSubmitInteraction<"cached">;
 }

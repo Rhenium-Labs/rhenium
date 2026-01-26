@@ -1,5 +1,4 @@
 import {
-	type ChatInputCommandInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -813,7 +812,7 @@ export default class Config extends Command {
 	}
 
 	public async interactionRun(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const subcommandGroup = interaction.options.getSubcommandGroup() as ConfigSubcommandGroup;
@@ -950,7 +949,7 @@ export default class Config extends Command {
 	}
 
 	private async setContentFilterDetectorMode(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const mode = interaction.options.getString("mode", true) as DetectorMode;
@@ -969,7 +968,7 @@ export default class Config extends Command {
 	}
 
 	private async _setContentFilterVerbosity(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const level = interaction.options.getString("level", true) as ContentFilterVerbosity;
@@ -988,7 +987,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleContentFilterDetector(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const detector = interaction.options.getString("detector", true) as Detector;
@@ -1018,7 +1017,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleContentFilter(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const enable = interaction.options.getBoolean("value", true);
@@ -1041,7 +1040,7 @@ export default class Config extends Command {
 	}
 
 	private async _setContentFilterReviewChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -1096,7 +1095,7 @@ export default class Config extends Command {
 	}
 
 	private async _addContentFilterImmuneRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -1117,7 +1116,7 @@ export default class Config extends Command {
 	}
 
 	private async _removeContentFilterImmuneRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -1138,7 +1137,7 @@ export default class Config extends Command {
 	}
 
 	private async _listContentFilterImmuneRoles(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.content_filter;
@@ -1163,7 +1162,7 @@ export default class Config extends Command {
 	}
 
 	private async _addContentFilterChannelScoping(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.content_filter;
@@ -1189,7 +1188,7 @@ export default class Config extends Command {
 	}
 
 	private async _removeContentFilterChannelScoping(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.content_filter;
@@ -1209,7 +1208,7 @@ export default class Config extends Command {
 	}
 
 	private async _listContentFilterChannelScopings(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.content_filter;
@@ -1242,7 +1241,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleQuickMutes(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const enable = interaction.options.getBoolean("value", true);
@@ -1265,7 +1264,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleQuickPurges(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const enable = interaction.options.getBoolean("value", true);
@@ -1288,7 +1287,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleHighlights(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const enable = interaction.options.getBoolean("value", true);
@@ -1311,7 +1310,7 @@ export default class Config extends Command {
 	}
 
 	private async _setQuickPurgeLogChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -1366,7 +1365,7 @@ export default class Config extends Command {
 	}
 
 	private async _setQuickPurgeResultChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -1421,7 +1420,7 @@ export default class Config extends Command {
 	}
 
 	private async _setQuickMuteLogChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -1476,7 +1475,7 @@ export default class Config extends Command {
 	}
 
 	private async _setQuickMuteResultChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -1531,7 +1530,7 @@ export default class Config extends Command {
 	}
 
 	private async _setQuickMutePurgeLimit(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const amount = interaction.options.getInteger("amount", true);
@@ -1554,7 +1553,7 @@ export default class Config extends Command {
 	}
 
 	private async _addQuickMuteChannelScoping(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.quick_mutes;
@@ -1580,7 +1579,7 @@ export default class Config extends Command {
 	}
 
 	private async _removeQuickMuteChannelScoping(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.quick_mutes;
@@ -1605,7 +1604,7 @@ export default class Config extends Command {
 	}
 
 	private async _listQuickMuteChannelScopings(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.quick_mutes;
@@ -1640,7 +1639,7 @@ export default class Config extends Command {
 	}
 
 	private async _setQuickPurgeLimit(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const amount = interaction.options.getInteger("amount", true);
@@ -1663,7 +1662,7 @@ export default class Config extends Command {
 	}
 
 	private async _addQuickPurgeChannelScoping(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.quick_purges;
@@ -1689,7 +1688,7 @@ export default class Config extends Command {
 	}
 
 	private async _removeQuickPurgeChannelScoping(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.quick_purges;
@@ -1714,7 +1713,7 @@ export default class Config extends Command {
 	}
 
 	private async _listQuickPurgeChannelScopings(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.quick_purges;
@@ -1749,7 +1748,7 @@ export default class Config extends Command {
 	}
 
 	private async _setMaxHighlightPatterns(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const amount = interaction.options.getInteger("amount", true);
@@ -1772,7 +1771,7 @@ export default class Config extends Command {
 	}
 
 	private async _createPermissionScope(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -1815,7 +1814,7 @@ export default class Config extends Command {
 	}
 
 	private async _deletePermissionScope(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -1851,7 +1850,7 @@ export default class Config extends Command {
 	}
 
 	private async _listPermissionScopes(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const scopes = config.data.permission_scopes;
@@ -1885,7 +1884,7 @@ export default class Config extends Command {
 	}
 
 	private async _addPermissionToScope(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -1943,7 +1942,7 @@ export default class Config extends Command {
 	}
 
 	private async _removePermissionFromScope(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -2005,7 +2004,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleReports(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const value = interaction.options.getBoolean("value", true);
@@ -2028,7 +2027,7 @@ export default class Config extends Command {
 	}
 
 	private async _setReportsDefaultReason(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const rawReason = interaction.options.getString("reason", true);
@@ -2053,7 +2052,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleReportsEnforceReason(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const value = interaction.options.getBoolean("value", true);
@@ -2076,7 +2075,7 @@ export default class Config extends Command {
 	}
 
 	private async _addReportsImmuneRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -2103,7 +2102,7 @@ export default class Config extends Command {
 	}
 
 	private async _removeReportsImmuneRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -2134,7 +2133,7 @@ export default class Config extends Command {
 	}
 
 	private async _listReportImmuneRoles(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.message_reports;
@@ -2159,7 +2158,7 @@ export default class Config extends Command {
 	}
 
 	private async _addReportNotifyRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -2186,7 +2185,7 @@ export default class Config extends Command {
 	}
 
 	private async _removeReportNotifyRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -2217,7 +2216,7 @@ export default class Config extends Command {
 	}
 
 	private async _listReportNotifyRoles(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.message_reports;
@@ -2242,7 +2241,7 @@ export default class Config extends Command {
 	}
 
 	private async _setReportReviewChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -2297,7 +2296,7 @@ export default class Config extends Command {
 	}
 
 	private async _setReportLogChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -2352,7 +2351,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleRequests(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const value = interaction.options.getBoolean("value", true);
@@ -2375,7 +2374,7 @@ export default class Config extends Command {
 	}
 
 	private async _toggleAutomaticallyTimeout(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const value = interaction.options.getBoolean("value", true);
@@ -2398,7 +2397,7 @@ export default class Config extends Command {
 	}
 
 	private async _setRequestReviewChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -2453,7 +2452,7 @@ export default class Config extends Command {
 	}
 
 	private async _setRequestDecisionChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -2508,7 +2507,7 @@ export default class Config extends Command {
 	}
 
 	private async _setRequestLogChannel(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
@@ -2563,7 +2562,7 @@ export default class Config extends Command {
 	}
 
 	private async _listRequestNotifyRoles(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.ban_requests;
@@ -2588,7 +2587,7 @@ export default class Config extends Command {
 	}
 
 	private async _addRequestNotifyRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -2615,7 +2614,7 @@ export default class Config extends Command {
 	}
 
 	private async _removeRequestNotifyRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -2646,7 +2645,7 @@ export default class Config extends Command {
 	}
 
 	private async _listRequestImmuneRoles(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const config = configClass.data.ban_requests;
@@ -2671,7 +2670,7 @@ export default class Config extends Command {
 	}
 
 	private async _addRequestImmuneRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
@@ -2698,7 +2697,7 @@ export default class Config extends Command {
 	}
 
 	private async _removeRequestImmuneRole(
-		interaction: ChatInputCommandInteraction<"cached">,
+		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);

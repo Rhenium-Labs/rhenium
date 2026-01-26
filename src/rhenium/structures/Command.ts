@@ -6,7 +6,8 @@ import type {
 	ChatInputCommandInteraction,
 	CommandInteraction,
 	Message as DjsMessage,
-	MessageContextMenuCommandInteraction
+	MessageContextMenuCommandInteraction,
+	UserContextMenuCommandInteraction
 } from "discord.js";
 
 import { client, prisma } from "#root/index.js";
@@ -148,11 +149,16 @@ interface CommandFlag {
 	acceptsValue: boolean;
 }
 
+type InteractionGeneric = "chatInput" | "messageContextMenu" | "userContextMenu";
+
 export namespace Command {
 	export type Data = ApplicationCommandData;
 	export type Options = CommandOptions;
 	export type Args = ArgumentParser;
 	export type Message = DjsMessage<true>;
-	export type ChatInputCmdInteraction = ChatInputCommandInteraction<"cached">;
-	export type MessageCtxInteraction = MessageContextMenuCommandInteraction<"cached">;
+	export type Interaction<T extends InteractionGeneric = InteractionGeneric> = T extends "chatInput"
+		? ChatInputCommandInteraction<"cached">
+		: T extends "messageContextMenu"
+			? MessageContextMenuCommandInteraction<"cached">
+			: UserContextMenuCommandInteraction<"cached">;
 }
