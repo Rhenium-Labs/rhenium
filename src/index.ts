@@ -18,11 +18,11 @@ import { sleep } from "#utils/index.js";
 import { Rhenium } from "#rhenium";
 import { PrismaClient } from "#prisma/client.js";
 import { MessageQueue } from "#utils/Messages.js";
-import { initCacheInvalidator } from "#utils/Prisma.js";
+import { initConfigCacheInvalidator } from "#prisma/invalidator.js";
 import { CLIENT_CACHE_OPTIONS, CLIENT_INTENTS, CLIENT_PARTIALS, PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
 
 import Logger from "#utils/Logger.js";
-import GlobalConfig from "#managers/config/GlobalConfig.js";
+import GlobalConfig from "./lib/config/GlobalConfig.js";
 
 /** The Discord client instance. */
 export const client = new Rhenium({
@@ -41,7 +41,7 @@ export const client = new Rhenium({
 /** The Prisma client instance. */
 export const prisma = new PrismaClient({
 	adapter: new PrismaPg({ connectionString: process.env.PG_URL })
-}).$extends(initCacheInvalidator());
+}).$extends(initConfigCacheInvalidator());
 
 /** LMDB KV. */
 export const kv = open<Object, string>({

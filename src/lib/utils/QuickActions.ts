@@ -33,7 +33,7 @@ import { LOG_DATE_FORMAT } from "./Constants.js";
 import { MessageQueue } from "./Messages.js";
 
 import ModerationUtils from "./Moderation.js";
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "../config/GuildConfig.js";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */
 const BULK_DELETE_MAX_AGE = 14 * 24 * 60 * 60 * 1000;

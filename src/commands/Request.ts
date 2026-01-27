@@ -14,7 +14,7 @@ import { parseDurationString, validateDuration } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 import BanRequestUtils from "#utils/BanRequests.js";
 import ModerationUtils from "#utils/Moderation.js";
 

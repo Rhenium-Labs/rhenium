@@ -6,7 +6,7 @@ import { MessageQueue } from "#utils/Messages.js";
 import { ApplyOptions, Command } from "#rhenium";
 import type { MessageReplyData } from "#utils/Types.js";
 
-import GlobalConfig from "#managers/config/GlobalConfig.js";
+import GlobalConfig from "#root/lib/config/GlobalConfig.js";
 
 @ApplyOptions<Command.Options>({
 	name: "stats",

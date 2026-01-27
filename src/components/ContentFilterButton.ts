@@ -7,7 +7,7 @@ import { hastebin, userMentionWithId } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 

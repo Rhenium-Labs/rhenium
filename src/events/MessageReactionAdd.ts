@@ -10,7 +10,7 @@ import {
 import { ApplyOptions, EventListener } from "#rhenium";
 
 import QuickActionUtils from "#utils/QuickActions.js";
-import ConfigManager from "#managers/config/ConfigManager.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.MessageReactionAdd
@@ -23,7 +23,7 @@ export default class MessageReactionAdd extends EventListener {
 		const message = await MessageReactionAdd._parseMessage(reaction.message);
 		if (!message || !message.inGuild()) return;
 
-		const config = await ConfigManager.getGuildConfig(message.guild.id);
+		const config = await ConfigManager.get(message.guild.id);
 
 		return Promise.all([
 			QuickActionUtils.handleQuickMute({ user, message, reaction, config }),

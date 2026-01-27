@@ -15,8 +15,8 @@ import { ApplyOptions, Command } from "#rhenium";
 import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#prisma/enums.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
-import ConfigManager from "#managers/config/ConfigManager.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 @ApplyOptions<Command.Options>({
 	name: "config",
@@ -1807,7 +1807,7 @@ export default class Config extends Command {
 					allowed_permissions: [permission]
 				}
 			}),
-			ConfigManager.updateCachedConfig(interaction.guildId, "permission_scopes", updatedScopes)
+			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
 		]);
 
 		return { content: `Successfully created a permission scope for the ${role} role.` };
@@ -1843,7 +1843,7 @@ export default class Config extends Command {
 					}
 				}
 			}),
-			ConfigManager.updateCachedConfig(interaction.guildId, "permission_scopes", updatedScopes)
+			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
 		]);
 
 		return { content: `Successfully deleted the permission scope for the ${role} role.` };
@@ -1933,7 +1933,7 @@ export default class Config extends Command {
 					}
 				}
 			}),
-			ConfigManager.updateCachedConfig(interaction.guildId, "permission_scopes", updatedScopes)
+			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
 		]);
 
 		return {
@@ -1995,7 +1995,7 @@ export default class Config extends Command {
 					allowed_permissions: scope.allowed_permissions.filter(p => p !== permission)
 				}
 			}),
-			ConfigManager.updateCachedConfig(interaction.guildId, "permission_scopes", updatedScopes)
+			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
 		]);
 
 		return {

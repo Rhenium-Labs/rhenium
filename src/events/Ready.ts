@@ -3,7 +3,7 @@ import { Events } from "discord.js";
 import { ApplyOptions, EventListener } from "#rhenium";
 
 import Logger from "#utils/Logger.js";
-import GlobalConfig from "#managers/config/GlobalConfig.js";
+import GlobalConfig from "#root/lib/config/GlobalConfig.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 import HeuristicScanner from "#cf/HeuristicScanner.js";
 

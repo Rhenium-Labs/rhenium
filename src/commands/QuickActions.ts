@@ -24,7 +24,7 @@ import {
 import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 
 @ApplyOptions<Command.Options>({
 	name: "quick",

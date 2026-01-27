@@ -3,7 +3,7 @@ import { MessageFlags, type Message, type TextBasedChannel } from "discord.js";
 import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 import MessageReportUtils from "#utils/MessageReports.js";
 
 @ApplyOptions<Component.Options>({

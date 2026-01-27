@@ -4,7 +4,7 @@ import { ApplyOptions, Component } from "#rhenium";
 import { capitalize, userMentionWithId } from "#utils/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
 
 const AUTO_DELETE_DELAY = 7000;

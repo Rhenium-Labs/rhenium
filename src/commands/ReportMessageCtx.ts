@@ -11,7 +11,7 @@ import { ReportStatus } from "#prisma/enums.js";
 import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 import MessageReportUtils from "#utils/MessageReports.js";
 
 @ApplyOptions<Command.Options>({

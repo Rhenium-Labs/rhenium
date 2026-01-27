@@ -4,7 +4,7 @@ import type { Awaitable, ButtonInteraction, MessageComponentInteraction, ModalSu
 import { client, prisma } from "#root/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 
 export abstract class Component<Options extends Component.Options = Component.Options> extends Piece<
 	Options,

@@ -14,7 +14,7 @@ import type {
 	QuickPurgeConfig
 } from "#prisma/client.js";
 
-import GuildConfig, { type GuildConfigData } from "#managers/config/GuildConfig.js";
+import GuildConfig, { type GuildConfigData } from "./GuildConfig.js";
 
 export default class ConfigManager {
 	/**
@@ -30,7 +30,7 @@ export default class ConfigManager {
 	 * @returns The GuildConfig for the specified guild.
 	 */
 
-	public static async getGuildConfig(guildId: string): Promise<GuildConfig> {
+	public static async get(guildId: string): Promise<GuildConfig> {
 		let config = this._cache.get(guildId);
 
 		if (!config) {
@@ -50,7 +50,7 @@ export default class ConfigManager {
 	 * @returns void
 	 */
 
-	public static async updateCachedConfig<T extends ConfigFeature>(
+	public static async update<T extends ConfigFeature>(
 		guildId: string,
 		feature: T,
 		data: Partial<ConfigFeatureMap[T]>
@@ -86,7 +86,7 @@ export default class ConfigManager {
 	 * @param feature The feature key to recompute.
 	 * @returns void
 	 */
-	public static async recomputeFeature(guildId: string, feature: ConfigFeature): Promise<void> {
+	public static async computeSingle(guildId: string, feature: ConfigFeature): Promise<void> {
 		const config = this._cache.get(guildId);
 
 		if (!config) {

@@ -19,9 +19,9 @@ import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import RateLimiter from "#structures/RateLimiter.js";
-import GuildConfig from "#managers/config/GuildConfig.js";
-import ConfigManager from "#managers/config/ConfigManager.js";
+import RateLimiter from "#utils/RateLimiter.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
@@ -235,7 +235,7 @@ export default class Highlights extends Command {
 	/** Highlights a message if it matches any user's highlight patterns. */
 	public static async highlightMessage(message: Message<true>) {
 		const guildId = message.guild.id;
-		const config = await ConfigManager.getGuildConfig(guildId);
+		const config = await ConfigManager.get(guildId);
 
 		if (!config.data.highlights.enabled) return;
 

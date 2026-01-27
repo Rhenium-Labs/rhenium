@@ -9,8 +9,7 @@ import {
 import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
-import ConfigManager, { ConfigKeys } from "#managers/config/ConfigManager.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 
 @ApplyOptions<Command.Options>({
 	name: "reports",
@@ -75,15 +74,9 @@ export default class Reports extends Command {
 					return { error: "This user is already blacklisted from using the report system." };
 				}
 
-				const updatedBlacklist = [...config.blacklisted_users, user.id];
-
 				await this.prisma.messageReportConfig.update({
 					where: { id: interaction.guild.id },
 					data: { blacklisted_users: { push: user.id } }
-				});
-
-				await ConfigManager.updateCachedConfig(interaction.guildId, ConfigKeys.MessageReports, {
-					blacklisted_users: updatedBlacklist
 				});
 
 				return {
@@ -105,10 +98,6 @@ export default class Reports extends Command {
 					data: {
 						blacklisted_users: updatedBlacklist
 					}
-				});
-
-				await ConfigManager.updateCachedConfig(interaction.guildId, ConfigKeys.MessageReports, {
-					blacklisted_users: updatedBlacklist
 				});
 
 				return {

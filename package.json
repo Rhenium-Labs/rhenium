@@ -65,11 +65,9 @@
 		"typescript": "5.9.3"
 	},
 	"imports": {
-		"#rhenium": "./dist/rhenium/index.js",
+		"#rhenium": "./dist/lib/rhenium/index.js",
 		"#prisma/*": "./dist/lib/prisma/*",
 		"#utils/*": "./dist/lib/utils/*",
-		"#structures/*": "./dist/lib/structures/*",
-		"#managers/*": "./dist/lib/managers/*",
 		"#cf/*": "./dist/lib/content-filtering/*",
 		"#root/*": "./dist/*"
 	}

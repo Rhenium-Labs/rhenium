@@ -7,10 +7,10 @@ import {
 	MessageReportConfig
 } from "#prisma/client.js";
 
-import ConfigManager, { ConfigKeys } from "#managers/config/ConfigManager.js";
+import ConfigManager, { ConfigKeys } from "../config/ConfigManager.js";
 
 /** Initializes the Prisma cache invalidator extension. */
-export function initCacheInvalidator() {
+export function initConfigCacheInvalidator() {
 	return Prisma.defineExtension({
 		name: "prisma-cache-invalidator",
 		query: {
@@ -23,7 +23,7 @@ export function initCacheInvalidator() {
 						const typedResult = result as KeyToReturnType[typeof key];
 
 						if (typedResult?.id) {
-							void ConfigManager.updateCachedConfig(typedResult.id, key, typedResult);
+							void ConfigManager.update(typedResult.id, key, typedResult);
 						}
 					}
 
@@ -32,7 +32,7 @@ export function initCacheInvalidator() {
 						const configKey = ChannelScopingToConfigKey[model];
 
 						if (typedResult?.guild_id && configKey) {
-							void ConfigManager.recomputeFeature(typedResult.guild_id, configKey);
+							void ConfigManager.computeSingle(typedResult.guild_id, configKey);
 						}
 					}
 
@@ -48,7 +48,7 @@ export function initCacheInvalidator() {
 						const configKey = ChannelScopingToConfigKey[model];
 
 						if (typedResult?.guild_id && configKey) {
-							void ConfigManager.recomputeFeature(typedResult.guild_id, configKey);
+							void ConfigManager.computeSingle(typedResult.guild_id, configKey);
 						}
 					}
 
@@ -69,7 +69,7 @@ export function initCacheInvalidator() {
 					const result = await query(args);
 
 					if (ChannelScopingModels.includes(model) && guildId && configKey) {
-						void ConfigManager.recomputeFeature(guildId, configKey);
+						void ConfigManager.computeSingle(guildId, configKey);
 					}
 
 					return result;
@@ -89,7 +89,7 @@ export function initCacheInvalidator() {
 					const result = await query(args);
 
 					if (ChannelScopingModels.includes(model) && guildId && configKey) {
-						void ConfigManager.recomputeFeature(guildId, configKey);
+						void ConfigManager.computeSingle(guildId, configKey);
 					}
 
 					return result;

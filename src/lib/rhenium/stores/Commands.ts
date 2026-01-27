@@ -16,7 +16,7 @@ import { processResponse } from "#rhenium";
 
 import Logger from "#utils/Logger.js";
 
-import ConfigManager from "#managers/config/ConfigManager.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 export default class CommandStore extends AliasStore<Command, "commands"> {
 	public constructor() {
@@ -94,7 +94,7 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 			});
 		}
 
-		const config = await ConfigManager.getGuildConfig(interaction.guild.id);
+		const config = await ConfigManager.get(interaction.guild.id);
 
 		try {
 			const response = await command.interactionRun(interaction, config);
@@ -143,7 +143,7 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 		// They're simply not meant to be used as message commands.
 		if (!command.messageRun) return;
 
-		const config = await ConfigManager.getGuildConfig(message.guild.id);
+		const config = await ConfigManager.get(message.guild.id);
 
 		const parameters = spaceIndex === -1 ? "" : trimmed.substring(spaceIndex + 1).trim();
 		const args = command.getArgumentParser(message, parameters);

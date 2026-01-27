@@ -119,7 +119,7 @@ export default class GlobalConfig {
 				});
 
 				for (const { guild_id } of guilds) {
-					const config = (await ConfigManager.getGuildConfig(guild_id)).getMessageReportsConfig();
+					const config = (await ConfigManager.get(guild_id)).getMessageReportsConfig();
 					if (!config || config.auto_disregard_after <= 0) continue;
 
 					const threshold = new Date(now.getTime() - Number(config.auto_disregard_after));

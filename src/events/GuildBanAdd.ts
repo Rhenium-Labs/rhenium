@@ -11,7 +11,7 @@ import {
 
 import { ApplyOptions, EventListener } from "#rhenium";
 
-import ConfigManager from "#managers/config/ConfigManager.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 const CONCURRENCY_LIMIT = 3;
 
@@ -31,7 +31,7 @@ export default class GuildBanAdd extends EventListener {
 	 */
 
 	private async _resolveReports(ban: GuildBan): Promise<void> {
-		const config = await ConfigManager.getGuildConfig(ban.guild.id).then(c => c.getMessageReportsConfig());
+		const config = await ConfigManager.get(ban.guild.id).then(c => c.getMessageReportsConfig());
 		if (!config?.webhook_url || !config.log_webhook_url) return;
 
 		const reports = await this.prisma.messageReport.findMany({
@@ -99,7 +99,7 @@ export default class GuildBanAdd extends EventListener {
 	 */
 
 	private async _resolveRequests(ban: GuildBan): Promise<void> {
-		const config = await ConfigManager.getGuildConfig(ban.guild.id).then(c => c.getBanRequestsConfig());
+		const config = await ConfigManager.get(ban.guild.id).then(c => c.getBanRequestsConfig());
 		if (!config?.webhook_url || !config.log_webhook_url) return;
 
 		const requests = await this.prisma.banRequest.findMany({

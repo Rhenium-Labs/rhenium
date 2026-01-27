@@ -5,8 +5,8 @@ import { MessageQueue } from "#utils/Messages.js";
 import { ApplyOptions, EventListener } from "#rhenium";
 
 import Highlights from "#root/commands/Highlights.js";
-import GlobalConfig from "#managers/config/GlobalConfig.js";
-import ConfigManager from "#managers/config/ConfigManager.js";
+import GlobalConfig from "#root/lib/config/GlobalConfig.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 import HeuristicScanner from "#cf/HeuristicScanner.js";
 
@@ -29,7 +29,7 @@ export default class MessageCreate extends EventListener {
 			return;
 		}
 
-		const config = await ConfigManager.getGuildConfig(message.guild.id);
+		const config = await ConfigManager.get(message.guild.id);
 		const serializedMessage = MessageQueue.serializeMessage(message);
 
 		return Promise.all([

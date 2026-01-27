@@ -7,7 +7,7 @@ import { processResponse } from "#rhenium";
 import { Component, type ComponentInteraction } from "../structures/Component.js";
 
 import Logger from "#utils/Logger.js";
-import ConfigManager from "#managers/config/ConfigManager.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 export default class ComponentStore extends Store<Component, "components"> {
 	public constructor() {
@@ -69,7 +69,7 @@ export default class ComponentStore extends Store<Component, "components"> {
 			});
 		}
 
-		const config = await ConfigManager.getGuildConfig(interaction.guild.id);
+		const config = await ConfigManager.get(interaction.guild.id);
 
 		try {
 			const response = await component.run(interaction, config);

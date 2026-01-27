@@ -2,7 +2,7 @@ import { userMentionWithId } from "#utils/index.js";
 import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#managers/config/GuildConfig.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
 import MessageReportUtils, { type MessageReportAction } from "#utils/MessageReports.js";
 
 const AUTO_DELETE_DELAY = 7000;

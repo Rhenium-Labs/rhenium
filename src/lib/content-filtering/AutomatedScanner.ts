@@ -9,9 +9,9 @@ import type { Message as SerializedMessage, ContentFilterConfig, ContentFilterCh
 
 import { client } from "#root/index.js";
 import Logger from "#utils/Logger.js";
-import MinimumHeap from "#structures/MinimumHeap.js";
+import MinimumHeap from "#utils/MinimumHeap.js";
 import ContentFilter from "./ContentFilter.js";
-import ConfigManager from "#managers/config/ConfigManager.js";
+import ConfigManager from "../config/ConfigManager.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 
 /** Maximum number of channel states to keep in memory. */
@@ -221,7 +221,7 @@ export default class AutomatedScanner {
 					continue;
 				}
 
-				const guildConfig = await ConfigManager.getGuildConfig(entry.guildId);
+				const guildConfig = await ConfigManager.get(entry.guildId);
 				const contentFilterConfig = guildConfig.getContentFilterConfig();
 
 				if (contentFilterConfig) {
