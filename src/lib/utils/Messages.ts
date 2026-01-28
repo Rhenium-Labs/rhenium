@@ -18,9 +18,9 @@ import {
 	MessagePayload
 } from "discord.js";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import { hastebin, inflect, truncate } from "./index.js";
-import type { Message as SerializedMessage } from "#prisma/client.js";
+import type { Message as SerializedMessage } from "#root/lib/kysely/Schema.js";
 
 import Logger from "./Logger.js";
 
@@ -89,13 +89,18 @@ export class MessageQueue {
 	 */
 
 	public static async getMessage(id: Snowflake): Promise<SerializedMessage | null> {
-		let message = MessageQueue._cache.get(id) ?? null;
+		let message = MessageQueue._cache.get(id);
 
 		if (!message) {
-			message = await prisma.message.findUnique({ where: { id } });
+			// prettier-ignore
+			message = await kysely
+				.selectFrom("Message")
+				.selectAll()
+				.where("id", "=", id)
+				.executeTakeFirst();
 		}
 
-		return message;
+		return message ?? null;
 	}
 
 	/**
@@ -140,20 +145,18 @@ export class MessageQueue {
 	public static async getMessagesForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
 		const cachedMessages = MessageQueue._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
 
-		// Get messages from database
-		const dbMessages = await prisma.message.findMany({
-			where: {
-				channel_id: channelId,
-				deleted: false
-			},
-			orderBy: { created_at: "desc" },
-			take: limit
-		});
+		const messages = await kysely
+			.selectFrom("Message")
+			.selectAll()
+			.where("channel_id", "=", channelId)
+			.orderBy("created_at", "desc")
+			.limit(limit)
+			.execute();
 
 		// Merge and deduplicate (cache takes priority).
 		const messageMap = new Map<Snowflake, SerializedMessage>();
 
-		for (const msg of dbMessages) {
+		for (const msg of messages) {
 			messageMap.set(msg.id, msg);
 		}
 
@@ -175,20 +178,20 @@ export class MessageQueue {
 	 */
 
 	public static async deleteMessage(id: Snowflake): Promise<SerializedMessage | null> {
-		let message = MessageQueue._cache.get(id) ?? null;
+		let message = MessageQueue._cache.get(id);
 
 		if (message) {
 			message.deleted = true;
 		} else {
-			message = await prisma.message
-				.update({
-					data: { deleted: true },
-					where: { id }
-				})
-				.catch(() => null);
+			message = await kysely
+				.updateTable("Message")
+				.set({ deleted: true })
+				.where("id", "=", id)
+				.returningAll()
+				.executeTakeFirst();
 		}
 
-		return message;
+		return message ?? null;
 	}
 
 	/**
@@ -208,10 +211,12 @@ export class MessageQueue {
 
 		// Update what's left in the database.
 		if (messages.size !== ids.length) {
-			const updated = await prisma.message.updateManyAndReturn({
-				where: { id: { in: ids } },
-				data: { deleted: true }
-			});
+			const updated = await kysely
+				.updateTable("Message")
+				.set({ deleted: true })
+				.where("id", "in", ids)
+				.returningAll()
+				.execute();
 
 			// Merge the cached and stored messages.
 			return deletedMessages.concat(updated);
@@ -238,33 +243,35 @@ export class MessageQueue {
 			return oldContent;
 		}
 
-		const oldMessage = await prisma.message.findUnique({ where: { id } });
+		const result = await kysely
+			.with("old", db => db.selectFrom("Message").select("content").where("id", "=", id))
+			.updateTable("Message")
+			.set({ content: newContent })
+			.where("id", "=", id)
+			.returning(eb => eb.selectFrom("old").select("content").as("old_content"))
+			.executeTakeFirst();
 
-		await prisma.message
-			.update({
-				where: { id },
-				data: { content: newContent }
-			})
-			.catch(() => null);
-
-		return oldMessage?.content ?? "No message content.";
+		return result?.old_content ?? "No message content.";
 	}
 
 	/** Stores all cached messages into the database. */
 	static async store(event?: NodeJS.Signals): Promise<void> {
 		Logger.info(`Storing cached messages ${event ? `before exiting due to ${event}` : ""}...`);
 
-		// Insert all cached messages into the database.
-		const messages = Array.from(MessageQueue._cache.values());
-		const { count } = await prisma.message.createMany({ data: messages });
+		// prettier-ignore
+		const inserted = await kysely
+			.insertInto("Message")
+			.values(Array.from(MessageQueue._cache.values()))
+			.returning('Message.id')
+			.execute();
 
 		// Clear the cache.
 		MessageQueue._cache.clear();
 
-		if (!count) {
+		if (!inserted.length) {
 			Logger.info("No messages were stored.");
 		} else {
-			Logger.info(`Stored ${count} ${inflect(count, "message")}.`);
+			Logger.info(`Stored ${inserted.length} ${inflect(inserted.length, "message")}.`);
 		}
 	}
 

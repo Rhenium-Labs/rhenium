@@ -17,7 +17,7 @@ import {
 	MessageFlags
 } from "discord.js";
 
-import { prisma } from "#root/index.js";
+import { kysely } from "#root/index.js";
 import { cropLines, userMentionWithId } from "./index.js";
 import { cleanMessageContent, formatMessageContent } from "./Messages.js";
 
@@ -170,23 +170,24 @@ export default class MessageReportUtils {
 			};
 		}
 
-		await prisma.messageReport.create({
-			data: {
+		void kysely
+			.insertInto("MessageReport")
+			.values({
 				id: log.id,
-				guild_id: interaction.guildId,
+				guild_id: interaction.guildId!,
 				message_id: message.id,
-				reference_id: reference?.id,
+				reference_id: reference?.id ?? null,
 				message_url: message.url,
 				channel_id: message.channel.id,
 				author_id: message.author.id,
-				content: content,
-				reported_by: interaction.user.id,
+				content: content ?? null,
 				reported_at: new Date(),
-				report_reason: reason
-			}
-		});
-
-		webhook.destroy();
+				reported_by: interaction.user.id,
+				report_reason: reason,
+				status: "Pending"
+			})
+			.execute()
+			.then(() => webhook.destroy());
 
 		return {
 			content: `Successfully submitted a report for ${author}'s message - ID \`#${log.id}\``
@@ -269,14 +270,15 @@ export default class MessageReportUtils {
 						action,
 						interaction
 					}),
-					prisma.messageReport.update({
-						where: { id: report.id },
-						data: {
+					kysely
+						.updateTable("MessageReport")
+						.set({
 							resolved_by: interaction.user.id,
 							resolved_at: new Date(),
 							status: "Resolved"
-						}
-					}),
+						})
+						.where("id", "=", report.id)
+						.execute(),
 					interaction.message.delete().catch(() => null)
 				]);
 
@@ -292,14 +294,15 @@ export default class MessageReportUtils {
 						action,
 						interaction
 					}),
-					prisma.messageReport.update({
-						where: { id: report.id },
-						data: {
+					kysely
+						.updateTable("MessageReport")
+						.set({
 							resolved_by: interaction.user.id,
 							resolved_at: new Date(),
 							status: "Disregarded"
-						}
-					}),
+						})
+						.where("id", "=", report.id)
+						.execute(),
 					interaction.message.delete().catch(() => null)
 				]);
 

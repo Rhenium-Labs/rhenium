@@ -17,7 +17,7 @@ import {
 
 import ms from "ms";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import { Message as SerializedMessage } from "#prisma/client.js";
 import {
 	channelInScope,
@@ -91,15 +91,13 @@ export default class QuickActionUtils {
 			const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
 			if (!reactionIdentifier) return;
 
-			const quickMuteConfig = await prisma.quickMute.findUnique({
-				where: {
-					user_id_guild_id_reaction: {
-						user_id: user.id,
-						guild_id: message.guildId,
-						reaction: reactionIdentifier
-					}
-				}
-			});
+			const quickMuteConfig = await kysely
+				.selectFrom("QuickMute")
+				.where("user_id", "=", user.id)
+				.where("guild_id", "=", message.guildId)
+				.where("reaction", "=", reactionIdentifier)
+				.selectAll()
+				.executeTakeFirst();
 
 			if (!quickMuteConfig) return;
 
@@ -274,15 +272,13 @@ export default class QuickActionUtils {
 			const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
 			if (!reactionIdentifier) return;
 
-			const quickPurgeConfig = await prisma.quickPurge.findUnique({
-				where: {
-					user_id_guild_id_reaction: {
-						user_id: user.id,
-						guild_id: message.guildId,
-						reaction: reactionIdentifier
-					}
-				}
-			});
+			const quickPurgeConfig = await kysely
+				.selectFrom("QuickPurge")
+				.where("user_id", "=", user.id)
+				.where("guild_id", "=", message.guildId)
+				.where("reaction", "=", reactionIdentifier)
+				.selectAll()
+				.executeTakeFirst();
 
 			if (!quickPurgeConfig) return;
 
@@ -493,20 +489,18 @@ export default class QuickActionUtils {
 		const oldestCachedId =
 			cachedMessages.length > 0 ? cachedMessages[cachedMessages.length - 1] : triggerMessageId;
 
-		const dbMessages = await prisma.message.findMany({
-			where: {
-				channel_id: channelId,
-				author_id: authorId,
-				deleted: false,
-				// Only fetch messages older than our cached ones.
-				id: { lt: oldestCachedId }
-			},
-			orderBy: { created_at: "desc" },
-			take: remaining,
-			select: { id: true }
-		});
+		const messages = await kysely
+			.selectFrom("Message")
+			.select(["Message.id"])
+			.where("Message.channel_id", "=", channelId)
+			.where("Message.author_id", "=", authorId)
+			.where("Message.deleted", "=", false)
+			.where("Message.id", "<", oldestCachedId)
+			.orderBy("Message.created_at", "desc")
+			.limit(remaining)
+			.execute();
 
-		const dbMessageIds = dbMessages.map(m => m.id).filter(id => !cachedIds.has(id));
+		const dbMessageIds = messages.map(m => m.id).filter(id => !cachedIds.has(id));
 		return [...cachedMessages, ...dbMessageIds];
 	}
 
