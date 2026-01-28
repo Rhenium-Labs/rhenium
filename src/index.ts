@@ -1,6 +1,10 @@
 import "dotenv/config.js";
 
 import OpenAI from "openai";
+import postgres from "postgres";
+
+import { Kysely } from "kysely";
+import { PostgresJSDialect } from "kysely-postgres-js";
 
 import {
 	init,
@@ -20,6 +24,8 @@ import { PrismaClient } from "#prisma/client.js";
 import { MessageQueue } from "#utils/Messages.js";
 import { initConfigCacheInvalidator } from "#prisma/invalidator.js";
 import { CLIENT_CACHE_OPTIONS, CLIENT_INTENTS, CLIENT_PARTIALS, PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
+
+import type { DB } from "./lib/kysely/Schema.js";
 
 import Logger from "#utils/Logger.js";
 import GlobalConfig from "#config/GlobalConfig.js";
@@ -42,6 +48,13 @@ export const client = new Rhenium({
 export const prisma = new PrismaClient({
 	adapter: new PrismaPg({ connectionString: process.env.PG_URL })
 }).$extends(initConfigCacheInvalidator());
+
+/** The Kysely client instance. */
+export const kysely = new Kysely<DB>({
+	dialect: new PostgresJSDialect({
+		postgres: postgres(process.env.PG_URL)
+	})
+});
 
 /** LMDB KV. */
 export const kv = open<Object, string>({

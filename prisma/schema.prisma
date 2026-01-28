@@ -3,6 +3,13 @@ generator client {
   output   = "../src/lib/prisma"
 }
 
+generator kysely {
+  provider     = "prisma-kysely"
+  output       = "../src/lib/kysely"
+  fileName     = "Schema.ts"
+  enumFileName = "Enums.ts"
+}
+
 datasource db {
   provider = "postgresql"
 }
