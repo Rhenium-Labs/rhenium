@@ -21,8 +21,9 @@ import { prisma } from "#root/index.js";
 import { cropLines, userMentionWithId } from "./index.js";
 import { cleanMessageContent, formatMessageContent } from "./Messages.js";
 
-import type { MessageReport, MessageReportConfig } from "#prisma/client.js";
+import type { MessageReport } from "#prisma/client.js";
 import type { InteractionReplyData } from "./Types.js";
+import type { ValidatedMessageReportsConfig } from "#config/GuildConfig.js";
 
 export default class MessageReportUtils {
 	/**
@@ -34,7 +35,7 @@ export default class MessageReportUtils {
 
 	public static async create(data: {
 		interaction: ModalSubmitInteraction<"cached"> | MessageContextMenuCommandInteraction<"cached">;
-		config: MessageReportConfig;
+		config: ValidatedMessageReportsConfig;
 		author: User;
 		message: Message<true>;
 		reason: string;
@@ -201,7 +202,7 @@ export default class MessageReportUtils {
 
 	public static async bumpSubmission(data: {
 		interaction: MessageContextMenuCommandInteraction<"cached">;
-		config: MessageReportConfig;
+		config: ValidatedMessageReportsConfig;
 		report: MessageReport;
 	}): Promise<any> {
 		const { interaction, report, config } = data;
@@ -252,7 +253,7 @@ export default class MessageReportUtils {
 
 	public static async handle(data: {
 		interaction: ButtonInteraction<"cached">;
-		config: MessageReportConfig;
+		config: ValidatedMessageReportsConfig;
 		action: MessageReportAction;
 		report: MessageReport;
 	}): Promise<InteractionReplyData | null> {
@@ -317,7 +318,7 @@ export default class MessageReportUtils {
 	 */
 
 	private static async _log(data: {
-		config: MessageReportConfig;
+		config: ValidatedMessageReportsConfig;
 		action: MessageReportAction;
 		interaction: ButtonInteraction<"cached">;
 	}): Promise<any> {

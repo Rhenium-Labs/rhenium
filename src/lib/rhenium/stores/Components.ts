@@ -7,7 +7,7 @@ import { processResponse } from "#rhenium";
 import { Component, type ComponentInteraction } from "../structures/Component.js";
 
 import Logger from "#utils/Logger.js";
-import ConfigManager from "#root/lib/config/ConfigManager.js";
+import ConfigManager from "#config/ConfigManager.js";
 
 export default class ComponentStore extends Store<Component, "components"> {
 	public constructor() {

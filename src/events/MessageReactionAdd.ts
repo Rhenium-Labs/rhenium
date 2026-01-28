@@ -25,7 +25,7 @@ export default class MessageReactionAdd extends EventListener {
 
 		const config = await ConfigManager.get(message.guild.id);
 
-		return Promise.all([
+		void Promise.all([
 			QuickActionUtils.handleQuickMute({ user, message, reaction, config }),
 			QuickActionUtils.handleQuickPurge({ user, message, reaction, config })
 		]);

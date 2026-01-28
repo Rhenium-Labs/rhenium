@@ -18,9 +18,10 @@ import ms from "ms";
 
 import { client, prisma } from "#root/index.js";
 import { userMentionWithId } from "./index.js";
-import { RequestStatus, type BanRequest, type BanRequestConfig } from "#prisma/client.js";
+import { RequestStatus, type BanRequest } from "#prisma/client.js";
 
 import type { InteractionReplyData } from "./Types.js";
+import type { ValidatedBanRequestsConfig } from "#config/GuildConfig.js";
 
 export default class BanRequestUtils {
 	/**
@@ -31,7 +32,7 @@ export default class BanRequestUtils {
 	 */
 
 	public static async create(data: {
-		config: BanRequestConfig;
+		config: ValidatedBanRequestsConfig;
 		target: User;
 		executor: GuildMember;
 		duration: number | null;
@@ -81,7 +82,7 @@ export default class BanRequestUtils {
 			userInfoButton
 		);
 
-		const webhook = new WebhookClient({ url: config.webhook_url! });
+		const webhook = new WebhookClient({ url: config.webhook_url });
 		const content =
 			config.notify_roles.length > 0 ? config.notify_roles.map(r => roleMention(r)).join(", ") : undefined;
 
@@ -141,7 +142,7 @@ export default class BanRequestUtils {
 
 	public static async process(data: {
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
-		config: BanRequestConfig;
+		config: ValidatedBanRequestsConfig;
 		action: BanRequestAction;
 		request: BanRequest;
 		reviewReason: string | null;
@@ -330,7 +331,7 @@ export default class BanRequestUtils {
 	 */
 
 	private static async _log(data: {
-		config: BanRequestConfig;
+		config: ValidatedBanRequestsConfig;
 		action: BanRequestAction;
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 		reason: string | null;

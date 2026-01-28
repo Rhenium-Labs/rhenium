@@ -13,7 +13,7 @@ import type {
 import { client, prisma } from "#root/index.js";
 import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#root/lib/config/GuildConfig.js";
+import GuildConfig from "#config/GuildConfig.js";
 import FlagStrategy from "./FlagStrategy.js";
 import ArgumentParser from "./ArgumentParser.js";
 

@@ -9,6 +9,6 @@ import ConfigManager from "#root/lib/config/ConfigManager.js";
 export default class GuildCreate extends EventListener {
 	public async onEmit(guild: Guild) {
 		// Trigger the creation/loading of the guild config.
-		return ConfigManager.get(guild.id);
+		void ConfigManager.get(guild.id);
 	}
 }

@@ -65,6 +65,7 @@
 		"typescript": "5.9.3"
 	},
 	"imports": {
+		"#config/*": "./dist/lib/config/*",
 		"#rhenium": "./dist/lib/rhenium/index.js",
 		"#prisma/*": "./dist/lib/prisma/*",
 		"#utils/*": "./dist/lib/utils/*",

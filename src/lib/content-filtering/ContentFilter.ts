@@ -20,8 +20,9 @@ import { openAi, prisma } from "#root/index.js";
 import { userMentionWithId } from "#utils/index.js";
 import { ContentFilterButtonNames, ContentFilterFieldNames, ScanType } from "./Enums.js";
 
-import type { ContentFilterConfig, Detector } from "#prisma/client.js";
+import type { Detector } from "#prisma/client.js";
 import type { ContentPredictionData, ContentPredictions } from "./Types.js";
+import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 
 import Logger from "#utils/Logger.js";
 import MediaUtils, { MessageMediaMetadata } from "#utils/Media.js";
@@ -44,7 +45,7 @@ export default class ContentFilter {
 		predictions: ContentPredictions[],
 		scanType: ScanType,
 		message: Message<true>,
-		config: ContentFilterConfig
+		config: ValidatedContentFilterConfig
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
@@ -233,7 +234,7 @@ export default class ContentFilter {
 	public static async scanMessage(
 		message: Message<true>,
 		detector: Detector,
-		config: ContentFilterConfig
+		config: ValidatedContentFilterConfig
 	): Promise<ContentPredictions | null> {
 		const predictionData: ContentPredictionData[] = [];
 		const problematicContent: string[] = [];
@@ -301,7 +302,7 @@ export default class ContentFilter {
 	 */
 	private static async _runOcrScan(
 		media: MessageMediaMetadata[],
-		config: ContentFilterConfig
+		config: ValidatedContentFilterConfig
 	): Promise<{ predictions: ContentPredictionData[]; content: string[] }> {
 		const predictions: ContentPredictionData[] = [];
 		const matchedContent: string[] = [];
@@ -372,7 +373,7 @@ export default class ContentFilter {
 	 */
 	public static async openAiScan(
 		content: ModerationMultiModalInput[] | string,
-		config: ContentFilterConfig,
+		config: ValidatedContentFilterConfig,
 		message?: Message<true>
 	): Promise<ContentPredictionData[]> {
 		if (this.openAiRateLimitedUntil && Date.now() < this.openAiRateLimitedUntil) {
@@ -452,7 +453,7 @@ export default class ContentFilter {
 	public static async runDetectors(
 		_channel: TextBasedChannel,
 		message: Message<true>,
-		config: ContentFilterConfig
+		config: ValidatedContentFilterConfig
 	): Promise<ContentPredictions[]> {
 		const predictions: ContentPredictions[] = [];
 

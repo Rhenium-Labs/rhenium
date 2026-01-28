@@ -139,7 +139,7 @@ export default class GlobalConfig {
 
 					if (count > 0) {
 						Logger.info(
-							`Automatically disregarded ${count} ${inflect(count, "message report")} in guild with ID "${guild_id}".`
+							`Automatically disregarded ${count} message ${inflect(count, "report")} in guild with ID "${guild_id}".`
 						);
 					}
 				}

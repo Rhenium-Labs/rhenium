@@ -22,7 +22,7 @@ import { initConfigCacheInvalidator } from "#prisma/invalidator.js";
 import { CLIENT_CACHE_OPTIONS, CLIENT_INTENTS, CLIENT_PARTIALS, PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
 
 import Logger from "#utils/Logger.js";
-import GlobalConfig from "./lib/config/GlobalConfig.js";
+import GlobalConfig from "#config/GlobalConfig.js";
 
 /** The Discord client instance. */
 export const client = new Rhenium({
@@ -62,8 +62,11 @@ async function main(): Promise<void> {
 	await client.loadPieces();
 
 	// Connect to the database.
+	// We have to add a test query here because driver adapters in v7 can't properly determine
+	// if the connection is valid without making a query for some fucking reason.
 	try {
 		await prisma.$connect();
+		await prisma.message.findFirst();
 		Logger.info("Connected to the database.");
 	} catch (error) {
 		Logger.fatal("Failed to connect to the database:", error);
@@ -105,9 +108,7 @@ PROCESS_EXIT_EVENTS.forEach(event => {
 				Logger.error("Error when storing messages on process exit:", error);
 				process.exit(1);
 			})
-			.then(() => {
-				process.exit(0);
-			});
+			.then(() => process.exit(0));
 	});
 });
 

@@ -168,23 +168,37 @@ export default class QuickActions extends Command {
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		const routeKey = `${group}:${subcommand}`;
+		switch (group) {
+			case QuickSubcommandGroup.Mutes: {
+				switch (subcommand) {
+					case QuickSubcommand.Add:
+						return this._addMute(interaction, config);
+					case QuickSubcommand.Remove:
+						return this._removeMute(interaction);
+					case QuickSubcommand.List:
+						return this._listMutes(interaction);
+					case QuickSubcommand.Clear:
+						return this._clearMutes(interaction);
+				}
+			}
 
-		const handlers: Record<string, () => Promise<InteractionReplyData>> = {
-			// Mutes group
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Add}`]: () => this._addMute(interaction, config),
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Remove}`]: () => this._removeMute(interaction),
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.List}`]: () => this._listMutes(interaction),
-			[`${QuickSubcommandGroup.Mutes}:${QuickSubcommand.Clear}`]: () => this._clearMutes(interaction),
-			// Purges group
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Add}`]: () => this._addPurge(interaction, config),
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Remove}`]: () => this._removePurge(interaction),
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.List}`]: () => this._listPurges(interaction),
-			[`${QuickSubcommandGroup.Purges}:${QuickSubcommand.Clear}`]: () => this._clearPurges(interaction)
-		};
+			case QuickSubcommandGroup.Purges: {
+				switch (subcommand) {
+					case QuickSubcommand.Add:
+						return this._addPurge(interaction, config);
+					case QuickSubcommand.Remove:
+						return this._removePurge(interaction);
+					case QuickSubcommand.List:
+						return this._listPurges(interaction);
+					case QuickSubcommand.Clear:
+						return this._clearPurges(interaction);
+				}
+			}
 
-		const handler = handlers[routeKey];
-		return handler ? handler() : { error: "Unknown subcommand." };
+			default: {
+				return { error: "Unknown subcommand." };
+			}
+		}
 	}
 
 	private async _addMute(

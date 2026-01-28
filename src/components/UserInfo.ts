@@ -67,30 +67,21 @@ export default class UserInfo extends Component {
 			]);
 		}
 
-		const reports = await this.prisma.messageReport.findMany({
-			where: {
-				author_id: targetId,
-				guild_id: interaction.guild.id
-			}
-		});
+		const [pending, resolved] = await this.prisma.$transaction([
+			this.prisma.messageReport.count({
+				where: { author_id: targetId, guild_id: interaction.guild.id, status: "Pending" }
+			}),
+			this.prisma.messageReport.count({
+				where: { author_id: targetId, guild_id: interaction.guild.id, NOT: { status: "Pending" } }
+			})
+		]);
 
-		if (reports.length > 0) {
-			const [pending, resolved] = reports.reduce(
-				(acc, report) => {
-					if (report.resolved_by) {
-						acc[1]++;
-					} else if (report.status === "Pending") {
-						acc[0]++;
-					}
-					return acc;
-				},
-				[0, 0]
-			);
-
+		if ((pending || resolved) > 0) {
+			const count = pending + resolved;
 			embed.addFields([
 				{
 					name: "Existing Reports",
-					value: `${reports.length} ${inflect(reports.length, "report", "reports")} (${pending} pending, ${resolved} resolved).`,
+					value: `${count} ${inflect(count, "report")} (${pending} pending, ${resolved} resolved).`,
 					inline: true
 				}
 			]);

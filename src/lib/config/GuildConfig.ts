@@ -38,12 +38,12 @@ export default class GuildConfig {
 	 *
 	 * @return The message report configuration or null.
 	 */
-	public getMessageReportsConfig(): MessageReportConfig | null {
+	public getMessageReportsConfig(): ValidatedMessageReportsConfig | null {
 		if (!this.data.message_reports.enabled || !this.data.message_reports.webhook_url) {
 			return null;
 		}
 
-		return this.data.message_reports;
+		return this.data.message_reports as ValidatedMessageReportsConfig;
 	}
 
 	/**
@@ -55,12 +55,12 @@ export default class GuildConfig {
 	 *
 	 * @return The ban request configuration or null.
 	 */
-	public getBanRequestsConfig(): BanRequestConfig | null {
+	public getBanRequestsConfig(): ValidatedBanRequestsConfig | null {
 		if (!this.data.ban_requests.enabled || !this.data.ban_requests.webhook_url) {
 			return null;
 		}
 
-		return this.data.ban_requests;
+		return this.data.ban_requests as ValidatedBanRequestsConfig;
 	}
 
 	/**
@@ -73,12 +73,7 @@ export default class GuildConfig {
 	 *
 	 * @return The quick mutes configuration or null.
 	 */
-	public getQuickMutesConfig():
-		| ((QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] }) & {
-				webhook_url: string;
-				result_webhook_url: string;
-		  })
-		| null {
+	public getQuickMutesConfig(): ValidatedQuickMutesConfig | null {
 		if (
 			!this.data.quick_mutes.enabled ||
 			!this.data.quick_mutes.webhook_url ||
@@ -87,10 +82,7 @@ export default class GuildConfig {
 			return null;
 		}
 
-		return this.data.quick_mutes as (QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] }) & {
-			webhook_url: string;
-			result_webhook_url: string;
-		};
+		return this.data.quick_mutes as ValidatedQuickMutesConfig;
 	}
 
 	/**
@@ -102,12 +94,7 @@ export default class GuildConfig {
 	 * - Quick purge result webhook URL is not configured.
 	 */
 
-	public getQuickPurgesConfig():
-		| ((QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] }) & {
-				webhook_url: string;
-				result_webhook_url: string;
-		  })
-		| null {
+	public getQuickPurgesConfig(): ValidatedQuickPurgesConfig | null {
 		if (
 			!this.data.quick_purges.enabled ||
 			!this.data.quick_purges.webhook_url ||
@@ -116,10 +103,7 @@ export default class GuildConfig {
 			return null;
 		}
 
-		return this.data.quick_purges as (QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] }) & {
-			webhook_url: string;
-			result_webhook_url: string;
-		};
+		return this.data.quick_purges as ValidatedQuickPurgesConfig;
 	}
 
 	/**
@@ -131,12 +115,12 @@ export default class GuildConfig {
 	 *
 	 * @return The content filter configuration or null.
 	 */
-	public getContentFilterConfig(): ContentFilterConfig | null {
+	public getContentFilterConfig(): ValidatedContentFilterConfig | null {
 		if (!this.data.content_filter.enabled || !this.data.content_filter.webhook_url) {
 			return null;
 		}
 
-		return this.data.content_filter;
+		return this.data.content_filter as ValidatedContentFilterConfig;
 	}
 
 	/**
@@ -171,4 +155,33 @@ export type GuildConfigData = {
 	quick_mutes: QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] };
 	quick_purges: QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] };
 	permission_scopes: PermissionScope[];
+};
+
+// Validated Config Types
+// These types represent configurations that have been validated to ensure
+// all required fields for the feature to function are present.
+
+export type ValidatedMessageReportsConfig = MessageReportConfig & {
+	webhook_url: string;
+};
+
+export type ValidatedBanRequestsConfig = BanRequestConfig & {
+	webhook_url: string;
+	decision_webhook_url: string;
+};
+
+export type ValidatedContentFilterConfig = (ContentFilterConfig & {
+	channel_scoping: ContentFilterChannelScoping[];
+}) & {
+	webhook_url: string;
+};
+
+export type ValidatedQuickMutesConfig = (QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] }) & {
+	webhook_url: string;
+	result_webhook_url: string;
+};
+
+export type ValidatedQuickPurgesConfig = (QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] }) & {
+	webhook_url: string;
+	result_webhook_url: string;
 };

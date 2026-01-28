@@ -1,13 +1,14 @@
 import { Colors, EmbedBuilder, Message, Snowflake, TextChannel, WebhookClient } from "discord.js";
 
+import { client } from "#root/index.js";
 import { ScanTypes } from "./Enums.js";
 import { CF_CONSTANTS } from "#utils/Constants.js";
 import { channelInScope, parseChannelScoping, userMentionWithId } from "#utils/index.js";
 
 import type { ChannelScanState, ContentPredictions } from "./Types.js";
-import type { Message as SerializedMessage, ContentFilterConfig, ContentFilterChannelScoping } from "#prisma/client.js";
+import type { Message as SerializedMessage } from "#prisma/client.js";
+import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 
-import { client } from "#root/index.js";
 import Logger from "#utils/Logger.js";
 import MinimumHeap from "#utils/MinimumHeap.js";
 import ContentFilter from "./ContentFilter.js";
@@ -147,7 +148,7 @@ export default class AutomatedScanner {
 	 */
 	public static enqueueForScan(
 		message: Message<true>,
-		config: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] },
+		config: ValidatedContentFilterConfig,
 		serializedMessage: SerializedMessage
 	): void {
 		if (!config.enabled || !config.webhook_url) return;
@@ -311,7 +312,7 @@ export default class AutomatedScanner {
 	public static async automatedScan(
 		channel: TextChannel,
 		message: Message<true>,
-		config: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] }
+		config: ValidatedContentFilterConfig
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
@@ -364,7 +365,7 @@ export default class AutomatedScanner {
 	public static async prepareChannelForScan(
 		channel: TextChannel,
 		message: Message<true>,
-		config: ContentFilterConfig,
+		config: ValidatedContentFilterConfig,
 		now: number,
 		options?: { risk?: number; force?: boolean }
 	): Promise<{
@@ -479,7 +480,10 @@ export default class AutomatedScanner {
 	 * @param message The message from the priority user.
 	 * @param config The content filter configuration.
 	 */
-	public static async sendPriorityUserWarning(message: Message<true>, config: ContentFilterConfig): Promise<any> {
+	public static async sendPriorityUserWarning(
+		message: Message<true>,
+		config: ValidatedContentFilterConfig
+	): Promise<any> {
 		if (!config.webhook_url) return;
 
 		const embed = new EmbedBuilder()
@@ -505,7 +509,7 @@ export default class AutomatedScanner {
 	public static async sendScanRateChangeLog(
 		channel: TextChannel,
 		newRate: number,
-		config: ContentFilterConfig
+		config: ValidatedContentFilterConfig
 	): Promise<any> {
 		if (!config.webhook_url) return;
 

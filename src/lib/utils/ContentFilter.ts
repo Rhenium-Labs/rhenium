@@ -3,7 +3,9 @@ import type { ChannelScanState } from "#cf/Types.js";
 
 import { prisma } from "#root/index.js";
 import { CF_CONSTANTS } from "./Constants.js";
-import { ContentFilterAlert, DetectorMode, ContentFilterConfig, Message, ContentFilterStatus } from "#prisma/client.js";
+import { ContentFilterAlert, DetectorMode, Message, ContentFilterStatus } from "#prisma/client.js";
+
+import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 
 export default class ContentFilterUtils {
 	/**
@@ -13,7 +15,7 @@ export default class ContentFilterUtils {
 	 * @param message The serialized message data.
 	 * @returns The computed risk score.
 	 */
-	public static computeMessageRisk(config: ContentFilterConfig, message: Message): number {
+	public static computeMessageRisk(config: ValidatedContentFilterConfig, message: Message): number {
 		const riskIncreaseStep =
 			config.detector_mode === DetectorMode.Lenient
 				? CF_CONSTANTS.HEURISTIC_LENIENT_RISK_INCREASE
@@ -84,7 +86,7 @@ export default class ContentFilterUtils {
 	 * @param config The content filter configuration.
 	 * @returns The minimum score threshold.
 	 */
-	public static getMinScore(config: ContentFilterConfig): number {
+	public static getMinScore(config: ValidatedContentFilterConfig): number {
 		let base =
 			config.detector_mode === DetectorMode.Lenient
 				? CF_CONSTANTS.HEURISTIC_LENIENT_SCORE
@@ -104,7 +106,7 @@ export default class ContentFilterUtils {
 	 * @returns The adjusted minimum score threshold.
 	 */
 	public static getMinScoreWithState(
-		config: ContentFilterConfig,
+		config: ValidatedContentFilterConfig,
 		state: ChannelScanState | null,
 		authorId: Snowflake
 	): number {

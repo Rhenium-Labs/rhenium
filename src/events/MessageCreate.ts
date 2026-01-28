@@ -29,15 +29,21 @@ export default class MessageCreate extends EventListener {
 			return;
 		}
 
-		const config = await ConfigManager.get(message.guild.id);
-		const serializedMessage = MessageQueue.serializeMessage(message);
+		const config = (await ConfigManager.get(message.guild.id)).getContentFilterConfig();
 
-		return Promise.all([
+		if (config) {
+			const serializedMessage = MessageQueue.serializeMessage(message);
+
+			void Promise.all([
+				AutomatedScanner.enqueueForScan(message, config, serializedMessage),
+				HeuristicScanner.triggerScan(message, config)
+			]);
+		}
+
+		void Promise.all([
 			store.handleMessageCommand(message),
 			MessageQueue.queue(message),
-			Highlights.highlightMessage(message),
-			AutomatedScanner.enqueueForScan(message, config.data.content_filter, serializedMessage),
-			HeuristicScanner.triggerScan(message, config.data.content_filter)
+			Highlights.highlightMessage(message)
 		]);
 	}
 }

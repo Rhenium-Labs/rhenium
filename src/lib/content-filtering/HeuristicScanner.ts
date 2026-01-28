@@ -6,7 +6,8 @@ import { MessageQueue } from "#utils/Messages.js";
 import { CF_CONSTANTS } from "#utils/Constants.js";
 import { channelInScope, parseChannelScoping } from "#utils/index.js";
 
-import type { ContentFilterChannelScoping, ContentFilterConfig, Message } from "#prisma/client.js";
+import type { Message } from "#prisma/client.js";
+import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 import type { ContentPredictions, HeuristicData, HeuristicMessageData } from "./Types.js";
 
 import Logger from "#utils/Logger.js";
@@ -272,7 +273,7 @@ export default class HeuristicScanner {
 	 */
 	public static async triggerScan(
 		message: DiscordMessage<true>,
-		config: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] }
+		config: ValidatedContentFilterConfig
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
@@ -329,7 +330,7 @@ export default class HeuristicScanner {
 	/**
 	 * Perform a heuristic scan on a channel based on recent message activity and content.
 	 */
-	private static async _heuristicScan(channel: TextChannel, config: ContentFilterConfig): Promise<void> {
+	private static async _heuristicScan(channel: TextChannel, config: ValidatedContentFilterConfig): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
 		const channelId = channel.id;
