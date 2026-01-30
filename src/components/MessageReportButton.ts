@@ -1,5 +1,7 @@
+import { kysely } from "#root/index.js";
 import { userMentionWithId } from "#utils/index.js";
 import { ApplyOptions, Component } from "#rhenium";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
@@ -26,12 +28,15 @@ export default class MessageReportButton extends Component {
 		}
 
 		const action = interaction.customId.split("-")[2] as MessageReportAction;
-		const report = await this.prisma.messageReport.findUnique({
-			where: { id: interaction.message.id, guild_id: interaction.guild.id }
-		});
+		const report = await kysely
+			.selectFrom("MessageReport")
+			.selectAll()
+			.where("id", "=", interaction.message!.id)
+			.executeTakeFirst();
 
 		if (!report) {
 			setTimeout(() => interaction.message?.delete().catch(() => null), AUTO_DELETE_DELAY);
+
 			return {
 				error: "Failed to find the message report associated with this message. I will attempt to delete this submission in 7 seconds."
 			};
@@ -39,6 +44,7 @@ export default class MessageReportButton extends Component {
 
 		if (report.resolved_by) {
 			setTimeout(() => interaction.message?.delete().catch(() => null), AUTO_DELETE_DELAY);
+
 			return {
 				error: `This report has already been resolved by ${userMentionWithId(report.resolved_by)}. I will attempt to delete this submission in 7 seconds.`
 			};

@@ -6,7 +6,7 @@ import { CF_CONSTANTS } from "#utils/Constants.js";
 import { channelInScope, parseChannelScoping, userMentionWithId } from "#utils/index.js";
 
 import type { ChannelScanState, ContentPredictions } from "./Types.js";
-import type { Message as SerializedMessage } from "#prisma/client.js";
+import type { Message as SerializedMessage } from "#kysely/Schema.js";
 import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 
 import Logger from "#utils/Logger.js";

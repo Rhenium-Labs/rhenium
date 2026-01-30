@@ -16,10 +16,11 @@ import {
 
 import ms from "ms";
 
-import { client, prisma } from "#root/index.js";
+import { RequestStatus } from "#kysely/Enums.js";
+import { client, kysely } from "#root/index.js";
 import { userMentionWithId } from "./index.js";
-import { RequestStatus, type BanRequest } from "#prisma/client.js";
 
+import type { BanRequest } from "#kysely/Schema.js";
 import type { InteractionReplyData } from "./Types.js";
 import type { ValidatedBanRequestsConfig } from "#config/GuildConfig.js";
 
@@ -35,7 +36,7 @@ export default class BanRequestUtils {
 		config: ValidatedBanRequestsConfig;
 		target: User;
 		executor: GuildMember;
-		duration: number | null;
+		duration: bigint | null;
 		reason: string;
 	}): Promise<InteractionReplyData> {
 		const { config, target, executor, duration, reason } = data;
@@ -52,7 +53,7 @@ export default class BanRequestUtils {
 			.setTimestamp();
 
 		if (duration) {
-			embed.spliceFields(2, 0, { name: "Duration", value: ms(duration, { long: true }) });
+			embed.spliceFields(2, 0, { name: "Duration", value: ms(Number(duration), { long: true }) });
 		}
 
 		const acceptButton = new ButtonBuilder()
@@ -114,8 +115,9 @@ export default class BanRequestUtils {
 			}
 		}
 
-		await prisma.banRequest.create({
-			data: {
+		void kysely
+			.insertInto("BanRequest")
+			.values({
 				id: log.id,
 				guild_id: config.id,
 				target_id: target.id,
@@ -123,10 +125,9 @@ export default class BanRequestUtils {
 				requested_by: executor.id,
 				duration,
 				reason
-			}
-		});
-
-		webhook.destroy();
+			})
+			.execute()
+			.then(() => webhook.destroy());
 
 		return {
 			content: `Successfully submitted a ban request for ${target} - ID \`${log.id}\`.`
@@ -162,21 +163,22 @@ export default class BanRequestUtils {
 						.catch(() => null);
 				}
 
-				Promise.all([
+				void Promise.all([
 					BanRequestUtils._log({
 						config,
 						action,
 						interaction,
 						reason: reviewReason
 					}),
-					prisma.banRequest.update({
-						where: { id: request.id },
-						data: {
+					kysely
+						.updateTable("BanRequest")
+						.set({
 							resolved_by: interaction.user.id,
 							resolved_at: new Date(),
 							status: RequestStatus.Disregarded
-						}
-					}),
+						})
+						.where("id", "=", request.id)
+						.execute(),
 					interaction.message?.delete().catch(() => null)
 				]);
 
@@ -214,20 +216,22 @@ export default class BanRequestUtils {
 				}
 
 				if (expiresAt) {
-					const data = {
-						guild_id: interaction.guild.id,
-						target_id: target.id,
-						expires_at: expiresAt
-					};
-
-					await prisma.temporaryBan.upsert({
-						where: { guild_id_target_id: { guild_id: interaction.guild.id, target_id: target.id } },
-						create: data,
-						update: data
-					});
+					void kysely
+						.insertInto("TemporaryBan")
+						.values({
+							guild_id: interaction.guild.id,
+							target_id: target.id,
+							expires_at: expiresAt
+						})
+						.onConflict(oc =>
+							oc.columns(["guild_id", "target_id"]).doUpdateSet({
+								expires_at: expiresAt
+							})
+						)
+						.execute();
 				}
 
-				Promise.all([
+				void Promise.all([
 					BanRequestUtils._notify({
 						webhook_url: config.decision_webhook_url,
 						reviewReason,
@@ -240,14 +244,15 @@ export default class BanRequestUtils {
 						interaction,
 						reason: reviewReason
 					}),
-					prisma.banRequest.update({
-						where: { id: request.id },
-						data: {
+					kysely
+						.updateTable("BanRequest")
+						.set({
 							status: RequestStatus.Accepted,
 							resolved_by: interaction.user.id,
 							resolved_at: new Date()
-						}
-					}),
+						})
+						.where("id", "=", request.id)
+						.execute(),
 					interaction.message?.delete().catch(() => null)
 				]);
 
@@ -263,7 +268,7 @@ export default class BanRequestUtils {
 						.catch(() => null);
 				}
 
-				Promise.all([
+				void Promise.all([
 					BanRequestUtils._notify({
 						webhook_url: config.decision_webhook_url,
 						reviewReason,
@@ -276,14 +281,15 @@ export default class BanRequestUtils {
 						interaction,
 						reason: reviewReason
 					}),
-					prisma.banRequest.update({
-						where: { id: request.id },
-						data: {
+					kysely
+						.updateTable("BanRequest")
+						.set({
 							status: RequestStatus.Denied,
 							resolved_by: interaction.user.id,
 							resolved_at: new Date()
-						}
-					}),
+						})
+						.where("id", "=", request.id)
+						.execute(),
 					interaction.message?.delete().catch(() => null)
 				]);
 

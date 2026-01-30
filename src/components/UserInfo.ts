@@ -1,7 +1,9 @@
 import { Colors, EmbedBuilder, time } from "discord.js";
 
+import { kysely } from "#root/index.js";
 import { inflect } from "#utils/index.js";
 import { ApplyOptions, Component } from "#rhenium";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
 @ApplyOptions<Component.Options>({
@@ -67,14 +69,26 @@ export default class UserInfo extends Component {
 			]);
 		}
 
-		const [pending, resolved] = await this.prisma.$transaction([
-			this.prisma.messageReport.count({
-				where: { author_id: targetId, guild_id: interaction.guild.id, status: "Pending" }
-			}),
-			this.prisma.messageReport.count({
-				where: { author_id: targetId, guild_id: interaction.guild.id, NOT: { status: "Pending" } }
-			})
-		]);
+		const [pending, resolved] = await kysely.transaction().execute(async trx =>
+			Promise.all([
+				trx
+					.selectFrom("MessageReport")
+					.select(eb => eb.fn.countAll<number>().as("count"))
+					.where("author_id", "=", targetId)
+					.where("guild_id", "=", interaction.guild.id)
+					.where("status", "=", "Pending")
+					.executeTakeFirstOrThrow()
+					.then(r => r.count),
+				trx
+					.selectFrom("MessageReport")
+					.select(eb => eb.fn.countAll<number>().as("count"))
+					.where("author_id", "=", targetId)
+					.where("guild_id", "=", interaction.guild.id)
+					.where("status", "!=", "Pending")
+					.executeTakeFirstOrThrow()
+					.then(r => r.count)
+			])
+		);
 
 		if ((pending || resolved) > 0) {
 			const count = pending + resolved;

@@ -20,7 +20,7 @@ import {
 
 import { client, kysely } from "#root/index.js";
 import { hastebin, inflect, truncate } from "./index.js";
-import type { Message as SerializedMessage } from "#root/lib/kysely/Schema.js";
+import type { Message as SerializedMessage } from "#kysely/Schema.js";
 
 import Logger from "./Logger.js";
 
@@ -256,6 +256,11 @@ export class MessageQueue {
 
 	/** Stores all cached messages into the database. */
 	static async store(event?: NodeJS.Signals): Promise<void> {
+		if (MessageQueue._cache.size === 0) {
+			Logger.info("No cached messages to store.");
+			return;
+		}
+
 		Logger.info(`Storing cached messages ${event ? `before exiting due to ${event}` : ""}...`);
 
 		// prettier-ignore

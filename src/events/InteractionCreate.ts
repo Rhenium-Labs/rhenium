@@ -5,7 +5,7 @@ import { KvCache } from "#utils/KvCache.js";
 import { ApplyOptions, EventListener } from "#rhenium";
 
 import Logger from "#utils/Logger.js";
-import GlobalConfig from "#root/lib/config/GlobalConfig.js";
+import GlobalConfig from "#config/GlobalConfig.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.InteractionCreate

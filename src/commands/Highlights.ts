@@ -9,10 +9,11 @@ import {
 	MessageFlags,
 	PermissionFlagsBits
 } from "discord.js";
+import { jsonArrayFrom } from "kysely/helpers/postgres";
 
 import safe from "safe-regex";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import { formatMessageContent } from "#utils/Messages.js";
 import { ApplyOptions, Command } from "#rhenium";
 import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "#utils/index.js";
@@ -22,6 +23,7 @@ import type { InteractionReplyData } from "#utils/Types.js";
 import RateLimiter from "#utils/RateLimiter.js";
 import GuildConfig from "#root/lib/config/GuildConfig.js";
 import ConfigManager from "#root/lib/config/ConfigManager.js";
+import { Highlight } from "#kysely/Schema.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
@@ -239,15 +241,21 @@ export default class Highlights extends Command {
 
 		if (!config.data.highlights.enabled) return;
 
-		const highlights = await prisma.highlight.findMany({
-			where: { guild_id: guildId },
-			select: {
-				user_id: true,
-				patterns: true,
-				channel_scoping: true,
-				user_blacklist: true
-			}
-		});
+		// This query is a nightmare, but so is prisma's performance.
+		const highlights = await kysely
+			.selectFrom("Highlight")
+			.selectAll()
+			.select(eb => [
+				jsonArrayFrom(
+					eb
+						.selectFrom("HighlightChannelScoping")
+						.select(["channel_id", "type"])
+						.whereRef("HighlightChannelScoping.user_id", "=", "Highlight.user_id")
+						.whereRef("HighlightChannelScoping.guild_id", "=", "Highlight.guild_id")
+				).as("channel_scoping")
+			])
+			.where("guild_id", "=", guildId)
+			.execute();
 
 		// Return early if no highlights exist.
 		if (highlights.length === 0) return;
@@ -361,21 +369,28 @@ export default class Highlights extends Command {
 		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
-		const highlight = await this.prisma.highlight.upsert({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			create: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guild.id
-			},
-			update: {}
-		});
+		let highlight = await kysely
+			.selectFrom("Highlight")
+			.selectAll()
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
 
-		if (highlight.patterns.length >= config.data.highlights.max_patterns) {
+		if (!highlight) {
+			// Create highlight entry if it doesn't exist.
+			highlight = (await kysely
+				.insertInto("Highlight")
+				.values({
+					user_id: interaction.user.id,
+					guild_id: interaction.guild.id,
+					patterns: [],
+					user_blacklist: []
+				})
+				.returningAll()
+				.executeTakeFirst()) as Highlight;
+		}
+
+		if ((highlight.patterns.length ?? 0) >= config.data.highlights.max_patterns) {
 			return {
 				error: `You have reached the maximum number of highlight patterns (${config.data.highlights.max_patterns}).`
 			};
@@ -396,36 +411,26 @@ export default class Highlights extends Command {
 			};
 		}
 
-		await this.prisma.highlight.update({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			data: {
-				patterns: {
-					push: pattern
-				}
-			}
-		});
+		const patterns = highlight.patterns.concat(pattern);
+
+		await kysely
+			.updateTable("Highlight")
+			.set({ patterns })
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.execute();
 
 		return { content: `Successfully added \`${pattern}\` to your highlights.` };
 	}
 
 	private async _removePattern(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
 		const pattern = interaction.options.getString("pattern", true);
-		const highlight = await this.prisma.highlight.findUnique({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			select: {
-				patterns: true
-			}
-		});
+		const highlight = await kysely
+			.selectFrom("Highlight")
+			.select(["patterns"])
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
 
 		if (!highlight || !highlight.patterns.includes(pattern)) {
 			return {
@@ -433,55 +438,38 @@ export default class Highlights extends Command {
 			};
 		}
 
-		await this.prisma.highlight.update({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			data: {
-				patterns: {
-					set: highlight.patterns.filter(p => p !== pattern)
-				}
-			}
-		});
+		const patterns = highlight.patterns.filter(p => p !== pattern);
+
+		await kysely
+			.updateTable("Highlight")
+			.set({ patterns })
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
 
 		return { content: `Successfully removed \`${pattern}\` from your highlights.` };
 	}
 
 	private async _clearPatterns(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const highlight = await this.prisma.highlight.findUnique({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			select: {
-				patterns: true
-			}
-		});
+		const highlight = await kysely
+			.selectFrom("Highlight")
+			.select(["patterns"])
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
 
 		if (!highlight || highlight.patterns.length === 0) {
 			return {
-				content: `You have no highlight patterns to clear.`
+				error: `You have no highlight patterns to clear.`
 			};
 		}
 
-		await this.prisma.highlight.update({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			data: {
-				patterns: {
-					set: []
-				}
-			}
-		});
+		await kysely
+			.updateTable("Highlight")
+			.set({ patterns: [] })
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
 
 		return {
 			content: `Successfully cleared \`${highlight.patterns.length}\` ${inflect(highlight.patterns.length, "highlight pattern")}.`
@@ -493,80 +481,95 @@ export default class Highlights extends Command {
 		const scopeType = interaction.options.getInteger("type", true);
 		const stringifiedType = scopeType === 0 ? "include" : "exclude";
 
-		try {
-			await this.prisma.highlight.upsert({
-				where: {
-					user_id_guild_id: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guild.id
-					}
-				},
-				update: {
-					channel_scoping: {
-						create: {
-							channel_id: channel.id,
-							type: scopeType
-						}
-					}
-				},
-				create: {
+		// Ensure highlight entry exists first or this will fail.
+		let highlight = await kysely
+			.selectFrom("Highlight")
+			.selectAll()
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
+
+		if (!highlight) {
+			// Create highlight entry if it doesn't exist.
+			highlight = (await kysely
+				.insertInto("Highlight")
+				.values({
 					user_id: interaction.user.id,
 					guild_id: interaction.guild.id,
-					channel_scoping: {
-						create: {
-							channel_id: channel.id,
-							type: scopeType
-						}
-					}
-				}
-			});
-		} catch {
+					patterns: [],
+					user_blacklist: []
+				})
+				.returningAll()
+				.executeTakeFirst()) as Highlight;
+		}
+
+		const scoping = await kysely
+			.selectFrom("HighlightChannelScoping")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.where("channel_id", "=", channel.id)
+			.executeTakeFirst();
+
+		if (scoping) {
 			return {
-				content: `Failed to ${stringifiedType} ${channel}. Please check whether the channel is already in the scope.`,
-				temporary: true
+				error: `${channel} is already in your highlight scoping.`
 			};
 		}
+
+		await kysely
+			.insertInto("HighlightChannelScoping")
+			.values({
+				user_id: interaction.user.id,
+				guild_id: interaction.guild.id,
+				channel_id: channel.id,
+				type: scopeType
+			})
+			.execute();
 
 		return { content: `Successfully ${stringifiedType}d ${channel} for your highlights.` };
 	}
 
 	private async _removeChannelScoping(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true);
+		const scoping = await kysely
+			.selectFrom("HighlightChannelScoping")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.where("channel_id", "=", channel.id)
+			.executeTakeFirst();
 
-		try {
-			await this.prisma.highlightChannelScoping.delete({
-				where: {
-					user_id_guild_id_channel_id: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guild.id,
-						channel_id: channel.id
-					}
-				}
-			});
-		} catch {
+		if (!scoping) {
 			return {
-				content: `Failed to remove ${channel} from your highlight scoping. It may not exist in your highlight scoping.`
+				error: `${channel} is not in your highlight scoping.`
 			};
 		}
+
+		await kysely
+			.deleteFrom("HighlightChannelScoping")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.where("channel_id", "=", channel.id)
+			.execute();
 
 		return { content: `Successfully removed ${channel} from your highlight scoping.` };
 	}
 
 	private async _clearChannelScoping(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const { count } = await this.prisma.highlightChannelScoping.deleteMany({
-			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guild.id
-			}
-		});
+		const { numDeletedRows } = await kysely
+			.deleteFrom("HighlightChannelScoping")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
 
-		if (count === 0) {
+		if (numDeletedRows === 0n) {
 			return {
-				content: `You have no highlight channel scoping to clear.`
+				error: `You have no highlight channel scoping to clear.`
 			};
 		}
 
-		return { content: `Successfully cleared \`${count}\` ${inflect(count, "highlight channel scoping")}.` };
+		return {
+			content: `Successfully cleared \`${numDeletedRows}\` ${inflect(Number(numDeletedRows), "highlight channel scoping")}.`
+		};
 	}
 
 	private async _addUserBlacklist(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
@@ -578,30 +581,31 @@ export default class Highlights extends Command {
 			};
 		}
 
-		try {
-			await this.prisma.highlight.upsert({
-				where: {
-					user_id_guild_id: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guild.id
-					}
-				},
-				update: {
-					user_blacklist: {
-						push: user.id
-					}
-				},
-				create: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id,
-					user_blacklist: [user.id]
-				}
-			});
-		} catch {
+		const highlight = await kysely
+			.selectFrom("Highlight")
+			.select(["user_blacklist"])
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
+
+		if (highlight && highlight.user_blacklist.includes(user.id)) {
 			return {
-				error: `Failed to blacklist ${user}. They may already be blacklisted.`
+				error: `${user} is already blacklisted from triggering your highlights.`
 			};
 		}
+
+		const updatedBlacklist = highlight ? highlight.user_blacklist.concat(user.id) : [user.id];
+
+		await kysely
+			.insertInto("Highlight")
+			.values({
+				user_id: interaction.user.id,
+				guild_id: interaction.guild.id,
+				patterns: [],
+				user_blacklist: updatedBlacklist
+			})
+			.onConflict(oc => oc.columns(["guild_id", "user_id"]).doUpdateSet({ user_blacklist: updatedBlacklist }))
+			.execute();
 
 		return { content: `Successfully blacklisted ${user} from triggering your highlights.` };
 	}
@@ -609,17 +613,12 @@ export default class Highlights extends Command {
 	private async _removeUserBlacklist(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
 		const user = interaction.options.getUser("user", true);
 
-		const highlight = await this.prisma.highlight.findUnique({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			select: {
-				user_blacklist: true
-			}
-		});
+		const highlight = await kysely
+			.selectFrom("Highlight")
+			.select(["user_blacklist"])
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
 
 		if (!highlight || !highlight.user_blacklist.includes(user.id)) {
 			return {
@@ -629,51 +628,36 @@ export default class Highlights extends Command {
 
 		const updatedBlacklist = highlight.user_blacklist.filter(u => u !== user.id);
 
-		await this.prisma.highlight.update({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			data: {
-				user_blacklist: updatedBlacklist
-			}
-		});
+		await kysely
+			.updateTable("Highlight")
+			.set({ user_blacklist: updatedBlacklist })
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.execute();
 
 		return { content: `Successfully removed ${user} from your highlight blacklist.` };
 	}
 
 	private async _clearUserBlacklist(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const highlight = await this.prisma.highlight.findUnique({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			select: {
-				user_blacklist: true
-			}
-		});
+		const highlight = await kysely
+			.selectFrom("Highlight")
+			.select(["user_blacklist"])
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.executeTakeFirst();
 
 		if (!highlight || !highlight.user_blacklist.length) {
 			return {
-				content: `You have no highlight user blacklist to clear.`
+				error: `You have no highlight user blacklist to clear.`
 			};
 		}
 
-		await this.prisma.highlight.update({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			data: {
-				user_blacklist: []
-			}
-		});
+		await kysely
+			.updateTable("Highlight")
+			.set({ user_blacklist: [] })
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully cleared \`${highlight.user_blacklist.length}\` ${inflect(highlight.user_blacklist.length, "highlight user blacklist entry")}.`
@@ -681,31 +665,43 @@ export default class Highlights extends Command {
 	}
 
 	private async _listHighlights(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const highlights = await this.prisma.highlight.findUnique({
-			where: {
-				user_id_guild_id: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guild.id
-				}
-			},
-			include: {
-				channel_scoping: true
-			}
-		});
+		const highlights = await kysely
+			.selectFrom("Highlight")
+			.select(eb => [
+				jsonArrayFrom(
+					eb
+						.selectFrom("HighlightChannelScoping")
+						.select(["channel_id", "type"])
+						.whereRef("HighlightChannelScoping.user_id", "=", "Highlight.user_id")
+						.whereRef("HighlightChannelScoping.guild_id", "=", "Highlight.guild_id")
+				).as("channel_scoping")
+			])
+			.selectAll()
+			.where("guild_id", "=", interaction.guild.id)
+			.where("user_id", "=", interaction.user.id)
+			.executeTakeFirst();
 
-		const patternCount = highlights?.patterns.length ?? 0;
-		const rawPatterns = highlights?.patterns.map(pattern => `\`${pattern}\``).join("\n") || "None";
+		if (!highlights) {
+			return { content: `You have no highlights set up.` };
+		}
 
-		const blacklistedUsers = highlights?.user_blacklist.map(id => `<@${id}>`).join("\n") || "None";
+		const patternsArr = highlights.patterns ?? [];
+		const userBlacklist = highlights.user_blacklist ?? [];
+		const channelScoping = highlights.channel_scoping ?? [];
 
-		const [includedChannels, excludedChannels] = highlights?.channel_scoping.reduce<[string[], string[]]>(
+		const patternCount = patternsArr.length;
+		const rawPatterns = patternsArr.map(pattern => `\`${pattern}\``).join("\n") || "None";
+
+		const blacklistedUsers = userBlacklist.map(id => `<@${id}>`).join("\n") || "None";
+
+		const [includedChannels, excludedChannels] = channelScoping.reduce<[string[], string[]]>(
 			(acc, channel) => {
 				const index = channel.type === 0 ? 0 : 1;
 				acc[index].push(`<#${channel.channel_id}>`);
 				return acc;
 			},
 			[[], []]
-		) ?? [[], []];
+		);
 
 		let patterns: string;
 
@@ -738,7 +734,7 @@ export default class Highlights extends Command {
 					inline: true
 				},
 				{
-					name: `Blacklisted Users (${highlights?.user_blacklist.length ?? 0})`,
+					name: `Blacklisted Users (${userBlacklist.length})`,
 					value: blacklistedUsers,
 					inline: true
 				}
@@ -749,31 +745,30 @@ export default class Highlights extends Command {
 	}
 
 	private async _clearAllHighlights(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const [patterns] = await this.prisma.$transaction([
-			this.prisma.highlightChannelScoping.deleteMany({
-				where: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guildId
-				}
-			}),
-			this.prisma.highlight.delete({
-				where: {
-					user_id_guild_id: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guildId
-					}
-				}
-			})
-		]);
+		const { numDeletedRows } = await kysely.transaction().execute(async trx => {
+			const scopingResult = await trx
+				.deleteFrom("HighlightChannelScoping")
+				.where("user_id", "=", interaction.user.id)
+				.where("guild_id", "=", interaction.guildId)
+				.executeTakeFirstOrThrow();
 
-		if (patterns.count === 0) {
+			await trx
+				.deleteFrom("Highlight")
+				.where("user_id", "=", interaction.user.id)
+				.where("guild_id", "=", interaction.guildId)
+				.execute();
+
+			return scopingResult;
+		});
+
+		if (numDeletedRows === 0n) {
 			return {
 				content: `You have no highlights to clear.`
 			};
 		}
 
 		return {
-			content: `Successfully erased \`${patterns.count}\` ${inflect(patterns.count, "highlight")}.`
+			content: `Successfully erased \`${numDeletedRows}\` ${inflect(Number(numDeletedRows), "highlight")}.`
 		};
 	}
 }

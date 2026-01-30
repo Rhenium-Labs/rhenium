@@ -16,11 +16,11 @@ import ms from "ms";
 import Tesseract from "node-tesseract-ocr";
 
 import { CF_CONSTANTS } from "#utils/Constants.js";
-import { openAi, prisma } from "#root/index.js";
+import { openAi, kysely } from "#root/index.js";
 import { userMentionWithId } from "#utils/index.js";
 import { ContentFilterButtonNames, ContentFilterFieldNames, ScanType } from "./Enums.js";
 
-import type { Detector } from "#prisma/client.js";
+import type { Detector } from "#kysely/Enums.js";
 import type { ContentPredictionData, ContentPredictions } from "./Types.js";
 import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 
@@ -188,8 +188,10 @@ export default class ContentFilter {
 		alertMessageId = alertMessage.id;
 		alertChannelId = alertMessage.channel_id;
 
-		const alert = await prisma.contentFilterAlert.create({
-			data: {
+		const alert = await kysely
+			.insertInto("ContentFilterAlert")
+			.values({
+				id: alertMessage.id,
 				guild_id: message.guildId,
 				message_id: message.id,
 				channel_id: message.channelId,
@@ -200,19 +202,22 @@ export default class ContentFilter {
 				highest_score: highestScore,
 				mod_status: "Pending",
 				del_status: "Pending"
-			}
-		});
+			})
+			.returningAll()
+			.executeTakeFirst();
 
 		// Store flagged content for viewing later.
 		if (problematicContent.length > 0) {
 			const contentStr = problematicContent.join("\n---\n");
-			await prisma.contentFilterLog.create({
-				data: {
+			await kysely
+				.insertInto("ContentFilterLog")
+				.values({
+					id: alert!.id,
 					guild_id: message.guildId,
-					alert_id: alert.id,
+					alert_id: alert!.id,
 					content: contentStr
-				}
-			});
+				})
+				.execute();
 		}
 
 		// Update channel state for tracking

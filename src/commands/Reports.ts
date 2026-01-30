@@ -6,6 +6,7 @@ import {
 	PermissionFlagsBits
 } from "discord.js";
 
+import { kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
@@ -74,10 +75,13 @@ export default class Reports extends Command {
 					return { error: "This user is already blacklisted from using the report system." };
 				}
 
-				await this.prisma.messageReportConfig.update({
-					where: { id: interaction.guild.id },
-					data: { blacklisted_users: { push: user.id } }
-				});
+				await kysely
+					.updateTable("MessageReportConfig")
+					.set({
+						blacklisted_users: [...config.blacklisted_users, user.id]
+					})
+					.where("id", "=", interaction.guild.id)
+					.execute();
 
 				return {
 					content: `Successfully blacklisted ${user.tag} from using the report system.`
@@ -93,12 +97,13 @@ export default class Reports extends Command {
 
 				const updatedBlacklist = config.blacklisted_users.filter(id => id !== user.id);
 
-				await this.prisma.messageReportConfig.update({
-					where: { id: interaction.guild.id },
-					data: {
+				await kysely
+					.updateTable("MessageReportConfig")
+					.set({
 						blacklisted_users: updatedBlacklist
-					}
-				});
+					})
+					.where("id", "=", interaction.guild.id)
+					.execute();
 
 				return {
 					content: `Successfully unblacklisted ${user.tag} from using the report system.`

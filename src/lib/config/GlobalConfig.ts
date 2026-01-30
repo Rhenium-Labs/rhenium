@@ -5,7 +5,7 @@ import ms from "ms";
 import fs from "node:fs";
 
 import { MessageQueue } from "#utils/Messages.js";
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import { LOG_DATE_FORMAT, ZOD_CRON_REGEX } from "#utils/Constants.js";
 import { inflect, readYamlFile, startCronJob } from "#utils/index.js";
 
@@ -88,15 +88,16 @@ export default class GlobalConfig {
 
 				Logger.info(`Deleting messages created before ${createdAtStr} (older than ${durationStr})...`);
 
-				const { count } = await prisma.message.deleteMany({
-					where: { created_at: { lte: createdAtThreshold } }
-				});
+				const { numDeletedRows } = await kysely
+					.deleteFrom("Message")
+					.where("created_at", "<=", createdAtThreshold)
+					.executeTakeFirst();
 
-				if (count === 0) {
+				if (numDeletedRows === 0n) {
 					Logger.info("No messages were deleted.");
 				} else {
 					Logger.info(
-						`Deleted ${count} ${inflect(count, "message")} created before ${createdAtStr} (older than ${durationStr}).`
+						`Deleted ${numDeletedRows} ${inflect(Number(numDeletedRows), "message")} created before ${createdAtStr} (older than ${durationStr}).`
 					);
 				}
 			}
@@ -112,11 +113,12 @@ export default class GlobalConfig {
 			cronTime: disregard_cron,
 			onTick: async () => {
 				const now = new Date();
-				const guilds = await prisma.messageReport.findMany({
-					where: { status: "Pending" },
-					select: { guild_id: true },
-					distinct: ["guild_id"]
-				});
+				const guilds = await kysely
+					.selectFrom("MessageReport")
+					.select("guild_id")
+					.where("status", "=", "Pending")
+					.distinct()
+					.execute();
 
 				for (const { guild_id } of guilds) {
 					const config = (await ConfigManager.get(guild_id)).getMessageReportsConfig();
@@ -124,22 +126,21 @@ export default class GlobalConfig {
 
 					const threshold = new Date(now.getTime() - Number(config.auto_disregard_after));
 
-					const { count } = await prisma.messageReport.updateMany({
-						where: {
-							guild_id,
-							status: "Pending",
-							reported_at: { lte: threshold }
-						},
-						data: {
+					const { numUpdatedRows } = await kysely
+						.updateTable("MessageReport")
+						.set({
 							status: "Disregarded",
 							resolved_at: now,
 							resolved_by: client.user.id
-						}
-					});
+						})
+						.where("guild_id", "=", guild_id)
+						.where("status", "=", "Pending")
+						.where("reported_at", "<=", threshold)
+						.executeTakeFirst();
 
-					if (count > 0) {
+					if (numUpdatedRows > 0n) {
 						Logger.info(
-							`Automatically disregarded ${count} message ${inflect(count, "report")} in guild with ID "${guild_id}".`
+							`Automatically disregarded ${numUpdatedRows} message ${inflect(Number(numUpdatedRows), "report")} in guild with ID "${guild_id}".`
 						);
 					}
 				}

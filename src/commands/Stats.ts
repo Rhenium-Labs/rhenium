@@ -1,9 +1,12 @@
 import { EmbedBuilder } from "discord.js";
+import { sql } from "kysely";
 
 import ms from "ms";
 
+import { kysely } from "#root/index.js";
 import { MessageQueue } from "#utils/Messages.js";
 import { ApplyOptions, Command } from "#rhenium";
+
 import type { MessageReplyData } from "#utils/Types.js";
 
 import GlobalConfig from "#root/lib/config/GlobalConfig.js";
@@ -38,16 +41,17 @@ export default class Stats extends Command {
 		const members = guilds.cache.reduce((acc, guild) => acc + guild.members.cache.size, 0);
 
 		// Database Size.
-		const dbSizeQuery = await this.prisma.$queryRaw<DatabaseSizeResult[]>`
-                SELECT pg_database_size(current_database()) / (1024 * 1024) as size_in_mb
-                FROM pg_database
-                WHERE datname = current_database()
-                LIMIT 1
-            `;
-		const dbSize = dbSizeQuery[0].size_in_mb;
+		const dbSizeQuery = await sql<DatabaseSizeResult>`
+			SELECT pg_database_size(current_database()) / (1024 * 1024) as size_in_mb
+		`.execute(kysely);
+		const dbSize = dbSizeQuery.rows[0].size_in_mb;
 
 		// Message Count.
-		const messageCount = await this.prisma.message.count();
+		const messages = await kysely
+			.selectFrom("Message")
+			.select(eb => eb.fn.countAll().as("count"))
+			.where("guild_id", "=", message.guildId)
+			.executeTakeFirst();
 
 		const embed = new EmbedBuilder()
 			.setColor("NotQuiteBlack")
@@ -80,7 +84,7 @@ export default class Stats extends Command {
 				},
 				{
 					name: "Database Summary",
-					value: `${dbSize} MB / ${messageCount} Messages`,
+					value: `${dbSize} MB / ${messages?.count ?? 0} Messages`,
 					inline: true
 				}
 			])

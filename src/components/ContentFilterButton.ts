@@ -1,6 +1,7 @@
 import { Colors, EmbedBuilder, MessageFlags, ComponentType } from "discord.js";
 
-import { ContentFilterStatus } from "#prisma/enums.js";
+import { MessageQueue } from "#utils/Messages.js";
+import { ContentFilterStatus } from "#kysely/Enums.js";
 import { ApplyOptions, Component } from "#rhenium";
 import { ContentFilterFieldNames } from "#cf/Enums.js";
 import { hastebin, userMentionWithId } from "#utils/index.js";
@@ -301,9 +302,7 @@ export default class ContentFilterButton extends Component {
 		}
 
 		// Fall back to the message content in the Message table
-		const dbMessage = await this.prisma.message.findUnique({
-			where: { id: messageId }
-		});
+		const dbMessage = await MessageQueue.getMessage(messageId);
 
 		if (!dbMessage) {
 			return { error: "Could not find the message content in the database." };

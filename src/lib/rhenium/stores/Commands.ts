@@ -113,6 +113,8 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 				}
 			});
 
+			Logger.error(`Error executing command "${command.name}":`, error);
+
 			const content = `An error occurred while executing this command. Please include this ID when reporting the bug: \`${sentryId}\`.`;
 
 			if (interaction.deferred || interaction.replied) {
@@ -160,6 +162,8 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 					messageId: message.id
 				}
 			});
+
+			Logger.error(`Error executing command "${command.name}":`, error);
 
 			return reply(message, {
 				content: `An error occurred while executing this command. Please include this ID when reporting the bug: \`${sentryId}\`.`

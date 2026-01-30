@@ -10,9 +10,9 @@ import type {
 	QuickMuteChannelScoping,
 	QuickMuteConfig,
 	QuickPurgeChannelScoping,
-	QuickPurgeConfig,
-	UserPermission
-} from "#prisma/client.js";
+	QuickPurgeConfig
+} from "#kysely/Schema.js";
+import type { UserPermission } from "#kysely/Enums.js";
 
 export default class GuildConfig {
 	/**

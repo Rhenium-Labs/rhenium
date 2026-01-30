@@ -1,5 +1,6 @@
-import { Message } from "#prisma/client.js";
-import { Detector } from "#prisma/enums.js";
+import { Message } from "#kysely/Schema.js";
+import { Detector } from "#kysely/Enums.js";
+
 import { Snowflake } from "discord.js";
 
 export type HeuristicMessageData = {

@@ -1,5 +1,5 @@
 import { Collection } from "discord.js";
-import { prisma } from "#root/index.js";
+import { kysely } from "#root/index.js";
 
 import type {
 	BanRequestConfig,
@@ -12,7 +12,7 @@ import type {
 	QuickMuteConfig,
 	QuickPurgeChannelScoping,
 	QuickPurgeConfig
-} from "#prisma/client.js";
+} from "#kysely/Schema.js";
 
 import GuildConfig, { type GuildConfigData } from "./GuildConfig.js";
 
@@ -93,68 +93,100 @@ export default class ConfigManager {
 			return;
 		}
 
+		console.log(`Recomputing config feature '${feature}' for guild ${guildId}...`);
+
 		let featureData: ConfigFeatureMap[ConfigFeature];
 
 		switch (feature) {
 			case "message_reports":
-				featureData = await prisma.messageReportConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				});
+				featureData = (await kysely
+					.insertInto("MessageReportConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirst()) as MessageReportConfig;
 				break;
 
 			case "ban_requests":
-				featureData = await prisma.banRequestConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				});
+				featureData = (await kysely
+					.insertInto("BanRequestConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirst()) as BanRequestConfig;
 				break;
 
 			case "quick_mutes": {
-				const result = await prisma.quickMuteConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				});
-				featureData = { ...result, channel_scoping: result.channel_scoping };
+				const result = (await kysely
+					.insertInto("QuickMuteConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirst()) as QuickMuteConfig;
+
+				const scoping = await kysely
+					.selectFrom("QuickMuteChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute();
+
+				featureData = { ...result, channel_scoping: scoping };
 				break;
 			}
 
 			case "quick_purges": {
-				const result = await prisma.quickPurgeConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				});
-				featureData = { ...result, channel_scoping: result.channel_scoping };
+				const result = (await kysely
+					.insertInto("QuickPurgeConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirst()) as QuickPurgeConfig;
+
+				const scoping = await kysely
+					.selectFrom("QuickPurgeChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute();
+
+				featureData = { ...result, channel_scoping: scoping };
 				break;
 			}
 
 			case "highlights":
-				featureData = await prisma.highlightConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				});
+				featureData = (await kysely
+					.insertInto("HighlightConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirst()) as HighlightConfig;
+
 				break;
 
 			case "content_filter": {
-				const result = await prisma.contentFilterConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				});
-				featureData = { ...result, channel_scoping: result.channel_scoping };
+				const result = (await kysely
+					.insertInto("ContentFilterConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirst()) as ContentFilterConfig;
+
+				const scoping = await kysely
+					.selectFrom("ContentFilterChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute();
+
+				featureData = { ...result, channel_scoping: scoping };
 				break;
 			}
 
 			case "permission_scopes":
-				featureData = await prisma.permissionScope.findMany({ where: { guild_id: guildId } });
+				featureData = await kysely
+					.selectFrom("PermissionScope")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute();
+
 				break;
 		}
 
@@ -178,50 +210,67 @@ export default class ConfigManager {
 	public static async compute(guildId: string): Promise<GuildConfig> {
 		// Upsert a guild first or all subsequent upserts will fail due to foreign key constraints.
 
-		await prisma.guild.upsert({
-			where: { id: guildId },
-			create: { id: guildId },
-			update: {}
-		});
+		await kysely
+			.insertInto("Guild")
+			.values({ id: guildId })
+			.onConflict(oc => oc.column("id").doNothing())
+			.execute();
 
-		const [messageReports, banRequests, quickMutes, quickPurges, highlights, contentFilter, permissionScopes] =
-			await prisma.$transaction([
-				prisma.messageReportConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				}),
-				prisma.banRequestConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				}),
-				prisma.quickMuteConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				}),
-				prisma.quickPurgeConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				}),
-				prisma.highlightConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-
-					update: {}
-				}),
-				prisma.contentFilterConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				}),
-				prisma.permissionScope.findMany({ where: { guild_id: guildId } })
-			]);
+		const [
+			messageReports,
+			banRequests,
+			quickMutes,
+			quickPurges,
+			highlights,
+			contentFilter,
+			permissionScopes,
+			quickMuteScoping,
+			quickPurgeScoping,
+			contentFilterScoping
+		] = await kysely.transaction().execute(async trx =>
+			Promise.all([
+				trx
+					.insertInto("MessageReportConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("BanRequestConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("QuickMuteConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("QuickPurgeConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("HighlightConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("ContentFilterConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx.selectFrom("PermissionScope").selectAll().where("guild_id", "=", guildId).execute(),
+				trx.selectFrom("QuickMuteChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
+				trx.selectFrom("QuickPurgeChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
+				trx.selectFrom("ContentFilterChannelScoping").selectAll().where("guild_id", "=", guildId).execute()
+			])
+		);
 
 		const data: GuildConfigData = {
 			id: guildId,
@@ -229,16 +278,16 @@ export default class ConfigManager {
 			ban_requests: banRequests,
 			quick_mutes: {
 				...quickMutes,
-				channel_scoping: quickMutes.channel_scoping
+				channel_scoping: quickMuteScoping
 			},
 			quick_purges: {
 				...quickPurges,
-				channel_scoping: quickPurges.channel_scoping
+				channel_scoping: quickPurgeScoping
 			},
 			highlights: highlights,
 			content_filter: {
 				...contentFilter,
-				channel_scoping: contentFilter.channel_scoping
+				channel_scoping: contentFilterScoping
 			},
 			permission_scopes: permissionScopes
 		};

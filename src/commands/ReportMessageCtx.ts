@@ -7,7 +7,7 @@ import {
 	MessageFlags
 } from "discord.js";
 
-import { ReportStatus } from "#prisma/enums.js";
+import { kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
@@ -90,13 +90,13 @@ export default class ReportMessageCtx extends Command {
 			}
 		}
 
-		const report = await this.prisma.messageReport.findFirst({
-			where: {
-				guild_id: interaction.guild.id,
-				message_id: message.id,
-				status: ReportStatus.Pending
-			}
-		});
+		const report = await kysely
+			.selectFrom("MessageReport")
+			.selectAll()
+			.where("guild_id", "=", interaction.guild.id)
+			.where("message_id", "=", message.id)
+			.where("status", "=", "Pending")
+			.executeTakeFirst();
 
 		if (report) {
 			if (report.reported_by === interaction.user.id) {

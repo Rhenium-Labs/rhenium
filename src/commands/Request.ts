@@ -9,6 +9,7 @@ import {
 
 import ms, { type StringValue } from "ms";
 
+import { kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 import { parseDurationString, validateDuration } from "#utils/index.js";
 
@@ -79,14 +80,14 @@ export default class Request extends Command {
 			return { error: "The target user could not be found." };
 		}
 
-		const existingRequest = await this.prisma.banRequest.findFirst({
-			where: {
-				guild_id: interaction.guildId,
-				target_id: target.id,
-				status: "Pending",
-				requested_by: interaction.user.id
-			}
-		});
+		const existingRequest = await kysely
+			.selectFrom("BanRequest")
+			.selectAll()
+			.where("guild_id", "=", interaction.guildId)
+			.where("target_id", "=", target.id)
+			.where("status", "=", "Pending")
+			.where("requested_by", "=", interaction.user.id)
+			.executeTakeFirst();
 
 		if (existingRequest) {
 			return { error: "You already have a pending ban request for this user." };
@@ -116,6 +117,7 @@ export default class Request extends Command {
 
 		if (duration) {
 			const durationValidation = validateDuration({ duration, minimum: "1s", maximum: "5y" });
+
 			if (!durationValidation.ok) {
 				return { error: durationValidation.message };
 			}
@@ -142,7 +144,7 @@ export default class Request extends Command {
 		return BanRequestUtils.create({
 			config,
 			target,
-			duration,
+			duration: duration ? BigInt(duration) : null,
 			reason: reason ?? "No reason provided.",
 			executor: interaction.member
 		});

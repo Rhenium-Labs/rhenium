@@ -1,6 +1,6 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Colors } from "discord.js";
 
-import { kv } from "#root/index.js";
+import { kv, kysely } from "#root/index.js";
 import { hastebin } from "#utils/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 
@@ -53,13 +53,18 @@ export default class Whitelist extends Command {
 	}
 
 	private async _createWhitelist(guildId: string): Promise<MessageReplyData> {
-		const exists = await this.prisma.whitelist.findUnique({ where: { id: guildId } });
+		// prettier-ignore
+		const exists = await kysely
+			.selectFrom("Whitelist")
+			.selectAll()
+			.where("id", "=", guildId)
+			.executeTakeFirst();
 
 		if (exists) {
 			return { error: `Guild with ID \`${guildId}\` is already whitelisted.` };
 		}
 
-		await this.prisma.whitelist.create({ data: { id: guildId } });
+		await kysely.insertInto("Whitelist").values({ id: guildId }).execute();
 		await kv.put(`whitelists:${guildId}`, { status: true });
 
 		return {
@@ -68,12 +73,18 @@ export default class Whitelist extends Command {
 	}
 
 	private async _deleteWhitelist(guildId: string): Promise<MessageReplyData> {
-		const exists = await this.prisma.whitelist.findUnique({ where: { id: guildId } });
+		// prettier-ignore
+		const exists = await kysely
+			.selectFrom("Whitelist")
+			.selectAll()
+			.where("id", "=", guildId)
+			.executeTakeFirst();
+
 		if (!exists) {
 			return { error: `Guild with ID \`${guildId}\` is not whitelisted.` };
 		}
 
-		await this.prisma.whitelist.delete({ where: { id: guildId } });
+		await kysely.deleteFrom("Whitelist").where("id", "=", guildId).execute();
 		await kv.put(`whitelists:${guildId}`, { status: false });
 
 		return {
@@ -87,7 +98,7 @@ export default class Whitelist extends Command {
 	}
 
 	private async _checkWhitelist(guildId: string): Promise<MessageReplyData> {
-		const isWhitelisted = await this.prisma.whitelist.findUnique({ where: { id: guildId } });
+		const isWhitelisted = kv.get(`whitelists:${guildId}`) as { status: boolean } | undefined;
 
 		return {
 			embeds: [
@@ -100,7 +111,11 @@ export default class Whitelist extends Command {
 	}
 
 	private async _listWhitelists(): Promise<MessageReplyData> {
-		const whitelists = await this.prisma.whitelist.findMany();
+		// prettier-ignore
+		const whitelists = await kysely
+			.selectFrom("Whitelist")
+			.selectAll()
+			.execute();
 
 		if (whitelists.length === 0) {
 			return {

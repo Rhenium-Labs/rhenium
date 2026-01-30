@@ -18,7 +18,6 @@ import {
 import ms from "ms";
 
 import { client, kysely } from "#root/index.js";
-import { Message as SerializedMessage } from "#prisma/client.js";
 import {
 	channelInScope,
 	getEmojiIdentifier,
@@ -31,6 +30,8 @@ import {
 } from "./index.js";
 import { LOG_DATE_FORMAT } from "./Constants.js";
 import { MessageQueue } from "./Messages.js";
+
+import type { Message as SerializedMessage } from "#kysely/Schema.js";
 
 import ModerationUtils from "./Moderation.js";
 import GuildConfig from "../config/GuildConfig.js";

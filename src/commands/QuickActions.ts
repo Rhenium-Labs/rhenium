@@ -25,6 +25,7 @@ import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
+import { kysely } from "#root/index.js";
 
 @ApplyOptions<Command.Options>({
 	name: "quick",
@@ -218,15 +219,14 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		const quickMuteCount = await this.prisma.quickMute.count({
-			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guildId
-			}
-		});
+		const quickMutes = await kysely
+			.selectFrom("QuickMute")
+			.select(eb => eb.fn.countAll().as("count"))
+			.where("guild_id", "=", interaction.guildId)
+			.executeTakeFirst();
 
 		// Hardcoded limit of 10 quick mutes per user.
-		if (quickMuteCount >= 10) {
+		if (quickMutes?.count !== undefined && Number(quickMutes.count) >= 10) {
 			return {
 				error: "You have reached the maximum of 10 quick mutes. Please remove an existing one before adding a new one."
 			};
@@ -265,15 +265,12 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		const existing = await this.prisma.quickMute.findUnique({
-			where: {
-				user_id_guild_id_reaction: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guildId,
-					reaction: reactionIdentifier
-				}
-			}
-		});
+		const existing = await kysely
+			.selectFrom("QuickMute")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.where("reaction", "=", reactionIdentifier)
+			.executeTakeFirst();
 
 		if (existing) {
 			return {
@@ -281,16 +278,17 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		await this.prisma.quickMute.create({
-			data: {
+		await kysely
+			.insertInto("QuickMute")
+			.values({
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId,
 				reaction: reactionIdentifier,
 				duration: BigInt(duration),
 				reason,
 				purge_amount: purgeAmount
-			}
-		});
+			})
+			.execute();
 
 		const formattedDuration = ms(duration, { long: true });
 		const emojiDisplay = validatedEmoji.id
@@ -314,21 +312,25 @@ export default class QuickActions extends Command {
 
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
 
-		try {
-			await this.prisma.quickMute.delete({
-				where: {
-					user_id_guild_id_reaction: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guildId,
-						reaction: reactionIdentifier
-					}
-				}
-			});
-		} catch {
+		const exists = await kysely
+			.selectFrom("QuickMute")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.where("reaction", "=", reactionIdentifier)
+			.executeTakeFirst();
+
+		if (!exists) {
 			return {
 				error: `You don't have a quick mute configured for this reaction.`
 			};
 		}
+
+		await kysely
+			.deleteFrom("QuickMute")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.where("reaction", "=", reactionIdentifier)
+			.execute();
 
 		const emojiDisplay = validatedEmoji.id
 			? `<:${validatedEmoji.name}:${validatedEmoji.id}>`
@@ -340,12 +342,12 @@ export default class QuickActions extends Command {
 	}
 
 	private async _listMutes(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const quickMutes = await this.prisma.quickMute.findMany({
-			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guildId
-			}
-		});
+		const quickMutes = await kysely
+			.selectFrom("QuickMute")
+			.selectAll()
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.execute();
 
 		if (quickMutes.length === 0) {
 			return {
@@ -378,21 +380,20 @@ export default class QuickActions extends Command {
 	}
 
 	private async _clearMutes(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const { count } = await this.prisma.quickMute.deleteMany({
-			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guildId
-			}
-		});
+		const { numDeletedRows } = await kysely
+			.deleteFrom("QuickMute")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.executeTakeFirst();
 
-		if (count === 0) {
+		if (numDeletedRows === 0n) {
 			return {
 				content: "You don't have any quick mutes to clear."
 			};
 		}
 
 		return {
-			content: `Successfully cleared \`${count}\` ${inflect(count, "quick mute")}.`
+			content: `Successfully cleared \`${numDeletedRows}\` ${inflect(Number(numDeletedRows), "quick mute")}.`
 		};
 	}
 
@@ -410,15 +411,14 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		const quickPurgeCount = await this.prisma.quickPurge.count({
-			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guildId
-			}
-		});
+		const quickPurges = await kysely
+			.selectFrom("QuickPurge")
+			.select(eb => eb.fn.countAll().as("count"))
+			.where("guild_id", "=", interaction.guildId)
+			.executeTakeFirst();
 
 		// Hardcoded limit of 10 quick purges per user.
-		if (quickPurgeCount >= 10) {
+		if (quickPurges?.count !== undefined && Number(quickPurges.count) >= 10) {
 			return {
 				error: "You have reached the maximum of 10 quick purges. Please remove an existing one before adding a new one."
 			};
@@ -440,15 +440,12 @@ export default class QuickActions extends Command {
 
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
 
-		const existing = await this.prisma.quickPurge.findUnique({
-			where: {
-				user_id_guild_id_reaction: {
-					user_id: interaction.user.id,
-					guild_id: interaction.guildId,
-					reaction: reactionIdentifier
-				}
-			}
-		});
+		const existing = await kysely
+			.selectFrom("QuickPurge")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.where("reaction", "=", reactionIdentifier)
+			.executeTakeFirst();
 
 		if (existing) {
 			return {
@@ -456,14 +453,15 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		await this.prisma.quickPurge.create({
-			data: {
+		await kysely
+			.insertInto("QuickPurge")
+			.values({
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId,
 				reaction: reactionIdentifier,
 				purge_amount: purgeAmount
-			}
-		});
+			})
+			.execute();
 
 		const emojiDisplay = validatedEmoji.id
 			? `<:${validatedEmoji.name}:${validatedEmoji.id}>`
@@ -486,21 +484,25 @@ export default class QuickActions extends Command {
 
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
 
-		try {
-			await this.prisma.quickPurge.delete({
-				where: {
-					user_id_guild_id_reaction: {
-						user_id: interaction.user.id,
-						guild_id: interaction.guildId,
-						reaction: reactionIdentifier
-					}
-				}
-			});
-		} catch {
+		const exists = await kysely
+			.selectFrom("QuickPurge")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.where("reaction", "=", reactionIdentifier)
+			.executeTakeFirst();
+
+		if (!exists) {
 			return {
 				error: `You don't have a quick purge configured for this reaction.`
 			};
 		}
+
+		await kysely
+			.deleteFrom("QuickPurge")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.where("reaction", "=", reactionIdentifier)
+			.execute();
 
 		const emojiDisplay = validatedEmoji.id
 			? `<:${validatedEmoji.name}:${validatedEmoji.id}>`
@@ -512,12 +514,12 @@ export default class QuickActions extends Command {
 	}
 
 	private async _listPurges(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const quickPurges = await this.prisma.quickPurge.findMany({
-			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guildId
-			}
-		});
+		const quickPurges = await kysely
+			.selectFrom("QuickPurge")
+			.selectAll()
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.execute();
 
 		if (quickPurges.length === 0) {
 			return {
@@ -547,21 +549,20 @@ export default class QuickActions extends Command {
 	}
 
 	private async _clearPurges(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
-		const { count } = await this.prisma.quickPurge.deleteMany({
-			where: {
-				user_id: interaction.user.id,
-				guild_id: interaction.guildId
-			}
-		});
+		const { numDeletedRows } = await kysely
+			.deleteFrom("QuickPurge")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.executeTakeFirst();
 
-		if (count === 0) {
+		if (numDeletedRows === 0n) {
 			return {
 				content: "You don't have any quick purges to clear."
 			};
 		}
 
 		return {
-			content: `Successfully cleared \`${count}\` ${inflect(count, "quick purge")}.`
+			content: `Successfully cleared \`${numDeletedRows}\` ${inflect(Number(numDeletedRows), "quick purge")}.`
 		};
 	}
 }

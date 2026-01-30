@@ -1,7 +1,7 @@
 import { Piece } from "@sapphire/pieces";
 import type { Awaitable, ButtonInteraction, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#config/GuildConfig.js";
@@ -17,10 +17,10 @@ export abstract class Component<Options extends Component.Options = Component.Op
 	public client = client;
 
 	/**
-	 * Prisma client instance.
+	 * Kysely client instance.
 	 */
 
-	public prisma = prisma;
+	public kysely = kysely;
 
 	/**
 	 * The component's custom ID

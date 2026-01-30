@@ -25,7 +25,7 @@ export type BanRequestTable = {
 	resolved_by: string | null;
 	requested_at: Generated<Timestamp>;
 	requested_by: string;
-	duration: string | null;
+	duration: bigint | null;
 	reason: string;
 };
 
@@ -163,7 +163,7 @@ export type MessageReportConfigTable = {
 	enabled: Generated<boolean>;
 	webhook_url: string | null;
 	log_webhook_url: string | null;
-	auto_disregard_after: Generated<string>;
+	auto_disregard_after: Generated<bigint>;
 	immune_roles: Generated<string[]>;
 	notify_roles: Generated<string[]>;
 	blacklisted_users: Generated<string[]>;
@@ -184,7 +184,7 @@ export type QuickMuteTable = {
 	user_id: string;
 	guild_id: string;
 	reaction: string;
-	duration: string;
+	duration: bigint;
 	reason: string;
 	purge_amount: Generated<number>;
 };

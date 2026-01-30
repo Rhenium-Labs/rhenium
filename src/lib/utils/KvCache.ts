@@ -1,4 +1,4 @@
-import { kv, prisma } from "#root/index.js";
+import { kv, kysely } from "#root/index.js";
 
 export class KvCache {
 	/**
@@ -14,11 +14,13 @@ export class KvCache {
 
 		if (cached !== undefined) return cached.status;
 
-		const isWhitelisted = await prisma.whitelist
-			.findUnique({ where: { id: guildId } })
-			.then(Boolean)
-			// If there's an error (e.g., database connection issue), treat as not whitelisted.
-			.catch(() => false);
+		const whitelistEntry = await kysely
+			.selectFrom("Whitelist")
+			.selectAll()
+			.where("id", "=", guildId)
+			.executeTakeFirst();
+
+		const isWhitelisted = whitelistEntry !== undefined;
 
 		await kv.put(cacheKey, { status: isWhitelisted });
 		return isWhitelisted;

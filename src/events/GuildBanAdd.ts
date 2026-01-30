@@ -10,7 +10,7 @@ import {
 	WebhookClient
 } from "discord.js";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import { ApplyOptions, EventListener } from "#rhenium";
 
 import ConfigManager from "#root/lib/config/ConfigManager.js";
@@ -49,10 +49,18 @@ export default class GuildBanAdd extends EventListener {
 	private static async _clearMessageReports(ban: GuildBan, config: GuildConfig): Promise<void> {
 		if (!config?.data.message_reports.webhook_url || !config.data.message_reports.log_webhook_url) return;
 
-		const reports = await prisma.messageReport.updateManyAndReturn({
-			where: { author_id: ban.user.id, guild_id: ban.guild.id, status: "Pending" },
-			data: { resolved_by: client.user.id, resolved_at: new Date(), status: "AutoResolved" }
-		});
+		const reports = await kysely
+			.updateTable("MessageReport")
+			.set({
+				resolved_by: client.user.id,
+				resolved_at: new Date(),
+				status: "AutoResolved"
+			})
+			.where("author_id", "=", ban.user.id)
+			.where("guild_id", "=", ban.guild.id)
+			.where("status", "=", "Pending")
+			.returningAll()
+			.execute();
 
 		if (reports.length === 0) return;
 
@@ -105,10 +113,18 @@ export default class GuildBanAdd extends EventListener {
 	private static async _clearBanRequests(ban: GuildBan, config: GuildConfig): Promise<void> {
 		if (!config?.data.ban_requests.webhook_url || !config.data.ban_requests.log_webhook_url) return;
 
-		const requests = await prisma.banRequest.updateManyAndReturn({
-			where: { target_id: ban.user.id, guild_id: ban.guild.id, status: "Pending" },
-			data: { resolved_by: client.user.id, resolved_at: new Date(), status: "AutoResolved" }
-		});
+		const requests = await kysely
+			.updateTable("BanRequest")
+			.set({
+				resolved_by: client.user.id,
+				resolved_at: new Date(),
+				status: "AutoResolved"
+			})
+			.where("target_id", "=", ban.user.id)
+			.where("guild_id", "=", ban.guild.id)
+			.where("status", "=", "Pending")
+			.returningAll()
+			.execute();
 
 		if (requests.length === 0) return;
 

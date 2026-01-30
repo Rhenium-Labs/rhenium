@@ -1,5 +1,7 @@
+import { kysely } from "#root/index.js";
 import { capitalize } from "#utils/index.js";
 import { ApplyOptions, Component } from "#rhenium";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
@@ -24,12 +26,15 @@ export default class BanRequestModal extends Component {
 		const action = capitalize(interaction.customId.split("-")[2]) as BanRequestAction;
 		const requestId = interaction.customId.split("-")[3];
 
-		const request = await this.prisma.banRequest.findUnique({
-			where: { id: requestId, guild_id: interaction.guild.id }
-		});
+		const request = await kysely
+			.selectFrom("BanRequest")
+			.selectAll()
+			.where("id", "=", requestId)
+			.executeTakeFirst();
 
 		if (!request) {
 			setTimeout(() => interaction.message?.delete().catch(() => null), AUTO_DELETE_DELAY);
+
 			return {
 				error: "Failed to find the ban request associated with this message. I will attempt to delete this submission in 7 seconds."
 			};

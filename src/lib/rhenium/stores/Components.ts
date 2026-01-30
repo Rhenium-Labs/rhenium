@@ -88,6 +88,8 @@ export default class ComponentStore extends Store<Component, "components"> {
 				}
 			});
 
+			Logger.error(`Error executing component "${component.id}":`, error);
+
 			const content = `An error occurred while executing this component. Please include this ID when reporting the bug: \`${sentryId}\`.`;
 
 			if (interaction.deferred || interaction.replied) {

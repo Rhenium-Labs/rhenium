@@ -21,7 +21,7 @@ import { kysely } from "#root/index.js";
 import { cropLines, userMentionWithId } from "./index.js";
 import { cleanMessageContent, formatMessageContent } from "./Messages.js";
 
-import type { MessageReport } from "#prisma/client.js";
+import type { MessageReport } from "#kysely/Schema.js";
 import type { InteractionReplyData } from "./Types.js";
 import type { ValidatedMessageReportsConfig } from "#config/GuildConfig.js";
 
@@ -264,7 +264,7 @@ export default class MessageReportUtils {
 
 		switch (action) {
 			case MessageReportAction.Resolve: {
-				await Promise.all([
+				void Promise.all([
 					MessageReportUtils._log({
 						config,
 						action,
@@ -288,7 +288,7 @@ export default class MessageReportUtils {
 			}
 
 			case MessageReportAction.Disregard: {
-				await Promise.all([
+				void Promise.all([
 					MessageReportUtils._log({
 						config,
 						action,

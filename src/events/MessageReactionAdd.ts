@@ -16,12 +16,9 @@ import ConfigManager from "#root/lib/config/ConfigManager.js";
 	event: Events.MessageReactionAdd
 })
 export default class MessageReactionAdd extends EventListener {
-	public async onEmit(addedReaction: MessageReaction, user: User) {
-		const reaction = await MessageReactionAdd._parseReaction(addedReaction);
-		if (!reaction) return;
-
-		const message = await MessageReactionAdd._parseMessage(reaction.message);
-		if (!message || !message.inGuild()) return;
+	public async onEmit(rec: MessageReaction, user: User) {
+		const [reaction, message] = await MessageReactionAdd._parseProps(rec, rec.message);
+		if (!reaction || !message || !message.inGuild()) return;
 
 		const config = await ConfigManager.get(message.guild.id);
 
@@ -31,21 +28,13 @@ export default class MessageReactionAdd extends EventListener {
 		]);
 	}
 
-	private static async _parseReaction(
-		reaction: PartialMessageReaction | MessageReaction
-	): Promise<MessageReaction | null> {
-		if (reaction.partial) {
-			return reaction.fetch().catch(() => null);
-		}
+	private static async _parseProps(
+		reaction: PartialMessageReaction | MessageReaction,
+		message: PartialMessage | Message
+	): Promise<readonly [MessageReaction | null, Message | null]> {
+		const parsedReaction = reaction.partial ? await reaction.fetch().catch(() => null) : reaction;
+		const parsedMessage = message.partial ? await message.fetch().catch(() => null) : message;
 
-		return Promise.resolve(reaction);
-	}
-
-	private static async _parseMessage(message: PartialMessage | Message): Promise<Message | null> {
-		if (message.partial) {
-			return message.fetch().catch(() => null);
-		}
-
-		return Promise.resolve(message);
+		return [parsedReaction, parsedMessage] as const;
 	}
 }

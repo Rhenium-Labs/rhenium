@@ -3,7 +3,8 @@ import type { ChannelScanState } from "#cf/Types.js";
 
 import { kysely } from "#root/index.js";
 import { CF_CONSTANTS } from "./Constants.js";
-import { ContentFilterAlert, DetectorMode, Message, ContentFilterStatus } from "#prisma/client.js";
+import { ContentFilterAlert, Message } from "#kysely/Schema.js";
+import { ContentFilterStatus, DetectorMode } from "#kysely/Enums.js";
 
 import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 
