@@ -1,5 +1,5 @@
 import { Collection } from "discord.js";
-import { prisma } from "#root/index.js";
+import { kysely } from "#root/index.js";
 
 import type {
 	BanRequestConfig,
@@ -12,7 +12,7 @@ import type {
 	QuickMuteConfig,
 	QuickPurgeChannelScoping,
 	QuickPurgeConfig
-} from "#prisma/client.js";
+} from "#kysely/Schema.js";
 
 import GuildConfig, { type GuildConfigData } from "./GuildConfig.js";
 
@@ -34,7 +34,7 @@ export default class ConfigManager {
 		let config = this._cache.get(guildId);
 
 		if (!config) {
-			config = await this.compute(guildId);
+			config = await this._compute(guildId);
 			this._cache.set(guildId, config);
 		}
 
@@ -42,122 +42,20 @@ export default class ConfigManager {
 	}
 
 	/**
-	 * Updates the cached configuration for a guild by providing the updated entry for a specific feature.
+	 * Reloads a specific feature key in the cached configuration for a guild.
 	 *
 	 * @param guildId The ID of the guild.
-	 * @param feature The feature key to update (e.g., 'message_reports', 'ban_requests').
-	 * @param data The partial configuration data to merge into the specified feature.
+	 * @param feature The feature key to reload (e.g., 'message_reports', 'ban_requests').
 	 * @returns void
 	 */
-
-	public static async update<T extends ConfigFeature>(
-		guildId: string,
-		feature: T,
-		data: Partial<ConfigFeatureMap[T]>
-	): Promise<void> {
+	public static async reload(guildId: string, feature: ConfigFeature): Promise<void> {
 		const config = this._cache.get(guildId);
 
 		if (!config) {
 			return;
 		}
 
-		// Merge the existing feature data with the new data.
-		// Arrays are replaced entirely, while objects are merged.
-		const newFeatureData = Array.isArray(data)
-			? data
-			: {
-					...config.data[feature],
-					...data
-				};
-
-		const updatedData: GuildConfigData = {
-			...config.data,
-			[feature]: newFeatureData
-		};
-
-		this._cache.set(guildId, new GuildConfig(updatedData));
-	}
-
-	/**
-	 * Recomputes a specific feature of the guild configuration and updates the cache.
-	 * This is more efficient than calling compute() when only one feature needs to be refreshed.
-	 *
-	 * @param guildId The ID of the guild.
-	 * @param feature The feature key to recompute.
-	 * @returns void
-	 */
-	public static async computeSingle(guildId: string, feature: ConfigFeature): Promise<void> {
-		const config = this._cache.get(guildId);
-
-		if (!config) {
-			return;
-		}
-
-		let featureData: ConfigFeatureMap[ConfigFeature];
-
-		switch (feature) {
-			case "message_reports":
-				featureData = await prisma.messageReportConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				});
-				break;
-
-			case "ban_requests":
-				featureData = await prisma.banRequestConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				});
-				break;
-
-			case "quick_mutes": {
-				const result = await prisma.quickMuteConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				});
-				featureData = { ...result, channel_scoping: result.channel_scoping };
-				break;
-			}
-
-			case "quick_purges": {
-				const result = await prisma.quickPurgeConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				});
-				featureData = { ...result, channel_scoping: result.channel_scoping };
-				break;
-			}
-
-			case "highlights":
-				featureData = await prisma.highlightConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				});
-				break;
-
-			case "content_filter": {
-				const result = await prisma.contentFilterConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				});
-				featureData = { ...result, channel_scoping: result.channel_scoping };
-				break;
-			}
-
-			case "permission_scopes":
-				featureData = await prisma.permissionScope.findMany({ where: { guild_id: guildId } });
-				break;
-		}
-
+		const featureData = await this._getFeatureData(guildId, feature);
 		const updatedData: GuildConfigData = {
 			...config.data,
 			[feature]: featureData
@@ -167,61 +65,121 @@ export default class ConfigManager {
 	}
 
 	/**
+	 * Fetches the data for a specific feature from the database.
+	 *
+	 * @param guildId The ID of the guild.
+	 * @param feature The feature key to fetch.
+	 * @returns The feature data.
+	 */
+	private static async _getFeatureData(
+		guildId: string,
+		feature: ConfigFeature
+	): Promise<ConfigFeatureMap[ConfigFeature]> {
+		if (feature === "permission_scopes") {
+			// prettier-ignore
+			return kysely
+				.selectFrom("PermissionScope")
+				.selectAll()
+				.where("guild_id", "=", guildId)
+				.execute();
+		}
+
+		const { table, scopingTable } = FeatureTableMap[feature];
+
+		// prettier-ignore
+		const result = await kysely
+			.selectFrom(table)
+			.selectAll()
+			.where("id", "=", guildId)
+			.executeTakeFirst()
+
+		if (!scopingTable) {
+			return result as ConfigFeatureMap[ConfigFeature];
+		}
+
+		// prettier-ignore
+		const scoping = await kysely
+			.selectFrom(scopingTable)
+			.selectAll()
+			.where("guild_id", "=", guildId)
+			.execute();
+
+		return { ...result, channel_scoping: scoping } as ConfigFeatureMap[ConfigFeature];
+	}
+
+	/**
 	 * Computes a config for the guild and stores it in the cache.
 	 *
-	 * ⚠️ This method performs a lot of batched database queries and isn't intended to be called frequently. Use the .get method to retrieve cached configs instead.
+	 * ⚠️ This method performs a lot of batched database queries and is meant to be called once per guild.
 	 *
 	 * @param guildId The ID of the guild.
 	 * @returns The computed GuildConfig.
 	 */
 
-	public static async compute(guildId: string): Promise<GuildConfig> {
-		// Upsert a guild first or all subsequent upserts will fail due to foreign key constraints.
+	private static async _compute(guildId: string): Promise<GuildConfig> {
+		// Ensure the guild exists in the database.
+		// All subsequent config inserts rely on this.
+		await kysely
+			.insertInto("Guild")
+			.values({ id: guildId })
+			.onConflict(oc => oc.column("id").doNothing())
+			.execute();
 
-		await prisma.guild.upsert({
-			where: { id: guildId },
-			create: { id: guildId },
-			update: {}
-		});
-
-		const [messageReports, banRequests, quickMutes, quickPurges, highlights, contentFilter, permissionScopes] =
-			await prisma.$transaction([
-				prisma.messageReportConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				}),
-				prisma.banRequestConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					update: {}
-				}),
-				prisma.quickMuteConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				}),
-				prisma.quickPurgeConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				}),
-				prisma.highlightConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-
-					update: {}
-				}),
-				prisma.contentFilterConfig.upsert({
-					where: { id: guildId },
-					create: { id: guildId },
-					include: { channel_scoping: true },
-					update: {}
-				}),
-				prisma.permissionScope.findMany({ where: { guild_id: guildId } })
-			]);
+		const [
+			messageReports,
+			banRequests,
+			quickMutes,
+			quickPurges,
+			highlights,
+			contentFilter,
+			permissionScopes,
+			quickMuteScoping,
+			quickPurgeScoping,
+			contentFilterScoping
+		] = await kysely.transaction().execute(async trx =>
+			Promise.all([
+				trx
+					.insertInto("MessageReportConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("BanRequestConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("QuickMuteConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("QuickPurgeConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("HighlightConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx
+					.insertInto("ContentFilterConfig")
+					.values({ id: guildId })
+					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
+					.returningAll()
+					.executeTakeFirstOrThrow(),
+				trx.selectFrom("PermissionScope").selectAll().where("guild_id", "=", guildId).execute(),
+				trx.selectFrom("QuickMuteChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
+				trx.selectFrom("QuickPurgeChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
+				trx.selectFrom("ContentFilterChannelScoping").selectAll().where("guild_id", "=", guildId).execute()
+			])
+		);
 
 		const data: GuildConfigData = {
 			id: guildId,
@@ -229,16 +187,16 @@ export default class ConfigManager {
 			ban_requests: banRequests,
 			quick_mutes: {
 				...quickMutes,
-				channel_scoping: quickMutes.channel_scoping
+				channel_scoping: quickMuteScoping
 			},
 			quick_purges: {
 				...quickPurges,
-				channel_scoping: quickPurges.channel_scoping
+				channel_scoping: quickPurgeScoping
 			},
 			highlights: highlights,
 			content_filter: {
 				...contentFilter,
-				channel_scoping: contentFilter.channel_scoping
+				channel_scoping: contentFilterScoping
 			},
 			permission_scopes: permissionScopes
 		};
@@ -247,7 +205,17 @@ export default class ConfigManager {
 	}
 }
 
-/** Maping of feature keys. */
+/** Mapping of feature keys to their main table and optional scoping table. */
+const FeatureTableMap = {
+	message_reports: { table: "MessageReportConfig", scopingTable: null },
+	ban_requests: { table: "BanRequestConfig", scopingTable: null },
+	quick_mutes: { table: "QuickMuteConfig", scopingTable: "QuickMuteChannelScoping" },
+	quick_purges: { table: "QuickPurgeConfig", scopingTable: "QuickPurgeChannelScoping" },
+	highlights: { table: "HighlightConfig", scopingTable: null },
+	content_filter: { table: "ContentFilterConfig", scopingTable: "ContentFilterChannelScoping" }
+} as const;
+
+/** Mapping of feature keys to their types. */
 type ConfigFeatureMap = {
 	message_reports: MessageReportConfig;
 	ban_requests: BanRequestConfig;

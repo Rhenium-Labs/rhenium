@@ -10,7 +10,7 @@ import type {
 	UserContextMenuCommandInteraction
 } from "discord.js";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#config/GuildConfig.js";
@@ -28,10 +28,10 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	public client = client;
 
 	/**
-	 * Prisma client instance.
+	 * Kysely client instance.
 	 */
 
-	public prisma = prisma;
+	public kysely = kysely;
 
 	/**
 	 * The description of the command.

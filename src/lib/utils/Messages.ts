@@ -18,9 +18,9 @@ import {
 	MessagePayload
 } from "discord.js";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import { hastebin, inflect, truncate } from "./index.js";
-import type { Message as SerializedMessage } from "#prisma/client.js";
+import type { Message as SerializedMessage } from "#kysely/Schema.js";
 
 import Logger from "./Logger.js";
 
@@ -52,7 +52,7 @@ export class MessageQueue {
 	 *
 	 * @param ids The message IDs to exclude.
 	 */
-	public static addPurgeExclusions(ids: Snowflake[]): void {
+	public static async addPurgeExclusions(ids: Snowflake[]): Promise<void> {
 		for (const id of ids) {
 			MessageQueue.purgeExclusions.add(id);
 		}
@@ -63,7 +63,7 @@ export class MessageQueue {
 	 *
 	 * @param ids The message IDs to remove from exclusions.
 	 */
-	public static removePurgeExclusions(ids: Snowflake[]): void {
+	public static async removePurgeExclusions(ids: Snowflake[]): Promise<void> {
 		if (ids.length === 0) return;
 
 		for (const id of ids) {
@@ -76,7 +76,7 @@ export class MessageQueue {
 	 * @param message The message to queue.
 	 */
 
-	public static queue(message: Message<true>): void {
+	public static async enqueue(message: Message<true>): Promise<void> {
 		const messageEntry = MessageQueue.serializeMessage(message);
 		MessageQueue._cache.set(message.id, messageEntry);
 	}
@@ -89,13 +89,18 @@ export class MessageQueue {
 	 */
 
 	public static async getMessage(id: Snowflake): Promise<SerializedMessage | null> {
-		let message = MessageQueue._cache.get(id) ?? null;
+		let message = MessageQueue._cache.get(id);
 
 		if (!message) {
-			message = await prisma.message.findUnique({ where: { id } });
+			// prettier-ignore
+			message = await kysely
+				.selectFrom("Message")
+				.selectAll()
+				.where("id", "=", id)
+				.executeTakeFirst();
 		}
 
-		return message;
+		return message ?? null;
 	}
 
 	/**
@@ -140,20 +145,18 @@ export class MessageQueue {
 	public static async getMessagesForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
 		const cachedMessages = MessageQueue._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
 
-		// Get messages from database
-		const dbMessages = await prisma.message.findMany({
-			where: {
-				channel_id: channelId,
-				deleted: false
-			},
-			orderBy: { created_at: "desc" },
-			take: limit
-		});
+		const messages = await kysely
+			.selectFrom("Message")
+			.selectAll()
+			.where("channel_id", "=", channelId)
+			.orderBy("created_at", "desc")
+			.limit(limit)
+			.execute();
 
 		// Merge and deduplicate (cache takes priority).
 		const messageMap = new Map<Snowflake, SerializedMessage>();
 
-		for (const msg of dbMessages) {
+		for (const msg of messages) {
 			messageMap.set(msg.id, msg);
 		}
 
@@ -175,20 +178,20 @@ export class MessageQueue {
 	 */
 
 	public static async deleteMessage(id: Snowflake): Promise<SerializedMessage | null> {
-		let message = MessageQueue._cache.get(id) ?? null;
+		let message = MessageQueue._cache.get(id);
 
 		if (message) {
 			message.deleted = true;
 		} else {
-			message = await prisma.message
-				.update({
-					data: { deleted: true },
-					where: { id }
-				})
-				.catch(() => null);
+			message = await kysely
+				.updateTable("Message")
+				.set({ deleted: true })
+				.where("id", "=", id)
+				.returningAll()
+				.executeTakeFirst();
 		}
 
-		return message;
+		return message ?? null;
 	}
 
 	/**
@@ -208,10 +211,12 @@ export class MessageQueue {
 
 		// Update what's left in the database.
 		if (messages.size !== ids.length) {
-			const updated = await prisma.message.updateManyAndReturn({
-				where: { id: { in: ids } },
-				data: { deleted: true }
-			});
+			const updated = await kysely
+				.updateTable("Message")
+				.set({ deleted: true })
+				.where("id", "in", ids)
+				.returningAll()
+				.execute();
 
 			// Merge the cached and stored messages.
 			return deletedMessages.concat(updated);
@@ -238,33 +243,40 @@ export class MessageQueue {
 			return oldContent;
 		}
 
-		const oldMessage = await prisma.message.findUnique({ where: { id } });
+		const result = await kysely
+			.with("old", db => db.selectFrom("Message").select("content").where("id", "=", id))
+			.updateTable("Message")
+			.set({ content: newContent })
+			.where("id", "=", id)
+			.returning(eb => eb.selectFrom("old").select("content").as("old_content"))
+			.executeTakeFirst();
 
-		await prisma.message
-			.update({
-				where: { id },
-				data: { content: newContent }
-			})
-			.catch(() => null);
-
-		return oldMessage?.content ?? "No message content.";
+		return result?.old_content ?? "No message content.";
 	}
 
 	/** Stores all cached messages into the database. */
 	static async store(event?: NodeJS.Signals): Promise<void> {
+		if (MessageQueue._cache.size === 0) {
+			Logger.info("No cached messages to store.");
+			return;
+		}
+
 		Logger.info(`Storing cached messages ${event ? `before exiting due to ${event}` : ""}...`);
 
-		// Insert all cached messages into the database.
-		const messages = Array.from(MessageQueue._cache.values());
-		const { count } = await prisma.message.createMany({ data: messages });
+		// prettier-ignore
+		const inserted = await kysely
+			.insertInto("Message")
+			.values(Array.from(MessageQueue._cache.values()))
+			.returning('Message.id')
+			.execute();
 
 		// Clear the cache.
 		MessageQueue._cache.clear();
 
-		if (!count) {
+		if (!inserted.length) {
 			Logger.info("No messages were stored.");
 		} else {
-			Logger.info(`Stored ${count} ${inflect(count, "message")}.`);
+			Logger.info(`Stored ${inserted.length} ${inflect(inserted.length, "message")}.`);
 		}
 	}
 
@@ -293,35 +305,6 @@ export class MessageQueue {
 			deleted: false
 		};
 	}
-}
-
-/**
- * Tracks a response with a message, in a way that if {@link send} is called with `message`, `response` will be edited.
- *
- * @param message The message to track when editing.
- * @param response The response to edit when using send with `message`.
- */
-function track(message: Message, response: Message): void {
-	replies.set(message, response);
-}
-
-/**
- * Removes the tracked response for `message`.
- *
- * @param message The message to free from tracking.
- * @returns Whether the message was tracked.
- */
-function free(message: Message): boolean {
-	return replies.delete(message);
-}
-
-/**
- * Gets the tracked response to `message`, if any was tracked and was not deleted.
- * @param message The message to get the reply from.
- * @returns The replied message, if any.
- */
-function get(message: Message): Message | null {
-	return replies.get(message) ?? null;
 }
 
 /**
@@ -363,14 +346,14 @@ async function handle<T extends MessageOptions>(
 	options: string | T,
 	extra?: T | undefined
 ): Promise<Message> {
-	const existing = get(message);
+	const existing = replies.get(message) ?? null;
 
 	const payloadOptions = existing
 		? resolveEditPayload(existing, options as MessageEditOptions)
 		: resolveSendPayload<T>(options);
 	const payload = await MessagePayload.create(message.channel, payloadOptions, extra).resolveBody().resolveFiles();
 	const response = await (existing ? tryEdit(message, existing, payload) : trySend(message, payload));
-	track(message, response);
+	replies.set(message, response);
 
 	return response;
 }
@@ -409,7 +392,7 @@ async function tryEdit(message: Message, response: Message, payload: MessagePayl
 		//
 		// We always call `track()` right after `tryEdit()`, so it'll be tracked
 		// once the message has been sent, provided it did not throw.
-		free(message);
+		replies.delete(message);
 		return trySend(message, payload);
 	}
 }

@@ -4,7 +4,7 @@ import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import MessageReportUtils from "#utils/MessageReports.js";
+import ReportMessageCtx from "#root/commands/ReportMessageCtx.js";
 
 @ApplyOptions<Component.Options>({
 	id: { matches: /^report-message-\d{17,19}-\d{17,19}$/m }
@@ -55,7 +55,7 @@ export default class ReportMessage extends Component {
 			return { error: "You must provide a valid reason for reporting this message." };
 		}
 
-		return MessageReportUtils.create({
+		return ReportMessageCtx.createReport({
 			author: message.author,
 			interaction,
 			config,

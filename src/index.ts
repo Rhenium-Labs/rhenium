@@ -1,6 +1,10 @@
 import "dotenv/config.js";
 
 import OpenAI from "openai";
+import postgres from "postgres";
+
+import { Kysely } from "kysely";
+import { PostgresJSDialect } from "kysely-postgres-js";
 
 import {
 	init,
@@ -12,17 +16,18 @@ import {
 	captureException
 } from "@sentry/node";
 import { open } from "lmdb";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { Sweepers } from "discord.js";
 
 import { sleep } from "#utils/index.js";
 import { Rhenium } from "#rhenium";
-import { PrismaClient } from "#prisma/client.js";
 import { MessageQueue } from "#utils/Messages.js";
-import { initConfigCacheInvalidator } from "#prisma/invalidator.js";
 import { CLIENT_CACHE_OPTIONS, CLIENT_INTENTS, CLIENT_PARTIALS, PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
+
+import type { DB } from "./lib/kysely/Schema.js";
 
 import Logger from "#utils/Logger.js";
 import GlobalConfig from "#config/GlobalConfig.js";
+import ConfigCacheInvalidatorPlugin from "#kysely/plugins/ConfigCacheInvalidator.js";
 
 /** The Discord client instance. */
 export const client = new Rhenium({
@@ -33,15 +38,24 @@ export const client = new Rhenium({
 		users: {
 			interval: 3600,
 			filter: () => () => true // Sweeps everything.
+		},
+		guildMembers: {
+			interval: 3600,
+			filter: Sweepers.filterByLifetime({
+				lifetime: 1800 // 30 minutes
+			})
 		}
 	},
 	allowedMentions: { parse: [] }
 });
 
-/** The Prisma client instance. */
-export const prisma = new PrismaClient({
-	adapter: new PrismaPg({ connectionString: process.env.PG_URL })
-}).$extends(initConfigCacheInvalidator());
+/** The Kysely client instance. */
+export const kysely = new Kysely<DB>({
+	dialect: new PostgresJSDialect({
+		postgres: postgres(process.env.PG_URL)
+	}),
+	plugins: [new ConfigCacheInvalidatorPlugin()]
+});
 
 /** LMDB KV. */
 export const kv = open<Object, string>({
@@ -61,12 +75,10 @@ async function main(): Promise<void> {
 	// Load pieces.
 	await client.loadPieces();
 
-	// Connect to the database.
-	// We have to add a test query here because driver adapters in v7 can't properly determine
-	// if the connection is valid without making a query for some fucking reason.
+	// Attempt to connect to the database.
+	// We run a simple test query to ensure the connection is valid.
 	try {
-		await prisma.$connect();
-		await prisma.message.findFirst();
+		await kysely.selectFrom("Message").selectAll().limit(1).executeTakeFirst();
 		Logger.info("Connected to the database.");
 	} catch (error) {
 		Logger.fatal("Failed to connect to the database:", error);
@@ -78,7 +90,6 @@ async function main(): Promise<void> {
 		dsn: process.env.SENTRY_DSN,
 		environment: process.env.NODE_ENV || "production",
 		tracesSampleRate: 1.0,
-		profilesSampleRate: 1.0,
 		sampleRate: 1.0,
 		enableLogs: true,
 		integrations: [

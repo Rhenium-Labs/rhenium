@@ -11,12 +11,13 @@ import {
 	roleMention
 } from "discord.js";
 
+import { kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
-import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#prisma/enums.js";
+import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#kysely/Enums.js";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 @ApplyOptions<Command.Options>({
 	name: "config",
@@ -861,15 +862,15 @@ export default class Config extends Command {
 
 			// Permission Group
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Create}`]: () =>
-				this._createPermissionScope(interaction, config),
+				this._createPermissionScope(interaction),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Delete}`]: () =>
-				this._deletePermissionScope(interaction, config),
+				this._deletePermissionScope(interaction),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.List}`]: () =>
 				this._listPermissionScopes(interaction, config),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Grant}`]: () =>
-				this._addPermissionToScope(interaction, config),
+				this._addPermissionToScope(interaction),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Revoke}`]: () =>
-				this._removePermissionFromScope(interaction, config),
+				this._removePermissionFromScope(interaction),
 
 			// Message Reports Group
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.EnforceReason}`]: () =>
@@ -959,10 +960,11 @@ export default class Config extends Command {
 			return { error: `Content filter detector mode is already set to ${mode}.` };
 		}
 
-		await this.prisma.contentFilterConfig.update({
-			where: { id: interaction.guild.id },
-			data: { detector_mode: mode }
-		});
+		await kysely
+			.updateTable("ContentFilterConfig")
+			.set({ detector_mode: mode })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return { content: `Successfully set content filter detector mode to ${mode}.` };
 	}
@@ -978,10 +980,11 @@ export default class Config extends Command {
 			return { error: `Content filter verbosity is already set to ${level}.` };
 		}
 
-		await this.prisma.contentFilterConfig.update({
-			where: { id: interaction.guild.id },
-			data: { verbosity: level }
-		});
+		await kysely
+			.updateTable("ContentFilterConfig")
+			.set({ verbosity: level })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return { content: `Successfully set content filter verbosity to ${level}.` };
 	}
@@ -1006,10 +1009,11 @@ export default class Config extends Command {
 			? [...currentDetectors, detector]
 			: currentDetectors.filter(d => d !== detector);
 
-		await this.prisma.contentFilterConfig.update({
-			where: { id: interaction.guild.id },
-			data: { detectors: updatedDetectors }
-		});
+		await kysely
+			.updateTable("ContentFilterConfig")
+			.set({ detectors: updatedDetectors })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} the ${detector} detector.`
@@ -1029,10 +1033,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.contentFilterConfig.update({
-			where: { id: interaction.guild.id },
-			data: { enabled: enable }
-		});
+		await kysely
+			.updateTable("ContentFilterConfig")
+			.set({ enabled: enable })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} the content filter.`
@@ -1083,10 +1088,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.contentFilterConfig.update({
-				where: { id: interaction.guild.id },
-				data: { webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("ContentFilterConfig")
+				.set({ webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the content filter review channel to ${channel}.`
@@ -1107,10 +1113,11 @@ export default class Config extends Command {
 
 		const updatedRoles = [...config.immune_roles, role.id];
 
-		await this.prisma.contentFilterConfig.update({
-			where: { id: interaction.guild.id },
-			data: { immune_roles: updatedRoles }
-		});
+		await kysely
+			.updateTable("ContentFilterConfig")
+			.set({ immune_roles: updatedRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return { content: `Successfully added ${role} to content filter immune roles.` };
 	}
@@ -1128,10 +1135,11 @@ export default class Config extends Command {
 
 		const updatedRoles = config.immune_roles.filter(r => r !== role.id);
 
-		await this.prisma.contentFilterConfig.update({
-			where: { id: interaction.guild.id },
-			data: { immune_roles: updatedRoles }
-		});
+		await kysely
+			.updateTable("ContentFilterConfig")
+			.set({ immune_roles: updatedRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return { content: `Successfully removed ${role} from content filter immune roles.` };
 	}
@@ -1174,13 +1182,14 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
-		await this.prisma.contentFilterChannelScoping.create({
-			data: {
+		await kysely
+			.insertInto("ContentFilterChannelScoping")
+			.values({
 				guild_id: interaction.guildId,
 				channel_id: channel.id,
 				type: scopeType
-			}
-		});
+			})
+			.execute();
 
 		return {
 			content: `Successfully added the channel ${channel} to content filter channel scoping as an \`${stringifiedType}\` channel.`
@@ -1198,9 +1207,11 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
-		await this.prisma.contentFilterChannelScoping.deleteMany({
-			where: { guild_id: interaction.guildId, channel_id: channel.id }
-		});
+		await kysely
+			.deleteFrom("ContentFilterChannelScoping")
+			.where("guild_id", "=", interaction.guildId)
+			.where("channel_id", "=", channel.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the channel ${channel} from content filter channel scoping.`
@@ -1253,10 +1264,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.quickMuteConfig.update({
-			where: { id: interaction.guild.id },
-			data: { enabled: enable }
-		});
+		await kysely
+			.updateTable("QuickMuteConfig")
+			.set({ enabled: enable })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} quick mutes.`
@@ -1276,10 +1288,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.quickPurgeConfig.update({
-			where: { id: interaction.guild.id },
-			data: { enabled: enable }
-		});
+		await kysely
+			.updateTable("QuickPurgeConfig")
+			.set({ enabled: enable })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} quick purges.`
@@ -1299,10 +1312,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.highlightConfig.update({
-			where: { id: interaction.guild.id },
-			data: { enabled: enable }
-		});
+		await kysely
+			.updateTable("HighlightConfig")
+			.set({ enabled: enable })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} highlights.`
@@ -1353,10 +1367,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.quickPurgeConfig.update({
-				where: { id: interaction.guild.id },
-				data: { webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("QuickPurgeConfig")
+				.set({ webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the quick purge log channel to ${channel}.`
@@ -1408,10 +1423,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.quickPurgeConfig.update({
-				where: { id: interaction.guild.id },
-				data: { result_webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("QuickPurgeConfig")
+				.set({ result_webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the quick purge result channel to ${channel}.`
@@ -1463,10 +1479,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.quickMuteConfig.update({
-				where: { id: interaction.guild.id },
-				data: { webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("QuickMuteConfig")
+				.set({ webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the quick mute log channel to ${channel}.`
@@ -1518,10 +1535,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.quickMuteConfig.update({
-				where: { id: interaction.guild.id },
-				data: { result_webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("QuickMuteConfig")
+				.set({ result_webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the quick mute result channel to ${channel}.`
@@ -1542,10 +1560,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.quickMuteConfig.update({
-			where: { id: interaction.guild.id },
-			data: { purge_limit: amount }
-		});
+		await kysely
+			.updateTable("QuickMuteConfig")
+			.set({ purge_limit: amount })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully set the quick mute purge limit to ${amount}.`
@@ -1565,13 +1584,14 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
-		await this.prisma.quickMuteChannelScoping.create({
-			data: {
+		await kysely
+			.insertInto("QuickMuteChannelScoping")
+			.values({
 				guild_id: interaction.guildId,
 				channel_id: channel.id,
 				type: scopeType
-			}
-		});
+			})
+			.execute();
 
 		return {
 			content: `Successfully added the channel ${channel} to quick mute scoping as an \`${stringifiedType}\` channel.`
@@ -1591,12 +1611,11 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
-		await this.prisma.quickMuteChannelScoping.deleteMany({
-			where: {
-				guild_id: interaction.guildId,
-				channel_id: channel.id
-			}
-		});
+		await kysely
+			.deleteFrom("QuickMuteChannelScoping")
+			.where("guild_id", "=", interaction.guildId)
+			.where("channel_id", "=", channel.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the channel ${channel} from quick mute scoping.`
@@ -1651,10 +1670,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.quickPurgeConfig.update({
-			where: { id: interaction.guild.id },
-			data: { max_limit: amount }
-		});
+		await kysely
+			.updateTable("QuickPurgeConfig")
+			.set({ max_limit: amount })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully set the quick purge limit to ${amount}.`
@@ -1674,13 +1694,14 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
-		await this.prisma.quickPurgeChannelScoping.create({
-			data: {
+		await kysely
+			.insertInto("QuickPurgeChannelScoping")
+			.values({
 				guild_id: interaction.guildId,
 				channel_id: channel.id,
 				type: scopeType
-			}
-		});
+			})
+			.execute();
 
 		return {
 			content: `Successfully added the channel ${channel} to quick purge scoping as an \`${stringifiedType}\` channel.`
@@ -1700,12 +1721,11 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
-		await this.prisma.quickPurgeChannelScoping.deleteMany({
-			where: {
-				guild_id: interaction.guildId,
-				channel_id: channel.id
-			}
-		});
+		await kysely
+			.deleteFrom("QuickPurgeChannelScoping")
+			.where("guild_id", "=", interaction.guildId)
+			.where("channel_id", "=", channel.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the channel ${channel} from quick purge scoping.`
@@ -1760,10 +1780,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.highlightConfig.update({
-			where: { id: interaction.guild.id },
-			data: { max_patterns: amount }
-		});
+		await kysely
+			.updateTable("HighlightConfig")
+			.set({ max_patterns: amount })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully set the maximum number of highlight patterns to ${amount}.`
@@ -1771,80 +1792,55 @@ export default class Config extends Command {
 	}
 
 	private async _createPermissionScope(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
+		interaction: Command.Interaction<"chatInput">
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
-		const exists = await this.prisma.permissionScope.findUnique({
-			where: {
-				guild_id_role_id: {
-					guild_id: interaction.guildId,
-					role_id: role.id
-				}
-			}
-		});
+		const exists = await kysely
+			.selectFrom("PermissionScope")
+			.selectAll()
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.executeTakeFirst();
 
 		if (exists) {
 			return { error: `A permission scope for the role ${role} already exists.` };
 		}
 
-		const updatedScopes = [
-			...config.data.permission_scopes,
-			{
+		await kysely
+			.insertInto("PermissionScope")
+			.values({
 				guild_id: interaction.guildId,
 				role_id: role.id,
 				allowed_permissions: [permission]
-			}
-		];
-
-		await Promise.all([
-			this.prisma.permissionScope.create({
-				data: {
-					guild_id: interaction.guildId,
-					role_id: role.id,
-					allowed_permissions: [permission]
-				}
-			}),
-			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
-		]);
+			})
+			.execute();
 
 		return { content: `Successfully created a permission scope for the ${role} role.` };
 	}
 
 	private async _deletePermissionScope(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
+		interaction: Command.Interaction<"chatInput">
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 
-		const scope = await this.prisma.permissionScope.findUnique({
-			where: {
-				guild_id_role_id: {
-					guild_id: interaction.guildId,
-					role_id: role.id
-				}
-			}
-		});
+		const scope = await kysely
+			.selectFrom("PermissionScope")
+			.selectAll()
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.executeTakeFirst();
 
 		if (!scope) {
 			return { error: `No permission scope found for the role ${role}.` };
 		}
 
-		const updatedScopes = config.data.permission_scopes.filter(s => s.role_id !== role.id);
-
-		await Promise.all([
-			this.prisma.permissionScope.delete({
-				where: {
-					guild_id_role_id: {
-						guild_id: interaction.guildId,
-						role_id: role.id
-					}
-				}
-			}),
-			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
-		]);
+		await kysely
+			.deleteFrom("PermissionScope")
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.execute();
 
 		return { content: `Successfully deleted the permission scope for the ${role} role.` };
 	}
@@ -1883,21 +1879,16 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _addPermissionToScope(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	private async _addPermissionToScope(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
-		const scope = await this.prisma.permissionScope.findUnique({
-			where: {
-				guild_id_role_id: {
-					guild_id: interaction.guildId,
-					role_id: role.id
-				}
-			}
-		});
+		const scope = await kysely
+			.selectFrom("PermissionScope")
+			.selectAll()
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.executeTakeFirst();
 
 		if (!scope) {
 			return { error: `No permission scope found for the role ${role}.` };
@@ -1909,32 +1900,14 @@ export default class Config extends Command {
 			};
 		}
 
-		const updatedScopes = config.data.permission_scopes.map(s => {
-			if (s.role_id === role.id) {
-				return {
-					...s,
-					allowed_permissions: [...s.allowed_permissions, permission]
-				};
-			}
-			return s;
-		});
+		const updatedPermissions = [...scope.allowed_permissions, permission];
 
-		await Promise.all([
-			this.prisma.permissionScope.update({
-				where: {
-					guild_id_role_id: {
-						guild_id: interaction.guildId,
-						role_id: role.id
-					}
-				},
-				data: {
-					allowed_permissions: {
-						push: permission
-					}
-				}
-			}),
-			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
-		]);
+		await kysely
+			.updateTable("PermissionScope")
+			.set({ allowed_permissions: updatedPermissions })
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.execute();
 
 		return {
 			content: `Successfully added the permission \`${permission}\` to the scope for the role ${role}.`
@@ -1942,20 +1915,17 @@ export default class Config extends Command {
 	}
 
 	private async _removePermissionFromScope(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
+		interaction: Command.Interaction<"chatInput">
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
-		const scope = await this.prisma.permissionScope.findUnique({
-			where: {
-				guild_id_role_id: {
-					guild_id: interaction.guildId,
-					role_id: role.id
-				}
-			}
-		});
+		const scope = await kysely
+			.selectFrom("PermissionScope")
+			.selectAll()
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.executeTakeFirst();
 
 		if (!scope) {
 			return { error: `No permission scope found for the role ${role}.` };
@@ -1973,30 +1943,14 @@ export default class Config extends Command {
 			};
 		}
 
-		const updatedScopes = config.data.permission_scopes.map(s => {
-			if (s.role_id === role.id) {
-				return {
-					...s,
-					allowed_permissions: s.allowed_permissions.filter(p => p !== permission)
-				};
-			}
-			return s;
-		});
+		const updatedPermissions = scope.allowed_permissions.filter(p => p !== permission);
 
-		await Promise.all([
-			this.prisma.permissionScope.update({
-				where: {
-					guild_id_role_id: {
-						guild_id: interaction.guildId,
-						role_id: role.id
-					}
-				},
-				data: {
-					allowed_permissions: scope.allowed_permissions.filter(p => p !== permission)
-				}
-			}),
-			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
-		]);
+		await kysely
+			.updateTable("PermissionScope")
+			.set({ allowed_permissions: updatedPermissions })
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the permission \`${permission}\` from the scope for the role ${role}.`
@@ -2016,10 +1970,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.messageReportConfig.update({
-			where: { id: interaction.guild.id },
-			data: { enabled: value }
-		});
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ enabled: value })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${value ? "enabled" : "disabled"} message reports.`
@@ -2041,10 +1996,11 @@ export default class Config extends Command {
 
 		const reason = rawReason.toLowerCase() === "none" ? null : rawReason;
 
-		await this.prisma.messageReportConfig.update({
-			where: { id: interaction.guild.id },
-			data: { placeholder_reason: reason }
-		});
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ placeholder_reason: reason })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${reason ? "set" : "cleared"} the default reason for message reports.`
@@ -2064,10 +2020,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.messageReportConfig.update({
-			where: { id: interaction.guild.id },
-			data: { enforce_report_reason: value }
-		});
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ enforce_report_reason: value })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${value ? "enabled" : "disabled"} message report reason enforcement.`
@@ -2091,10 +2048,13 @@ export default class Config extends Command {
 			return { error: `The role ${role} is already an immune role.` };
 		}
 
-		await this.prisma.messageReportConfig.update({
-			where: { id: interaction.guild.id },
-			data: { immune_roles: { push: role.id } }
-		});
+		const updatedRoles = [...config.immune_roles, role.id];
+
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ immune_roles: updatedRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully added the role ${role} to immune roles.`
@@ -2120,12 +2080,11 @@ export default class Config extends Command {
 
 		const updatedImmuneRoles = config.immune_roles.filter(id => id !== role.id);
 
-		await this.prisma.messageReportConfig.update({
-			where: { id: interaction.guild.id },
-			data: {
-				immune_roles: updatedImmuneRoles
-			}
-		});
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ immune_roles: updatedImmuneRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the role ${role} from immune roles.`
@@ -2174,10 +2133,13 @@ export default class Config extends Command {
 			return { error: `The role ${role} is already a notify role.` };
 		}
 
-		await this.prisma.messageReportConfig.update({
-			where: { id: interaction.guild.id },
-			data: { notify_roles: { push: role.id } }
-		});
+		const updatedRoles = [...config.notify_roles, role.id];
+
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ notify_roles: updatedRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully added the role ${role} to notify roles.`
@@ -2203,12 +2165,11 @@ export default class Config extends Command {
 
 		const updatedNotifyRoles = config.notify_roles.filter(id => id !== role.id);
 
-		await this.prisma.messageReportConfig.update({
-			where: { id: interaction.guild.id },
-			data: {
-				notify_roles: updatedNotifyRoles
-			}
-		});
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ notify_roles: updatedNotifyRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the role ${role} from notify roles.`
@@ -2284,10 +2245,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.messageReportConfig.update({
-				where: { id: interaction.guild.id },
-				data: { webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("MessageReportConfig")
+				.set({ webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the review channel to ${channel}.`
@@ -2339,10 +2301,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.messageReportConfig.update({
-				where: { id: interaction.guild.id },
-				data: { log_webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("MessageReportConfig")
+				.set({ log_webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the log channel to ${channel}.`
@@ -2363,10 +2326,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.banRequestConfig.update({
-			where: { id: interaction.guild.id },
-			data: { enabled: value }
-		});
+		await kysely
+			.updateTable("BanRequestConfig")
+			.set({ enabled: value })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${value ? "enabled" : "disabled"} ban requests.`
@@ -2386,10 +2350,11 @@ export default class Config extends Command {
 			};
 		}
 
-		await this.prisma.banRequestConfig.update({
-			where: { id: interaction.guild.id },
-			data: { automatically_timeout: value }
-		});
+		await kysely
+			.updateTable("BanRequestConfig")
+			.set({ automatically_timeout: value })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully ${value ? "enabled" : "disabled"} automatic timeouts for ban requests.`
@@ -2440,10 +2405,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.banRequestConfig.update({
-				where: { id: interaction.guild.id },
-				data: { webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("BanRequestConfig")
+				.set({ webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the review channel to ${channel}.`
@@ -2495,10 +2461,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.banRequestConfig.update({
-				where: { id: interaction.guild.id },
-				data: { decision_webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("BanRequestConfig")
+				.set({ decision_webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the decision channel to ${channel}.`
@@ -2550,10 +2517,11 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
-			await this.prisma.banRequestConfig.update({
-				where: { id: interaction.guild.id },
-				data: { log_webhook_url: newWebhook.url }
-			});
+			await kysely
+				.updateTable("BanRequestConfig")
+				.set({ log_webhook_url: newWebhook.url })
+				.where("id", "=", interaction.guild.id)
+				.execute();
 
 			return {
 				content: `Successfully set the log channel to ${channel}.`
@@ -2603,10 +2571,13 @@ export default class Config extends Command {
 			return { error: `The role ${role} is already a notify role.` };
 		}
 
-		await this.prisma.banRequestConfig.update({
-			where: { id: interaction.guild.id },
-			data: { notify_roles: { push: role.id } }
-		});
+		const updatedRoles = [...config.notify_roles, role.id];
+
+		await kysely
+			.updateTable("BanRequestConfig")
+			.set({ notify_roles: updatedRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully added the role ${role} to notify roles.`
@@ -2632,12 +2603,11 @@ export default class Config extends Command {
 
 		const updatedNotifyRoles = config.notify_roles.filter(id => id !== role.id);
 
-		await this.prisma.banRequestConfig.update({
-			where: { id: interaction.guild.id },
-			data: {
-				notify_roles: updatedNotifyRoles
-			}
-		});
+		await kysely
+			.updateTable("BanRequestConfig")
+			.set({ notify_roles: updatedNotifyRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the role ${role} from notify roles.`
@@ -2686,10 +2656,13 @@ export default class Config extends Command {
 			return { error: `The role ${role} is already an immune role.` };
 		}
 
-		await this.prisma.banRequestConfig.update({
-			where: { id: interaction.guild.id },
-			data: { immune_roles: { push: role.id } }
-		});
+		const updatedRoles = [...config.immune_roles, role.id];
+
+		await kysely
+			.updateTable("BanRequestConfig")
+			.set({ immune_roles: updatedRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully added the role ${role} to immune roles.`
@@ -2715,12 +2688,11 @@ export default class Config extends Command {
 
 		const updatedImmuneRoles = config.immune_roles.filter(id => id !== role.id);
 
-		await this.prisma.banRequestConfig.update({
-			where: { id: interaction.guild.id },
-			data: {
-				immune_roles: updatedImmuneRoles
-			}
-		});
+		await kysely
+			.updateTable("BanRequestConfig")
+			.set({ immune_roles: updatedImmuneRoles })
+			.where("id", "=", interaction.guild.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the role ${role} from immune roles.`

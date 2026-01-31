@@ -4,26 +4,164 @@ import {
 	type ButtonInteraction,
 	type ModalSubmitInteraction,
 	ActionRowBuilder,
+	ApplicationCommandOptionType,
+	ApplicationCommandType,
+	ApplicationIntegrationType,
 	ButtonBuilder,
 	ButtonStyle,
 	Colors,
 	EmbedBuilder,
+	InteractionContextType,
 	MessageFlags,
+	PermissionFlagsBits,
 	roleMention,
 	userMention,
 	WebhookClient
 } from "discord.js";
 
-import ms from "ms";
+import ms, { type StringValue } from "ms";
 
-import { client, prisma } from "#root/index.js";
-import { userMentionWithId } from "./index.js";
-import { RequestStatus, type BanRequest } from "#prisma/client.js";
+import { client, kysely } from "#root/index.js";
+import { RequestStatus } from "#kysely/Enums.js";
+import { ApplyOptions, Command } from "#rhenium";
+import { parseDurationString, userMentionWithId, validateDuration } from "#utils/index.js";
 
-import type { InteractionReplyData } from "./Types.js";
-import type { ValidatedBanRequestsConfig } from "#config/GuildConfig.js";
+import type { BanRequest } from "#kysely/Schema.js";
+import type { InteractionReplyData } from "#utils/Types.js";
 
-export default class BanRequestUtils {
+import GuildConfig, { ValidatedBanRequestsConfig } from "#config/GuildConfig.js";
+import ModerationUtils from "#utils/Moderation.js";
+
+@ApplyOptions<Command.Options>({
+	name: "request",
+	description: "Request a moderation action."
+})
+export default class RequestAction extends Command {
+	public register(): Command.Data {
+		return {
+			name: this.name,
+			description: this.description,
+			type: ApplicationCommandType.ChatInput,
+			contexts: [InteractionContextType.Guild],
+			integrationTypes: [ApplicationIntegrationType.GuildInstall],
+			defaultMemberPermissions: PermissionFlagsBits.ModerateMembers,
+			options: [
+				{
+					name: "ban",
+					description: "Request a ban for a user.",
+					type: ApplicationCommandOptionType.Subcommand,
+					options: [
+						{
+							name: "target",
+							description: "The user to request a ban for.",
+							type: ApplicationCommandOptionType.User,
+							required: true
+						},
+						{
+							name: "duration",
+							description: "The duration of the ban.",
+							type: ApplicationCommandOptionType.String,
+							required: false
+						},
+						{
+							name: "reason",
+							description: "The reason for the ban.",
+							type: ApplicationCommandOptionType.String,
+							required: false,
+							max_length: 1024,
+							min_length: 1
+						}
+					]
+				}
+			]
+		};
+	}
+
+	public async interactionRun(
+		interaction: Command.Interaction<"chatInput">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const config = configClass.getBanRequestsConfig();
+
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+		if (!config?.enabled || !config.webhook_url) {
+			return { error: "Ban requests are not configured for this server." };
+		}
+
+		const target = interaction.options.getUser("target", true);
+
+		if (!target) {
+			return { error: "The target user could not be found." };
+		}
+
+		const existingRequest = await kysely
+			.selectFrom("BanRequest")
+			.selectAll()
+			.where("guild_id", "=", interaction.guildId)
+			.where("target_id", "=", target.id)
+			.where("status", "=", "Pending")
+			.executeTakeFirst();
+
+		if (existingRequest) {
+			return { error: "There is already a pending ban request for the provided target." };
+		}
+
+		const existingBan = await interaction.guild.bans.fetch(target.id).catch(() => null);
+
+		if (existingBan) {
+			return { error: "The provided target is already banned." };
+		}
+
+		const targetMember = interaction.guild.members.cache.get(target.id);
+
+		if (targetMember && config.immune_roles.some(role => targetMember.roles.cache.has(role))) {
+			return { error: "The provided target is immune to ban requests." };
+		}
+
+		const rawDuration = interaction.options.getString("duration", false);
+
+		if (rawDuration && ms(rawDuration as StringValue) === undefined) {
+			return {
+				error: "The provided duration is invalid. Please provide a valid duration string (e.g., 1d, 12h, 30m)."
+			};
+		}
+
+		const duration = parseDurationString(rawDuration);
+
+		if (duration) {
+			const durationValidation = validateDuration({ duration, minimum: "1s", maximum: "5y" });
+
+			if (!durationValidation.ok) {
+				return { error: durationValidation.message };
+			}
+		}
+
+		const actionValidation = ModerationUtils.validateAction({
+			target,
+			executor: interaction.member,
+			action: "Ban"
+		});
+
+		if (!actionValidation.ok) {
+			return { error: actionValidation.message };
+		}
+
+		const reason = interaction.options.getString("reason", false);
+
+		if (!reason && config.enforce_submission_reason) {
+			return { error: "A reason is required to submit a ban request in this server." };
+		}
+
+		return RequestAction.createBanRequest({
+			config,
+			target,
+			duration: duration ? BigInt(duration) : null,
+			reason: reason ?? "No reason provided.",
+			executor: interaction.member
+		});
+	}
+
 	/**
 	 * Creates a ban request and sends it to the configured webhook for review.
 	 *
@@ -31,11 +169,11 @@ export default class BanRequestUtils {
 	 * @return Interaction reply data indicating success or failure.
 	 */
 
-	public static async create(data: {
+	public static async createBanRequest(data: {
 		config: ValidatedBanRequestsConfig;
 		target: User;
 		executor: GuildMember;
-		duration: number | null;
+		duration: bigint | null;
 		reason: string;
 	}): Promise<InteractionReplyData> {
 		const { config, target, executor, duration, reason } = data;
@@ -52,7 +190,7 @@ export default class BanRequestUtils {
 			.setTimestamp();
 
 		if (duration) {
-			embed.spliceFields(2, 0, { name: "Duration", value: ms(duration, { long: true }) });
+			embed.spliceFields(2, 0, { name: "Duration", value: ms(Number(duration), { long: true }) });
 		}
 
 		const acceptButton = new ButtonBuilder()
@@ -114,8 +252,9 @@ export default class BanRequestUtils {
 			}
 		}
 
-		await prisma.banRequest.create({
-			data: {
+		void kysely
+			.insertInto("BanRequest")
+			.values({
 				id: log.id,
 				guild_id: config.id,
 				target_id: target.id,
@@ -123,10 +262,9 @@ export default class BanRequestUtils {
 				requested_by: executor.id,
 				duration,
 				reason
-			}
-		});
-
-		webhook.destroy();
+			})
+			.execute()
+			.then(() => webhook.destroy());
 
 		return {
 			content: `Successfully submitted a ban request for ${target} - ID \`${log.id}\`.`
@@ -140,7 +278,7 @@ export default class BanRequestUtils {
 	 * @return The result of the ban request action.
 	 */
 
-	public static async process(data: {
+	public static async processBanRequest(data: {
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 		config: ValidatedBanRequestsConfig;
 		action: BanRequestAction;
@@ -157,31 +295,32 @@ export default class BanRequestUtils {
 		switch (action) {
 			case BanRequestAction.Disregard: {
 				if (request.target_muted_automatically) {
-					await targetMember
+					void targetMember
 						?.timeout(null, `[${request.id}] Automatic unmute after ban request disregard`)
 						.catch(() => null);
 				}
 
-				Promise.all([
-					BanRequestUtils._log({
+				void Promise.all([
+					RequestAction._logBanRequest({
 						config,
 						action,
 						interaction,
 						reason: reviewReason
 					}),
-					prisma.banRequest.update({
-						where: { id: request.id },
-						data: {
+					kysely
+						.updateTable("BanRequest")
+						.set({
 							resolved_by: interaction.user.id,
 							resolved_at: new Date(),
 							status: RequestStatus.Disregarded
-						}
-					}),
+						})
+						.where("id", "=", request.id)
+						.execute(),
 					interaction.message?.delete().catch(() => null)
 				]);
 
 				return {
-					content: `Successfully disregarded the ban request for ${userMention(request.target_id)} - ID \`${request.id}\``
+					content: `Successfully disregarded the ban request for ${target} - ID \`${request.id}\``
 				};
 			}
 
@@ -214,40 +353,43 @@ export default class BanRequestUtils {
 				}
 
 				if (expiresAt) {
-					const data = {
-						guild_id: interaction.guild.id,
-						target_id: target.id,
-						expires_at: expiresAt
-					};
-
-					await prisma.temporaryBan.upsert({
-						where: { guild_id_target_id: { guild_id: interaction.guild.id, target_id: target.id } },
-						create: data,
-						update: data
-					});
+					void kysely
+						.insertInto("TemporaryBan")
+						.values({
+							guild_id: interaction.guild.id,
+							target_id: target.id,
+							expires_at: expiresAt
+						})
+						.onConflict(oc =>
+							oc.columns(["guild_id", "target_id"]).doUpdateSet({
+								expires_at: expiresAt
+							})
+						)
+						.execute();
 				}
 
-				Promise.all([
-					BanRequestUtils._notify({
+				void Promise.all([
+					RequestAction._notifyBanRequestSubmitter({
 						webhook_url: config.decision_webhook_url,
 						reviewReason,
 						action,
 						request
 					}),
-					BanRequestUtils._log({
+					RequestAction._logBanRequest({
 						config,
 						action,
 						interaction,
 						reason: reviewReason
 					}),
-					prisma.banRequest.update({
-						where: { id: request.id },
-						data: {
+					kysely
+						.updateTable("BanRequest")
+						.set({
 							status: RequestStatus.Accepted,
 							resolved_by: interaction.user.id,
 							resolved_at: new Date()
-						}
-					}),
+						})
+						.where("id", "=", request.id)
+						.execute(),
 					interaction.message?.delete().catch(() => null)
 				]);
 
@@ -258,32 +400,33 @@ export default class BanRequestUtils {
 
 			case BanRequestAction.Deny: {
 				if (targetMember && request.target_muted_automatically) {
-					await targetMember
+					void targetMember
 						.timeout(null, `Automatic unmute after ban request denial - ID ${request.id}`)
 						.catch(() => null);
 				}
 
-				Promise.all([
-					BanRequestUtils._notify({
+				void Promise.all([
+					RequestAction._notifyBanRequestSubmitter({
 						webhook_url: config.decision_webhook_url,
 						reviewReason,
 						action,
 						request
 					}),
-					BanRequestUtils._log({
+					RequestAction._logBanRequest({
 						config,
 						action,
 						interaction,
 						reason: reviewReason
 					}),
-					prisma.banRequest.update({
-						where: { id: request.id },
-						data: {
+					kysely
+						.updateTable("BanRequest")
+						.set({
 							status: RequestStatus.Denied,
 							resolved_by: interaction.user.id,
 							resolved_at: new Date()
-						}
-					}),
+						})
+						.where("id", "=", request.id)
+						.execute(),
 					interaction.message?.delete().catch(() => null)
 				]);
 
@@ -301,7 +444,7 @@ export default class BanRequestUtils {
 	 * @return The result of the notification.
 	 */
 
-	private static async _notify(data: {
+	private static async _notifyBanRequestSubmitter(data: {
 		webhook_url: string | null;
 		reviewReason: string | null;
 		action: Exclude<BanRequestAction, "Disregard">;
@@ -330,7 +473,7 @@ export default class BanRequestUtils {
 	 * @return The sent API message, or `null` if sending failed.
 	 */
 
-	private static async _log(data: {
+	private static async _logBanRequest(data: {
 		config: ValidatedBanRequestsConfig;
 		action: BanRequestAction;
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
@@ -342,8 +485,11 @@ export default class BanRequestUtils {
 
 		const color = BanRequestColors[action];
 		const pastTenseAction = PastTenseBanRequestAction[action];
+		const embed = interaction.message?.embeds.at(0);
 
-		const embed = new EmbedBuilder(interaction.message!.embeds[0].data)
+		if (!embed) return null;
+
+		const updatedEmbed = new EmbedBuilder(embed.data)
 			.setColor(color)
 			.setAuthor({ name: `Ban Request ${pastTenseAction}` })
 			.setFooter({
@@ -353,12 +499,12 @@ export default class BanRequestUtils {
 			.setTimestamp();
 
 		if (reason) {
-			embed.addFields({ name: "Reviewer Reason", value: reason });
+			updatedEmbed.addFields({ name: "Reviewer Reason", value: reason });
 		}
 
 		const webhook = new WebhookClient({ url: config.log_webhook_url });
 		return webhook
-			.send({ embeds: [embed], allowedMentions: { parse: [] } })
+			.send({ embeds: [updatedEmbed], allowedMentions: { parse: [] } })
 			.catch(() => null)
 			.then(() => webhook.destroy());
 	}

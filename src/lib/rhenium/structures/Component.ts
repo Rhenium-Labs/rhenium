@@ -1,7 +1,7 @@
 import { Piece } from "@sapphire/pieces";
 import type { Awaitable, ButtonInteraction, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#config/GuildConfig.js";
@@ -17,10 +17,10 @@ export abstract class Component<Options extends Component.Options = Component.Op
 	public client = client;
 
 	/**
-	 * Prisma client instance.
+	 * Kysely client instance.
 	 */
 
-	public prisma = prisma;
+	public kysely = kysely;
 
 	/**
 	 * The component's custom ID
@@ -55,31 +55,6 @@ export abstract class Component<Options extends Component.Options = Component.Op
 		interaction: ComponentInteraction,
 		config: GuildConfig
 	): Awaitable<InteractionReplyData | null>;
-
-	/**
-	 * Parses a string/object custom ID to a string.
-	 *
-	 * @param customId The custom ID to parse.
-	 * @returns The parsed custom ID as a string.
-	 */
-	public static parseComponentCustomId(customId: ComponentCustomID): string {
-		if (typeof customId === "string") {
-			return customId;
-		}
-
-		switch (true) {
-			case "matches" in customId:
-				return `matches(${customId.matches.toString()})`;
-			case "startsWith" in customId:
-				return `startsWith(${customId.startsWith})`;
-			case "endsWith" in customId:
-				return `endsWith(${customId.endsWith})`;
-			case "includes" in customId:
-				return `includes(${customId.includes})`;
-			default:
-				return "unknown";
-		}
-	}
 }
 
 interface ComponentOptions extends Piece.Options {

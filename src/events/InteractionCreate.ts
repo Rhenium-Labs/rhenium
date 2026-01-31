@@ -1,11 +1,11 @@
 import { type Interaction, Events } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import { KvCache } from "#utils/KvCache.js";
+import { getWhitelistStatus } from "#utils/index.js";
 import { ApplyOptions, EventListener } from "#rhenium";
 
 import Logger from "#utils/Logger.js";
-import GlobalConfig from "#root/lib/config/GlobalConfig.js";
+import GlobalConfig from "#config/GlobalConfig.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.InteractionCreate
@@ -19,8 +19,8 @@ export default class InteractionCreate extends EventListener {
 			throw new Error("Autocomplete handling not implemented yet.");
 		}
 
-		const whitelist = await KvCache.getWhitelistStatus(interaction.guild.id);
-		if (!whitelist && !GlobalConfig.isDeveloper(interaction.user.id)) return;
+		const whitelisted = await getWhitelistStatus(interaction.guild.id);
+		if (!whitelisted && !GlobalConfig.isDeveloper(interaction.user.id)) return;
 
 		try {
 			if (interaction.isCommand()) {

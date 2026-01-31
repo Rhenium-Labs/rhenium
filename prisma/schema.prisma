@@ -1,6 +1,8 @@
-generator client {
-  provider = "prisma-client"
-  output   = "../src/lib/prisma"
+generator kysely {
+  provider     = "prisma-kysely"
+  output       = "../src/lib/kysely"
+  fileName     = "Schema.ts"
+  enumFileName = "Enums.ts"
 }
 
 datasource db {
@@ -157,7 +159,7 @@ model ContentFilterChannelScoping {
 }
 
 model ContentFilterAlert {
-  id               String              @id @default(cuid())
+  id               String              @id
   guild_id         String
   message_id       String
   channel_id       String
@@ -177,7 +179,7 @@ model ContentFilterAlert {
 }
 
 model ContentFilterLog {
-  id         String   @id @default(cuid())
+  id         String   @id
   guild_id   String
   alert_id   String
   content    String

@@ -1,7 +1,7 @@
 import { Piece } from "@sapphire/pieces";
 import { Awaitable, Events } from "discord.js";
 
-import { client, prisma } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 
 export abstract class EventListener<Options extends EventListener.Options = EventListener.Options> extends Piece<
 	Options,
@@ -14,10 +14,10 @@ export abstract class EventListener<Options extends EventListener.Options = Even
 	public client = client;
 
 	/**
-	 * The Prisma client instance.
+	 * Kysely client instance.
 	 */
 
-	public prisma = prisma;
+	public kysely = kysely;
 
 	/**
 	 * The event this listener listens to.

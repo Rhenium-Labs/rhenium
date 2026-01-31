@@ -4,7 +4,7 @@ import { LoaderStrategy, Store } from "@sapphire/pieces";
 
 import { inflect } from "#utils/index.js";
 import { processResponse } from "#rhenium";
-import { Component, type ComponentInteraction } from "../structures/Component.js";
+import { Component, type ComponentCustomID, type ComponentInteraction } from "../structures/Component.js";
 
 import Logger from "#utils/Logger.js";
 import ConfigManager from "#config/ConfigManager.js";
@@ -88,6 +88,8 @@ export default class ComponentStore extends Store<Component, "components"> {
 				}
 			});
 
+			Logger.error(`Error executing component "${component.id}":`, error);
+
 			const content = `An error occurred while executing this component. Please include this ID when reporting the bug: \`${sentryId}\`.`;
 
 			if (interaction.deferred || interaction.replied) {
@@ -106,8 +108,37 @@ class ComponentLoaderStrategy extends LoaderStrategy<Component> {
 	}
 
 	public override async onLoad(_: ComponentStore, piece: Component) {
-		return Logger.custom("COMPONENTS", `Loaded component "${Component.parseComponentCustomId(piece.id)}".`, {
-			color: "Cyan"
-		});
+		return Logger.custom(
+			"COMPONENTS",
+			`Loaded component "${ComponentLoaderStrategy.parseComponentCustomId(piece.id)}".`,
+			{
+				color: "Cyan"
+			}
+		);
+	}
+
+	/**
+	 * Parses a string/object custom ID to a string.
+	 *
+	 * @param customId The custom ID to parse.
+	 * @returns The parsed custom ID as a string.
+	 */
+	public static parseComponentCustomId(customId: ComponentCustomID): string {
+		if (typeof customId === "string") {
+			return customId;
+		}
+
+		switch (true) {
+			case "matches" in customId:
+				return `matches(${customId.matches.toString()})`;
+			case "startsWith" in customId:
+				return `startsWith(${customId.startsWith})`;
+			case "endsWith" in customId:
+				return `endsWith(${customId.endsWith})`;
+			case "includes" in customId:
+				return `includes(${customId.includes})`;
+			default:
+				return "unknown";
+		}
 	}
 }

@@ -8,13 +8,13 @@ export default class ArgumentParser {
 	 * The message that triggered the parser.
 	 */
 
-	private message: Message<true>;
+	private _message: Message<true>;
 
 	/**
 	 * Internal argument parser.
 	 */
 
-	private parser: ArgumentStream;
+	private _parser: ArgumentStream;
 
 	/**
 	 * Constructs a new Args instance.
@@ -25,8 +25,8 @@ export default class ArgumentParser {
 	 */
 
 	public constructor(message: Message<true>, parser: ArgumentStream) {
-		this.message = message;
-		this.parser = parser;
+		this._message = message;
+		this._parser = parser;
 	}
 
 	/**
@@ -34,7 +34,7 @@ export default class ArgumentParser {
 	 */
 
 	public get finished(): boolean {
-		return this.parser?.finished ?? true;
+		return this._parser?.finished ?? true;
 	}
 
 	/**
@@ -42,15 +42,15 @@ export default class ArgumentParser {
 	 */
 
 	public async getMember(): Promise<GuildMember | null> {
-		if (this.parser.finished) {
+		if (this._parser.finished) {
 			return null;
 		}
 
-		return this.parser
+		return this._parser
 			.singleParseAsync<GuildMember | null, null>(async parameter => {
 				const memberId = UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
 				const member = memberId
-					? await this.message.guild.members.fetch(memberId[1] as Snowflake).catch(() => null)
+					? await this._message.guild.members.fetch(memberId[1] as Snowflake).catch(() => null)
 					: null;
 
 				return Result.ok(member);
@@ -63,15 +63,15 @@ export default class ArgumentParser {
 	 */
 
 	public async getUser(): Promise<User | null> {
-		if (this.parser.finished) {
+		if (this._parser.finished) {
 			return null;
 		}
 
-		return this.parser
+		return this._parser
 			.singleParseAsync<User | null, null>(async parameter => {
 				const userId = UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
 				const user = userId
-					? await this.message.client.users.fetch(userId[1] as Snowflake).catch(() => null)
+					? await this._message.client.users.fetch(userId[1] as Snowflake).catch(() => null)
 					: null;
 
 				return Result.ok(user);
@@ -84,9 +84,9 @@ export default class ArgumentParser {
 	 */
 
 	public getString(): string | null {
-		return this.parser.finished
+		return this._parser.finished
 			? null
-			: this.parser
+			: this._parser
 					.singleParse<string | null, null>(parameter => {
 						return Result.ok(parameter);
 					})
@@ -101,11 +101,11 @@ export default class ArgumentParser {
 	 */
 
 	public getNumber(min?: number, max?: number): number | null {
-		if (this.parser.finished) {
+		if (this._parser.finished) {
 			return null;
 		}
 
-		return this.parser
+		return this._parser
 			.singleParse<number | null, null>(parameter => {
 				const number = Number(parameter);
 
@@ -124,14 +124,14 @@ export default class ArgumentParser {
 	 * Retrieves a boolean from the available arguments.
 	 */
 	public getBoolean(): boolean | null {
-		if (this.parser.finished) {
+		if (this._parser.finished) {
 			return null;
 		}
 
 		const trueValues = ["true", "yes", "y", "on", "enable", "enabled", "positive"];
 		const falseValues = ["false", "no", "n", "off", "disable", "disabled", "negative"];
 
-		return this.parser
+		return this._parser
 			.singleParse<boolean | null, null>(parameter => {
 				const value = parameter.trim().toLowerCase();
 
@@ -148,12 +148,12 @@ export default class ArgumentParser {
 	 */
 
 	public restString(): string | null {
-		if (this.parser.finished) {
+		if (this._parser.finished) {
 			return null;
 		}
 
-		this.parser.save();
-		const str = join(this.parser.many().unwrapOr<WordParameter[]>([]));
+		this._parser.save();
+		const str = join(this._parser.many().unwrapOr<WordParameter[]>([]));
 
 		return str;
 	}
@@ -164,7 +164,7 @@ export default class ArgumentParser {
      * @param keys The name(s) of the option.
      */
 	public getOption(...keys: readonly string[]): string | null {
-		return this.parser.option(...keys).unwrapOr(null) || null;
+		return this._parser.option(...keys).unwrapOr(null) || null;
 	}
 
 	/**
@@ -173,6 +173,6 @@ export default class ArgumentParser {
 	 * @param keys The name(s) of the flag.
 	 */
 	public getFlags(...keys: readonly string[]): boolean {
-		return this.parser.flag(...keys) ?? false;
+		return this._parser.flag(...keys) ?? false;
 	}
 }

@@ -52,7 +52,18 @@ export default class Eval extends Command {
 		if (isSilent) return null;
 
 		if (output.length > 1900) {
-			return this._buildLargeOutputResponse(output, isError, type, timeTaken);
+			const dataUrl = await hastebin(output, "js");
+
+			if (!dataUrl) {
+				return { error: "Output too large and failed to upload to hastebin." };
+			}
+
+			const button = new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("View Output").setURL(dataUrl);
+
+			return {
+				content: `**Return Type:** \`${isError ? "error" : type}\`\n**Time Taken:** \`${formatExecutionTime(timeTaken)}\``,
+				components: [new ActionRowBuilder<ButtonBuilder>().addComponents(button)]
+			};
 		}
 
 		const header = isError ? "**Error**" : "**Output**";
@@ -60,26 +71,6 @@ export default class Eval extends Command {
 		const content = `${header}\n${codeBlock("ts", output)}${typeInfo}\n**Time Taken:** \`${formatExecutionTime(timeTaken)}\``;
 
 		return { content };
-	}
-
-	private async _buildLargeOutputResponse(
-		output: string,
-		isError: boolean,
-		type: string,
-		timeTaken: number
-	): Promise<MessageReplyData> {
-		const dataUrl = await hastebin(output, "js");
-
-		if (!dataUrl) {
-			return { error: "Output too large and failed to upload to hastebin." };
-		}
-
-		const button = new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("View Output").setURL(dataUrl);
-
-		return {
-			content: `**Return Type:** \`${isError ? "error" : type}\`\n**Time Taken:** \`${formatExecutionTime(timeTaken)}\``,
-			components: [new ActionRowBuilder<ButtonBuilder>().addComponents(button)]
-		};
 	}
 }
 

@@ -1,9 +1,10 @@
 import type { Snowflake } from "discord.js";
 import type { ChannelScanState } from "#cf/Types.js";
 
-import { prisma } from "#root/index.js";
+import { kysely } from "#root/index.js";
 import { CF_CONSTANTS } from "./Constants.js";
-import { ContentFilterAlert, DetectorMode, Message, ContentFilterStatus } from "#prisma/client.js";
+import { ContentFilterAlert, Message } from "#kysely/Schema.js";
+import { ContentFilterStatus, DetectorMode } from "#kysely/Enums.js";
 
 import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 
@@ -136,16 +137,18 @@ export default class ContentFilterUtils {
 	 * @returns An array of pending ContentFilterAlert records.
 	 */
 	public static async fetchPendingAlerts(guildId: Snowflake, threshold?: Date): Promise<ContentFilterAlert[]> {
-		return prisma.contentFilterAlert.findMany({
-			where: {
-				guild_id: guildId,
-				mod_status: "Pending",
-				created_at: threshold ? { lt: threshold } : undefined
-			},
-			orderBy: {
-				created_at: "asc"
-			}
-		});
+		const query = kysely
+			.selectFrom("ContentFilterAlert")
+			.selectAll()
+			.where("guild_id", "=", guildId)
+			.where("mod_status", "=", "Pending")
+			.orderBy("created_at", "asc");
+
+		if (threshold) {
+			query.where("created_at", "<", threshold);
+		}
+
+		return query.execute();
 	}
 
 	/**
@@ -162,13 +165,13 @@ export default class ContentFilterUtils {
 		channelId: string,
 		since: Date
 	): Promise<{ alerts: ContentFilterAlert[]; falsePositiveRatio: number; highestScore: number }> {
-		const alerts = await prisma.contentFilterAlert.findMany({
-			where: {
-				guild_id: guildId,
-				channel_id: channelId,
-				created_at: { gte: since }
-			}
-		});
+		const alerts = await kysely
+			.selectFrom("ContentFilterAlert")
+			.selectAll()
+			.where("guild_id", "=", guildId)
+			.where("channel_id", "=", channelId)
+			.where("created_at", ">", since)
+			.execute();
 
 		const total = alerts.length;
 		const falseCount = alerts.filter(a => a.mod_status === "False").length;
@@ -185,10 +188,13 @@ export default class ContentFilterUtils {
 	 * @returns True if an alert exists, false otherwise.
 	 */
 	public static async alertExistsForMessage(messageId: string): Promise<boolean> {
-		const existing = await prisma.contentFilterAlert.findFirst({
-			where: { message_id: messageId }
-		});
-		return existing !== null;
+		const existing = await kysely
+			.selectFrom("ContentFilterAlert")
+			.select("id")
+			.where("message_id", "=", messageId)
+			.executeTakeFirst();
+
+		return existing !== undefined;
 	}
 
 	/** Delete old content filter alerts.
@@ -198,13 +204,13 @@ export default class ContentFilterUtils {
 	 */
 	public static async deleteOldAlerts(ttl: number = CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
-		const { count } = await prisma.contentFilterAlert.deleteMany({
-			where: {
-				created_at: { lt: threshold }
-			}
-		});
+		const result = await kysely
+			.deleteFrom("ContentFilterAlert")
+			.where("created_at", "<", threshold)
+			.returning("ContentFilterAlert.id")
+			.execute();
 
-		return count;
+		return result.length;
 	}
 
 	/**
@@ -215,13 +221,13 @@ export default class ContentFilterUtils {
 	 */
 	public static async deleteOldContentLogs(ttl: number = CF_CONSTANTS.CONTENT_FILTER_LOG_TTL): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
-		const { count } = await prisma.contentFilterLog.deleteMany({
-			where: {
-				created_at: { lt: threshold }
-			}
-		});
+		const result = await kysely
+			.deleteFrom("ContentFilterLog")
+			.where("created_at", "<", threshold)
+			.returning("ContentFilterLog.id")
+			.execute();
 
-		return count;
+		return result.length;
 	}
 
 	/**
@@ -268,11 +274,13 @@ export default class ContentFilterUtils {
 		alertId: string,
 		newStatus: ContentFilterStatus
 	): Promise<ContentFilterAlert | null> {
-		return prisma.contentFilterAlert
-			.update({
-				where: { id: alertId },
-				data: { mod_status: newStatus }
-			})
+		return kysely
+			.updateTable("ContentFilterAlert")
+			.set({ mod_status: newStatus })
+			.where("id", "=", alertId)
+			.returningAll()
+			.executeTakeFirst()
+			.then(result => result ?? null)
 			.catch(() => null);
 	}
 
@@ -287,11 +295,13 @@ export default class ContentFilterUtils {
 		alertId: string,
 		newStatus: ContentFilterStatus
 	): Promise<ContentFilterAlert | null> {
-		return prisma.contentFilterAlert
-			.update({
-				where: { id: alertId },
-				data: { del_status: newStatus }
-			})
+		return kysely
+			.updateTable("ContentFilterAlert")
+			.set({ del_status: newStatus })
+			.where("id", "=", alertId)
+			.returningAll()
+			.executeTakeFirst()
+			.then(result => result ?? null)
 			.catch(() => null);
 	}
 
@@ -302,9 +312,12 @@ export default class ContentFilterUtils {
 	 * @returns The ContentFilterAlert or null if not found.
 	 */
 	static async getAlertByMessageId(messageId: string): Promise<ContentFilterAlert | null> {
-		return prisma.contentFilterAlert.findFirst({
-			where: { message_id: messageId }
-		});
+		return kysely
+			.selectFrom("ContentFilterAlert")
+			.selectAll()
+			.where("message_id", "=", messageId)
+			.executeTakeFirst()
+			.then(result => result ?? null);
 	}
 
 	/**
@@ -314,9 +327,12 @@ export default class ContentFilterUtils {
 	 * @returns The content log string or null if not found.
 	 */
 	static async getContentLogByAlertId(alertId: string): Promise<string | null> {
-		const log = await prisma.contentFilterLog.findFirst({
-			where: { alert_id: alertId }
-		});
+		const log = await kysely
+			.selectFrom("ContentFilterLog")
+			.select("content")
+			.where("alert_id", "=", alertId)
+			.executeTakeFirst();
+
 		return log?.content ?? null;
 	}
 }
