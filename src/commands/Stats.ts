@@ -50,7 +50,6 @@ export default class Stats extends Command {
 		const messages = await kysely
 			.selectFrom("Message")
 			.select(eb => eb.fn.countAll().as("count"))
-			.where("guild_id", "=", message.guildId)
 			.executeTakeFirst();
 
 		const embed = new EmbedBuilder()
