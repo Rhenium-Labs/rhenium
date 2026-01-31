@@ -264,11 +264,17 @@ export default class Highlights extends Command {
 		const messageAuthorId = message.author.id;
 
 		for (const highlight of highlights) {
+			const [rawChannelScoping, userBlacklist, patterns] = [
+				highlight.channel_scoping ?? [],
+				highlight.user_blacklist ?? [],
+				highlight.patterns ?? []
+			];
+
 			// Ignore messages from the highlight owner.
 			if (highlight.user_id === messageAuthorId) continue;
 
 			// Check if the message author is blacklisted.
-			if (highlight.user_blacklist.includes(messageAuthorId)) continue;
+			if (userBlacklist.includes(messageAuthorId)) continue;
 
 			// Check if the highlight user can view the channel.
 			const highlightMember = await message.guild.members.fetch(highlight.user_id).catch(() => null);
@@ -284,11 +290,11 @@ export default class Highlights extends Command {
 
 			if (!canViewChannel) continue;
 
-			const channelScoping = parseChannelScoping(highlight.channel_scoping);
+			const channelScoping = parseChannelScoping(rawChannelScoping);
 			if (!channelInScope(message.channel, channelScoping)) continue;
 
 			// Use cached compiled regex for pattern matching.
-			const matchedPattern = highlight.patterns.find(pattern => {
+			const matchedPattern = patterns.find(pattern => {
 				const regex = Highlights._getRegex(pattern);
 				return regex.test(messageContent);
 			});
