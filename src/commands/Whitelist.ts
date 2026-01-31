@@ -98,8 +98,24 @@ export default class Whitelist extends Command {
 	}
 
 	private async _checkWhitelist(guildId: string): Promise<MessageReplyData> {
-		const isWhitelisted = kv.get(`whitelists:${guildId}`) as { status: boolean } | undefined;
+		const cacheEntry = kv.get(`whitelists:${guildId}`) as { status: boolean } | undefined;
 
+		let isWhitelisted: boolean;
+
+		if (cacheEntry !== undefined) {
+			isWhitelisted = cacheEntry.status;
+		} else {
+			// Cache miss: fall back to the database and refresh the cache.
+			// prettier-ignore
+			const dbEntry = await kysely
+				.selectFrom("Whitelist")
+				.selectAll()
+				.where("id", "=", guildId)
+				.executeTakeFirst();
+
+			isWhitelisted = !!dbEntry;
+			await kv.put(`whitelists:${guildId}`, { status: isWhitelisted });
+		}
 		return {
 			embeds: [
 				{
