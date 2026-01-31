@@ -42,157 +42,69 @@ export default class ConfigManager {
 	}
 
 	/**
-	 * Updates the cached configuration for a guild by providing the updated entry for a specific feature.
+	 * Reloads a specific feature key in the cached configuration for a guild.
 	 *
 	 * @param guildId The ID of the guild.
-	 * @param feature The feature key to update (e.g., 'message_reports', 'ban_requests').
-	 * @param data The partial configuration data to merge into the specified feature.
+	 * @param feature The feature key to reload (e.g., 'message_reports', 'ban_requests').
 	 * @returns void
 	 */
-
-	public static async update<T extends ConfigFeature>(
-		guildId: string,
-		feature: T,
-		data: Partial<ConfigFeatureMap[T]>
-	): Promise<void> {
+	public static async reload(guildId: string, feature: ConfigFeature): Promise<void> {
 		const config = this._cache.get(guildId);
 
 		if (!config) {
 			return;
 		}
 
-		// Merge the existing feature data with the new data.
-		// Arrays are replaced entirely, while objects are merged.
-		const newFeatureData = Array.isArray(data)
-			? data
-			: {
-					...config.data[feature],
-					...data
-				};
-
-		const updatedData: GuildConfigData = {
-			...config.data,
-			[feature]: newFeatureData
-		};
-
-		this._cache.set(guildId, new GuildConfig(updatedData));
-	}
-
-	/**
-	 * Invalidates a specific feature key in the cached configuration for a guild.
-	 *
-	 * @param guildId The ID of the guild.
-	 * @param feature The feature key to invalidate (e.g., 'message_reports', 'ban_requests').
-	 * @returns void
-	 */
-	public static async invalidateKey(guildId: string, feature: ConfigFeature): Promise<void> {
-		const config = this._cache.get(guildId);
-
-		if (!config) {
-			return;
-		}
-
-		let featureData: ConfigFeatureMap[ConfigFeature];
-
-		switch (feature) {
-			case "message_reports":
-				featureData = (await kysely
-					.insertInto("MessageReportConfig")
-					.values({ id: guildId })
-					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
-					.returningAll()
-					.executeTakeFirst()) as MessageReportConfig;
-				break;
-
-			case "ban_requests":
-				featureData = (await kysely
-					.insertInto("BanRequestConfig")
-					.values({ id: guildId })
-					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
-					.returningAll()
-					.executeTakeFirst()) as BanRequestConfig;
-				break;
-
-			case "quick_mutes": {
-				const result = (await kysely
-					.insertInto("QuickMuteConfig")
-					.values({ id: guildId })
-					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
-					.returningAll()
-					.executeTakeFirst()) as QuickMuteConfig;
-
-				const scoping = await kysely
-					.selectFrom("QuickMuteChannelScoping")
-					.selectAll()
-					.where("guild_id", "=", guildId)
-					.execute();
-
-				featureData = { ...result, channel_scoping: scoping };
-				break;
-			}
-
-			case "quick_purges": {
-				const result = (await kysely
-					.insertInto("QuickPurgeConfig")
-					.values({ id: guildId })
-					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
-					.returningAll()
-					.executeTakeFirst()) as QuickPurgeConfig;
-
-				const scoping = await kysely
-					.selectFrom("QuickPurgeChannelScoping")
-					.selectAll()
-					.where("guild_id", "=", guildId)
-					.execute();
-
-				featureData = { ...result, channel_scoping: scoping };
-				break;
-			}
-
-			case "highlights":
-				featureData = (await kysely
-					.insertInto("HighlightConfig")
-					.values({ id: guildId })
-					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
-					.returningAll()
-					.executeTakeFirst()) as HighlightConfig;
-
-				break;
-
-			case "content_filter": {
-				const result = (await kysely
-					.insertInto("ContentFilterConfig")
-					.values({ id: guildId })
-					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
-					.returningAll()
-					.executeTakeFirst()) as ContentFilterConfig;
-
-				const scoping = await kysely
-					.selectFrom("ContentFilterChannelScoping")
-					.selectAll()
-					.where("guild_id", "=", guildId)
-					.execute();
-
-				featureData = { ...result, channel_scoping: scoping };
-				break;
-			}
-
-			case "permission_scopes":
-				featureData = await kysely
-					.selectFrom("PermissionScope")
-					.selectAll()
-					.where("guild_id", "=", guildId)
-					.execute();
-
-				break;
-		}
-
+		const featureData = await this._getFeatureData(guildId, feature);
 		const updatedData: GuildConfigData = {
 			...config.data,
 			[feature]: featureData
 		};
 
 		this._cache.set(guildId, new GuildConfig(updatedData));
+	}
+
+	/**
+	 * Fetches the data for a specific feature from the database.
+	 *
+	 * @param guildId The ID of the guild.
+	 * @param feature The feature key to fetch.
+	 * @returns The feature data.
+	 */
+	private static async _getFeatureData(
+		guildId: string,
+		feature: ConfigFeature
+	): Promise<ConfigFeatureMap[ConfigFeature]> {
+		if (feature === "permission_scopes") {
+			// prettier-ignore
+			return kysely
+				.selectFrom("PermissionScope")
+				.selectAll()
+				.where("guild_id", "=", guildId)
+				.execute();
+		}
+
+		const { table, scopingTable } = FeatureTableMap[feature];
+
+		// prettier-ignore
+		const result = await kysely
+			.selectFrom(table)
+			.selectAll()
+			.where("id", "=", guildId)
+			.executeTakeFirst()
+
+		if (!scopingTable) {
+			return result as ConfigFeatureMap[ConfigFeature];
+		}
+
+		// prettier-ignore
+		const scoping = await kysely
+			.selectFrom(scopingTable)
+			.selectAll()
+			.where("guild_id", "=", guildId)
+			.execute();
+
+		return { ...result, channel_scoping: scoping } as ConfigFeatureMap[ConfigFeature];
 	}
 
 	/**
@@ -293,7 +205,17 @@ export default class ConfigManager {
 	}
 }
 
-/** Maping of feature keys. */
+/** Mapping of feature keys to their main table and optional scoping table. */
+const FeatureTableMap = {
+	message_reports: { table: "MessageReportConfig", scopingTable: null },
+	ban_requests: { table: "BanRequestConfig", scopingTable: null },
+	quick_mutes: { table: "QuickMuteConfig", scopingTable: "QuickMuteChannelScoping" },
+	quick_purges: { table: "QuickPurgeConfig", scopingTable: "QuickPurgeChannelScoping" },
+	highlights: { table: "HighlightConfig", scopingTable: null },
+	content_filter: { table: "ContentFilterConfig", scopingTable: "ContentFilterChannelScoping" }
+} as const;
+
+/** Mapping of feature keys to their types. */
 type ConfigFeatureMap = {
 	message_reports: MessageReportConfig;
 	ban_requests: BanRequestConfig;

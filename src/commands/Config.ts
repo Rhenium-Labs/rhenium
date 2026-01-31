@@ -14,10 +14,10 @@ import {
 import { kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#kysely/Enums.js";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 @ApplyOptions<Command.Options>({
 	name: "config",
@@ -862,15 +862,15 @@ export default class Config extends Command {
 
 			// Permission Group
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Create}`]: () =>
-				this._createPermissionScope(interaction, config),
+				this._createPermissionScope(interaction),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Delete}`]: () =>
-				this._deletePermissionScope(interaction, config),
+				this._deletePermissionScope(interaction),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.List}`]: () =>
 				this._listPermissionScopes(interaction, config),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Grant}`]: () =>
-				this._addPermissionToScope(interaction, config),
+				this._addPermissionToScope(interaction),
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Revoke}`]: () =>
-				this._removePermissionFromScope(interaction, config),
+				this._removePermissionFromScope(interaction),
 
 			// Message Reports Group
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.EnforceReason}`]: () =>
@@ -1792,8 +1792,7 @@ export default class Config extends Command {
 	}
 
 	private async _createPermissionScope(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
+		interaction: Command.Interaction<"chatInput">
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
@@ -1809,33 +1808,20 @@ export default class Config extends Command {
 			return { error: `A permission scope for the role ${role} already exists.` };
 		}
 
-		const updatedScopes = [
-			...config.data.permission_scopes,
-			{
+		await kysely
+			.insertInto("PermissionScope")
+			.values({
 				guild_id: interaction.guildId,
 				role_id: role.id,
 				allowed_permissions: [permission]
-			}
-		];
-
-		await Promise.all([
-			kysely
-				.insertInto("PermissionScope")
-				.values({
-					guild_id: interaction.guildId,
-					role_id: role.id,
-					allowed_permissions: [permission]
-				})
-				.execute(),
-			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
-		]);
+			})
+			.execute();
 
 		return { content: `Successfully created a permission scope for the ${role} role.` };
 	}
 
 	private async _deletePermissionScope(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
+		interaction: Command.Interaction<"chatInput">
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 
@@ -1850,16 +1836,11 @@ export default class Config extends Command {
 			return { error: `No permission scope found for the role ${role}.` };
 		}
 
-		const updatedScopes = config.data.permission_scopes.filter(s => s.role_id !== role.id);
-
-		await Promise.all([
-			kysely
-				.deleteFrom("PermissionScope")
-				.where("guild_id", "=", interaction.guildId)
-				.where("role_id", "=", role.id)
-				.execute(),
-			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
-		]);
+		await kysely
+			.deleteFrom("PermissionScope")
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.execute();
 
 		return { content: `Successfully deleted the permission scope for the ${role} role.` };
 	}
@@ -1898,10 +1879,7 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _addPermissionToScope(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	private async _addPermissionToScope(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
@@ -1924,25 +1902,12 @@ export default class Config extends Command {
 
 		const updatedPermissions = [...scope.allowed_permissions, permission];
 
-		const updatedScopes = config.data.permission_scopes.map(s => {
-			if (s.role_id === role.id) {
-				return {
-					...s,
-					allowed_permissions: [...s.allowed_permissions, permission]
-				};
-			}
-			return s;
-		});
-
-		await Promise.all([
-			kysely
-				.updateTable("PermissionScope")
-				.set({ allowed_permissions: updatedPermissions })
-				.where("guild_id", "=", interaction.guildId)
-				.where("role_id", "=", role.id)
-				.execute(),
-			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
-		]);
+		await kysely
+			.updateTable("PermissionScope")
+			.set({ allowed_permissions: updatedPermissions })
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.execute();
 
 		return {
 			content: `Successfully added the permission \`${permission}\` to the scope for the role ${role}.`
@@ -1950,8 +1915,7 @@ export default class Config extends Command {
 	}
 
 	private async _removePermissionFromScope(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
+		interaction: Command.Interaction<"chatInput">
 	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
@@ -1981,25 +1945,12 @@ export default class Config extends Command {
 
 		const updatedPermissions = scope.allowed_permissions.filter(p => p !== permission);
 
-		const updatedScopes = config.data.permission_scopes.map(s => {
-			if (s.role_id === role.id) {
-				return {
-					...s,
-					allowed_permissions: s.allowed_permissions.filter(p => p !== permission)
-				};
-			}
-			return s;
-		});
-
-		await Promise.all([
-			kysely
-				.updateTable("PermissionScope")
-				.set({ allowed_permissions: updatedPermissions })
-				.where("guild_id", "=", interaction.guildId)
-				.where("role_id", "=", role.id)
-				.execute(),
-			ConfigManager.update(interaction.guildId, "permission_scopes", updatedScopes)
-		]);
+		await kysely
+			.updateTable("PermissionScope")
+			.set({ allowed_permissions: updatedPermissions })
+			.where("guild_id", "=", interaction.guildId)
+			.where("role_id", "=", role.id)
+			.execute();
 
 		return {
 			content: `Successfully removed the permission \`${permission}\` from the scope for the role ${role}.`
