@@ -6,7 +6,7 @@ import {
 	type PartialMessageReaction,
 	type Snowflake,
 	type WebhookMessageCreateOptions,
-		Events,
+	Events,
 	WebhookClient,
 	TextChannel,
 	EmbedBuilder,
