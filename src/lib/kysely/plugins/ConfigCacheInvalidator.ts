@@ -78,7 +78,7 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 
 		if (configKey) {
 			// Invalidate the cache for this guild and config key.
-			void ConfigManager.computeSingle(metadata.guildId, configKey);
+			void ConfigManager.invalidateKey(metadata.guildId, configKey);
 		}
 
 		return result;
@@ -217,7 +217,8 @@ const CachedModels = [
 	"QuickMuteConfig",
 	"QuickPurgeConfig",
 	"ContentFilterConfig",
-	"HighlightConfig"
+	"HighlightConfig",
+	"PermissionScope"
 ] as const;
 
 const ChannelScopingModels = [
@@ -238,5 +239,6 @@ const ModelToConfigKeys: Record<string, ConfigKeys> = {
 	QuickMuteConfig: ConfigKeys.QuickMutes,
 	QuickPurgeConfig: ConfigKeys.QuickPurges,
 	ContentFilterConfig: ConfigKeys.ContentFilter,
-	HighlightConfig: ConfigKeys.Highlights
+	HighlightConfig: ConfigKeys.Highlights,
+	PermissionScope: ConfigKeys.PermissionScopes
 };

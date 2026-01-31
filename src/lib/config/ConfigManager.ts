@@ -34,7 +34,7 @@ export default class ConfigManager {
 		let config = this._cache.get(guildId);
 
 		if (!config) {
-			config = await this.compute(guildId);
+			config = await this._compute(guildId);
 			this._cache.set(guildId, config);
 		}
 
@@ -79,21 +79,18 @@ export default class ConfigManager {
 	}
 
 	/**
-	 * Recomputes a specific feature of the guild configuration and updates the cache.
-	 * This is more efficient than calling compute() when only one feature needs to be refreshed.
+	 * Invalidates a specific feature key in the cached configuration for a guild.
 	 *
 	 * @param guildId The ID of the guild.
-	 * @param feature The feature key to recompute.
+	 * @param feature The feature key to invalidate (e.g., 'message_reports', 'ban_requests').
 	 * @returns void
 	 */
-	public static async computeSingle(guildId: string, feature: ConfigFeature): Promise<void> {
+	public static async invalidateKey(guildId: string, feature: ConfigFeature): Promise<void> {
 		const config = this._cache.get(guildId);
 
 		if (!config) {
 			return;
 		}
-
-		console.log(`Recomputing config feature '${feature}' for guild ${guildId}...`);
 
 		let featureData: ConfigFeatureMap[ConfigFeature];
 
@@ -201,15 +198,15 @@ export default class ConfigManager {
 	/**
 	 * Computes a config for the guild and stores it in the cache.
 	 *
-	 * ⚠️ This method performs a lot of batched database queries and isn't intended to be called frequently. Use the .get method to retrieve cached configs instead.
+	 * ⚠️ This method performs a lot of batched database queries and is meant to be called once per guild.
 	 *
 	 * @param guildId The ID of the guild.
 	 * @returns The computed GuildConfig.
 	 */
 
-	public static async compute(guildId: string): Promise<GuildConfig> {
-		// Upsert a guild first or all subsequent upserts will fail due to foreign key constraints.
-
+	private static async _compute(guildId: string): Promise<GuildConfig> {
+		// Ensure the guild exists in the database.
+		// All subsequent config inserts rely on this.
 		await kysely
 			.insertInto("Guild")
 			.values({ id: guildId })
