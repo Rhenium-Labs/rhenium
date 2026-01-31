@@ -460,7 +460,7 @@ export default class Highlights extends Command {
 
 		if (!highlight || highlight.patterns.length === 0) {
 			return {
-				error: `You have no highlight patterns to clear.`
+				content: `You have no highlight patterns to clear.`
 			};
 		}
 
@@ -563,7 +563,7 @@ export default class Highlights extends Command {
 
 		if (numDeletedRows === 0n) {
 			return {
-				error: `You have no highlight channel scoping to clear.`
+				content: `You have no highlight channel scoping to clear.`
 			};
 		}
 
@@ -648,7 +648,7 @@ export default class Highlights extends Command {
 
 		if (!highlight || !highlight.user_blacklist.length) {
 			return {
-				error: `You have no highlight user blacklist to clear.`
+				content: `You have no highlight user blacklist to clear.`
 			};
 		}
 
