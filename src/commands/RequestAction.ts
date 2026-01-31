@@ -4,27 +4,165 @@ import {
 	type ButtonInteraction,
 	type ModalSubmitInteraction,
 	ActionRowBuilder,
+	ApplicationCommandOptionType,
+	ApplicationCommandType,
+	ApplicationIntegrationType,
 	ButtonBuilder,
 	ButtonStyle,
 	Colors,
 	EmbedBuilder,
+	InteractionContextType,
 	MessageFlags,
+	PermissionFlagsBits,
 	roleMention,
 	userMention,
 	WebhookClient
 } from "discord.js";
 
-import ms from "ms";
+import ms, { type StringValue } from "ms";
 
-import { RequestStatus } from "#kysely/Enums.js";
 import { client, kysely } from "#root/index.js";
-import { userMentionWithId } from "./index.js";
+import { RequestStatus } from "#kysely/Enums.js";
+import { ApplyOptions, Command } from "#rhenium";
+import { parseDurationString, userMentionWithId, validateDuration } from "#utils/index.js";
 
 import type { BanRequest } from "#kysely/Schema.js";
-import type { InteractionReplyData } from "./Types.js";
-import type { ValidatedBanRequestsConfig } from "#config/GuildConfig.js";
+import type { InteractionReplyData } from "#utils/Types.js";
 
-export default class BanRequestUtils {
+import GuildConfig, { ValidatedBanRequestsConfig } from "#config/GuildConfig.js";
+import ModerationUtils from "#utils/Moderation.js";
+
+@ApplyOptions<Command.Options>({
+	name: "request",
+	description: "Request a moderation action."
+})
+export default class RequestAction extends Command {
+	public register(): Command.Data {
+		return {
+			name: this.name,
+			description: this.description,
+			type: ApplicationCommandType.ChatInput,
+			contexts: [InteractionContextType.Guild],
+			integrationTypes: [ApplicationIntegrationType.GuildInstall],
+			defaultMemberPermissions: PermissionFlagsBits.ModerateMembers,
+			options: [
+				{
+					name: "ban",
+					description: "Request a ban for a user.",
+					type: ApplicationCommandOptionType.Subcommand,
+					options: [
+						{
+							name: "target",
+							description: "The user to request a ban for.",
+							type: ApplicationCommandOptionType.User,
+							required: true
+						},
+						{
+							name: "duration",
+							description: "The duration of the ban.",
+							type: ApplicationCommandOptionType.String,
+							required: false
+						},
+						{
+							name: "reason",
+							description: "The reason for the ban.",
+							type: ApplicationCommandOptionType.String,
+							required: false,
+							max_length: 1024,
+							min_length: 1
+						}
+					]
+				}
+			]
+		};
+	}
+
+	public async interactionRun(
+		interaction: Command.Interaction<"chatInput">,
+		configClass: GuildConfig
+	): Promise<InteractionReplyData> {
+		const config = configClass.getBanRequestsConfig();
+
+		if (!config?.enabled || !config.webhook_url) {
+			return { error: "Ban requests are not configured for this server." };
+		}
+
+		const target = interaction.options.getUser("target", true);
+
+		if (!target) {
+			return { error: "The target user could not be found." };
+		}
+
+		const existingRequest = await kysely
+			.selectFrom("BanRequest")
+			.selectAll()
+			.where("guild_id", "=", interaction.guildId)
+			.where("target_id", "=", target.id)
+			.where("status", "=", "Pending")
+			.where("requested_by", "=", interaction.user.id)
+			.executeTakeFirst();
+
+		if (existingRequest) {
+			return { error: "You already have a pending ban request for this user." };
+		}
+
+		const existingBan = await interaction.guild.bans.fetch(target.id).catch(() => null);
+
+		if (existingBan) {
+			return { error: "The provided target is already banned." };
+		}
+
+		const targetMember = interaction.guild.members.cache.get(target.id);
+
+		if (targetMember && config.immune_roles.some(role => targetMember.roles.cache.has(role))) {
+			return { error: "The provided target is immune to ban requests." };
+		}
+
+		const rawDuration = interaction.options.getString("duration", false);
+
+		if (rawDuration && ms(rawDuration as StringValue) === undefined) {
+			return {
+				error: "The provided duration is invalid. Please provide a valid duration string (e.g., 1d, 12h, 30m)."
+			};
+		}
+
+		const duration = parseDurationString(rawDuration);
+
+		if (duration) {
+			const durationValidation = validateDuration({ duration, minimum: "1s", maximum: "5y" });
+
+			if (!durationValidation.ok) {
+				return { error: durationValidation.message };
+			}
+		}
+
+		const actionValidation = ModerationUtils.validateAction({
+			target,
+			executor: interaction.member,
+			action: "Ban"
+		});
+
+		if (!actionValidation.ok) {
+			return { error: actionValidation.message };
+		}
+
+		const reason = interaction.options.getString("reason", false);
+
+		if (!reason && config.enforce_submission_reason) {
+			return { error: "A reason is required to submit a ban request in this server." };
+		}
+
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+		return RequestAction.createBanRequest({
+			config,
+			target,
+			duration: duration ? BigInt(duration) : null,
+			reason: reason ?? "No reason provided.",
+			executor: interaction.member
+		});
+	}
+
 	/**
 	 * Creates a ban request and sends it to the configured webhook for review.
 	 *
@@ -32,7 +170,7 @@ export default class BanRequestUtils {
 	 * @return Interaction reply data indicating success or failure.
 	 */
 
-	public static async create(data: {
+	public static async createBanRequest(data: {
 		config: ValidatedBanRequestsConfig;
 		target: User;
 		executor: GuildMember;
@@ -141,7 +279,7 @@ export default class BanRequestUtils {
 	 * @return The result of the ban request action.
 	 */
 
-	public static async process(data: {
+	public static async processBanRequest(data: {
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 		config: ValidatedBanRequestsConfig;
 		action: BanRequestAction;
@@ -158,13 +296,13 @@ export default class BanRequestUtils {
 		switch (action) {
 			case BanRequestAction.Disregard: {
 				if (request.target_muted_automatically) {
-					await targetMember
+					void targetMember
 						?.timeout(null, `[${request.id}] Automatic unmute after ban request disregard`)
 						.catch(() => null);
 				}
 
 				void Promise.all([
-					BanRequestUtils._log({
+					RequestAction._logBanRequest({
 						config,
 						action,
 						interaction,
@@ -183,7 +321,7 @@ export default class BanRequestUtils {
 				]);
 
 				return {
-					content: `Successfully disregarded the ban request for ${userMention(request.target_id)} - ID \`${request.id}\``
+					content: `Successfully disregarded the ban request for ${target} - ID \`${request.id}\``
 				};
 			}
 
@@ -232,13 +370,13 @@ export default class BanRequestUtils {
 				}
 
 				void Promise.all([
-					BanRequestUtils._notify({
+					RequestAction._notifyBanRequestSubmitter({
 						webhook_url: config.decision_webhook_url,
 						reviewReason,
 						action,
 						request
 					}),
-					BanRequestUtils._log({
+					RequestAction._logBanRequest({
 						config,
 						action,
 						interaction,
@@ -263,19 +401,19 @@ export default class BanRequestUtils {
 
 			case BanRequestAction.Deny: {
 				if (targetMember && request.target_muted_automatically) {
-					await targetMember
+					void targetMember
 						.timeout(null, `Automatic unmute after ban request denial - ID ${request.id}`)
 						.catch(() => null);
 				}
 
 				void Promise.all([
-					BanRequestUtils._notify({
+					RequestAction._notifyBanRequestSubmitter({
 						webhook_url: config.decision_webhook_url,
 						reviewReason,
 						action,
 						request
 					}),
-					BanRequestUtils._log({
+					RequestAction._logBanRequest({
 						config,
 						action,
 						interaction,
@@ -307,7 +445,7 @@ export default class BanRequestUtils {
 	 * @return The result of the notification.
 	 */
 
-	private static async _notify(data: {
+	private static async _notifyBanRequestSubmitter(data: {
 		webhook_url: string | null;
 		reviewReason: string | null;
 		action: Exclude<BanRequestAction, "Disregard">;
@@ -336,7 +474,7 @@ export default class BanRequestUtils {
 	 * @return The sent API message, or `null` if sending failed.
 	 */
 
-	private static async _log(data: {
+	private static async _logBanRequest(data: {
 		config: ValidatedBanRequestsConfig;
 		action: BanRequestAction;
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;

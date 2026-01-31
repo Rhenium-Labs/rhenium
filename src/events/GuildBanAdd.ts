@@ -1,12 +1,12 @@
 import { captureException } from "@sentry/node";
 import {
+	type GuildBan,
 	type APIActionRowComponent,
 	type APIButtonComponentWithCustomId,
 	Colors,
 	ComponentType,
 	EmbedBuilder,
 	Events,
-	GuildBan,
 	WebhookClient
 } from "discord.js";
 

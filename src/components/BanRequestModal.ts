@@ -5,7 +5,7 @@ import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
+import RequestAction, { BanRequestAction } from "#root/commands/RequestAction.js";
 
 const AUTO_DELETE_DELAY = 7000;
 
@@ -42,7 +42,7 @@ export default class BanRequestModal extends Component {
 
 		const reviewReason = interaction.fields.getTextInputValue("reason");
 
-		return BanRequestUtils.process({
+		return RequestAction.processBanRequest({
 			interaction,
 			config,
 			action,

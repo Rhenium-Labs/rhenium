@@ -52,7 +52,7 @@ export class MessageQueue {
 	 *
 	 * @param ids The message IDs to exclude.
 	 */
-	public static addPurgeExclusions(ids: Snowflake[]): void {
+	public static async addPurgeExclusions(ids: Snowflake[]): Promise<void> {
 		for (const id of ids) {
 			MessageQueue.purgeExclusions.add(id);
 		}
@@ -63,7 +63,7 @@ export class MessageQueue {
 	 *
 	 * @param ids The message IDs to remove from exclusions.
 	 */
-	public static removePurgeExclusions(ids: Snowflake[]): void {
+	public static async removePurgeExclusions(ids: Snowflake[]): Promise<void> {
 		if (ids.length === 0) return;
 
 		for (const id of ids) {
@@ -76,7 +76,7 @@ export class MessageQueue {
 	 * @param message The message to queue.
 	 */
 
-	public static queue(message: Message<true>): void {
+	public static async enqueue(message: Message<true>): Promise<void> {
 		const messageEntry = MessageQueue.serializeMessage(message);
 		MessageQueue._cache.set(message.id, messageEntry);
 	}
@@ -308,35 +308,6 @@ export class MessageQueue {
 }
 
 /**
- * Tracks a response with a message, in a way that if {@link send} is called with `message`, `response` will be edited.
- *
- * @param message The message to track when editing.
- * @param response The response to edit when using send with `message`.
- */
-function track(message: Message, response: Message): void {
-	replies.set(message, response);
-}
-
-/**
- * Removes the tracked response for `message`.
- *
- * @param message The message to free from tracking.
- * @returns Whether the message was tracked.
- */
-function free(message: Message): boolean {
-	return replies.delete(message);
-}
-
-/**
- * Gets the tracked response to `message`, if any was tracked and was not deleted.
- * @param message The message to get the reply from.
- * @returns The replied message, if any.
- */
-function get(message: Message): Message | null {
-	return replies.get(message) ?? null;
-}
-
-/**
  * Sends a message as a response for `message`, and tracks it.
  *
  * @param message The message to replies to.
@@ -375,14 +346,14 @@ async function handle<T extends MessageOptions>(
 	options: string | T,
 	extra?: T | undefined
 ): Promise<Message> {
-	const existing = get(message);
+	const existing = replies.get(message) ?? null;
 
 	const payloadOptions = existing
 		? resolveEditPayload(existing, options as MessageEditOptions)
 		: resolveSendPayload<T>(options);
 	const payload = await MessagePayload.create(message.channel, payloadOptions, extra).resolveBody().resolveFiles();
 	const response = await (existing ? tryEdit(message, existing, payload) : trySend(message, payload));
-	track(message, response);
+	replies.set(message, response);
 
 	return response;
 }
@@ -421,7 +392,7 @@ async function tryEdit(message: Message, response: Message, payload: MessagePayl
 		//
 		// We always call `track()` right after `tryEdit()`, so it'll be tracked
 		// once the message has been sent, provided it did not throw.
-		free(message);
+		replies.delete(message);
 		return trySend(message, payload);
 	}
 }

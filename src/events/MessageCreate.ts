@@ -42,7 +42,7 @@ export default class MessageCreate extends EventListener {
 
 		void Promise.all([
 			store.handleMessageCommand(message),
-			MessageQueue.queue(message),
+			MessageQueue.enqueue(message),
 			Highlights.highlightMessage(message)
 		]);
 	}

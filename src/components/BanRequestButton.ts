@@ -7,7 +7,7 @@ import { capitalize, userMentionWithId } from "#utils/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
+import RequestAction, { BanRequestAction } from "#root/commands/RequestAction.js";
 
 const AUTO_DELETE_DELAY = 7000;
 
@@ -53,7 +53,7 @@ export default class BanRequestButton extends Component {
 		}
 
 		if (action === BanRequestAction.Disregard) {
-			return BanRequestUtils.process({ interaction, request, action, config, reviewReason: null });
+			return RequestAction.processBanRequest({ interaction, request, action, config, reviewReason: null });
 		}
 
 		const requiresReason =
@@ -65,7 +65,7 @@ export default class BanRequestButton extends Component {
 			return null;
 		}
 
-		return BanRequestUtils.process({
+		return RequestAction.processBanRequest({
 			interaction,
 			config,
 			action,

@@ -5,7 +5,7 @@ import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import MessageReportUtils, { type MessageReportAction } from "#utils/MessageReports.js";
+import ReportMessageCtx, { MessageReportAction } from "#root/commands/ReportMessageCtx.js";
 
 const AUTO_DELETE_DELAY = 7000;
 
@@ -50,6 +50,6 @@ export default class MessageReportButton extends Component {
 			};
 		}
 
-		return MessageReportUtils.handle({ interaction, action, report, config });
+		return ReportMessageCtx.processReport({ interaction, action, report, config });
 	}
 }
