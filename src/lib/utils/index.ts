@@ -6,11 +6,36 @@ import ms, { type StringValue } from "ms";
 import fs from "node:fs";
 import YAML from "yaml";
 
-import { client } from "#root/index.js";
+import { client, kv, kysely } from "#root/index.js";
 import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants.js";
 
 import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types.js";
 import Logger from "./Logger.js";
+
+/**
+ * Checks a guild's whitelist status.
+ *
+ * @param guildId The ID of the guild to check.
+ * @return True if the guild is whitelisted, false otherwise.
+ */
+
+export async function getWhitelistStatus(guildId: Snowflake): Promise<boolean> {
+	const cacheKey = `whitelists:${guildId}`;
+	const cached = kv.get(cacheKey) as { status: boolean } | undefined;
+
+	if (cached !== undefined) return cached.status;
+
+	const whitelistEntry = await kysely
+		.selectFrom("Whitelist")
+		.selectAll()
+		.where("id", "=", guildId)
+		.executeTakeFirst();
+
+	const isWhitelisted = whitelistEntry !== undefined;
+
+	await kv.put(cacheKey, { status: isWhitelisted });
+	return isWhitelisted;
+}
 
 /**
  * Reads a YAML file from the given path and returns the parsed content.

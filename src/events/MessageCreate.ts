@@ -1,7 +1,7 @@
 import { type Message, Events } from "discord.js";
 
-import { KvCache } from "#utils/KvCache.js";
 import { MessageQueue } from "#utils/Messages.js";
+import { getWhitelistStatus } from "#utils/index.js";
 import { ApplyOptions, EventListener } from "#rhenium";
 
 import Highlights from "#root/commands/Highlights.js";
@@ -19,9 +19,9 @@ export default class MessageCreate extends EventListener {
 		if (message.author.bot || message.webhookId || message.system) return;
 
 		const store = this.client.stores.get("commands");
-		const whitelist = await KvCache.getWhitelistStatus(message.guild.id);
+		const whitelisted = await getWhitelistStatus(message.guild.id);
 
-		if (!whitelist) {
+		if (!whitelisted) {
 			if (GlobalConfig.isDeveloper(message.author.id)) {
 				return store.handleMessageCommand(message);
 			}
