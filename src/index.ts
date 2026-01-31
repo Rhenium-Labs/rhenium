@@ -16,6 +16,7 @@ import {
 	captureException
 } from "@sentry/node";
 import { open } from "lmdb";
+import { Sweepers } from "discord.js";
 
 import { sleep } from "#utils/index.js";
 import { Rhenium } from "#rhenium";
@@ -37,6 +38,12 @@ export const client = new Rhenium({
 		users: {
 			interval: 3600,
 			filter: () => () => true // Sweeps everything.
+		},
+		guildMembers: {
+			interval: 3600,
+			filter: Sweepers.filterByLifetime({
+				lifetime: 1800 // 30 minutes
+			})
 		}
 	},
 	allowedMentions: { parse: [] }
