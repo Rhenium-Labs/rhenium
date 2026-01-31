@@ -78,7 +78,7 @@ async function main(): Promise<void> {
 	// Attempt to connect to the database.
 	// We run a simple test query to ensure the connection is valid.
 	try {
-		await kysely.selectFrom("Message").selectAll().limit(1).executeTakeFirstOrThrow();
+		await kysely.selectFrom("Message").selectAll().limit(1).executeTakeFirst();
 		Logger.info("Connected to the database.");
 	} catch (error) {
 		Logger.fatal("Failed to connect to the database:", error);
