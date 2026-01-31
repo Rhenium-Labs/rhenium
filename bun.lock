@@ -37,7 +37,7 @@
       },
       "devDependencies": {
         "@types/cron": "2.4.3",
-        "@types/fluent-ffmpeg": "^2.1.28",
+        "@types/fluent-ffmpeg": "2.1.28",
         "@types/lodash": "4.17.23",
         "@types/ms": "2.1.0",
         "@types/node": "25.0.10",
