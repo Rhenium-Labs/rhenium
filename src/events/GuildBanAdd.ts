@@ -1,14 +1,5 @@
 import { captureException } from "@sentry/node";
-import {
-	type GuildBan,
-	type APIActionRowComponent,
-	type APIButtonComponentWithCustomId,
-	Colors,
-	ComponentType,
-	EmbedBuilder,
-	Events,
-	WebhookClient
-} from "discord.js";
+import { type GuildBan, Colors, EmbedBuilder, Events, WebhookClient } from "discord.js";
 
 import { client, kysely } from "#root/index.js";
 import { ApplyOptions, EventListener } from "#rhenium";
@@ -46,8 +37,9 @@ export default class GuildBanAdd extends EventListener {
 		}
 	}
 
-	private static async _clearMessageReports(ban: GuildBan, config: GuildConfig): Promise<void> {
-		if (!config?.data.message_reports.webhook_url || !config.data.message_reports.log_webhook_url) return;
+	private static async _clearMessageReports(ban: GuildBan, guildConfig: GuildConfig): Promise<void> {
+		const config = guildConfig.getMessageReportsConfig();
+		if (!config || !config.log_webhook_url) return;
 
 		const reports = await kysely
 			.updateTable("MessageReport")
@@ -67,8 +59,8 @@ export default class GuildBanAdd extends EventListener {
 		const reportIds = reports.map(r => r.id);
 
 		const [primaryWebhook, secondaryWebhook] = [
-			new WebhookClient({ url: config.data.message_reports.webhook_url }),
-			new WebhookClient({ url: config.data.message_reports.log_webhook_url })
+			new WebhookClient({ url: config.webhook_url }),
+			new WebhookClient({ url: config.log_webhook_url })
 		];
 
 		for (let i = 0; i < reportIds.length; i += CONCURRENCY_LIMIT) {
@@ -78,15 +70,12 @@ export default class GuildBanAdd extends EventListener {
 					const message = await primaryWebhook.fetchMessage(id).catch(() => null);
 					if (!message) return;
 
-					const actionRows = (message.components?.filter(c => c.type === ComponentType.ActionRow) ??
-						[]) as APIActionRowComponent<APIButtonComponentWithCustomId>[];
+					const embedIndex = message.embeds.length > 1 ? 1 : 0;
+					const embed = message.embeds.at(embedIndex);
 
-					const hasRefEmbed = actionRows
-						.flatMap(row => row.components)
-						.some(btn => btn.custom_id?.startsWith("delete-reference-report-message"));
+					if (!embed) return;
 
-					const embedIndex = hasRefEmbed ? 1 : 0;
-					const resolvedEmbed = new EmbedBuilder(message.embeds[embedIndex])
+					const resolvedEmbed = new EmbedBuilder(embed)
 						.setAuthor({ name: "Message Report AutoResolved" })
 						.setColor(Colors.Green)
 						.setFooter({
@@ -94,11 +83,12 @@ export default class GuildBanAdd extends EventListener {
 						})
 						.setTimestamp();
 
-					const embeds = hasRefEmbed
-						? [new EmbedBuilder(message.embeds[0]), resolvedEmbed]
-						: [resolvedEmbed];
+					const embeds =
+						message.embeds.length > 1
+							? [new EmbedBuilder(message.embeds.at(0)), resolvedEmbed]
+							: [resolvedEmbed];
 
-					return Promise.all([
+					void Promise.all([
 						secondaryWebhook.send({ embeds }).catch(() => null),
 						primaryWebhook.deleteMessage(id).catch(() => null)
 					]).then(() => {
@@ -110,8 +100,9 @@ export default class GuildBanAdd extends EventListener {
 		}
 	}
 
-	private static async _clearBanRequests(ban: GuildBan, config: GuildConfig): Promise<void> {
-		if (!config?.data.ban_requests.webhook_url || !config.data.ban_requests.log_webhook_url) return;
+	private static async _clearBanRequests(ban: GuildBan, guildConfig: GuildConfig): Promise<void> {
+		const config = guildConfig.getBanRequestsConfig();
+		if (!config || !config.log_webhook_url) return;
 
 		const requests = await kysely
 			.updateTable("BanRequest")
@@ -131,8 +122,8 @@ export default class GuildBanAdd extends EventListener {
 		const requestIds = requests.map(r => r.id);
 
 		const [primaryWebhook, secondaryWebhook] = [
-			new WebhookClient({ url: config.data.ban_requests.webhook_url }),
-			new WebhookClient({ url: config.data.ban_requests.log_webhook_url })
+			new WebhookClient({ url: config.webhook_url }),
+			new WebhookClient({ url: config.log_webhook_url })
 		];
 
 		for (let i = 0; i < requestIds.length; i += CONCURRENCY_LIMIT) {

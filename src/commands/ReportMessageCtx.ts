@@ -1,7 +1,6 @@
 import {
-	type APIActionRowComponent,
+	type User,
 	type ModalSubmitInteraction,
-	type APIButtonComponentWithCustomId,
 	type ButtonInteraction,
 	ApplicationCommandType,
 	LabelBuilder,
@@ -9,15 +8,13 @@ import {
 	TextInputBuilder,
 	TextInputStyle,
 	MessageFlags,
-	User,
 	EmbedBuilder,
 	Colors,
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
 	WebhookClient,
-	roleMention,
-	ComponentType
+	roleMention
 } from "discord.js";
 
 import { kysely } from "#root/index.js";
@@ -155,16 +152,15 @@ export default class ReportMessageCtx extends Command {
 
 		// prettier-ignore
 		const reasonLabel = new LabelBuilder()
-		    .setLabel("Reason")
-		    .setTextInputComponent(reasonInput);
+			.setLabel("Reason")
+			.setTextInputComponent(reasonInput);
 
 		const modal = new ModalBuilder()
 			.setCustomId(`report-message-${message.channel.id}-${message.id}`)
 			.setTitle(`Report @${targetUser.username}'s Message`)
 			.addLabelComponents(reasonLabel);
 
-		await interaction.showModal(modal);
-		return null;
+		return interaction.showModal(modal).then(() => null);
 	}
 
 	/**
@@ -356,32 +352,28 @@ export default class ReportMessageCtx extends Command {
 
 		if (!message) return null;
 
-		const components = (message.components?.filter(c => c.type === ComponentType.ActionRow) ??
-			[]) as APIActionRowComponent<APIButtonComponentWithCustomId>[];
-		const hasReferenceEmbed = components
-			.flatMap(row => row.components)
-			.some(btn => btn.custom_id?.startsWith("delete-reference-report-message"));
-
-		const embed = message.embeds.at(hasReferenceEmbed ? 1 : 0);
-		const currentValue = embed?.fields?.find(field => {
+		const embedIndex = message.embeds.length > 1 ? 1 : 0;
+		const embed = message.embeds.at(embedIndex);
+		const value = embed?.fields?.find(field => {
 			return field.name === "Reported By";
 		})?.value;
 
-		if (!embed || !currentValue) return null;
+		if (!embed || !value) return null;
 		// Prevent duplicate mentions.
-		if (currentValue.includes(interaction.user.id)) return null;
+		if (value.includes(interaction.user.id)) return null;
 
 		const updatedEmbed = EmbedBuilder.from(embed)
 			.spliceFields(0, 1, {
 				name: "Reported By",
-				value: `${currentValue}\n${userMentionWithId(interaction.user.id)}`
+				value: `${value}\n${userMentionWithId(interaction.user.id)}`
 			})
 			.setTimestamp();
 
+		const embeds =
+			message.embeds.length > 1 ? [new EmbedBuilder(message.embeds.at(0)), updatedEmbed] : [updatedEmbed];
+
 		return webhook
-			.editMessage(message.id, {
-				embeds: hasReferenceEmbed ? [message.embeds[0], updatedEmbed] : [updatedEmbed]
-			})
+			.editMessage(message.id, { embeds })
 			.catch(() => null)
 			.then(() => webhook.destroy());
 	}
@@ -470,14 +462,14 @@ export default class ReportMessageCtx extends Command {
 
 		if (!config.log_webhook_url) return null;
 
-		const components = interaction.message.components!.filter(c => c.type === ComponentType.ActionRow);
-		const hasDeleteRefButton = components.find(c =>
-			c.components.some(comp => comp.customId?.startsWith("delete-reference-report-message"))
-		);
-
 		const formattedAction = action === MessageReportAction.Resolve ? "Resolved" : "Disregarded";
 
-		const embed = new EmbedBuilder(interaction.message.embeds[hasDeleteRefButton ? 1 : 0].data)
+		const embedIndex = interaction.message.embeds.length > 1 ? 1 : 0;
+		const embed = interaction.message.embeds.at(embedIndex);
+
+		if (!embed) return null;
+
+		const updatedEmbed = new EmbedBuilder(embed.data)
 			.setAuthor({ name: `Message Report ${formattedAction}` })
 			.setColor(action === MessageReportAction.Resolve ? Colors.Green : Colors.NotQuiteBlack)
 			.setFooter({
@@ -487,9 +479,13 @@ export default class ReportMessageCtx extends Command {
 			.setTimestamp();
 
 		const webhook = new WebhookClient({ url: config.log_webhook_url });
+		const embeds =
+			interaction.message.embeds.length > 1
+				? [new EmbedBuilder(interaction.message.embeds.at(0)?.data), updatedEmbed]
+				: [updatedEmbed];
 
 		return webhook
-			.send({ embeds: hasDeleteRefButton ? [interaction.message.embeds[0], embed] : [embed] })
+			.send({ embeds })
 			.catch(() => null)
 			.then(() => webhook.destroy());
 	}

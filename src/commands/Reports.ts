@@ -77,9 +77,7 @@ export default class Reports extends Command {
 
 				await kysely
 					.updateTable("MessageReportConfig")
-					.set({
-						blacklisted_users: [...config.blacklisted_users, user.id]
-					})
+					.set({ blacklisted_users: [...config.blacklisted_users, user.id] })
 					.where("id", "=", interaction.guild.id)
 					.execute();
 
@@ -95,12 +93,10 @@ export default class Reports extends Command {
 					return { error: "This user is not blacklisted from using the report system." };
 				}
 
-				const updatedBlacklist = config.blacklisted_users.filter(id => id !== user.id);
-
 				await kysely
 					.updateTable("MessageReportConfig")
 					.set({
-						blacklisted_users: updatedBlacklist
+						blacklisted_users: config.blacklisted_users.filter(id => id !== user.id)
 					})
 					.where("id", "=", interaction.guild.id)
 					.execute();

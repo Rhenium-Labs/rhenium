@@ -83,6 +83,8 @@ export default class RequestAction extends Command {
 	): Promise<InteractionReplyData> {
 		const config = configClass.getBanRequestsConfig();
 
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
 		if (!config?.enabled || !config.webhook_url) {
 			return { error: "Ban requests are not configured for this server." };
 		}
@@ -99,11 +101,10 @@ export default class RequestAction extends Command {
 			.where("guild_id", "=", interaction.guildId)
 			.where("target_id", "=", target.id)
 			.where("status", "=", "Pending")
-			.where("requested_by", "=", interaction.user.id)
 			.executeTakeFirst();
 
 		if (existingRequest) {
-			return { error: "You already have a pending ban request for this user." };
+			return { error: "There is already a pending ban request for the provided target." };
 		}
 
 		const existingBan = await interaction.guild.bans.fetch(target.id).catch(() => null);
@@ -151,8 +152,6 @@ export default class RequestAction extends Command {
 		if (!reason && config.enforce_submission_reason) {
 			return { error: "A reason is required to submit a ban request in this server." };
 		}
-
-		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		return RequestAction.createBanRequest({
 			config,
@@ -486,8 +485,11 @@ export default class RequestAction extends Command {
 
 		const color = BanRequestColors[action];
 		const pastTenseAction = PastTenseBanRequestAction[action];
+		const embed = interaction.message?.embeds.at(0);
 
-		const embed = new EmbedBuilder(interaction.message!.embeds[0].data)
+		if (!embed) return null;
+
+		const updatedEmbed = new EmbedBuilder(embed.data)
 			.setColor(color)
 			.setAuthor({ name: `Ban Request ${pastTenseAction}` })
 			.setFooter({
@@ -497,12 +499,12 @@ export default class RequestAction extends Command {
 			.setTimestamp();
 
 		if (reason) {
-			embed.addFields({ name: "Reviewer Reason", value: reason });
+			updatedEmbed.addFields({ name: "Reviewer Reason", value: reason });
 		}
 
 		const webhook = new WebhookClient({ url: config.log_webhook_url });
 		return webhook
-			.send({ embeds: [embed], allowedMentions: { parse: [] } })
+			.send({ embeds: [updatedEmbed], allowedMentions: { parse: [] } })
 			.catch(() => null)
 			.then(() => webhook.destroy());
 	}
