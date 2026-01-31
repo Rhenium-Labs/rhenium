@@ -1,7 +1,7 @@
 import { Events, type PartialMessage } from "discord.js";
-
-import { MessageQueue } from "#utils/Messages.js";
 import { ApplyOptions, EventListener } from "#rhenium";
+
+import Messages from "#utils/Messages.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.MessageDelete
@@ -11,8 +11,8 @@ export default class MessageDelete extends EventListener {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author?.bot || message.webhookId || message.system) return;
 		// Skip if this message is being handled by a purge action.
-		if (MessageQueue.purgeExclusions.has(message.id)) return;
+		if (Messages.purgeExclusions.has(message.id)) return;
 
-		return MessageQueue.deleteMessage(message.id);
+		return Messages.delete(message.id);
 	}
 }

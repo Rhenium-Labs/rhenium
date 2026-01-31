@@ -1,7 +1,7 @@
 import { Events, type Message, type PartialMessage } from "discord.js";
-
 import { ApplyOptions, EventListener } from "#rhenium";
-import { cleanMessageContent, MessageQueue } from "#utils/Messages.js";
+
+import Messages from "#utils/Messages.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.MessageUpdate
@@ -13,7 +13,7 @@ export default class MessageUpdate extends EventListener {
 		// Ignore empty updates.
 		if (!newMessage.content) return;
 
-		const updatedContent = cleanMessageContent(newMessage.content, newMessage.channel);
-		return MessageQueue.updateMessage(newMessage.id, updatedContent);
+		const updatedContent = Messages.cleanContent(newMessage.content, newMessage.channel);
+		return Messages.update(newMessage.id, updatedContent);
 	}
 }

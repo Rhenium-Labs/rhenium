@@ -8,14 +8,13 @@ import {
 	type Message
 } from "discord.js";
 
-import { reply } from "#utils/Messages.js";
 import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";
 import { Command } from "../structures/Command.js";
 import { processResponse } from "#rhenium";
 
 import Logger from "#utils/Logger.js";
-
+import Messages from "#utils/Messages.js";
 import ConfigManager from "#config/ConfigManager.js";
 
 export default class CommandStore extends AliasStore<Command, "commands"> {
@@ -165,7 +164,7 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 
 			Logger.error(`Error executing command "${command.name}":`, error);
 
-			return reply(message, {
+			return Messages.reply(message, {
 				content: `An error occurred while executing this command. Please include this ID when reporting the bug: \`${sentryId}\`.`
 			}).catch(() => {});
 		}

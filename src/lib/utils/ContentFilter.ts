@@ -16,7 +16,7 @@ export default class ContentFilterUtils {
 	 * @param message The serialized message data.
 	 * @returns The computed risk score.
 	 */
-	public static computeMessageRisk(config: ValidatedContentFilterConfig, message: Message): number {
+	static computeMessageRisk(config: ValidatedContentFilterConfig, message: Message): number {
 		const riskIncreaseStep =
 			config.detector_mode === DetectorMode.Lenient
 				? CF_CONSTANTS.HEURISTIC_LENIENT_RISK_INCREASE
@@ -33,7 +33,7 @@ export default class ContentFilterUtils {
 	}
 
 	/** Retries a function with exponential backoff and jitter. */
-	public static async retryWithBackoff<T>(
+	static async retryWithBackoff<T>(
 		fn: () => Promise<T>,
 		options?: {
 			maxRetries?: number;
@@ -87,7 +87,7 @@ export default class ContentFilterUtils {
 	 * @param config The content filter configuration.
 	 * @returns The minimum score threshold.
 	 */
-	public static getMinScore(config: ValidatedContentFilterConfig): number {
+	static getMinScore(config: ValidatedContentFilterConfig): number {
 		let base =
 			config.detector_mode === DetectorMode.Lenient
 				? CF_CONSTANTS.HEURISTIC_LENIENT_SCORE
@@ -106,7 +106,7 @@ export default class ContentFilterUtils {
 	 * @param authorId The author's user ID.
 	 * @returns The adjusted minimum score threshold.
 	 */
-	public static getMinScoreWithState(
+	static getMinScoreWithState(
 		config: ValidatedContentFilterConfig,
 		state: ChannelScanState | null,
 		authorId: Snowflake
@@ -136,7 +136,7 @@ export default class ContentFilterUtils {
 	 * @param threshold Optional date to filter alerts created before this time.
 	 * @returns An array of pending ContentFilterAlert records.
 	 */
-	public static async fetchPendingAlerts(guildId: Snowflake, threshold?: Date): Promise<ContentFilterAlert[]> {
+	static async fetchPendingAlerts(guildId: Snowflake, threshold?: Date): Promise<ContentFilterAlert[]> {
 		const query = kysely
 			.selectFrom("ContentFilterAlert")
 			.selectAll()
@@ -160,7 +160,7 @@ export default class ContentFilterUtils {
 	 *
 	 * @returns An object containing the alerts, false positive ratio, and highest score.
 	 */
-	public static async getRecentAlertsAndFalsePositiveRatio(
+	static async getRecentAlertsAndFalsePositiveRatio(
 		guildId: string,
 		channelId: string,
 		since: Date
@@ -187,7 +187,7 @@ export default class ContentFilterUtils {
 	 * @param messageId The ID of the message to check.
 	 * @returns True if an alert exists, false otherwise.
 	 */
-	public static async alertExistsForMessage(messageId: string): Promise<boolean> {
+	static async alertExistsForMessage(messageId: string): Promise<boolean> {
 		const existing = await kysely
 			.selectFrom("ContentFilterAlert")
 			.select("id")
@@ -202,7 +202,7 @@ export default class ContentFilterUtils {
 	 * @param ttl Time-to-live in milliseconds. Defaults to CONTENT_FILTER_ALERT_TTL.
 	 * @returns The number of deleted alerts.
 	 */
-	public static async deleteOldAlerts(ttl: number = CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL): Promise<number> {
+	static async deleteOldAlerts(ttl: number = CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
 		const result = await kysely
 			.deleteFrom("ContentFilterAlert")
@@ -219,7 +219,7 @@ export default class ContentFilterUtils {
 	 * @param ttl Time-to-live in milliseconds. Defaults to CONTENT_FILTER_LOG_TTL.
 	 * @returns The number of deleted logs.
 	 */
-	public static async deleteOldContentLogs(ttl: number = CF_CONSTANTS.CONTENT_FILTER_LOG_TTL): Promise<number> {
+	static async deleteOldContentLogs(ttl: number = CF_CONSTANTS.CONTENT_FILTER_LOG_TTL): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
 		const result = await kysely
 			.deleteFrom("ContentFilterLog")
@@ -238,10 +238,7 @@ export default class ContentFilterUtils {
 	 * @param target The desired status to transition to.
 	 * @returns The resulting status after applying the transition rules.
 	 */
-	public static handleAlertModStatus(
-		original: ContentFilterStatus,
-		target: ContentFilterStatus
-	): ContentFilterStatus {
+	static handleAlertModStatus(original: ContentFilterStatus, target: ContentFilterStatus): ContentFilterStatus {
 		if (target === ContentFilterStatus.Resolved) {
 			switch (original) {
 				case ContentFilterStatus.Pending:
@@ -270,7 +267,7 @@ export default class ContentFilterUtils {
 	 * @param newStatus The new moderation status to set.
 	 * @returns The updated ContentFilterAlert or null if not found.
 	 */
-	public static async updateAlertModStatus(
+	static async updateAlertModStatus(
 		alertId: string,
 		newStatus: ContentFilterStatus
 	): Promise<ContentFilterAlert | null> {
@@ -291,7 +288,7 @@ export default class ContentFilterUtils {
 	 * @param newStatus The new deletion status to set.
 	 * @returns The updated ContentFilterAlert or null if not found.
 	 */
-	public static async updateAlertDelStatus(
+	static async updateAlertDelStatus(
 		alertId: string,
 		newStatus: ContentFilterStatus
 	): Promise<ContentFilterAlert | null> {

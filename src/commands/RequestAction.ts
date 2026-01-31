@@ -21,8 +21,8 @@ import {
 
 import ms, { type StringValue } from "ms";
 
-import { client, kysely } from "#root/index.js";
 import { RequestStatus } from "#kysely/Enums.js";
+import { client, kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 import { parseDurationString, userMentionWithId, validateDuration } from "#utils/index.js";
 
@@ -169,7 +169,7 @@ export default class RequestAction extends Command {
 	 * @return Interaction reply data indicating success or failure.
 	 */
 
-	public static async createBanRequest(data: {
+	static async createBanRequest(data: {
 		config: ValidatedBanRequestsConfig;
 		target: User;
 		executor: GuildMember;
@@ -278,7 +278,7 @@ export default class RequestAction extends Command {
 	 * @return The result of the ban request action.
 	 */
 
-	public static async processBanRequest(data: {
+	static async processBanRequest(data: {
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
 		config: ValidatedBanRequestsConfig;
 		action: BanRequestAction;

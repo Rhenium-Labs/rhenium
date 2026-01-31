@@ -20,12 +20,12 @@ import { Sweepers } from "discord.js";
 
 import { sleep } from "#utils/index.js";
 import { Rhenium } from "#rhenium";
-import { MessageQueue } from "#utils/Messages.js";
 import { CLIENT_CACHE_OPTIONS, CLIENT_INTENTS, CLIENT_PARTIALS, PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
 
 import type { DB } from "./lib/kysely/Schema.js";
 
 import Logger from "#utils/Logger.js";
+import Messages from "#utils/Messages.js";
 import GlobalConfig from "#config/GlobalConfig.js";
 import ConfigCacheInvalidatorPlugin from "#kysely/plugins/ConfigCacheInvalidator.js";
 
@@ -114,7 +114,7 @@ void main();
 /** Handles storing messages on process exit events. */
 PROCESS_EXIT_EVENTS.forEach(event => {
 	process.on(event, async () => {
-		await MessageQueue.store(event)
+		await Messages.store(event)
 			.catch(error => {
 				Logger.error("Error when storing messages on process exit:", error);
 				process.exit(1);

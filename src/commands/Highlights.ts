@@ -14,16 +14,16 @@ import { jsonArrayFrom } from "kysely/helpers/postgres";
 import safe from "safe-regex";
 
 import { client, kysely } from "#root/index.js";
-import { formatMessageContent } from "#utils/Messages.js";
 import { ApplyOptions, Command } from "#rhenium";
 import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "#utils/index.js";
 
+import type { Highlight } from "#kysely/Schema.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
+import Messages from "#utils/Messages.js";
 import RateLimiter from "#utils/RateLimiter.js";
 import GuildConfig from "#root/lib/config/GuildConfig.js";
 import ConfigManager from "#root/lib/config/ConfigManager.js";
-import { Highlight } from "#kysely/Schema.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
@@ -192,50 +192,70 @@ export default class Highlights extends Command {
 		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
-		const group = interaction.options.getSubcommandGroup();
+		const subcommandGroup = interaction.options.getSubcommandGroup() as HighlightSubcommandGroup | null;
 		const subcommand = interaction.options.getSubcommand() as HighlightSubcommand;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		// Route to the appropriate handler based on group and subcommand.
-		const routeKey = group ? `${group}:${subcommand}` : subcommand;
+		if (!subcommandGroup) {
+			switch (subcommand) {
+				case HighlightSubcommand.List:
+					return Highlights._listHighlights(interaction);
+				case HighlightSubcommand.Clear:
+					return Highlights._clearAllHighlights(interaction);
+				default: {
+					return { error: "Unknown subcommand." };
+				}
+			}
+		}
 
-		const handlers: Record<string, () => Promise<InteractionReplyData>> = {
-			// Top-level subcommands (no group)
-			[HighlightSubcommand.List]: () => this._listHighlights(interaction),
-			[HighlightSubcommand.Clear]: () => this._clearAllHighlights(interaction),
+		if (subcommandGroup === HighlightSubcommandGroup.Pattern) {
+			switch (subcommand) {
+				case HighlightSubcommand.Add:
+					return Highlights._addPattern(interaction, config);
+				case HighlightSubcommand.Remove:
+					return Highlights._removePattern(interaction);
+				case HighlightSubcommand.Clear:
+					return Highlights._clearPatterns(interaction);
+				default: {
+					return { error: "Unknown subcommand." };
+				}
+			}
+		}
 
-			// Pattern group
-			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Add}`]: () =>
-				this._addPattern(interaction, config),
-			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Remove}`]: () =>
-				this._removePattern(interaction),
-			[`${HighlightSubcommandGroup.Pattern}:${HighlightSubcommand.Clear}`]: () =>
-				this._clearPatterns(interaction),
+		if (subcommandGroup === HighlightSubcommandGroup.ChannelScoping) {
+			switch (subcommand) {
+				case HighlightSubcommand.Add:
+					return Highlights._addChannelScoping(interaction);
+				case HighlightSubcommand.Remove:
+					return Highlights._removeChannelScoping(interaction);
+				case HighlightSubcommand.Clear:
+					return Highlights._clearChannelScoping(interaction);
+				default: {
+					return { error: "Unknown subcommand." };
+				}
+			}
+		}
 
-			// Channel scoping group
-			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Add}`]: () =>
-				this._addChannelScoping(interaction),
-			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Remove}`]: () =>
-				this._removeChannelScoping(interaction),
-			[`${HighlightSubcommandGroup.ChannelScoping}:${HighlightSubcommand.Clear}`]: () =>
-				this._clearChannelScoping(interaction),
+		if (subcommandGroup === HighlightSubcommandGroup.UserBlacklist) {
+			switch (subcommand) {
+				case HighlightSubcommand.Add:
+					return Highlights._addUserBlacklist(interaction);
+				case HighlightSubcommand.Remove:
+					return Highlights._removeUserBlacklist(interaction);
+				case HighlightSubcommand.Clear:
+					return Highlights._clearUserBlacklist(interaction);
+				default: {
+					return { error: "Unknown subcommand." };
+				}
+			}
+		}
 
-			// User blacklist group
-			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Add}`]: () =>
-				this._addUserBlacklist(interaction),
-			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Remove}`]: () =>
-				this._removeUserBlacklist(interaction),
-			[`${HighlightSubcommandGroup.UserBlacklist}:${HighlightSubcommand.Clear}`]: () =>
-				this._clearUserBlacklist(interaction)
-		};
-
-		const handler = handlers[routeKey];
-		return handler ? handler() : { error: "Unknown subcommand." };
+		return { error: "Unknown subcommand." };
 	}
 
 	/** Highlights a message if it matches any user's highlight patterns. */
-	public static async highlightMessage(message: Message<true>) {
+	static async highlightMessage(message: Message<true>) {
 		const guildId = message.guild.id;
 		const config = await ConfigManager.get(guildId);
 
@@ -305,7 +325,7 @@ export default class Highlights extends Command {
 			if (!ratelimiter.limit(`${highlight.user_id}:${messageAuthorId}`).success) continue;
 
 			const user = await client.users.fetch(highlight.user_id).catch(() => null);
-			const formattedContent = await formatMessageContent({
+			const formattedContent = await Messages.formatContent({
 				url: message.url,
 				content: message.content,
 				stickerId: null,
@@ -371,7 +391,7 @@ export default class Highlights extends Command {
 		}
 	}
 
-	private async _addPattern(
+	private static async _addPattern(
 		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
@@ -429,7 +449,7 @@ export default class Highlights extends Command {
 		return { content: `Successfully added \`${pattern}\` to your highlights.` };
 	}
 
-	private async _removePattern(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _removePattern(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
 		const pattern = interaction.options.getString("pattern", true);
 		const highlight = await kysely
 			.selectFrom("Highlight")
@@ -456,7 +476,7 @@ export default class Highlights extends Command {
 		return { content: `Successfully removed \`${pattern}\` from your highlights.` };
 	}
 
-	private async _clearPatterns(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _clearPatterns(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
 		const highlight = await kysely
 			.selectFrom("Highlight")
 			.select(["patterns"])
@@ -482,7 +502,9 @@ export default class Highlights extends Command {
 		};
 	}
 
-	private async _addChannelScoping(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _addChannelScoping(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true);
 		const scopeType = interaction.options.getInteger("type", true);
 		const stringifiedType = scopeType === 0 ? "include" : "exclude";
@@ -535,7 +557,9 @@ export default class Highlights extends Command {
 		return { content: `Successfully ${stringifiedType}d ${channel} for your highlights.` };
 	}
 
-	private async _removeChannelScoping(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _removeChannelScoping(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true);
 		const scoping = await kysely
 			.selectFrom("HighlightChannelScoping")
@@ -560,7 +584,9 @@ export default class Highlights extends Command {
 		return { content: `Successfully removed ${channel} from your highlight scoping.` };
 	}
 
-	private async _clearChannelScoping(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _clearChannelScoping(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const { numDeletedRows } = await kysely
 			.deleteFrom("HighlightChannelScoping")
 			.where("user_id", "=", interaction.user.id)
@@ -578,7 +604,9 @@ export default class Highlights extends Command {
 		};
 	}
 
-	private async _addUserBlacklist(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _addUserBlacklist(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const user = interaction.options.getUser("user", true);
 
 		if (user.id === interaction.user.id) {
@@ -616,7 +644,9 @@ export default class Highlights extends Command {
 		return { content: `Successfully blacklisted ${user} from triggering your highlights.` };
 	}
 
-	private async _removeUserBlacklist(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _removeUserBlacklist(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const user = interaction.options.getUser("user", true);
 
 		const highlight = await kysely
@@ -644,7 +674,9 @@ export default class Highlights extends Command {
 		return { content: `Successfully removed ${user} from your highlight blacklist.` };
 	}
 
-	private async _clearUserBlacklist(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _clearUserBlacklist(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const highlight = await kysely
 			.selectFrom("Highlight")
 			.select(["user_blacklist"])
@@ -670,7 +702,9 @@ export default class Highlights extends Command {
 		};
 	}
 
-	private async _listHighlights(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _listHighlights(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const highlights = await kysely
 			.selectFrom("Highlight")
 			.select(eb => [
@@ -750,7 +784,9 @@ export default class Highlights extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _clearAllHighlights(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _clearAllHighlights(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const { numDeletedRows } = await kysely.transaction().execute(async trx => {
 			const scopingResult = await trx
 				.deleteFrom("HighlightChannelScoping")
@@ -779,19 +815,15 @@ export default class Highlights extends Command {
 	}
 }
 
-const HighlightSubcommandGroup = {
-	Pattern: "pattern",
-	ChannelScoping: "channel-scoping",
-	UserBlacklist: "user-blacklist"
-} as const;
+enum HighlightSubcommandGroup {
+	Pattern = "pattern",
+	ChannelScoping = "channel-scoping",
+	UserBlacklist = "user-blacklist"
+}
 
-type HighlightSubcommandGroup = (typeof HighlightSubcommandGroup)[keyof typeof HighlightSubcommandGroup];
-
-const HighlightSubcommand = {
-	Add: "add",
-	Remove: "remove",
-	Clear: "clear",
-	List: "list"
-} as const;
-
-type HighlightSubcommand = (typeof HighlightSubcommand)[keyof typeof HighlightSubcommand];
+enum HighlightSubcommand {
+	Add = "add",
+	Remove = "remove",
+	Clear = "clear",
+	List = "list"
+}

@@ -30,7 +30,7 @@ export default class ConfigManager {
 	 * @returns The GuildConfig for the specified guild.
 	 */
 
-	public static async get(guildId: string): Promise<GuildConfig> {
+	static async get(guildId: string): Promise<GuildConfig> {
 		let config = this._cache.get(guildId);
 
 		if (!config) {
@@ -48,7 +48,7 @@ export default class ConfigManager {
 	 * @param feature The feature key to reload (e.g., 'message_reports', 'ban_requests').
 	 * @returns void
 	 */
-	public static async reload(guildId: string, feature: ConfigFeature): Promise<void> {
+	static async reload(guildId: string, feature: ConfigFeature): Promise<void> {
 		const config = this._cache.get(guildId);
 
 		if (!config) {

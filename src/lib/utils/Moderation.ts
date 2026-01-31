@@ -13,7 +13,7 @@ export default class ModerationUtils {
 	 * @returns The result of the validation.
 	 */
 
-	public static validateAction(data: {
+	static validateAction(data: {
 		target: GuildMember | User;
 		executor: GuildMember;
 		action: "Ban" | "Mute" | "Quick Mute";

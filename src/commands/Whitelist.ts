@@ -1,7 +1,7 @@
 import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Colors } from "discord.js";
 
-import { kv, kysely } from "#root/index.js";
 import { hastebin } from "#utils/index.js";
+import { kv, kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 
 import type { MessageReplyData } from "#utils/Types.js";
@@ -23,36 +23,36 @@ export default class Whitelist extends Command {
 			return { error: "You must specify a subcommand: create, delete, check, list." };
 		}
 
-		const rawSubcmd = args.getString()!;
-		const subcmd = rawSubcmd.toLowerCase() as Subcommand;
+		const subcommand = args.getString()!.toLowerCase() as WhitelistSubcommand;
 
-		if (!Object.values(Subcommand).includes(subcmd)) {
+		if (!Object.values(WhitelistSubcommand).includes(subcommand)) {
 			return {
-				error: `Invalid subcommand \`${rawSubcmd}\`. Valid subcommands are: create, delete, check, list.`
+				error: `Invalid subcommand \`${subcommand}\`. Valid subcommands are: create, delete, check, list.`
 			};
 		}
 
 		// List doesn't require a guild ID.
-		if (subcmd === Subcommand.List) {
-			return this._listWhitelists();
+		if (subcommand === WhitelistSubcommand.List) {
+			return Whitelist._list();
 		}
 
 		const guildId = args.getString();
 
 		if (!guildId) {
-			return { error: `You must provide the ID of a guild to ${subcmd} an entry for.` };
+			return { error: `You must provide the ID of a guild to ${subcommand} an entry for.` };
 		}
 
-		const handlers: Record<Exclude<Subcommand, "list">, () => Promise<MessageReplyData>> = {
-			[Subcommand.Create]: () => this._createWhitelist(guildId),
-			[Subcommand.Delete]: () => this._deleteWhitelist(guildId),
-			[Subcommand.Check]: () => this._checkWhitelist(guildId)
-		};
-
-		return handlers[subcmd]();
+		switch (subcommand) {
+			case WhitelistSubcommand.Create:
+				return Whitelist._create(guildId);
+			case WhitelistSubcommand.Delete:
+				return Whitelist._delete(guildId);
+			case WhitelistSubcommand.Check:
+				return Whitelist._check(guildId);
+		}
 	}
 
-	private async _createWhitelist(guildId: string): Promise<MessageReplyData> {
+	private static async _create(guildId: string): Promise<MessageReplyData> {
 		// prettier-ignore
 		const exists = await kysely
 			.selectFrom("Whitelist")
@@ -72,7 +72,7 @@ export default class Whitelist extends Command {
 		};
 	}
 
-	private async _deleteWhitelist(guildId: string): Promise<MessageReplyData> {
+	private static async _delete(guildId: string): Promise<MessageReplyData> {
 		// prettier-ignore
 		const exists = await kysely
 			.selectFrom("Whitelist")
@@ -97,7 +97,7 @@ export default class Whitelist extends Command {
 		};
 	}
 
-	private async _checkWhitelist(guildId: string): Promise<MessageReplyData> {
+	private static async _check(guildId: string): Promise<MessageReplyData> {
 		const cacheEntry = kv.get(`whitelists:${guildId}`) as { status: boolean } | undefined;
 
 		let isWhitelisted: boolean;
@@ -126,7 +126,7 @@ export default class Whitelist extends Command {
 		};
 	}
 
-	private async _listWhitelists(): Promise<MessageReplyData> {
+	private static async _list(): Promise<MessageReplyData> {
 		// prettier-ignore
 		const whitelists = await kysely
 			.selectFrom("Whitelist")
@@ -164,10 +164,9 @@ export default class Whitelist extends Command {
 	}
 }
 
-const Subcommand = {
-	Create: "create",
-	Delete: "delete",
-	Check: "check",
-	List: "list"
-} as const;
-type Subcommand = (typeof Subcommand)[keyof typeof Subcommand];
+enum WhitelistSubcommand {
+	Create = "create",
+	Delete = "delete",
+	Check = "check",
+	List = "list"
+}

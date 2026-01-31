@@ -41,27 +41,27 @@ export interface LogOptions {
 }
 
 export default class Logger {
-	public static debug(...values: unknown[]): void {
+	static debug(...values: unknown[]): void {
 		this._log(LogLevel.Debug, ...values);
 	}
 
-	public static info(...values: unknown[]): void {
+	static info(...values: unknown[]): void {
 		this._log(LogLevel.Info, ...values);
 	}
 
-	public static success(...values: unknown[]): void {
+	static success(...values: unknown[]): void {
 		this._log(LogLevel.Success, ...values);
 	}
 
-	public static warn(...values: unknown[]): void {
+	static warn(...values: unknown[]): void {
 		this._log(LogLevel.Warn, ...values);
 	}
 
-	public static error(...values: unknown[]): void {
+	static error(...values: unknown[]): void {
 		this._log(LogLevel.Error, ...values);
 	}
 
-	public static tracable(sentryId: string, ...values: unknown[]): void {
+	static tracable(sentryId: string, ...values: unknown[]): void {
 		const timestamp = new Date().toISOString();
 		const ts = `${LogColor.Grey}[${timestamp}]${LogColor.Reset}`;
 		const color = this._getColor(LogLevel.Error);
@@ -70,7 +70,7 @@ export default class Logger {
 		console.log(`${ts} ${badge}`, ...values);
 	}
 
-	public static fatal(...values: unknown[]): void {
+	static fatal(...values: unknown[]): void {
 		this._log(LogLevel.Fatal, ...values);
 	}
 
@@ -81,7 +81,7 @@ export default class Logger {
 	 * @param message The message to log.
 	 * @param options Optional log options such as color.
 	 */
-	public static custom(level: string, message: string, options?: LogOptions): void {
+	static custom(level: string, message: string, options?: LogOptions): void {
 		const timestamp = new Date().toISOString();
 		const ts = `${LogColor.Grey}[${timestamp}]${LogColor.Reset}`;
 		const color = options?.color ? LogColor[options.color] : "";

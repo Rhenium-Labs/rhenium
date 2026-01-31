@@ -1,5 +1,4 @@
 import {
-	type Message,
 	type TextBasedChannel,
 	type MessageCreateOptions,
 	type MessageEditOptions,
@@ -11,6 +10,7 @@ import {
 	DiscordAPIError,
 	escapeCodeBlock,
 	hyperlink,
+	Message,
 	RESTJSONErrorCodes,
 	StickerFormatType,
 	cleanContent as djsCleanContent,
@@ -24,26 +24,63 @@ import type { Message as SerializedMessage } from "#kysely/Schema.js";
 
 import Logger from "./Logger.js";
 
-const replies = new WeakMap<Message, Message>();
-
 type MessageOptions = MessageCreateOptions | MessageReplyOptions | MessageEditOptions;
 
-export class MessageQueue {
+export default class Messages {
 	/**
 	 * Collection of messages that are queued to be added to the database.
 	 */
 	private static readonly _cache = new Collection<Snowflake, SerializedMessage>();
 
 	/**
+	 * Tracks reply messages for sent responses.
+	 */
+	private static readonly _replies = new WeakMap<Message, Message>();
+
+	/**
 	 * Set of message IDs currently being purged. Used to prevent duplicate
 	 * delete operations when Discord emits MessageDelete/MessageBulkDelete events
 	 * for messages that are already being handled by a purge action.
 	 */
-	public static readonly purgeExclusions = new Set<Snowflake>();
+	static readonly purgeExclusions = new Set<Snowflake>();
+
+	/**
+	 * Sends a message as a response for `message`, and tracks it.
+	 *
+	 * @param message The message to reply to.
+	 * @param options The options for the message sending, identical to `TextBasedChannel#send`'s options.
+	 * @returns The response message.
+	 */
+	static async send(message: Message, options: string | MessageOptions): Promise<Message> {
+		return this._handle(message, options);
+	}
+
+	/**
+	 * Sends a reply message as a response for `message`, and tracks it.
+	 *
+	 * @param message The message to reply to.
+	 * @param options The options for the message sending, identical to `TextBasedChannel#send`'s options.
+	 * @returns The response message.
+	 */
+	static async reply(message: Message, options: string | MessageOptions): Promise<Message> {
+		const replyOptions: ReplyOptions =
+			typeof options === "string"
+				? {
+						messageReference: message,
+						failIfNotExists: message.client.options.failIfNotExists
+					}
+				: {
+						messageReference: message,
+						failIfNotExists:
+							Reflect.get(options, "failIfNotExists") ?? message.client.options.failIfNotExists
+					};
+
+		return this._handle(message, options, { reply: replyOptions });
+	}
 
 	/** Returns the number of messages currently in the queue. */
-	public static get size(): number {
-		return MessageQueue._cache.size;
+	static get size(): number {
+		return this._cache.size;
 	}
 
 	/**
@@ -52,9 +89,9 @@ export class MessageQueue {
 	 *
 	 * @param ids The message IDs to exclude.
 	 */
-	public static async addPurgeExclusions(ids: Snowflake[]): Promise<void> {
+	static async addPurgeExclusions(ids: Snowflake[]): Promise<void> {
 		for (const id of ids) {
-			MessageQueue.purgeExclusions.add(id);
+			this.purgeExclusions.add(id);
 		}
 	}
 
@@ -63,22 +100,22 @@ export class MessageQueue {
 	 *
 	 * @param ids The message IDs to remove from exclusions.
 	 */
-	public static async removePurgeExclusions(ids: Snowflake[]): Promise<void> {
+	static async removePurgeExclusions(ids: Snowflake[]): Promise<void> {
 		if (ids.length === 0) return;
 
 		for (const id of ids) {
-			MessageQueue.purgeExclusions.delete(id);
+			this.purgeExclusions.delete(id);
 		}
 	}
 
 	/**
 	 * Queues a message to be added to the database.
+	 *
 	 * @param message The message to queue.
 	 */
-
-	public static async enqueue(message: Message<true>): Promise<void> {
-		const messageEntry = MessageQueue.serializeMessage(message);
-		MessageQueue._cache.set(message.id, messageEntry);
+	static async enqueue(message: Message<true>): Promise<void> {
+		const messageEntry = Messages.serialize(message);
+		this._cache.set(message.id, messageEntry);
 	}
 
 	/**
@@ -87,9 +124,8 @@ export class MessageQueue {
 	 * @param id The ID of the message.
 	 * @returns The message, or null if it does not exist.
 	 */
-
-	public static async getMessage(id: Snowflake): Promise<SerializedMessage | null> {
-		let message = MessageQueue._cache.get(id);
+	static async get(id: Snowflake): Promise<SerializedMessage | null> {
+		let message = this._cache.get(id);
 
 		if (!message) {
 			// prettier-ignore
@@ -110,7 +146,7 @@ export class MessageQueue {
 	 * @param data The filter criteria for messages.
 	 * @returns An array of message IDs from the cache.
 	 */
-	public static getMessagesForPurge(data: {
+	static getForPurge(data: {
 		channelId: Snowflake;
 		authorId: Snowflake;
 		triggerMessageId: Snowflake;
@@ -119,7 +155,7 @@ export class MessageQueue {
 		const { channelId, authorId, triggerMessageId, limit } = data;
 
 		// Filter cached messages by channel, author, not deleted, and <= trigger message
-		const matching = MessageQueue._cache.filter(
+		const matching = this._cache.filter(
 			msg =>
 				msg.channel_id === channelId &&
 				msg.author_id === authorId &&
@@ -142,8 +178,8 @@ export class MessageQueue {
 	 * @param limit The maximum number of messages to return.
 	 * @returns An array of serialized messages.
 	 */
-	public static async getMessagesForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
-		const cachedMessages = MessageQueue._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
+	static async getForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
+		const cachedMessages = this._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
 
 		const messages = await kysely
 			.selectFrom("Message")
@@ -176,9 +212,8 @@ export class MessageQueue {
 	 * @param id The ID of the message to update.
 	 * @returns The updated message, or null if it does not exist.
 	 */
-
-	public static async deleteMessage(id: Snowflake): Promise<SerializedMessage | null> {
-		let message = MessageQueue._cache.get(id);
+	static async delete(id: Snowflake): Promise<SerializedMessage | null> {
+		let message = this._cache.get(id);
 
 		if (message) {
 			message.deleted = true;
@@ -200,9 +235,8 @@ export class MessageQueue {
 	 * @param ids The IDs of the messages to update.
 	 * @returns The updated messages.
 	 */
-
-	public static async bulkDeleteMessages(ids: Snowflake[]): Promise<SerializedMessage[]> {
-		const messages = MessageQueue._cache.filter(message => ids.includes(message.id) && !message.deleted);
+	static async bulkDelete(ids: Snowflake[]): Promise<SerializedMessage[]> {
+		const messages = this._cache.filter(message => ids.includes(message.id) && !message.deleted);
 
 		const deletedMessages = messages.map(message => {
 			message.deleted = true;
@@ -232,9 +266,8 @@ export class MessageQueue {
 	 * @param newContent The new content of the message.
 	 * @returns The old content of the message.
 	 */
-
-	public static async updateMessage(id: Snowflake, newContent: string): Promise<string> {
-		const message = MessageQueue._cache.get(id);
+	static async update(id: Snowflake, newContent: string): Promise<string> {
+		const message = this._cache.get(id);
 
 		if (message) {
 			const oldContent = message.content ?? "No message content.";
@@ -254,9 +287,13 @@ export class MessageQueue {
 		return result?.old_content ?? "No message content.";
 	}
 
-	/** Stores all cached messages into the database. */
+	/**
+	 * Stores all cached messages into the database.
+	 *
+	 * @param event Optional signal that triggered the store operation.
+	 */
 	static async store(event?: NodeJS.Signals): Promise<void> {
-		if (MessageQueue._cache.size === 0) {
+		if (this._cache.size === 0) {
 			Logger.info("No cached messages to store.");
 			return;
 		}
@@ -266,12 +303,12 @@ export class MessageQueue {
 		// prettier-ignore
 		const inserted = await kysely
 			.insertInto("Message")
-			.values(Array.from(MessageQueue._cache.values()))
+			.values(Array.from(this._cache.values()))
 			.returning('Message.id')
 			.execute();
 
 		// Clear the cache.
-		MessageQueue._cache.clear();
+		this._cache.clear();
 
 		if (!inserted.length) {
 			Logger.info("No messages were stored.");
@@ -286,11 +323,10 @@ export class MessageQueue {
 	 * @param message The message to serialize.
 	 * @returns The serialized message.
 	 */
-
-	public static serializeMessage(message: Message<true>): SerializedMessage {
+	static serialize(message: Message<true>): SerializedMessage {
 		const stickerId = message.stickers?.first()?.id ?? null;
 		const referenceId = message.reference?.messageId ?? null;
-		const content = cleanMessageContent(message.content, message.channel);
+		const content = Messages.cleanContent(message.content, message.channel);
 
 		return {
 			id: message.id,
@@ -305,168 +341,178 @@ export class MessageQueue {
 			deleted: false
 		};
 	}
-}
 
-/**
- * Sends a message as a response for `message`, and tracks it.
- *
- * @param message The message to replies to.
- * @param options The options for the message sending, identical to `TextBasedChannel#send`'s options.
- * @returns The response message.
- */
-export function send(message: Message, options: string | MessageOptions): Promise<Message> {
-	return handle(message, options);
-}
+	/**
+	 * Formats message content, including stickers and URLs, for display.
+	 *
+	 * @param content The message content.
+	 * @param stickerId The sticker ID.
+	 * @param url The message URL.
+	 * @param options Additional formatting options.
+	 * @returns The formatted message content.
+	 */
 
-/**
- * Sends a reply message as a response for `message`, and tracks it.
- *
- * @param message The message to replies to.
- * @param options The options for the message sending, identical to `TextBasedChannel#send`'s options.
- * @returns The response message.
- */
-export function reply(message: Message, options: string | MessageOptions): Promise<Message> {
-	const replyOptions: ReplyOptions =
-		typeof options === "string"
-			? {
-					messageReference: message,
-					failIfNotExists: message.client.options.failIfNotExists
-				}
-			: {
-					messageReference: message,
-					failIfNotExists:
-						Reflect.get(options, "failIfNotExists") ?? message.client.options.failIfNotExists
-				};
+	static async formatContent(data: {
+		url: string | null;
+		content: string | null;
+		stickerId: string | null;
+		createdAt?: Date;
+		includeUrl?: boolean;
+	}): Promise<string> {
+		const { url, content, stickerId, createdAt, includeUrl = true } = data;
+		const parts: string[] = [];
 
-	return handle(message, options, { reply: replyOptions });
-}
+		if (createdAt) {
+			const timestamp = Math.floor(createdAt.getTime() / 1000);
+			parts.push(`Sent on <t:${timestamp}:f>`);
+		}
 
-async function handle<T extends MessageOptions>(
-	message: Message,
-	options: string | T,
-	extra?: T | undefined
-): Promise<Message> {
-	const existing = replies.get(message) ?? null;
+		if (url && includeUrl) {
+			parts.push(hyperlink("Jump to message", url));
+		}
 
-	const payloadOptions = existing
-		? resolveEditPayload(existing, options as MessageEditOptions)
-		: resolveSendPayload<T>(options);
-	const payload = await MessagePayload.create(message.channel, payloadOptions, extra).resolveBody().resolveFiles();
-	const response = await (existing ? tryEdit(message, existing, payload) : trySend(message, payload));
-	replies.set(message, response);
+		if (stickerId) {
+			const sticker = await client.fetchSticker(stickerId);
+			const stickerText =
+				sticker.format === StickerFormatType.Lottie
+					? `Lottie Sticker: ${sticker.name}`
+					: hyperlink(`Sticker: ${sticker.name}`, sticker.url);
+			parts.push(stickerText);
+		}
 
-	return response;
-}
+		const prefix = parts.length ? parts.join(" `|` ") : "";
+		const separator = prefix ? " `|` " : "";
 
-function resolveSendPayload<T extends MessageOptions>(options: string | MessageOptions): T {
-	return typeof options === "string"
-		? ({ content: options, components: [] } as unknown as T)
-		: ({ components: [], ...options } as T);
-}
+		if (!content) {
+			return prefix + codeBlock("Unknown content.");
+		}
 
-function resolveEditPayload(response: Message, options: string | MessageEditOptions): MessageEditOptions {
-	options = resolveSendPayload<MessageEditOptions>(options);
+		const escapedContent = escapeCodeBlock(content);
 
-	if (response.embeds.length) options.embeds ??= [];
-	if (response.attachments.size) options.attachments ??= [];
+		if (escapedContent.length > 900) {
+			const hastebinUrl = await hastebin(escapedContent, "txt");
+			return prefix + separator + hyperlink("View full content", hastebinUrl!);
+		}
 
-	return options;
-}
-
-async function tryEdit(message: Message, response: Message, payload: MessagePayload) {
-	try {
-		return await response.edit(payload);
-	} catch (error) {
-		// If the error isn't a Discord API Error, re-throw:
-		if (!(error instanceof DiscordAPIError)) throw error;
-
-		// If the error isn't caused by the error triggered by editing a deleted
-		// message, re-throw:
-		if (error.code !== RESTJSONErrorCodes.UnknownMessage) throw error;
-
-		// Free the response temporarily, serves a dual purpose here:
-		//
-		// - A following `send()` (before a new one was sent) call will not
-		//   trigger this error again.
-		// - If the message send throws, no response will be stored.
-		//
-		// We always call `track()` right after `tryEdit()`, so it'll be tracked
-		// once the message has been sent, provided it did not throw.
-		replies.delete(message);
-		return trySend(message, payload);
-	}
-}
-
-async function trySend(message: Message, payload: MessagePayload) {
-	return (message.channel as Exclude<Message["channel"], PartialGroupDMChannel>).send(payload);
-}
-
-/**
- * Formats message content, including stickers and URLs, for display.
- *
- * @param content The message content.
- * @param stickerId The sticker ID.
- * @param url The message URL.
- * @param options Additional formatting options.
- * @returns The formatted message content.
- */
-
-export async function formatMessageContent(data: {
-	url: string | null;
-	content: string | null;
-	stickerId: string | null;
-	createdAt?: Date;
-	includeUrl?: boolean;
-}): Promise<string> {
-	const { url, content, stickerId, createdAt, includeUrl = true } = data;
-	const parts: string[] = [];
-
-	if (createdAt) {
-		const timestamp = Math.floor(createdAt.getTime() / 1000);
-		parts.push(`Sent on <t:${timestamp}:f>`);
+		const maxContentLength = Math.max(0, 900 - prefix.length);
+		return prefix + codeBlock(truncate(escapedContent, maxContentLength));
 	}
 
-	if (url && includeUrl) {
-		parts.push(hyperlink("Jump to message", url));
+	/**
+	 * Clean the content of a message for logging.
+	 *
+	 * @param str The string to clean.
+	 * @param channel The channel this message was sent in.
+	 * @returns The cleaned string.
+	 */
+	static cleanContent(str: string, channel: TextBasedChannel): string {
+		return djsCleanContent(
+			str
+				.replace(/<(a?):([^:\n\r]+):(\d{17,19})>/g, "<$1\\:$2\\:$3>")
+				.replace(/<@!?(\d{17,19})>/g, "<@$1> ($1)"),
+			channel
+		);
 	}
 
-	if (stickerId) {
-		const sticker = await client.fetchSticker(stickerId);
-		const stickerText =
-			sticker.format === StickerFormatType.Lottie
-				? `Lottie Sticker: ${sticker.name}`
-				: hyperlink(`Sticker: ${sticker.name}`, sticker.url);
-		parts.push(stickerText);
+	/**
+	 * Handles sending or editing a message response.
+	 *
+	 * @param message The original message to respond to.
+	 * @param options The message options.
+	 * @param extra Additional options to merge into the payload.
+	 * @returns The sent or edited message.
+	 */
+	private static async _handle<T extends MessageOptions>(
+		message: Message,
+		options: string | T,
+		extra?: T | undefined
+	): Promise<Message> {
+		const existing = this._replies.get(message) ?? null;
+
+		const payloadOptions = existing
+			? this._resolveEditPayload(existing, options as MessageEditOptions)
+			: this._resolveSendPayload<T>(options);
+
+		const payload = await MessagePayload.create(message.channel, payloadOptions, extra)
+			.resolveBody()
+			.resolveFiles();
+
+		const response = await (existing
+			? this._tryEdit(message, existing, payload)
+			: this._trySend(message, payload));
+
+		this._replies.set(message, response);
+
+		return response;
 	}
 
-	const prefix = parts.length ? parts.join(" `|` ") : "";
-	const separator = prefix ? " `|` " : "";
-
-	if (!content) {
-		return prefix + codeBlock("Unknown content.");
+	/**
+	 * Resolves options into a send payload.
+	 *
+	 * @param options The message options (string or object).
+	 * @returns The resolved payload options.
+	 */
+	private static _resolveSendPayload<T extends MessageOptions>(options: string | MessageOptions): T {
+		return typeof options === "string"
+			? ({ content: options, components: [] } as unknown as T)
+			: ({ components: [], ...options } as T);
 	}
 
-	const escapedContent = escapeCodeBlock(content);
+	/**
+	 * Resolves options into an edit payload, preserving embeds and attachments.
+	 *
+	 * @param response The existing response message.
+	 * @param options The edit options.
+	 * @returns The resolved edit payload.
+	 */
+	private static _resolveEditPayload(response: Message, options: string | MessageEditOptions): MessageEditOptions {
+		const resolved = this._resolveSendPayload<MessageEditOptions>(options);
 
-	if (escapedContent.length > 900) {
-		const hastebinUrl = await hastebin(escapedContent, "txt");
-		return prefix + separator + hyperlink("View full content", hastebinUrl!);
+		if (response.embeds.length) resolved.embeds ??= [];
+		if (response.attachments.size) resolved.attachments ??= [];
+
+		return resolved;
 	}
 
-	const maxContentLength = Math.max(0, 900 - prefix.length);
-	return prefix + codeBlock(truncate(escapedContent, maxContentLength));
-}
+	/**
+	 * Attempts to edit an existing message, falling back to send if the message was deleted.
+	 *
+	 * @param message The original message.
+	 * @param response The existing response to edit.
+	 * @param payload The message payload.
+	 * @returns The edited or newly sent message.
+	 */
+	private static async _tryEdit(message: Message, response: Message, payload: MessagePayload): Promise<Message> {
+		try {
+			return await response.edit(payload);
+		} catch (error) {
+			// If the error isn't a Discord API Error, re-throw:
+			if (!(error instanceof DiscordAPIError)) throw error;
 
-/**
- * Clean the content of a message for logging.
- *
- * @param str The string to clean.
- * @param channel The channel this message was sent in.
- * @returns The cleaned string.
- */
-export function cleanMessageContent(str: string, channel: TextBasedChannel): string {
-	return djsCleanContent(
-		str.replace(/<(a?):([^:\n\r]+):(\d{17,19})>/g, "<$1\\:$2\\:$3>").replace(/<@!?(\d{17,19})>/g, "<@$1> ($1)"),
-		channel
-	);
+			// If the error isn't caused by editing a deleted message, re-throw:
+			if (error.code !== RESTJSONErrorCodes.UnknownMessage) throw error;
+
+			// Free the response temporarily, serves a dual purpose here:
+			//
+			// - A following `send()` (before a new one was sent) call will not
+			//   trigger this error again.
+			// - If the message send throws, no response will be stored.
+			//
+			// We always call `_handle()` right after `_tryEdit()`, so it'll be tracked
+			// once the message has been sent, provided it did not throw.
+			this._replies.delete(message);
+			return this._trySend(message, payload);
+		}
+	}
+
+	/**
+	 * Sends a message to the channel.
+	 *
+	 * @param message The original message (used to get the channel).
+	 * @param payload The message payload.
+	 * @returns The sent message.
+	 */
+	private static async _trySend(message: Message, payload: MessagePayload): Promise<Message> {
+		return (message.channel as Exclude<Message["channel"], PartialGroupDMChannel>).send(payload);
+	}
 }

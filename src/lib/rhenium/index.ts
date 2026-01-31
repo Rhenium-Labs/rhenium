@@ -9,10 +9,10 @@ import {
 	type InteractionReplyOptions
 } from "discord.js";
 
-import { reply } from "#utils/Messages.js";
-
 import type { InteractionReplyData, MessageReplyData } from "#utils/Types.js";
 import type { ComponentInteraction } from "./structures/Component.js";
+
+import Messages from "#utils/Messages.js";
 
 // Structures
 export * from "./structures/Rhenium.js";
@@ -99,7 +99,7 @@ export async function processResponse<T extends ResponseType>(type: T, data: Res
 					}
 				: { ...rest };
 
-			const createdMessage = await reply(message, options);
+			const createdMessage = await Messages.reply(message, options);
 
 			if (error || temporary) {
 				setTimeout(() => {

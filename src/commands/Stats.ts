@@ -4,11 +4,11 @@ import { sql } from "kysely";
 import ms from "ms";
 
 import { kysely } from "#root/index.js";
-import { MessageQueue } from "#utils/Messages.js";
 import { ApplyOptions, Command } from "#rhenium";
 
 import type { MessageReplyData } from "#utils/Types.js";
 
+import Messages from "#utils/Messages.js";
 import GlobalConfig from "#root/lib/config/GlobalConfig.js";
 
 @ApplyOptions<Command.Options>({
@@ -78,7 +78,7 @@ export default class Stats extends Command {
 				},
 				{
 					name: "Cached Entities",
-					value: `${users.cache.size} Users / ${guilds.cache.size} Guilds / ${channels.cache.size} Channels / ${members} Members / ${MessageQueue.size} Messages`,
+					value: `${users.cache.size} Users / ${guilds.cache.size} Guilds / ${channels.cache.size} Channels / ${members} Members / ${Messages.size} Messages`,
 					inline: true
 				},
 				{
@@ -94,6 +94,6 @@ export default class Stats extends Command {
 	}
 }
 
-interface DatabaseSizeResult {
+type DatabaseSizeResult = {
 	size_in_mb: number;
-}
+};

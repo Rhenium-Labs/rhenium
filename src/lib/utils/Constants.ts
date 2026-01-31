@@ -1,5 +1,5 @@
 import { GatewayIntentBits, Options, Partials } from "discord.js";
-import z from "zod";
+import { z } from "zod";
 
 /**
  * Gateway intents used by Rhenium.

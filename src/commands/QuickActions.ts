@@ -21,11 +21,12 @@ import {
 	validateEmoji
 } from "#utils/index.js";
 
+import { kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import { kysely } from "#root/index.js";
 
 @ApplyOptions<Command.Options>({
 	name: "quick",
@@ -42,12 +43,12 @@ export default class QuickActions extends Command {
 			defaultMemberPermissions: PermissionFlagsBits.ModerateMembers,
 			options: [
 				{
-					name: QuickSubcommandGroup.Mutes,
+					name: QuickActionSubcommandGroup.Mutes,
 					description: "Manage your quick mute reactions.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
-							name: QuickSubcommand.Add,
+							name: QuickActionSubcommand.Add,
 							description: "Add a quick mute reaction.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
@@ -81,7 +82,7 @@ export default class QuickActions extends Command {
 							]
 						},
 						{
-							name: QuickSubcommand.Remove,
+							name: QuickActionSubcommand.Remove,
 							description: "Remove a quick mute reaction.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
@@ -94,24 +95,24 @@ export default class QuickActions extends Command {
 							]
 						},
 						{
-							name: QuickSubcommand.List,
+							name: QuickActionSubcommand.List,
 							description: "List your quick mute reactions.",
 							type: ApplicationCommandOptionType.Subcommand
 						},
 						{
-							name: QuickSubcommand.Clear,
+							name: QuickActionSubcommand.Clear,
 							description: "Clear all your quick mute reactions.",
 							type: ApplicationCommandOptionType.Subcommand
 						}
 					]
 				},
 				{
-					name: QuickSubcommandGroup.Purges,
+					name: QuickActionSubcommandGroup.Purges,
 					description: "Manage your quick purge reactions.",
 					type: ApplicationCommandOptionType.SubcommandGroup,
 					options: [
 						{
-							name: QuickSubcommand.Add,
+							name: QuickActionSubcommand.Add,
 							description: "Add a quick purge reaction.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
@@ -132,7 +133,7 @@ export default class QuickActions extends Command {
 							]
 						},
 						{
-							name: QuickSubcommand.Remove,
+							name: QuickActionSubcommand.Remove,
 							description: "Remove a quick purge reaction.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
@@ -145,12 +146,12 @@ export default class QuickActions extends Command {
 							]
 						},
 						{
-							name: QuickSubcommand.List,
+							name: QuickActionSubcommand.List,
 							description: "List your quick purge reactions.",
 							type: ApplicationCommandOptionType.Subcommand
 						},
 						{
-							name: QuickSubcommand.Clear,
+							name: QuickActionSubcommand.Clear,
 							description: "Clear all your quick purge reactions.",
 							type: ApplicationCommandOptionType.Subcommand
 						}
@@ -164,45 +165,41 @@ export default class QuickActions extends Command {
 		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
-		const group = interaction.options.getSubcommandGroup(true) as QuickSubcommandGroup;
-		const subcommand = interaction.options.getSubcommand(true) as QuickSubcommand;
+		const group = interaction.options.getSubcommandGroup(true) as QuickActionSubcommandGroup;
+		const subcommand = interaction.options.getSubcommand(true) as QuickActionSubcommand;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		switch (group) {
-			case QuickSubcommandGroup.Mutes: {
-				switch (subcommand) {
-					case QuickSubcommand.Add:
-						return this._addMute(interaction, config);
-					case QuickSubcommand.Remove:
-						return this._removeMute(interaction);
-					case QuickSubcommand.List:
-						return this._listMutes(interaction);
-					case QuickSubcommand.Clear:
-						return this._clearMutes(interaction);
-				}
-			}
-
-			case QuickSubcommandGroup.Purges: {
-				switch (subcommand) {
-					case QuickSubcommand.Add:
-						return this._addPurge(interaction, config);
-					case QuickSubcommand.Remove:
-						return this._removePurge(interaction);
-					case QuickSubcommand.List:
-						return this._listPurges(interaction);
-					case QuickSubcommand.Clear:
-						return this._clearPurges(interaction);
-				}
-			}
-
-			default: {
-				return { error: "Unknown subcommand." };
+		if (group === QuickActionSubcommandGroup.Mutes) {
+			switch (subcommand) {
+				case QuickActionSubcommand.Add:
+					return QuickActions._addQuickMute(interaction, config);
+				case QuickActionSubcommand.Remove:
+					return QuickActions._removeQuickMute(interaction);
+				case QuickActionSubcommand.List:
+					return QuickActions._listQuickMutes(interaction);
+				case QuickActionSubcommand.Clear:
+					return QuickActions._clearQuickMutes(interaction);
 			}
 		}
+
+		if (group === QuickActionSubcommandGroup.Purges) {
+			switch (subcommand) {
+				case QuickActionSubcommand.Add:
+					return QuickActions._addQuickPurge(interaction, config);
+				case QuickActionSubcommand.Remove:
+					return QuickActions._removeQuickPurge(interaction);
+				case QuickActionSubcommand.List:
+					return QuickActions._listQuickPurges(interaction);
+				case QuickActionSubcommand.Clear:
+					return QuickActions._clearQuickPurges(interaction);
+			}
+		}
+
+		return { error: "Unknown subcommand." };
 	}
 
-	private async _addMute(
+	private static async _addQuickMute(
 		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
@@ -241,6 +238,19 @@ export default class QuickActions extends Command {
 		}
 
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
+		const existing = await kysely
+			.selectFrom("QuickMute")
+			.where("user_id", "=", interaction.user.id)
+			.where("guild_id", "=", interaction.guildId)
+			.where("reaction", "=", reactionIdentifier)
+			.executeTakeFirst();
+
+		if (existing) {
+			return {
+				error: `You already have a quick mute configured for this reaction. Remove it first to add a new one.`
+			};
+		}
+
 		const duration = parseDurationString(durationInput);
 
 		if (!duration) {
@@ -262,19 +272,6 @@ export default class QuickActions extends Command {
 		if (purgeAmount > config.data.quick_purges.max_limit) {
 			return {
 				error: `The maximum purge amount for this server is \`${config.data.quick_purges.max_limit}\` messages.`
-			};
-		}
-
-		const existing = await kysely
-			.selectFrom("QuickMute")
-			.where("user_id", "=", interaction.user.id)
-			.where("guild_id", "=", interaction.guildId)
-			.where("reaction", "=", reactionIdentifier)
-			.executeTakeFirst();
-
-		if (existing) {
-			return {
-				error: `You already have a quick mute configured for this reaction. Remove it first to add a new one.`
 			};
 		}
 
@@ -300,7 +297,9 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private async _removeMute(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _removeQuickMute(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const validatedEmoji = await validateEmoji(reactionInput, interaction.guildId);
 
@@ -311,7 +310,6 @@ export default class QuickActions extends Command {
 		}
 
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
-
 		const exists = await kysely
 			.selectFrom("QuickMute")
 			.where("user_id", "=", interaction.user.id)
@@ -341,7 +339,9 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private async _listMutes(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _listQuickMutes(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const quickMutes = await kysely
 			.selectFrom("QuickMute")
 			.selectAll()
@@ -379,7 +379,9 @@ export default class QuickActions extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _clearMutes(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _clearQuickMutes(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const { numDeletedRows } = await kysely
 			.deleteFrom("QuickMute")
 			.where("user_id", "=", interaction.user.id)
@@ -397,7 +399,7 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private async _addPurge(
+	private static async _addQuickPurge(
 		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
@@ -432,14 +434,7 @@ export default class QuickActions extends Command {
 			};
 		}
 
-		if (purgeAmount > purgeConfig.max_limit) {
-			return {
-				error: `The maximum purge amount for this server is \`${purgeConfig.max_limit}\` messages.`
-			};
-		}
-
 		const reactionIdentifier = validatedEmoji.id ?? validatedEmoji.name;
-
 		const existing = await kysely
 			.selectFrom("QuickPurge")
 			.where("user_id", "=", interaction.user.id)
@@ -450,6 +445,12 @@ export default class QuickActions extends Command {
 		if (existing) {
 			return {
 				error: `You already have a quick purge configured for this reaction. Remove it first to add a new one.`
+			};
+		}
+
+		if (purgeAmount > purgeConfig.max_limit) {
+			return {
+				error: `The maximum purge amount for this server is \`${purgeConfig.max_limit}\` messages.`
 			};
 		}
 
@@ -472,7 +473,9 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private async _removePurge(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _removeQuickPurge(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const validatedEmoji = await validateEmoji(reactionInput, interaction.guildId);
 
@@ -513,7 +516,9 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	private async _listPurges(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _listQuickPurges(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const quickPurges = await kysely
 			.selectFrom("QuickPurge")
 			.selectAll()
@@ -548,7 +553,9 @@ export default class QuickActions extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _clearPurges(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _clearQuickPurges(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const { numDeletedRows } = await kysely
 			.deleteFrom("QuickPurge")
 			.where("user_id", "=", interaction.user.id)
@@ -567,18 +574,14 @@ export default class QuickActions extends Command {
 	}
 }
 
-const QuickSubcommandGroup = {
-	Mutes: "mutes",
-	Purges: "purges"
-} as const;
+enum QuickActionSubcommandGroup {
+	Mutes = "mutes",
+	Purges = "purges"
+}
 
-type QuickSubcommandGroup = (typeof QuickSubcommandGroup)[keyof typeof QuickSubcommandGroup];
-
-const QuickSubcommand = {
-	Add: "add",
-	Remove: "remove",
-	List: "list",
-	Clear: "clear"
-} as const;
-
-type QuickSubcommand = (typeof QuickSubcommand)[keyof typeof QuickSubcommand];
+enum QuickActionSubcommand {
+	Add = "add",
+	Remove = "remove",
+	List = "list",
+	Clear = "clear"
+}

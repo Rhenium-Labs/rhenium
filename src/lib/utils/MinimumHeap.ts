@@ -13,28 +13,12 @@ export default class MinimumHeap {
 	/** Tracks the last cleanup time. */
 	private lastCleanup: number = Date.now();
 
-	/**
-	 * Compares two entries to determine their relative priority.
-	 *
-	 * @param a First entry to compare.
-	 * @param b Second entry to compare.
-	 * @returns Negative if `a` has higher priority, positive if `b` has higher priority, zero if equal.
-	 */
-	private compare(a: PriorityQueueEntry, b: PriorityQueueEntry): number {
-		// Primary sort: by nextScan time (ascending).
-		const timeDiff = a.nextScan - b.nextScan;
-		if (timeDiff !== 0) return timeDiff;
-
-		// Secondary sort: by risk (descending - higher risk = higher priority).
-		return b.risk - a.risk;
-	}
-
 	/** Add a new entry to the heap. Enforces size limits. */
 	public push(entry: PriorityQueueEntry): void {
 		const now = Date.now();
 
 		if (now - this.lastCleanup > 60000) {
-			this.pruneStaleEntries(now);
+			this._pruneStaleEntries(now);
 			this.lastCleanup = now;
 		}
 
@@ -44,44 +28,21 @@ export default class MinimumHeap {
 			let worstIdx = 0;
 
 			for (let i = 1; i < this.heap.length; i++) {
-				if (this.compare(this.heap[i], this.heap[worstIdx]) > 0) {
+				if (this._compare(this.heap[i], this.heap[worstIdx]) > 0) {
 					worstIdx = i;
 				}
 			}
 
 			// Only replace if new entry is better
-			if (this.compare(entry, this.heap[worstIdx]) < 0) {
+			if (this._compare(entry, this.heap[worstIdx]) < 0) {
 				this.heap[worstIdx] = entry;
-				this.rebuildHeap();
+				this._rebuildHeap();
 			}
 			return;
 		}
 
 		this.heap.push(entry);
-		this.bubbleUp();
-	}
-
-	/** Remove entries that are too old to be relevant. */
-	private pruneStaleEntries(now: number): void {
-		const cutoff = now - MAX_ENTRY_AGE_MS;
-		const before = this.heap.length;
-
-		this.heap = this.heap.filter(e => e.enqueuedAt > cutoff);
-
-		if (this.heap.length !== before) {
-			this.rebuildHeap();
-		}
-	}
-
-	/** Rebuild the entire heap from scratch. */
-	private rebuildHeap(): void {
-		const entries = [...this.heap];
-		this.heap = [];
-
-		for (const entry of entries) {
-			this.heap.push(entry);
-			this.bubbleUp();
-		}
+		this._bubbleUp();
 	}
 
 	/**
@@ -98,7 +59,7 @@ export default class MinimumHeap {
 		// Move last element to root and restore heap property.
 		if (this.heap.length > 0 && end) {
 			this.heap[0] = end;
-			this.sinkDown();
+			this._sinkDown();
 		}
 
 		return top;
@@ -119,8 +80,47 @@ export default class MinimumHeap {
 		return this.heap.length === 0;
 	}
 
+	/**
+	 * Compares two entries to determine their relative priority.
+	 *
+	 * @param a First entry to compare.
+	 * @param b Second entry to compare.
+	 * @returns Negative if `a` has higher priority, positive if `b` has higher priority, zero if equal.
+	 */
+	private _compare(a: PriorityQueueEntry, b: PriorityQueueEntry): number {
+		// Primary sort: by nextScan time (ascending).
+		const timeDiff = a.nextScan - b.nextScan;
+		if (timeDiff !== 0) return timeDiff;
+
+		// Secondary sort: by risk (descending - higher risk = higher priority).
+		return b.risk - a.risk;
+	}
+
+	/** Remove entries that are too old to be relevant. */
+	private _pruneStaleEntries(now: number): void {
+		const cutoff = now - MAX_ENTRY_AGE_MS;
+		const before = this.heap.length;
+
+		this.heap = this.heap.filter(e => e.enqueuedAt > cutoff);
+
+		if (this.heap.length !== before) {
+			this._rebuildHeap();
+		}
+	}
+
+	/** Rebuild the entire heap from scratch. */
+	private _rebuildHeap(): void {
+		const entries = [...this.heap];
+		this.heap = [];
+
+		for (const entry of entries) {
+			this.heap.push(entry);
+			this._bubbleUp();
+		}
+	}
+
 	/** Restores heap property by moving the last element up to its correct position. */
-	private bubbleUp(): void {
+	private _bubbleUp(): void {
 		let idx = this.heap.length - 1;
 		const entry = this.heap[idx];
 
@@ -129,7 +129,7 @@ export default class MinimumHeap {
 			const parent = this.heap[parentIdx];
 
 			// Stop if parent has higher or equal priority.
-			if (this.compare(entry, parent) >= 0) break;
+			if (this._compare(entry, parent) >= 0) break;
 
 			// Swap with parent and continue.
 			this.heap[parentIdx] = entry;
@@ -139,7 +139,7 @@ export default class MinimumHeap {
 	}
 
 	/** Restores heap property by moving the root element down to its correct position. */
-	private sinkDown(): void {
+	private _sinkDown(): void {
 		let idx = 0;
 		const length = this.heap.length;
 		const entry = this.heap[0];
@@ -150,15 +150,15 @@ export default class MinimumHeap {
 			let swapIdx: number | null = null;
 
 			// Check if left child has higher priority
-			if (leftIdx < length && this.compare(this.heap[leftIdx], entry) < 0) {
+			if (leftIdx < length && this._compare(this.heap[leftIdx], entry) < 0) {
 				swapIdx = leftIdx;
 			}
 
 			// Check if right child has higher priority than both current and left.
 			if (rightIdx < length) {
 				const rightHasHigherPriority =
-					(swapIdx === null && this.compare(this.heap[rightIdx], entry) < 0) ||
-					(swapIdx !== null && this.compare(this.heap[rightIdx], this.heap[leftIdx]) < 0);
+					(swapIdx === null && this._compare(this.heap[rightIdx], entry) < 0) ||
+					(swapIdx !== null && this._compare(this.heap[rightIdx], this.heap[leftIdx]) < 0);
 
 				if (rightHasHigherPriority) {
 					swapIdx = rightIdx;

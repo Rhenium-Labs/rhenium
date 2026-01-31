@@ -20,11 +20,11 @@ import {
 import { kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 import { cropLines, userMentionWithId } from "#utils/index.js";
-import { cleanMessageContent, formatMessageContent } from "#utils/Messages.js";
 
 import type { MessageReport } from "#kysely/Schema.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
+import Messages from "#utils/Messages.js";
 import GuildConfig, { ValidatedMessageReportsConfig } from "#config/GuildConfig.js";
 
 @ApplyOptions<Command.Options>({
@@ -170,7 +170,7 @@ export default class ReportMessageCtx extends Command {
 	 * @returns Interaction reply data indicating success or failure.
 	 */
 
-	public static async createReport(data: {
+	static async createReport(data: {
 		interaction: Command.Interaction<"messageContextMenu"> | ModalSubmitInteraction<"cached">;
 		config: ValidatedMessageReportsConfig;
 		author: User;
@@ -179,11 +179,11 @@ export default class ReportMessageCtx extends Command {
 	}): Promise<InteractionReplyData> {
 		const { interaction, config, author, message, reason } = data;
 
-		const messageContent = cleanMessageContent(message.content, message.channel);
+		const messageContent = Messages.cleanContent(message.content, message.channel);
 		const croppedContent = cropLines(messageContent, 5);
 		const stickerId = message.stickers.first()?.id ?? null;
 
-		const formattedContent = await formatMessageContent({
+		const formattedContent = await Messages.formatContent({
 			url: message.url,
 			content: croppedContent,
 			stickerId: stickerId,
@@ -220,11 +220,11 @@ export default class ReportMessageCtx extends Command {
 		const actionRow = new ActionRowBuilder<ButtonBuilder>();
 
 		if (reference) {
-			const referenceContent = cleanMessageContent(reference.content, reference.channel);
+			const referenceContent = Messages.cleanContent(reference.content, reference.channel);
 			const croppedReferenceContent = cropLines(referenceContent, 5);
 			const stickerId = reference.stickers.first()?.id ?? null;
 
-			const formattedReferenceContent = await formatMessageContent({
+			const formattedReferenceContent = await Messages.formatContent({
 				url: reference.url,
 				content: croppedReferenceContent,
 				stickerId: stickerId,
@@ -338,7 +338,7 @@ export default class ReportMessageCtx extends Command {
 	 * @returns The sent API message or null if updating failed.
 	 */
 
-	public static async updateReport(data: {
+	static async updateReport(data: {
 		interaction: Command.Interaction<"messageContextMenu">;
 		config: ValidatedMessageReportsConfig;
 		report: MessageReport;
@@ -385,7 +385,7 @@ export default class ReportMessageCtx extends Command {
 	 * @return Interaction reply data indicating success or failure.
 	 */
 
-	public static async processReport(data: {
+	static async processReport(data: {
 		interaction: ButtonInteraction<"cached">;
 		config: ValidatedMessageReportsConfig;
 		action: MessageReportAction;

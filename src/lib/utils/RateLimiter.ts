@@ -41,18 +41,11 @@ export default class RateLimiter {
 		// Start global prune interval if not already running
 		if (!RateLimiter._globalPruneInterval) {
 			RateLimiter._globalPruneInterval = setInterval(() => {
-				RateLimiter.pruneAll();
+				RateLimiter._pruneAll();
 			}, PRUNE_INTERVAL_MS);
 
 			// Allow the process to exit even with interval running
 			RateLimiter._globalPruneInterval.unref();
-		}
-	}
-
-	/** Prune all registered rate limiters. */
-	private static pruneAll(): void {
-		for (const instance of RateLimiter._instances) {
-			instance.prune();
 		}
 	}
 
@@ -165,6 +158,13 @@ export default class RateLimiter {
 			for (const [key] of toRemove) {
 				this._cache.delete(key);
 			}
+		}
+	}
+
+	/** Prune all registered rate limiters. */
+	private static _pruneAll(): void {
+		for (const instance of RateLimiter._instances) {
+			instance.prune();
 		}
 	}
 }

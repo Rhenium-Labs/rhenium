@@ -48,7 +48,7 @@ export default class AutomatedScanner {
 	};
 
 	/** Start the tick loop for processing queued scans. */
-	public static startTickLoop(): void {
+	static startTickLoop(): void {
 		if (this._tickInterval) return;
 
 		this._tickInterval = setInterval(() => this.tick(), CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS);
@@ -60,7 +60,7 @@ export default class AutomatedScanner {
 	}
 
 	/** Stop the tick loop. */
-	public static stopTickLoop(): void {
+	static stopTickLoop(): void {
 		if (this._tickInterval) {
 			clearInterval(this._tickInterval);
 			this._tickInterval = null;
@@ -105,7 +105,7 @@ export default class AutomatedScanner {
 	 * @param channelId The ID of the channel.
 	 * @returns The ChannelScanState for the channel.
 	 */
-	public static getOrInitChannelState(channelId: Snowflake): ChannelScanState {
+	static getOrInitChannelState(channelId: Snowflake): ChannelScanState {
 		// Update last activity timestamp
 		this._channelLastActivity.set(channelId, Date.now());
 		let state = this._channelScanStates.get(channelId);
@@ -146,7 +146,7 @@ export default class AutomatedScanner {
 	 * @param config The content filter configuration.
 	 * @param serializedMessage The serialized message data.
 	 */
-	public static enqueueForScan(
+	static enqueueForScan(
 		message: Message<true>,
 		config: ValidatedContentFilterConfig,
 		serializedMessage: SerializedMessage
@@ -270,7 +270,7 @@ export default class AutomatedScanner {
 	 * @param channelId The ID of the channel.
 	 * @param wasFalse Whether the alert was marked as false positive.
 	 */
-	public static async handleModeratorFeedback(channelId: Snowflake, wasFalse: boolean): Promise<void> {
+	static async handleModeratorFeedback(channelId: Snowflake, wasFalse: boolean): Promise<void> {
 		const state = this.getOrInitChannelState(channelId);
 
 		const prevA = state.betaA ?? 1;
@@ -309,7 +309,7 @@ export default class AutomatedScanner {
 	 * @param message The message to scan.
 	 * @param config The content filter configuration.
 	 */
-	public static async automatedScan(
+	static async automatedScan(
 		channel: TextChannel,
 		message: Message<true>,
 		config: ValidatedContentFilterConfig
@@ -362,7 +362,7 @@ export default class AutomatedScanner {
 	 * @param options Optional parameters including risk score and force scan flag.
 	 * @returns An object containing the channel state, whether to scan, smoothed false positive ratio, and risk score; or null if scanning is disabled.
 	 */
-	public static async prepareChannelForScan(
+	static async prepareChannelForScan(
 		channel: TextChannel,
 		message: Message<true>,
 		config: ValidatedContentFilterConfig,
@@ -480,10 +480,7 @@ export default class AutomatedScanner {
 	 * @param message The message from the priority user.
 	 * @param config The content filter configuration.
 	 */
-	public static async sendPriorityUserWarning(
-		message: Message<true>,
-		config: ValidatedContentFilterConfig
-	): Promise<any> {
+	static async sendPriorityUserWarning(message: Message<true>, config: ValidatedContentFilterConfig): Promise<any> {
 		if (!config.webhook_url) return;
 
 		const embed = new EmbedBuilder()
@@ -506,7 +503,7 @@ export default class AutomatedScanner {
 	 * @param newRate The new scan rate in messages per minute.
 	 * @param config The content filter configuration.
 	 */
-	public static async sendScanRateChangeLog(
+	static async sendScanRateChangeLog(
 		channel: TextChannel,
 		newRate: number,
 		config: ValidatedContentFilterConfig
@@ -534,7 +531,7 @@ export default class AutomatedScanner {
 	 * @param state The channel scan state.
 	 * @returns The computed dynamic base scan rate.
 	 */
-	public static getDynamicBaseScanRateForState(state: ChannelScanState): number {
+	static getDynamicBaseScanRateForState(state: ChannelScanState): number {
 		const ewmaMpm = state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE;
 		const beta = this._betaMean(state);
 
@@ -557,7 +554,7 @@ export default class AutomatedScanner {
 	 * @param riskScore The risk score of the message (0 to 1).
 	 * @returns The computed dynamic weight.
 	 */
-	public static computeDynamicWeight(detectorWeight: number, severity: number, riskScore: number): number {
+	static computeDynamicWeight(detectorWeight: number, severity: number, riskScore: number): number {
 		const w =
 			detectorWeight *
 			(CF_CONSTANTS.HEURISTIC_DYNAMIC_WEIGHT_BASE +
@@ -581,7 +578,7 @@ export default class AutomatedScanner {
 	 * @param smoothedFalsePositive The smoothed false positive ratio for the channel.
 	 * @returns void
 	 */
-	public static async applyPredictionsToState(
+	static async applyPredictionsToState(
 		state: ChannelScanState,
 		authorId: Snowflake,
 		predictions: ContentPredictions[],
@@ -622,7 +619,7 @@ export default class AutomatedScanner {
 	 * @param smoothedFalsePositive The smoothed false positive ratio for the channel.
 	 * @returns Whether the scan rate change should be logged.
 	 */
-	public static adjustScanRate(state: ChannelScanState, now: number, smoothedFalsePositive = 0): boolean {
+	static adjustScanRate(state: ChannelScanState, now: number, smoothedFalsePositive = 0): boolean {
 		// Decay beta priors toward uninformative prior over time.
 		try {
 			const last = state.betaLastUpdate ?? now;
@@ -738,7 +735,7 @@ export default class AutomatedScanner {
 	 * @param now The current timestamp in milliseconds.
 	 * @param ttl The time-to-live for user scores in milliseconds.
 	 */
-	public static cleanupOldTimestamps(state: ChannelScanState, now: number, ttl: number): void {
+	static cleanupOldTimestamps(state: ChannelScanState, now: number, ttl: number): void {
 		state.scanTimestamps = state.scanTimestamps.filter(
 			(ts: number) => now - ts < CF_CONSTANTS.HEURISTIC_SCAN_WINDOW
 		);
@@ -863,7 +860,7 @@ export default class AutomatedScanner {
 	 * @param smoothedFalsePositive The smoothed false positive ratio for the channel.
 	 * @returns The computed priority threshold.
 	 */
-	public static computePriorityThreshold(state: ChannelScanState, smoothedFalsePositive: number): number {
+	static computePriorityThreshold(state: ChannelScanState, smoothedFalsePositive: number): number {
 		const base = CF_CONSTANTS.HEURISTIC_PRIORITY_USER_FLAG_THRESHOLD || 2;
 		const multiplier =
 			1 +

@@ -2,7 +2,6 @@ import { distance } from "closest-match";
 import type { Snowflake, TextChannel, Message as DiscordMessage } from "discord.js";
 
 import { ScanTypes } from "./Enums.js";
-import { MessageQueue } from "#utils/Messages.js";
 import { CF_CONSTANTS } from "#utils/Constants.js";
 import { channelInScope, parseChannelScoping } from "#utils/index.js";
 
@@ -11,6 +10,7 @@ import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
 import type { ContentPredictions, HeuristicData, HeuristicMessageData } from "./Types.js";
 
 import Logger from "#utils/Logger.js";
+import Messages from "#utils/Messages.js";
 import ContentFilter from "./ContentFilter.js";
 import AutomatedScanner from "./AutomatedScanner.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
@@ -32,7 +32,7 @@ export default class HeuristicScanner {
 	private static _cleanupInterval: NodeJS.Timeout | null = null;
 
 	/** Start the cleanup interval. */
-	public static startCleanupInterval(): void {
+	static startCleanupInterval(): void {
 		if (this._cleanupInterval) return;
 
 		this._cleanupInterval = setInterval(() => this._pruneStaleEntries(), 5 * 60 * 1000);
@@ -40,7 +40,7 @@ export default class HeuristicScanner {
 	}
 
 	/** Stop the cleanup interval and clear all timers. */
-	public static stopCleanupInterval(): void {
+	static stopCleanupInterval(): void {
 		if (this._cleanupInterval) {
 			clearInterval(this._cleanupInterval);
 			this._cleanupInterval = null;
@@ -91,7 +91,7 @@ export default class HeuristicScanner {
 	 * @param messages The serialized messages to analyze.
 	 * @returns True if chat rate has increased, false otherwise.
 	 */
-	public static calculateChatRateIncrease(messages: Message[]): boolean {
+	static calculateChatRateIncrease(messages: Message[]): boolean {
 		const recentMessages = this.getRecentMessages(messages);
 		const previousMessages = this.getPreviousMessages(messages);
 
@@ -115,7 +115,7 @@ export default class HeuristicScanner {
 	 * @param messages The serialized messages to analyze.
 	 * @returns Previous messages from the defined time range.
 	 */
-	public static getPreviousMessages(messages: Message[]): Message[] {
+	static getPreviousMessages(messages: Message[]): Message[] {
 		const now = Date.now();
 		return messages.filter(
 			m =>
@@ -130,7 +130,7 @@ export default class HeuristicScanner {
 	 * @param messages The serialized messages to analyze.
 	 * @returns Messages that match reaction patterns.
 	 */
-	public static findReactionMessages(messages: Message[]): Message[] {
+	static findReactionMessages(messages: Message[]): Message[] {
 		const reactionMessages: Message[] = [];
 
 		for (const m of messages) {
@@ -148,7 +148,7 @@ export default class HeuristicScanner {
 	 * @param messages The serialized messages to analyze.
 	 * @returns Messages that are similar to others in the set.
 	 */
-	public static findMatchingMessages(messages: Message[]): Message[] {
+	static findMatchingMessages(messages: Message[]): Message[] {
 		const matchingMessages: Message[] = [];
 
 		for (let i = 0; i < messages.length - 1; i++) {
@@ -178,7 +178,7 @@ export default class HeuristicScanner {
 	 * @param matchingMessages Messages identified as similar/matching.
 	 * @param chatRateIncreased Whether the chat rate has increased significantly.
 	 */
-	public static async calculateHeuristics(
+	static async calculateHeuristics(
 		reactionMessages: Message[],
 		matchingMessages: Message[],
 		chatRateIncreased: boolean
@@ -194,8 +194,8 @@ export default class HeuristicScanner {
 				if (idx !== -1) {
 					referenceData[idx].score++;
 				} else {
-					// Fetch reference message from MessageQueue.
-					const reference = await MessageQueue.getMessage(message.reference_id);
+					// Fetch reference message from Messages.
+					const reference = await Messages.get(message.reference_id);
 
 					if (reference) {
 						referenceData.push({
@@ -226,7 +226,7 @@ export default class HeuristicScanner {
 	 * @param chatRateIncreased Whether the chat rate has increased significantly.
 	 * @returns Updated content predictions with heuristic data included.
 	 */
-	public static applyHeuristicsToPredictions(
+	static applyHeuristicsToPredictions(
 		predictions: ContentPredictions[],
 		reactionMessages: Message[],
 		matchingMessages: Message[],
@@ -271,10 +271,7 @@ export default class HeuristicScanner {
 	 * @param config The content filter configuration.
 	 * @return void
 	 */
-	public static async triggerScan(
-		message: DiscordMessage<true>,
-		config: ValidatedContentFilterConfig
-	): Promise<void> {
+	static async triggerScan(message: DiscordMessage<true>, config: ValidatedContentFilterConfig): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
 		const channel = message.channel as TextChannel;
@@ -356,8 +353,8 @@ export default class HeuristicScanner {
 			CF_CONSTANTS.HEURISTIC_WINDOW_SIZE * CF_CONSTANTS.HEURISTIC_DYNAMIC_WINDOW_MULT_MAX
 		);
 
-		// Get messages from the queue.
-		const serializedMessages = await MessageQueue.getMessagesForChannel(channelId, windowSize);
+		// Get messages for the channel within the dynamic window.
+		const serializedMessages = await Messages.getForChannel(channelId, windowSize);
 		if (serializedMessages.length === 0) return;
 
 		const chatRateIncreased = this.calculateChatRateIncrease(serializedMessages);

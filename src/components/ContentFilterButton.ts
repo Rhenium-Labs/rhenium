@@ -1,6 +1,5 @@
 import { Colors, EmbedBuilder, MessageFlags, ComponentType } from "discord.js";
 
-import { MessageQueue } from "#utils/Messages.js";
 import { ContentFilterStatus } from "#kysely/Enums.js";
 import { ApplyOptions, Component } from "#rhenium";
 import { ContentFilterFieldNames } from "#cf/Enums.js";
@@ -8,6 +7,7 @@ import { hastebin, userMentionWithId } from "#utils/index.js";
 
 import type { InteractionReplyData } from "#utils/Types.js";
 
+import Messages from "#utils/Messages.js";
 import GuildConfig from "#root/lib/config/GuildConfig.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
@@ -302,7 +302,7 @@ export default class ContentFilterButton extends Component {
 		}
 
 		// Fall back to the message content in the Message table
-		const dbMessage = await MessageQueue.getMessage(messageId);
+		const dbMessage = await Messages.get(messageId);
 
 		if (!dbMessage) {
 			return { error: "Could not find the message content in the database." };

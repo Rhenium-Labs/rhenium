@@ -1,7 +1,7 @@
 import { Events, type Collection, type PartialMessage, type Snowflake } from "discord.js";
-
-import { MessageQueue } from "#utils/Messages.js";
 import { ApplyOptions, EventListener } from "#rhenium";
+
+import Messages from "#utils/Messages.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.MessageBulkDelete
@@ -14,8 +14,8 @@ export default class MessageBulkDelete extends EventListener {
 
 		if (messageIds.length === 0) return;
 		// Skip if any of these messages are being handled by a purge action.
-		if (messageIds.some(id => MessageQueue.purgeExclusions.has(id))) return;
+		if (messageIds.some(id => Messages.purgeExclusions.has(id))) return;
 
-		return MessageQueue.bulkDeleteMessages(messageIds);
+		return Messages.bulkDelete(messageIds);
 	}
 }

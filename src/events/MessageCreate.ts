@@ -1,9 +1,9 @@
 import { type Message, Events } from "discord.js";
 
-import { MessageQueue } from "#utils/Messages.js";
 import { getWhitelistStatus } from "#utils/index.js";
 import { ApplyOptions, EventListener } from "#rhenium";
 
+import Messages from "#utils/Messages.js";
 import Highlights from "#root/commands/Highlights.js";
 import GlobalConfig from "#root/lib/config/GlobalConfig.js";
 import ConfigManager from "#root/lib/config/ConfigManager.js";
@@ -32,7 +32,7 @@ export default class MessageCreate extends EventListener {
 		const config = (await ConfigManager.get(message.guild.id)).getContentFilterConfig();
 
 		if (config) {
-			const serializedMessage = MessageQueue.serializeMessage(message);
+			const serializedMessage = Messages.serialize(message);
 
 			void Promise.all([
 				AutomatedScanner.enqueueForScan(message, config, serializedMessage),
@@ -42,7 +42,7 @@ export default class MessageCreate extends EventListener {
 
 		void Promise.all([
 			store.handleMessageCommand(message),
-			MessageQueue.enqueue(message),
+			Messages.enqueue(message),
 			Highlights.highlightMessage(message)
 		]);
 	}

@@ -41,7 +41,7 @@ export default class ContentFilter {
 	 * @param message The message that triggered the alert.
 	 * @param config The content filter configuration.
 	 */
-	public static async createContentFilterAlert(
+	static async createContentFilterAlert(
 		predictions: ContentPredictions[],
 		scanType: ScanType,
 		message: Message<true>,
@@ -236,7 +236,7 @@ export default class ContentFilter {
 	 * @param config The content filter configuration.
 	 * @returns The content predictions or null if no issues found.
 	 */
-	public static async scanMessage(
+	static async scanMessage(
 		message: Message<true>,
 		detector: Detector,
 		config: ValidatedContentFilterConfig
@@ -376,7 +376,7 @@ export default class ContentFilter {
 	 * @param message The message being scanned (optional).
 	 * @returns The content prediction data.
 	 */
-	public static async openAiScan(
+	static async openAiScan(
 		content: ModerationMultiModalInput[] | string,
 		config: ValidatedContentFilterConfig,
 		message?: Message<true>
@@ -427,7 +427,7 @@ export default class ContentFilter {
 	 * @param minScore The minimum score threshold for flagging.
 	 * @returns The content prediction data.
 	 */
-	public static parseOpenAiModerationResults(results: Moderation[], minScore: number): ContentPredictionData[] {
+	static parseOpenAiModerationResults(results: Moderation[], minScore: number): ContentPredictionData[] {
 		const predictions: ContentPredictionData[] = [];
 
 		for (const result of results) {
@@ -455,7 +455,7 @@ export default class ContentFilter {
 	 * @param config The content filter configuration.
 	 * @returns An array of content predictions from all detectors.
 	 */
-	public static async runDetectors(
+	static async runDetectors(
 		_channel: TextBasedChannel,
 		message: Message<true>,
 		config: ValidatedContentFilterConfig

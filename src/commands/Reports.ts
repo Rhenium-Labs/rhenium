@@ -8,9 +8,10 @@ import {
 
 import { kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
+
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import GuildConfig from "#root/lib/config/GuildConfig.js";
+import GuildConfig, { type ValidatedMessageReportsConfig } from "#config/GuildConfig.js";
 
 @ApplyOptions<Command.Options>({
 	name: "reports",
@@ -60,54 +61,68 @@ export default class Reports extends Command {
 		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
 	): Promise<InteractionReplyData> {
-		const subcommand = interaction.options.getSubcommand(true);
+		const subcommand = interaction.options.getSubcommand(true) as ReportSubcommand;
 		const config = configClass.getMessageReportsConfig();
 
 		if (!config) {
 			return { error: "Message reports have not been configured on this server." };
 		}
 
-		switch (subcommand) {
-			case "blacklist": {
-				const user = interaction.options.getUser("user", true);
-
-				if (config.blacklisted_users.includes(user.id)) {
-					return { error: "This user is already blacklisted from using the report system." };
-				}
-
-				await kysely
-					.updateTable("MessageReportConfig")
-					.set({ blacklisted_users: [...config.blacklisted_users, user.id] })
-					.where("id", "=", interaction.guild.id)
-					.execute();
-
-				return {
-					content: `Successfully blacklisted ${user.tag} from using the report system.`
-				};
-			}
-
-			case "unblacklist": {
-				const user = interaction.options.getUser("user", true);
-
-				if (!config.blacklisted_users.includes(user.id)) {
-					return { error: "This user is not blacklisted from using the report system." };
-				}
-
-				await kysely
-					.updateTable("MessageReportConfig")
-					.set({
-						blacklisted_users: config.blacklisted_users.filter(id => id !== user.id)
-					})
-					.where("id", "=", interaction.guild.id)
-					.execute();
-
-				return {
-					content: `Successfully unblacklisted ${user.tag} from using the report system.`
-				};
-			}
-
-			default:
-				return { error: "Unknown subcommand." };
+		if (subcommand === ReportSubcommand.Blacklist) {
+			return Reports._blacklistUser(interaction, config);
 		}
+
+		if (subcommand === ReportSubcommand.Unblacklist) {
+			return Reports._unblacklistUser(interaction, config);
+		}
+
+		return { error: "Unknown subcommand." };
 	}
+
+	private static async _blacklistUser(
+		interaction: Command.Interaction<"chatInput">,
+		config: ValidatedMessageReportsConfig
+	): Promise<InteractionReplyData> {
+		const user = interaction.options.getUser("user", true);
+
+		if (config.blacklisted_users.includes(user.id)) {
+			return { error: "This user is already blacklisted from using the report system." };
+		}
+
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ blacklisted_users: [...config.blacklisted_users, user.id] })
+			.where("id", "=", interaction.guild.id)
+			.execute();
+
+		return {
+			content: `Successfully blacklisted ${user.tag} from using the report system.`
+		};
+	}
+
+	private static async _unblacklistUser(
+		interaction: Command.Interaction<"chatInput">,
+		config: ValidatedMessageReportsConfig
+	): Promise<InteractionReplyData> {
+		const user = interaction.options.getUser("user", true);
+
+		if (!config.blacklisted_users.includes(user.id)) {
+			return { error: "This user is not blacklisted from using the report system." };
+		}
+
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ blacklisted_users: config.blacklisted_users.filter(id => id !== user.id) })
+			.where("id", "=", interaction.guild.id)
+			.execute();
+
+		return {
+			content: `Successfully unblacklisted ${user.tag} from using the report system.`
+		};
+	}
+}
+
+enum ReportSubcommand {
+	Blacklist = "blacklist",
+	Unblacklist = "unblacklist"
 }

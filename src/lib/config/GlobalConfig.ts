@@ -4,12 +4,12 @@ import { fromError } from "zod-validation-error";
 import ms from "ms";
 import fs from "node:fs";
 
-import { MessageQueue } from "#utils/Messages.js";
 import { client, kysely } from "#root/index.js";
 import { LOG_DATE_FORMAT, ZOD_CRON_REGEX } from "#utils/Constants.js";
 import { inflect, readYamlFile, startCronJob } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
+import Messages from "#utils/Messages.js";
 import ConfigManager from "./ConfigManager.js";
 
 export default class GlobalConfig {
@@ -32,7 +32,7 @@ export default class GlobalConfig {
 	});
 
 	/** Caches the global configuration data from the .yml file. */
-	public static async cache(): Promise<void> {
+	static async cache(): Promise<void> {
 		Logger.info("Caching global configuration...");
 
 		if (!fs.existsSync("cfg.global.yml")) {
@@ -60,19 +60,19 @@ export default class GlobalConfig {
 	 * @returns True if the user ID is a developer, false otherwise.
 	 */
 
-	public static isDeveloper(userId: string): boolean {
+	static isDeveloper(userId: string): boolean {
 		return this._data.developers.includes(userId);
 	}
 
 	/** Starts the cron jobs responsible for managing messages in the database. */
-	public static startMessageRetentionCronJobs(): void {
+	static startMessageRetentionCronJobs(): void {
 		const { insert_cron, delete_cron, ttl } = this._data.database.messages;
 
 		startCronJob({
 			monitorSlug: "MESSAGE_INSERT_CRON",
 			cronTime: insert_cron,
 			onTick: async () => {
-				await MessageQueue.store().catch(error => {
+				await Messages.store().catch(error => {
 					Logger.error("Failed to insert messages into the database:", error);
 				});
 			}
@@ -105,7 +105,7 @@ export default class GlobalConfig {
 	}
 
 	/** Starts the cron job for automatically disregarding message reports. */
-	public static startMessageReportDisregardCronJob(): void {
+	static startMessageReportDisregardCronJob(): void {
 		const { disregard_cron } = this._data.database.reports;
 
 		startCronJob({

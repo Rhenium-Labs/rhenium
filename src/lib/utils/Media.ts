@@ -16,7 +16,7 @@ export default class MediaUtils {
 	 * @param options Validation options.
 	 * @returns A list of serialized emoji media metadata, or null if none found.
 	 */
-	public static async serializeEmojis(
+	static async serializeEmojis(
 		message: Message,
 		options: { validate: boolean }
 	): Promise<MessageMediaMetadata[] | null> {
@@ -38,7 +38,7 @@ export default class MediaUtils {
 	 * @param options Validation options.\
 	 * @returns A list of serialized sticker media metadata, or null if none found.
 	 */
-	public static async serializeStickers(
+	static async serializeStickers(
 		message: Message,
 		options: { validate: boolean }
 	): Promise<MessageMediaMetadata[] | null> {
@@ -57,7 +57,7 @@ export default class MediaUtils {
 	 * @param options Validation options.
 	 * @returns A list of serialized embed media metadata, or null if none found.
 	 */
-	public static async serializeEmbeds(
+	static async serializeEmbeds(
 		message: Message,
 		options: { validate: boolean }
 	): Promise<MessageMediaMetadata[] | null> {
@@ -81,7 +81,7 @@ export default class MediaUtils {
 	 * @param options Validation options.
 	 * @returns A list of serialized attachment media metadata, or null if none found.
 	 */
-	public static async serializeAttachments(
+	static async serializeAttachments(
 		message: Message,
 		options: { validate: boolean }
 	): Promise<MessageMediaMetadata[] | null> {
@@ -100,10 +100,7 @@ export default class MediaUtils {
 	 * @param options Validation options.
 	 * @returns A collection of all serialized media, or null if none found.
 	 */
-	public static async serializeMedia(
-		message: Message,
-		options: { validate: boolean }
-	): Promise<MessageMedia | null> {
+	static async serializeMedia(message: Message, options: { validate: boolean }): Promise<MessageMedia | null> {
 		const [emojis, stickers, attachments, embeds] = await Promise.all([
 			this.serializeEmojis(message, options),
 			this.serializeStickers(message, options),
@@ -129,7 +126,7 @@ export default class MediaUtils {
 	 * @param media The media collection to flatten.
 	 * @returns An array of all media metadata items.
 	 */
-	public static retrieveMedia(media: MessageMedia): MessageMediaMetadata[] {
+	static retrieveMedia(media: MessageMedia): MessageMediaMetadata[] {
 		return [
 			...(media.emojis ?? []),
 			...(media.stickers ?? []),
@@ -144,7 +141,7 @@ export default class MediaUtils {
 	 * @param media The list of media metadata to process.
 	 * @returns A list of processed media metadata.
 	 */
-	public static async processMedia(media: MessageMediaMetadata[]): Promise<MessageMediaMetadata[]> {
+	static async processMedia(media: MessageMediaMetadata[]): Promise<MessageMediaMetadata[]> {
 		const processedMedia: MessageMediaMetadata[] = [];
 
 		await Promise.all(
@@ -170,7 +167,7 @@ export default class MediaUtils {
 	 * @param format The format of the input buffer.
 	 * @returns A list of processed media metadata.
 	 */
-	public static async mediaConversion(buffer: Uint8Array, format: Extensions): Promise<MessageMediaMetadata[]> {
+	static async mediaConversion(buffer: Uint8Array, format: Extensions): Promise<MessageMediaMetadata[]> {
 		switch (format) {
 			case Extensions.MP4:
 			case Extensions.AVI:
@@ -197,7 +194,7 @@ export default class MediaUtils {
 	 * @param content The processed media metadata.
 	 * @returns An array formatted for OpenAI multi-modal input.
 	 */
-	public static serializeMultiModalInput(
+	static serializeMultiModalInput(
 		content: MessageMediaMetadata[]
 	): Array<{ type: "image_url"; image_url: { url: string } }> {
 		return content.map(metadata => ({

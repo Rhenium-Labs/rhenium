@@ -123,7 +123,7 @@ class ComponentLoaderStrategy extends LoaderStrategy<Component> {
 	 * @param customId The custom ID to parse.
 	 * @returns The parsed custom ID as a string.
 	 */
-	public static parseComponentCustomId(customId: ComponentCustomID): string {
+	static parseComponentCustomId(customId: ComponentCustomID): string {
 		if (typeof customId === "string") {
 			return customId;
 		}
