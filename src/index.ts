@@ -8,11 +8,10 @@ import { PostgresJSDialect } from "kysely-postgres-js";
 
 import {
 	init,
-	prismaIntegration,
 	consoleIntegration,
 	nodeContextIntegration,
 	consoleLoggingIntegration,
-	postgresIntegration,
+	postgresJsIntegration,
 	captureException
 } from "@sentry/node";
 import { open } from "lmdb";
@@ -101,8 +100,7 @@ async function main(): Promise<void> {
 			nodeContextIntegration(),
 			consoleIntegration(),
 			consoleLoggingIntegration(),
-			prismaIntegration(),
-			postgresIntegration()
+			postgresJsIntegration()
 		]
 	});
 
