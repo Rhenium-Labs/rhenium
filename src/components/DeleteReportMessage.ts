@@ -16,7 +16,9 @@ import type { InteractionReplyData } from "#utils/Types.js";
 	id: { matches: /^delete-(original|reference)-report-message-\d{17,19}-\d{17,19}$/m }
 })
 export default class DeleteReportMessage extends Component {
-	public async run(interaction: Component.Interaction<"button">): Promise<InteractionReplyData | null> {
+	public async run(
+		interaction: Component.Interaction<"button">
+	): Promise<InteractionReplyData | null> {
 		const type = interaction.customId.split("-")[1] as "original" | "reference";
 		const channelId = interaction.customId.split("-")[4];
 		const messageId = interaction.customId.split("-")[5];
@@ -41,7 +43,11 @@ export default class DeleteReportMessage extends Component {
 			return gracefully(`Failed to fetch channel \`${channelId}\`.`);
 		}
 
-		if (!channel.permissionsFor(interaction.guild.members.me!).has(PermissionFlagsBits.ManageMessages)) {
+		if (
+			!channel
+				.permissionsFor(interaction.guild.members.me!)
+				.has(PermissionFlagsBits.ManageMessages)
+		) {
 			return gracefully(`I do not have permission to manage messages in ${channel}.`);
 		}
 
@@ -70,7 +76,11 @@ export default class DeleteReportMessage extends Component {
 		}
 
 		const components = this._getUpdatedComponents(interaction.message.components, type);
-		const embeds = this._getUpdatedEmbeds(interaction.message.embeds, interaction.user.id, type);
+		const embeds = this._getUpdatedEmbeds(
+			interaction.message.embeds,
+			interaction.user.id,
+			type
+		);
 
 		return Promise.all([
 			interaction.editReply({ embeds, components }),
@@ -89,7 +99,10 @@ export default class DeleteReportMessage extends Component {
 	 * @returns The updated components with the delete button disabled.
 	 */
 
-	private _getUpdatedComponents(components: TopLevelComponent[], type: "original" | "reference") {
+	private _getUpdatedComponents(
+		components: TopLevelComponent[],
+		type: "original" | "reference"
+	) {
 		// Filter out every other component except action rows.
 		return components
 			.filter(c => c.type === ComponentType.ActionRow)
@@ -116,7 +129,11 @@ export default class DeleteReportMessage extends Component {
 	 * @returns The updated embeds with deletion notes.
 	 */
 
-	private _getUpdatedEmbeds(embeds: Embed[], userId: string, type: "original" | "reference"): APIEmbed[] {
+	private _getUpdatedEmbeds(
+		embeds: Embed[],
+		userId: string,
+		type: "original" | "reference"
+	): APIEmbed[] {
 		const targetAuthor = type === "reference" ? "Message Reference" : "New Message Report";
 		const deletionType = type === "reference" ? "Reference Deleted" : "Message Deleted";
 		const deletionNote = `${deletionType} (by ${userMention(userId)})`;
@@ -130,7 +147,10 @@ export default class DeleteReportMessage extends Component {
 			const existingFlagsIndex = newEmbed.fields?.findIndex(f => f.name === "Flags") ?? -1;
 
 			if (existingFlagsIndex === -1) {
-				newEmbed.fields = [...(newEmbed.fields ?? []), { name: "Flags", value: deletionNote }];
+				newEmbed.fields = [
+					...(newEmbed.fields ?? []),
+					{ name: "Flags", value: deletionNote }
+				];
 			} else {
 				const currentValue = newEmbed.fields![existingFlagsIndex].value;
 				newEmbed.fields![existingFlagsIndex].value = currentValue

@@ -28,7 +28,9 @@ export * from "./structures/EventListener.js";
  * @param fn The class to decorate.
  * @see {@link ApplyOptions}
  */
-function createClassDecorator<TFunction extends (...args: any[]) => void>(fn: TFunction): ClassDecorator {
+function createClassDecorator<TFunction extends (...args: any[]) => void>(
+	fn: TFunction
+): ClassDecorator {
 	return fn;
 }
 
@@ -43,7 +45,9 @@ function createProxy<T extends object>(target: T, handler: Omit<ProxyHandler<T>,
 		...handler,
 		get: (target, property) => {
 			const value = Reflect.get(target, property);
-			return typeof value === "function" ? (...args: readonly unknown[]) => value.apply(target, args) : value;
+			return typeof value === "function"
+				? (...args: readonly unknown[]) => value.apply(target, args)
+				: value;
 		}
 	});
 }
@@ -58,10 +62,15 @@ export function ApplyOptions<T extends Piece.Options>(
 ): ClassDecorator {
 	return createClassDecorator((target: Ctor<ConstructorParameters<typeof Piece>, Piece>) =>
 		createProxy(target, {
-			construct: (ctor, [context, baseOptions = {}]: [Piece.LoaderContext, Piece.Options]) =>
+			construct: (
+				ctor,
+				[context, baseOptions = {}]: [Piece.LoaderContext, Piece.Options]
+			) =>
 				new ctor(context, {
 					...baseOptions,
-					...(typeof optionsOrFn === "function" ? optionsOrFn({ container, context }) : optionsOrFn)
+					...(typeof optionsOrFn === "function"
+						? optionsOrFn({ container, context })
+						: optionsOrFn)
 				})
 		})
 	);
@@ -82,7 +91,10 @@ interface ApplyOptionsCallbackParameters {
  * @returns A promise that resolves when the response has been processed.
  */
 
-export async function processResponse<T extends ResponseType>(type: T, data: ResponseData<T>): Promise<void> {
+export async function processResponse<T extends ResponseType>(
+	type: T,
+	data: ResponseData<T>
+): Promise<void> {
 	switch (type) {
 		case "Message": {
 			const { message, response } = data as ResponseData<"Message">;
@@ -94,7 +106,10 @@ export async function processResponse<T extends ResponseType>(type: T, data: Res
 
 			const options: MessageReplyOptions = error
 				? {
-						embeds: [{ description: error, color: Colors.Red }, ...(rest.embeds ?? [])],
+						embeds: [
+							{ description: error, color: Colors.Red },
+							...(rest.embeds ?? [])
+						],
 						...rest
 					}
 				: { ...rest };
@@ -125,7 +140,10 @@ export async function processResponse<T extends ResponseType>(type: T, data: Res
 				? {
 						...defaultReplyOptions,
 						...rest,
-						embeds: [{ description: error, color: Colors.Red }, ...(rest.embeds ?? [])]
+						embeds: [
+							{ description: error, color: Colors.Red },
+							...(rest.embeds ?? [])
+						]
 					}
 				: { ...defaultReplyOptions, ...rest };
 

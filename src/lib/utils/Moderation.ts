@@ -35,7 +35,10 @@ export default class ModerationUtils {
 
 		if (target instanceof GuildMember) {
 			if (!hierarchyCheck(executor, target)) {
-				return { ok: false, message: `You cannot ${actionLower} a member with higher or equal roles.` };
+				return {
+					ok: false,
+					message: `You cannot ${actionLower} a member with higher or equal roles.`
+				};
 			}
 
 			if (!hierarchyCheck(executor.guild.members.me!, target)) {

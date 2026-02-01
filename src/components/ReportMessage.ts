@@ -1,10 +1,10 @@
-import { MessageFlags, type Message, type TextBasedChannel } from "discord.js";
+import { MessageFlags } from "discord.js";
 
 import { ApplyOptions, Component } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import ReportMessageCtx from "#root/commands/ReportMessageCtx.js";
+import MessageReportUtils from "#utils/MessageReports.js";
 
 @ApplyOptions<Component.Options>({
 	id: { matches: /^report-message-\d{17,19}-\d{17,19}$/m }
@@ -12,55 +12,51 @@ import ReportMessageCtx from "#root/commands/ReportMessageCtx.js";
 export default class ReportMessage extends Component {
 	public async run(
 		interaction: Component.Interaction<"modalSubmit">,
-		configClass: GuildConfig
+		config: GuildConfig
 	): Promise<InteractionReplyData> {
-		const config = configClass.getMessageReportsConfig();
-
-		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-		if (!config) {
+		if (!config.getMessageReportsConfig()) {
 			return { error: "Message reports have not been configured on this server." };
 		}
+
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const channelId = interaction.customId.split("-")[2];
 		const messageId = interaction.customId.split("-")[3];
 
-		const channel = (await interaction.guild.channels
+		const message = await interaction.guild.channels
 			.fetch(channelId)
-			.catch(() => null)) as TextBasedChannel | null;
-
-		if (!channel) {
-			return { error: `Failed to fetch the channel for message with ID ${messageId}.` };
-		}
-
-		const message = (await channel.messages.fetch(messageId).catch(() => null)) as Message<true> | null;
+			.then(async channel => {
+				return channel?.isTextBased()
+					? await channel.messages.fetch(messageId).catch(() => null)
+					: null;
+			})
+			.catch(() => null);
 
 		if (!message) {
-			return { error: `Failed to fetch the message with ID ${messageId}. It may have been deleted.` };
+			return {
+				error: `Failed to fetch the message with ID ${messageId}.`
+			};
 		}
 
-		const targetMember = await interaction.guild.members.fetch(message.author.id).catch(() => null);
+		const reportReason = interaction.fields.getTextInputValue("reason");
 
-		if (!targetMember && config.enforce_member_in_guild) {
-			return { error: "You can only report messages whose authors are still in the server." };
-		}
-
-		if (targetMember?.roles.cache.some(role => config.immune_roles.includes(role.id))) {
-			return { error: "You cannot report this message." };
-		}
-
-		const reason = interaction.fields.getTextInputValue("report-reason");
-
-		if (!reason.match(/\w/g)) {
+		if (!reportReason.match(/\w/g)) {
 			return { error: "You must provide a valid reason for reporting this message." };
 		}
 
-		return ReportMessageCtx.createReport({
-			author: message.author,
-			interaction,
-			config,
+		const result = await MessageReportUtils.upsert(
+			interaction.user,
 			message,
-			reason
-		});
+			config,
+			reportReason
+		);
+
+		if (!result.ok) {
+			return { error: result.message };
+		}
+
+		return {
+			content: `Successfully reported ${message.author}'s message, thank you for your report!`
+		};
 	}
 }

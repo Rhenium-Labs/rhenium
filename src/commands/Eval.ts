@@ -20,7 +20,10 @@ import GlobalConfig from "#root/lib/config/GlobalConfig.js";
 	]
 })
 export default class Eval extends Command {
-	public async messageRun(message: Command.Message, args: Command.Args): Promise<MessageReplyData | null> {
+	public async messageRun(
+		message: Command.Message,
+		args: Command.Args
+	): Promise<MessageReplyData | null> {
 		if (!GlobalConfig.isDeveloper(message.author.id)) return null;
 
 		if (args.finished) {
@@ -46,7 +49,8 @@ export default class Eval extends Command {
 
 		const timeTaken = performance.now() - start;
 		const type = typeof rawOutput;
-		const output = typeof rawOutput === "string" ? rawOutput : util.inspect(rawOutput, { depth });
+		const output =
+			typeof rawOutput === "string" ? rawOutput : util.inspect(rawOutput, { depth });
 
 		// If silent, do not send any response.
 		if (isSilent) return null;
@@ -58,7 +62,10 @@ export default class Eval extends Command {
 				return { error: "Output too large and failed to upload to hastebin." };
 			}
 
-			const button = new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("View Output").setURL(dataUrl);
+			const button = new ButtonBuilder()
+				.setStyle(ButtonStyle.Link)
+				.setLabel("View Output")
+				.setURL(dataUrl);
 
 			return {
 				content: `**Return Type:** \`${isError ? "error" : type}\`\n**Time Taken:** \`${formatExecutionTime(timeTaken)}\``,

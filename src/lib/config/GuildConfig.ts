@@ -138,7 +138,10 @@ export default class GuildConfig {
 		for (let i = 0; i < scopesLen; i++) {
 			const scope = scopes[i];
 
-			if (member.roles.cache.has(scope.role_id) && scope.allowed_permissions.includes(permission)) {
+			if (
+				member.roles.cache.has(scope.role_id) &&
+				scope.allowed_permissions.includes(permission)
+			) {
 				return true;
 			}
 		}
@@ -188,12 +191,16 @@ export type ValidatedContentFilterConfig = (ContentFilterConfig & {
 	webhook_url: string;
 };
 
-export type ValidatedQuickMutesConfig = (QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] }) & {
+export type ValidatedQuickMutesConfig = (QuickMuteConfig & {
+	channel_scoping: QuickMuteChannelScoping[];
+}) & {
 	webhook_url: string;
 	result_webhook_url: string;
 };
 
-export type ValidatedQuickPurgesConfig = (QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] }) & {
+export type ValidatedQuickPurgesConfig = (QuickPurgeConfig & {
+	channel_scoping: QuickPurgeChannelScoping[];
+}) & {
 	webhook_url: string;
 	result_webhook_url: string;
 };

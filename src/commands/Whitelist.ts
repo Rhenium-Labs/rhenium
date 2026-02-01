@@ -1,4 +1,10 @@
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, Colors } from "discord.js";
+import {
+	ActionRowBuilder,
+	AttachmentBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	Colors
+} from "discord.js";
 
 import { hastebin } from "#utils/index.js";
 import { kv, kysely } from "#root/index.js";
@@ -14,7 +20,10 @@ import GlobalConfig from "#root/lib/config/GlobalConfig.js";
 	description: "Manage the guild whitelists."
 })
 export default class Whitelist extends Command {
-	public async messageRun(message: Command.Message, args: Command.Args): Promise<MessageReplyData> {
+	public async messageRun(
+		message: Command.Message,
+		args: Command.Args
+	): Promise<MessageReplyData> {
 		if (!GlobalConfig.isDeveloper(message.author.id)) {
 			return { error: "You do not have permission to use this command." };
 		}
@@ -39,7 +48,9 @@ export default class Whitelist extends Command {
 		const guildId = args.getString();
 
 		if (!guildId) {
-			return { error: `You must provide the ID of a guild to ${subcommand} an entry for.` };
+			return {
+				error: `You must provide the ID of a guild to ${subcommand} an entry for.`
+			};
 		}
 
 		switch (subcommand) {
@@ -68,7 +79,12 @@ export default class Whitelist extends Command {
 		await kv.put(`whitelists:${guildId}`, { status: true });
 
 		return {
-			embeds: [{ description: `Successfully whitelisted guild with ID \`${guildId}\`.`, color: Colors.Green }]
+			embeds: [
+				{
+					description: `Successfully whitelisted guild with ID \`${guildId}\`.`,
+					color: Colors.Green
+				}
+			]
 		};
 	}
 
@@ -135,12 +151,19 @@ export default class Whitelist extends Command {
 
 		if (whitelists.length === 0) {
 			return {
-				embeds: [{ description: "There are no entries in the whitelist.", color: Colors.Blue }]
+				embeds: [
+					{
+						description: "There are no entries in the whitelist.",
+						color: Colors.Blue
+					}
+				]
 			};
 		}
 
 		const content = whitelists.map(entry => `- ${entry.id}`).join("\n");
-		const attachment = new AttachmentBuilder(Buffer.from(content, "utf-8"), { name: "whitelist.txt" });
+		const attachment = new AttachmentBuilder(Buffer.from(content, "utf-8"), {
+			name: "whitelist.txt"
+		});
 
 		const uploadUrl = await hastebin(content, "txt").catch(() => null);
 

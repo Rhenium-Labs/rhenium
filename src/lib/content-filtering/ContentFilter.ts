@@ -76,7 +76,9 @@ export default class ContentFilter {
 		const scanResults: string[] = [];
 
 		for (const prediction of predictions) {
-			const detectorLabel = prediction.detector ? `[${prediction.detector}]` : "[HEURISTIC]";
+			const detectorLabel = prediction.detector
+				? `[${prediction.detector}]`
+				: "[HEURISTIC]";
 			for (const data of prediction.data) {
 				const line = data.score
 					? `${detectorLabel} ${data.content} (${data.score})`
@@ -165,7 +167,9 @@ export default class ContentFilter {
 		);
 
 		const notificationContent =
-			config.notify_roles.length > 0 ? config.notify_roles.map(r => roleMention(r)).join(", ") : undefined;
+			config.notify_roles.length > 0
+				? config.notify_roles.map(r => roleMention(r)).join(", ")
+				: undefined;
 
 		const webhook = new WebhookClient({ url: config.webhook_url });
 
@@ -295,7 +299,9 @@ export default class ContentFilter {
 			}
 		}
 
-		return predictionData.length ? { data: predictionData, detector, content: problematicContent } : null;
+		return predictionData.length
+			? { data: predictionData, detector, content: problematicContent }
+			: null;
 	}
 
 	/**
@@ -427,7 +433,10 @@ export default class ContentFilter {
 	 * @param minScore The minimum score threshold for flagging.
 	 * @returns The content prediction data.
 	 */
-	static parseOpenAiModerationResults(results: Moderation[], minScore: number): ContentPredictionData[] {
+	static parseOpenAiModerationResults(
+		results: Moderation[],
+		minScore: number
+	): ContentPredictionData[] {
 		const predictions: ContentPredictionData[] = [];
 
 		for (const result of results) {
@@ -468,7 +477,9 @@ export default class ContentFilter {
 		// Check if the author has immune roles
 		if (config.immune_roles && config.immune_roles.length > 0) {
 			try {
-				const member = await message.guild.members.fetch(message.author.id).catch(() => null);
+				const member = await message.guild.members
+					.fetch(message.author.id)
+					.catch(() => null);
 				if (member && member.roles.cache.hasAny(...config.immune_roles)) {
 					return predictions;
 				}

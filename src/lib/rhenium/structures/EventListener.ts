@@ -3,10 +3,9 @@ import { Awaitable, Events } from "discord.js";
 
 import { client, kysely } from "#root/index.js";
 
-export abstract class EventListener<Options extends EventListener.Options = EventListener.Options> extends Piece<
-	Options,
-	"events"
-> {
+export abstract class EventListener<
+	Options extends EventListener.Options = EventListener.Options
+> extends Piece<Options, "events"> {
 	/**
 	 * The client this listener is attached to.
 	 */

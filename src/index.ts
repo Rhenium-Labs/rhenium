@@ -20,7 +20,12 @@ import { Sweepers } from "discord.js";
 
 import { sleep } from "#utils/index.js";
 import { Rhenium } from "#rhenium";
-import { CLIENT_CACHE_OPTIONS, CLIENT_INTENTS, CLIENT_PARTIALS, PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
+import {
+	CLIENT_CACHE_OPTIONS,
+	CLIENT_INTENTS,
+	CLIENT_PARTIALS,
+	PROCESS_EXIT_EVENTS
+} from "#utils/Constants.js";
 
 import type { DB } from "./lib/kysely/Schema.js";
 

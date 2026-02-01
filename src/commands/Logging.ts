@@ -40,7 +40,8 @@ export default class Logging extends Command {
 					options: [
 						{
 							name: LoggingSubcommand.Create,
-							description: "Create a new logging webhook for the specified channel.",
+							description:
+								"Create a new logging webhook for the specified channel.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -156,9 +157,13 @@ export default class Logging extends Command {
 		};
 	}
 
-	async interactionRun(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	async interactionRun(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const subcommand = interaction.options.getSubcommand(true) as LoggingSubcommand;
-		const subcommandGroup = interaction.options.getSubcommandGroup(true) as LoggingSubcommandGroup;
+		const subcommandGroup = interaction.options.getSubcommandGroup(
+			true
+		) as LoggingSubcommandGroup;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -190,7 +195,9 @@ export default class Logging extends Command {
 		}
 	}
 
-	private static async _createWebhook(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _createWebhook(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
@@ -235,7 +242,9 @@ export default class Logging extends Command {
 		};
 	}
 
-	private static async _deleteWebhook(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _deleteWebhook(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 
 		// Find the webhook for this channel
@@ -269,7 +278,9 @@ export default class Logging extends Command {
 		};
 	}
 
-	private static async _listWebhooks(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _listWebhooks(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const webhooks = await WebhookUtils.getWebhooks(interaction.guildId);
 
 		if (webhooks.length === 0) {
@@ -293,13 +304,17 @@ export default class Logging extends Command {
 				iconURL: interaction.guild.iconURL() ?? undefined
 			})
 			.setDescription(description)
-			.setFooter({ text: `${webhooks.length} webhook${webhooks.length === 1 ? "" : "s"} configured` })
+			.setFooter({
+				text: `${webhooks.length} webhook${webhooks.length === 1 ? "" : "s"} configured`
+			})
 			.setTimestamp();
 
 		return { embeds: [embed] };
 	}
 
-	private static async _addEvent(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _addEvent(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
@@ -314,7 +329,9 @@ export default class Logging extends Command {
 		}
 
 		if (webhook.events.includes(event)) {
-			return { error: `The event \`${formatEventName(event)}\` is already subscribed to for this webhook.` };
+			return {
+				error: `The event \`${formatEventName(event)}\` is already subscribed to for this webhook.`
+			};
 		}
 
 		await WebhookUtils.addEvents(webhook.id, interaction.guildId, [event]);
@@ -324,7 +341,9 @@ export default class Logging extends Command {
 		};
 	}
 
-	private static async _removeEvent(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _removeEvent(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
@@ -337,10 +356,14 @@ export default class Logging extends Command {
 		}
 
 		if (!webhook.events.includes(event)) {
-			return { error: `The event \`${formatEventName(event)}\` is not subscribed to for this webhook.` };
+			return {
+				error: `The event \`${formatEventName(event)}\` is not subscribed to for this webhook.`
+			};
 		}
 
-		const updatedWebhook = await WebhookUtils.removeEvents(webhook.id, interaction.guildId, [event]);
+		const updatedWebhook = await WebhookUtils.removeEvents(webhook.id, interaction.guildId, [
+			event
+		]);
 
 		if (updatedWebhook && updatedWebhook.events.length === 0) {
 			return {
@@ -353,7 +376,9 @@ export default class Logging extends Command {
 		};
 	}
 
-	private static async _viewWebhook(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _viewWebhook(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 
 		// Find the webhook for this channel

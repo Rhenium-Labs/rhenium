@@ -62,7 +62,8 @@ export const CLIENT_CACHE_OPTIONS = Options.cacheWithLimits({
  */
 
 export const DISCORD_EMOJI_REGEX: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/;
-export const DISCORD_EMOJI_REGEX_GLOBAL: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/g;
+export const DISCORD_EMOJI_REGEX_GLOBAL: Readonly<RegExp> =
+	/<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/g;
 
 /**
  * Regex pattern for matching Unicode emojis.

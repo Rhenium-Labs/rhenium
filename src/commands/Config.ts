@@ -54,10 +54,12 @@ export default class Config extends Command {
 									description: "Base permission to assign.",
 									type: ApplicationCommandOptionType.String,
 									required: true,
-									choices: Object.values(UserPermission).map(permission => ({
-										name: permission,
-										value: permission
-									}))
+									choices: Object.values(UserPermission).map(
+										permission => ({
+											name: permission,
+											value: permission
+										})
+									)
 								}
 							]
 						},
@@ -95,10 +97,12 @@ export default class Config extends Command {
 									description: "The permission.",
 									type: ApplicationCommandOptionType.String,
 									required: true,
-									choices: Object.values(UserPermission).map(permission => ({
-										name: permission,
-										value: permission
-									}))
+									choices: Object.values(UserPermission).map(
+										permission => ({
+											name: permission,
+											value: permission
+										})
+									)
 								}
 							]
 						},
@@ -118,10 +122,12 @@ export default class Config extends Command {
 									description: "The permission.",
 									type: ApplicationCommandOptionType.String,
 									required: true,
-									choices: Object.values(UserPermission).map(permission => ({
-										name: permission,
-										value: permission
-									}))
+									choices: Object.values(UserPermission).map(
+										permission => ({
+											name: permission,
+											value: permission
+										})
+									)
 								}
 							]
 						}
@@ -162,7 +168,8 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.EnforceReason,
-							description: "Enforce reporters to provide a reason when reporting messages.",
+							description:
+								"Enforce reporters to provide a reason when reporting messages.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -327,12 +334,14 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.ListNotifyRoles,
-							description: "List all roles notified on ban request submission.",
+							description:
+								"List all roles notified on ban request submission.",
 							type: ApplicationCommandOptionType.Subcommand
 						},
 						{
 							name: ConfigSubcommand.AddNotifyRole,
-							description: "Add a role to be notified on ban request submission.",
+							description:
+								"Add a role to be notified on ban request submission.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -345,7 +354,8 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.RemoveNotifyRole,
-							description: "Remove a role from ban request creation notifications.",
+							description:
+								"Remove a role from ban request creation notifications.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -422,7 +432,8 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetMaxPatterns,
-							description: "Set the maximum number of highlight patterns per user.",
+							description:
+								"Set the maximum number of highlight patterns per user.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -457,7 +468,8 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetLimit,
-							description: "Set the maximum number of messages that can be purged at once.",
+							description:
+								"Set the maximum number of messages that can be purged at once.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -483,7 +495,8 @@ export default class Config extends Command {
 								},
 								{
 									name: "type",
-									description: "Include or exclude quick purges in this channel.",
+									description:
+										"Include or exclude quick purges in this channel.",
 									type: ApplicationCommandOptionType.Number,
 									required: true,
 									choices: [
@@ -561,7 +574,8 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetPurgeLimit,
-							description: "Set the maximum number of messages that can be purged at once.",
+							description:
+								"Set the maximum number of messages that can be purged at once.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -587,7 +601,8 @@ export default class Config extends Command {
 								},
 								{
 									name: "type",
-									description: "Include or exclude quick mutes in this channel.",
+									description:
+										"Include or exclude quick mutes in this channel.",
 									type: ApplicationCommandOptionType.Number,
 									required: true,
 									choices: [
@@ -665,7 +680,8 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetReviewChannel,
-							description: "Set the channel where new content filter alerts are sent.",
+							description:
+								"Set the channel where new content filter alerts are sent.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -721,7 +737,8 @@ export default class Config extends Command {
 								},
 								{
 									name: "type",
-									description: "Include or exclude the content filter in this channel.",
+									description:
+										"Include or exclude the content filter in this channel.",
 									type: ApplicationCommandOptionType.Number,
 									required: true,
 									choices: [
@@ -733,7 +750,8 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.RemoveChannelScoping,
-							description: "Remove a channel from content filter channel scopes.",
+							description:
+								"Remove a channel from content filter channel scopes.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -791,7 +809,8 @@ export default class Config extends Command {
 						},
 						{
 							name: ConfigSubcommand.SetVerbosity,
-							description: "Set the verbosity level for content filter alerts.",
+							description:
+								"Set the verbosity level for content filter alerts.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -799,10 +818,12 @@ export default class Config extends Command {
 									description: "The verbosity level.",
 									type: ApplicationCommandOptionType.String,
 									required: true,
-									choices: Object.values(ContentFilterVerbosity).map(level => ({
-										name: level,
-										value: level
-									}))
+									choices: Object.values(ContentFilterVerbosity).map(
+										level => ({
+											name: level,
+											value: level
+										})
+									)
 								}
 							]
 						}
@@ -839,10 +860,10 @@ export default class Config extends Command {
 				this._setQuickMutePurgeLimit(interaction, config),
 			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.AddChannelScoping}`]: () =>
 				this._addQuickMuteChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.RemoveChannelScoping}`]: () =>
-				this._removeQuickMuteChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.ListChannelScopings}`]: () =>
-				this._listQuickMuteChannelScopings(interaction, config),
+			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.RemoveChannelScoping}`]:
+				() => this._removeQuickMuteChannelScoping(interaction, config),
+			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.ListChannelScopings}`]:
+				() => this._listQuickMuteChannelScopings(interaction, config),
 
 			// Quick Purges Group
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.Toggle}`]: () =>
@@ -855,10 +876,10 @@ export default class Config extends Command {
 				this._setQuickPurgeLimit(interaction, config),
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.AddChannelScoping}`]: () =>
 				this._addQuickPurgeChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.RemoveChannelScoping}`]: () =>
-				this._removeQuickPurgeChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.ListChannelScopings}`]: () =>
-				this._listQuickPurgeChannelScopings(interaction, config),
+			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.RemoveChannelScoping}`]:
+				() => this._removeQuickPurgeChannelScoping(interaction, config),
+			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.ListChannelScopings}`]:
+				() => this._listQuickPurgeChannelScopings(interaction, config),
 
 			// Permission Group
 			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Create}`]: () =>
@@ -923,20 +944,20 @@ export default class Config extends Command {
 			// Content Filter Group
 			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.Toggle}`]: () =>
 				this._toggleContentFilter(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetReviewChannel}`]: () =>
-				this._setContentFilterReviewChannel(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetReviewChannel}`]:
+				() => this._setContentFilterReviewChannel(interaction, config),
 			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.AddImmuneRole}`]: () =>
 				this._addContentFilterImmuneRole(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveImmuneRole}`]: () =>
-				this._removeContentFilterImmuneRole(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveImmuneRole}`]:
+				() => this._removeContentFilterImmuneRole(interaction, config),
 			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ListImmuneRoles}`]: () =>
 				this._listContentFilterImmuneRoles(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.AddChannelScoping}`]: () =>
-				this._addContentFilterChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveChannelScoping}`]: () =>
-				this._removeContentFilterChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ListChannelScopings}`]: () =>
-				this._listContentFilterChannelScopings(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.AddChannelScoping}`]:
+				() => this._addContentFilterChannelScoping(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveChannelScoping}`]:
+				() => this._removeContentFilterChannelScoping(interaction, config),
+			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ListChannelScopings}`]:
+				() => this._listContentFilterChannelScopings(interaction, config),
 			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ToggleDetector}`]: () =>
 				this._toggleContentFilterDetector(interaction, config),
 			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetDetectorMode}`]: () =>
@@ -1070,7 +1091,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -1226,7 +1249,9 @@ export default class Config extends Command {
 		const scopings = config.channel_scoping;
 
 		if (scopings.length === 0) {
-			return { content: "There are no content filter channel scopings configured for this guild." };
+			return {
+				content: "There are no content filter channel scopings configured for this guild."
+			};
 		}
 
 		const description = scopings
@@ -1349,7 +1374,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -1405,7 +1432,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -1461,7 +1490,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -1517,7 +1548,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -1630,7 +1663,9 @@ export default class Config extends Command {
 		const scopings = config.channel_scoping;
 
 		if (scopings.length === 0) {
-			return { content: "There are no quick mute channel scopings configured for this guild." };
+			return {
+				content: "There are no quick mute channel scopings configured for this guild."
+			};
 		}
 
 		const description = scopings
@@ -1740,7 +1775,9 @@ export default class Config extends Command {
 		const scopings = config.channel_scoping;
 
 		if (scopings.length === 0) {
-			return { content: "There are no quick purge channel scopings configured for this guild." };
+			return {
+				content: "There are no quick purge channel scopings configured for this guild."
+			};
 		}
 
 		const description = scopings
@@ -1858,7 +1895,9 @@ export default class Config extends Command {
 		const description = scopes
 			.map(scope => {
 				const roleMentionStr = roleMention(scope.role_id);
-				const permissionsStr = scope.allowed_permissions.map(p => `\`${p}\``).join(", ");
+				const permissionsStr = scope.allowed_permissions
+					.map(p => `\`${p}\``)
+					.join(", ");
 
 				return `${roleMentionStr}\n└ ${permissionsStr}`;
 			})
@@ -1879,7 +1918,9 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _addPermissionToScope(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private async _addPermissionToScope(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
@@ -2183,7 +2224,9 @@ export default class Config extends Command {
 		const config = configClass.data.message_reports;
 
 		if (config.notify_roles.length === 0) {
-			return { content: "There are no notification roles configured for message reports." };
+			return {
+				content: "There are no notification roles configured for message reports."
+			};
 		}
 
 		const roleMentions = config.notify_roles.map(id => `<@&${id}>`).join("\n");
@@ -2227,7 +2270,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -2283,7 +2328,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -2387,7 +2434,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -2443,7 +2492,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {
@@ -2499,7 +2550,9 @@ export default class Config extends Command {
 				.catch(() => null);
 
 			if (!set) {
-				return { error: "Failed to move the existing webhook to the specified channel." };
+				return {
+					error: "Failed to move the existing webhook to the specified channel."
+				};
 			}
 
 			return {

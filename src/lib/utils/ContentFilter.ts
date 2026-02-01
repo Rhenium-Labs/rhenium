@@ -69,7 +69,9 @@ export default class ContentFilterUtils {
 				let sleep = delay;
 
 				if (jitter) {
-					sleep = Math.floor(delay * (1 + Math.random() * CF_CONSTANTS.DEFAULT_RETRY_JITTER));
+					sleep = Math.floor(
+						delay * (1 + Math.random() * CF_CONSTANTS.DEFAULT_RETRY_JITTER)
+					);
 				}
 
 				await new Promise(res => setTimeout(res, sleep));
@@ -136,7 +138,10 @@ export default class ContentFilterUtils {
 	 * @param threshold Optional date to filter alerts created before this time.
 	 * @returns An array of pending ContentFilterAlert records.
 	 */
-	static async fetchPendingAlerts(guildId: Snowflake, threshold?: Date): Promise<ContentFilterAlert[]> {
+	static async fetchPendingAlerts(
+		guildId: Snowflake,
+		threshold?: Date
+	): Promise<ContentFilterAlert[]> {
 		const query = kysely
 			.selectFrom("ContentFilterAlert")
 			.selectAll()
@@ -164,7 +169,11 @@ export default class ContentFilterUtils {
 		guildId: string,
 		channelId: string,
 		since: Date
-	): Promise<{ alerts: ContentFilterAlert[]; falsePositiveRatio: number; highestScore: number }> {
+	): Promise<{
+		alerts: ContentFilterAlert[];
+		falsePositiveRatio: number;
+		highestScore: number;
+	}> {
 		const alerts = await kysely
 			.selectFrom("ContentFilterAlert")
 			.selectAll()
@@ -202,7 +211,9 @@ export default class ContentFilterUtils {
 	 * @param ttl Time-to-live in milliseconds. Defaults to CONTENT_FILTER_ALERT_TTL.
 	 * @returns The number of deleted alerts.
 	 */
-	static async deleteOldAlerts(ttl: number = CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL): Promise<number> {
+	static async deleteOldAlerts(
+		ttl: number = CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL
+	): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
 		const result = await kysely
 			.deleteFrom("ContentFilterAlert")
@@ -219,7 +230,9 @@ export default class ContentFilterUtils {
 	 * @param ttl Time-to-live in milliseconds. Defaults to CONTENT_FILTER_LOG_TTL.
 	 * @returns The number of deleted logs.
 	 */
-	static async deleteOldContentLogs(ttl: number = CF_CONSTANTS.CONTENT_FILTER_LOG_TTL): Promise<number> {
+	static async deleteOldContentLogs(
+		ttl: number = CF_CONSTANTS.CONTENT_FILTER_LOG_TTL
+	): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
 		const result = await kysely
 			.deleteFrom("ContentFilterLog")
@@ -238,7 +251,10 @@ export default class ContentFilterUtils {
 	 * @param target The desired status to transition to.
 	 * @returns The resulting status after applying the transition rules.
 	 */
-	static handleAlertModStatus(original: ContentFilterStatus, target: ContentFilterStatus): ContentFilterStatus {
+	static handleAlertModStatus(
+		original: ContentFilterStatus,
+		target: ContentFilterStatus
+	): ContentFilterStatus {
 		if (target === ContentFilterStatus.Resolved) {
 			switch (original) {
 				case ContentFilterStatus.Pending:

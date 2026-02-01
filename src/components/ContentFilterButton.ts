@@ -74,7 +74,10 @@ export default class ContentFilterButton extends Component {
 		if (!message) {
 			// Message already deleted - update alert status
 			if (alert) {
-				await ContentFilterUtils.updateAlertDelStatus(alert.id, ContentFilterStatus.Deleted);
+				await ContentFilterUtils.updateAlertDelStatus(
+					alert.id,
+					ContentFilterStatus.Deleted
+				);
 			}
 
 			return { error: "The flagged message no longer exists or was already deleted." };
@@ -89,11 +92,16 @@ export default class ContentFilterButton extends Component {
 		// Update alert status in database.
 		if (alert) {
 			await ContentFilterUtils.updateAlertDelStatus(alert.id, ContentFilterStatus.Deleted);
-			await ContentFilterUtils.updateAlertModStatus(alert.id, ContentFilterStatus.Resolved);
+			await ContentFilterUtils.updateAlertModStatus(
+				alert.id,
+				ContentFilterStatus.Resolved
+			);
 		}
 
 		// Update the original embed to show it was handled.
-		const embed = EmbedBuilder.from(interaction.message.embeds[0] ?? {}).setColor(Colors.Green);
+		const embed = EmbedBuilder.from(interaction.message.embeds[0] ?? {}).setColor(
+			Colors.Green
+		);
 
 		// Update status fields
 		const fields = embed.data.fields ?? [];
@@ -152,7 +160,9 @@ export default class ContentFilterButton extends Component {
 			await ContentFilterUtils.updateAlertModStatus(alert.id, newStatus);
 		}
 
-		const embed = EmbedBuilder.from(interaction.message.embeds[0] ?? {}).setColor(Colors.Green);
+		const embed = EmbedBuilder.from(interaction.message.embeds[0] ?? {}).setColor(
+			Colors.Green
+		);
 
 		// Update status fields
 		const fields = embed.data.fields ?? [];
@@ -201,7 +211,10 @@ export default class ContentFilterButton extends Component {
 		for (const row of interaction.message.components) {
 			if ("components" in row) {
 				for (const component of row.components) {
-					if (component.type === ComponentType.Button && component.customId?.startsWith("cf-resolve-")) {
+					if (
+						component.type === ComponentType.Button &&
+						component.customId?.startsWith("cf-resolve-")
+					) {
 						messageId = component.customId.split("-")[2];
 						break;
 					}
@@ -215,14 +228,19 @@ export default class ContentFilterButton extends Component {
 
 		if (alert) {
 			// Handle status transition
-			const newStatus = ContentFilterUtils.handleAlertModStatus(alert.mod_status, ContentFilterStatus.False);
+			const newStatus = ContentFilterUtils.handleAlertModStatus(
+				alert.mod_status,
+				ContentFilterStatus.False
+			);
 			await ContentFilterUtils.updateAlertModStatus(alert.id, newStatus);
 		}
 
 		// Update the automated scanner's feedback
 		await AutomatedScanner.handleModeratorFeedback(channelId, true);
 
-		const embed = EmbedBuilder.from(interaction.message.embeds[0] ?? {}).setColor(Colors.Grey);
+		const embed = EmbedBuilder.from(interaction.message.embeds[0] ?? {}).setColor(
+			Colors.Grey
+		);
 
 		// Update status fields
 		const fields = embed.data.fields ?? [];
@@ -333,7 +351,9 @@ export default class ContentFilterButton extends Component {
 				new EmbedBuilder()
 					.setColor(Colors.Blurple)
 					.setTitle("Message Content")
-					.setDescription(`Content is too long to display here.\n\n[View full content](${url})`)
+					.setDescription(
+						`Content is too long to display here.\n\n[View full content](${url})`
+					)
 					.setFooter({ text: `Message ID: ${messageId}` })
 			]
 		};

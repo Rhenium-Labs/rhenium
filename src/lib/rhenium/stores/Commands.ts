@@ -27,9 +27,9 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 
 	/** Registers application commands with Discord. */
 	public async register(): Promise<void> {
-		const commands: ApplicationCommandData[] = this.filter(cmd => cmd.register !== undefined).map(cmd =>
-			cmd.register!()
-		);
+		const commands: ApplicationCommandData[] = this.filter(
+			cmd => cmd.register !== undefined
+		).map(cmd => cmd.register!());
 
 		if (commands.length === 0) {
 			Logger.info("Found no application commands to register.");
@@ -46,11 +46,15 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 			process.exit(1);
 		}
 
-		Logger.success(`Registered ${commands.length} ${inflect(commands.length, "application command")}.`);
+		Logger.success(
+			`Registered ${commands.length} ${inflect(commands.length, "application command")}.`
+		);
 	}
 
 	/** Handles command execution for application commands. */
-	public async handleApplicationCommand(interaction: CommandInteraction<"cached">): Promise<any> {
+	public async handleApplicationCommand(
+		interaction: CommandInteraction<"cached">
+	): Promise<any> {
 		const command = this.get(interaction.commandName);
 
 		if (!command) {
@@ -127,7 +131,12 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 	/** Handles execution for message commands. */
 	public async handleMessageCommand(message: Message<true>): Promise<any> {
 		if (!message.content.startsWith(".")) return;
-		if (!message.channel.permissionsFor(message.guild.members.me!).has(PermissionFlagsBits.SendMessages)) return;
+		if (
+			!message.channel
+				.permissionsFor(message.guild.members.me!)
+				.has(PermissionFlagsBits.SendMessages)
+		)
+			return;
 
 		const trimmed = message.content.slice(".".length).trim();
 		const spaceIndex = trimmed.indexOf(" ");

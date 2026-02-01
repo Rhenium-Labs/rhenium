@@ -1,13 +1,12 @@
-import { kysely } from "#root/index.js";
-import { userMentionWithId } from "#utils/index.js";
+import { MessageFlags } from "discord.js";
 import { ApplyOptions, Component } from "#rhenium";
-
 import type { InteractionReplyData } from "#utils/Types.js";
 
+import MessageReportUtils, {
+	MessageReportAction,
+	MessageReportActionToPastTenseMap
+} from "#utils/MessageReports.js";
 import GuildConfig from "#root/lib/config/GuildConfig.js";
-import ReportMessageCtx, { MessageReportAction } from "#root/commands/ReportMessageCtx.js";
-
-const AUTO_DELETE_DELAY = 7000;
 
 @ApplyOptions<Component.Options>({
 	id: { matches: /^message-report-(resolve|disregard)$/m }
@@ -15,41 +14,34 @@ const AUTO_DELETE_DELAY = 7000;
 export default class MessageReportButton extends Component {
 	public async run(
 		interaction: Component.Interaction<"button">,
-		configClass: GuildConfig
+		config: GuildConfig
 	): Promise<InteractionReplyData | null> {
-		const config = configClass.getMessageReportsConfig();
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		if (!configClass.hasPermission(interaction.member, "ReviewMessageReports")) {
-			return { error: "You do not have permission to review message reports." };
+		if (!config.getMessageReportsConfig())
+			return { error: "Message reports have not been configured on this server." };
+
+		const reportAction = interaction.customId
+			.split("-")[2]
+			.toLowerCase() as MessageReportAction;
+
+		// prettier-ignore
+		const result = await MessageReportUtils.handle(
+			interaction,
+			reportAction,
+			config,
+		);
+
+		if (!result.ok) {
+			return { error: result.message };
 		}
 
-		if (!config) {
-			return { error: "Message reports are not configured for this server." };
-		}
+		const formattedReportAction =
+			MessageReportActionToPastTenseMap[reportAction].toLowerCase();
 
-		const action = interaction.customId.split("-")[2] as MessageReportAction;
-		const report = await kysely
-			.selectFrom("MessageReport")
-			.selectAll()
-			.where("id", "=", interaction.message!.id)
-			.executeTakeFirst();
-
-		if (!report) {
-			setTimeout(() => interaction.message?.delete().catch(() => null), AUTO_DELETE_DELAY);
-
-			return {
-				error: "Failed to find the message report associated with this message. I will attempt to delete this submission in 7 seconds."
-			};
-		}
-
-		if (report.resolved_by) {
-			setTimeout(() => interaction.message?.delete().catch(() => null), AUTO_DELETE_DELAY);
-
-			return {
-				error: `This report has already been resolved by ${userMentionWithId(report.resolved_by)}. I will attempt to delete this submission in 7 seconds.`
-			};
-		}
-
-		return ReportMessageCtx.processReport({ interaction, action, report, config });
+		return {
+			content: `Successfully ${formattedReportAction} report - ID \`${interaction.message.id}\``,
+			temporary: true
+		};
 	}
 }

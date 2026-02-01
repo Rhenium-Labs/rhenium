@@ -152,7 +152,9 @@ export default class RateLimiter {
 
 		// If still over max size, remove oldest entries
 		if (this._cache.size > MAX_RATE_LIMITER_ENTRIES) {
-			const entries = Array.from(this._cache.entries()).sort((a, b) => a[1].windowStart - b[1].windowStart);
+			const entries = Array.from(this._cache.entries()).sort(
+				(a, b) => a[1].windowStart - b[1].windowStart
+			);
 
 			const toRemove = entries.slice(0, this._cache.size - MAX_RATE_LIMITER_ENTRIES);
 			for (const [key] of toRemove) {

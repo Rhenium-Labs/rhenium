@@ -53,7 +53,13 @@ export default class BanRequestButton extends Component {
 		}
 
 		if (action === BanRequestAction.Disregard) {
-			return RequestAction.processBanRequest({ interaction, request, action, config, reviewReason: null });
+			return RequestAction.processBanRequest({
+				interaction,
+				request,
+				action,
+				config,
+				reviewReason: null
+			});
 		}
 
 		const requiresReason =

@@ -33,11 +33,17 @@ export default class GuildBanAdd extends EventListener {
 				}
 			});
 
-			Logger.tracable(sentryId, `Failed cleanup operations for @${ban.user.username} (${ban.user.id}).`);
+			Logger.tracable(
+				sentryId,
+				`Failed cleanup operations for @${ban.user.username} (${ban.user.id}).`
+			);
 		}
 	}
 
-	private static async _clearMessageReports(ban: GuildBan, guildConfig: GuildConfig): Promise<void> {
+	private static async _clearMessageReports(
+		ban: GuildBan,
+		guildConfig: GuildConfig
+	): Promise<void> {
 		const config = guildConfig.getMessageReportsConfig();
 		if (!config || !config.log_webhook_url) return;
 
@@ -100,7 +106,10 @@ export default class GuildBanAdd extends EventListener {
 		}
 	}
 
-	private static async _clearBanRequests(ban: GuildBan, guildConfig: GuildConfig): Promise<void> {
+	private static async _clearBanRequests(
+		ban: GuildBan,
+		guildConfig: GuildConfig
+	): Promise<void> {
 		const config = guildConfig.getBanRequestsConfig();
 		if (!config || !config.log_webhook_url) return;
 

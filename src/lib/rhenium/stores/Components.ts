@@ -4,7 +4,11 @@ import { LoaderStrategy, Store } from "@sapphire/pieces";
 
 import { inflect } from "#utils/index.js";
 import { processResponse } from "#rhenium";
-import { Component, type ComponentCustomID, type ComponentInteraction } from "../structures/Component.js";
+import {
+	Component,
+	type ComponentCustomID,
+	type ComponentInteraction
+} from "../structures/Component.js";
 
 import Logger from "#utils/Logger.js";
 import ConfigManager from "#config/ConfigManager.js";

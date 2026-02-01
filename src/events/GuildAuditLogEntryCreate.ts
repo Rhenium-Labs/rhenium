@@ -1,4 +1,6 @@
 import { type Guild, type GuildAuditLogsEntry, AuditLogEvent, Events, Webhook } from "discord.js";
+
+import { kysely } from "#root/index.js";
 import { ApplyOptions, EventListener } from "#rhenium";
 
 import ConfigManager from "#config/ConfigManager.js";
@@ -13,12 +15,18 @@ export default class GuildAuditLogEntryCreate extends EventListener {
 		if (!executorId || executorId === this.client.user.id) return;
 		if (!(target instanceof Webhook) || action !== AuditLogEvent.WebhookDelete) return;
 
-		// If a webhook was deleted, check if it existed in our config and reload if so.
+		// If a webhook was deleted, check if it existed in our config.
 		const config = await ConfigManager.get(guild.id);
-		const exists = config.data.logging_webhooks.some(wh => wh.url === target.url);
+		const hasWebhook = config.data.logging_webhooks.some(wh => wh.id === target.id);
 
-		if (exists) {
-			void ConfigManager.reload(guild.id, "logging_webhooks");
+		if (hasWebhook) {
+			// Guild ID is provided to trigger a refresh of the cached logging webhooks.
+			// This is necessary because the cache invalidator looks for "guild_id" to determine what to invalidate.
+			return void kysely
+				.deleteFrom("LoggingWebhook")
+				.where("id", "=", target.id)
+				.where("guild_id", "=", guild.id)
+				.executeTakeFirst();
 		}
 	}
 }

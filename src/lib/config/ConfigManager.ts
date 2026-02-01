@@ -94,14 +94,22 @@ export default class ConfigManager {
 		const { table, scopingTable } = FeatureTableMap[feature];
 
 		// Prettier-ignore
-		const result = await kysely.selectFrom(table).selectAll().where("id", "=", guildId).executeTakeFirst();
+		const result = await kysely
+			.selectFrom(table)
+			.selectAll()
+			.where("id", "=", guildId)
+			.executeTakeFirst();
 
 		if (!scopingTable) {
 			return result as ConfigFeatureMap[ConfigFeature];
 		}
 
 		// Prettier-ignore
-		const scoping = await kysely.selectFrom(scopingTable).selectAll().where("guild_id", "=", guildId).execute();
+		const scoping = await kysely
+			.selectFrom(scopingTable)
+			.selectAll()
+			.where("guild_id", "=", guildId)
+			.execute();
 
 		return { ...result, channel_scoping: scoping } as ConfigFeatureMap[ConfigFeature];
 	}
@@ -174,11 +182,31 @@ export default class ConfigManager {
 					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
 					.returningAll()
 					.executeTakeFirstOrThrow(),
-				trx.selectFrom("PermissionScope").selectAll().where("guild_id", "=", guildId).execute(),
-				trx.selectFrom("QuickMuteChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
-				trx.selectFrom("QuickPurgeChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
-				trx.selectFrom("ContentFilterChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
-				trx.selectFrom("LoggingWebhook").selectAll().where("guild_id", "=", guildId).execute()
+				trx
+					.selectFrom("PermissionScope")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute(),
+				trx
+					.selectFrom("QuickMuteChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute(),
+				trx
+					.selectFrom("QuickPurgeChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute(),
+				trx
+					.selectFrom("ContentFilterChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute(),
+				trx
+					.selectFrom("LoggingWebhook")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute()
 			])
 		);
 

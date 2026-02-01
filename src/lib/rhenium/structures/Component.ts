@@ -1,15 +1,19 @@
 import { Piece } from "@sapphire/pieces";
-import type { Awaitable, ButtonInteraction, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
+import type {
+	Awaitable,
+	ButtonInteraction,
+	MessageComponentInteraction,
+	ModalSubmitInteraction
+} from "discord.js";
 
 import { client, kysely } from "#root/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#config/GuildConfig.js";
 
-export abstract class Component<Options extends Component.Options = Component.Options> extends Piece<
-	Options,
-	"components"
-> {
+export abstract class Component<
+	Options extends Component.Options = Component.Options
+> extends Piece<Options, "components"> {
 	/**
 	 * The client this component is associated with.
 	 */
@@ -36,7 +40,10 @@ export abstract class Component<Options extends Component.Options = Component.Op
 	 * @returns A new Component instance.
 	 */
 
-	public constructor(context: Piece.LoaderContext<"components">, options: Options = {} as Options) {
+	public constructor(
+		context: Piece.LoaderContext<"components">,
+		options: Options = {} as Options
+	) {
 		super(context, options);
 
 		this.id = options.id;
@@ -72,7 +79,9 @@ export type ComponentCustomID =
 	| { includes: string }
 	| { matches: RegExp };
 
-export type ComponentInteraction = MessageComponentInteraction<"cached"> | ModalSubmitInteraction<"cached">;
+export type ComponentInteraction =
+	| MessageComponentInteraction<"cached">
+	| ModalSubmitInteraction<"cached">;
 
 type InteractionGeneric = "button" | "modalSubmit";
 

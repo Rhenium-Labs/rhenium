@@ -155,7 +155,11 @@ export function parseDurationString(str: string | null): number | null {
  * @param data The duration data to validate.
  * @returns The result of the validation.
  */
-export function validateDuration(data: { duration: number; minimum?: string; maximum?: string }): SimpleResult {
+export function validateDuration(data: {
+	duration: number;
+	minimum?: string;
+	maximum?: string;
+}): SimpleResult {
 	const { duration, minimum, maximum } = data;
 
 	const minMs = minimum ? ms(minimum as StringValue) : undefined;
@@ -259,7 +263,10 @@ export function channelInScope(channel: GuildBasedChannel, scoping: ChannelScopi
 }
 
 /** Helper function to determine if a channel is included in scope. */
-function channelIsIncludedInScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
+function channelIsIncludedInScope(
+	channelData: ChannelScopingParams,
+	scoping: ChannelScoping
+): boolean {
 	const { channelId, threadId, categoryId } = channelData;
 
 	return (
@@ -271,7 +278,10 @@ function channelIsIncludedInScope(channelData: ChannelScopingParams, scoping: Ch
 }
 
 /** Helper function to determine if a channel is excluded from scope. */
-function channelIsExcludedFromScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
+function channelIsExcludedFromScope(
+	channelData: ChannelScopingParams,
+	scoping: ChannelScoping
+): boolean {
 	const { channelId, threadId, categoryId } = channelData;
 
 	return (
@@ -287,7 +297,9 @@ function channelIsExcludedFromScope(channelData: ChannelScopingParams, scoping: 
  * @param emoji A partial emoji object containing optional `id` and `name` properties.
  * @returns The emoji's ID if available, otherwise its name, or `null` if neither exists.
  */
-export function getEmojiIdentifier(emoji: Partial<Pick<Emoji, "id" | "name">>): Snowflake | string | null {
+export function getEmojiIdentifier(
+	emoji: Partial<Pick<Emoji, "id" | "name">>
+): Snowflake | string | null {
 	return emoji.id ?? emoji.name ?? null;
 }
 
@@ -301,7 +313,10 @@ export function getEmojiIdentifier(emoji: Partial<Pick<Emoji, "id" | "name">>): 
  * @param guildId The guild ID to check custom emoji membership against.
  * @returns A validated emoji object, or `null` if validation fails.
  */
-export async function validateEmoji(emoji: string, guildId: Snowflake): Promise<ValidatedEmoji | null> {
+export async function validateEmoji(
+	emoji: string,
+	guildId: Snowflake
+): Promise<ValidatedEmoji | null> {
 	const unicodeMatch = emoji.match(UNICODE_EMOJI_REGEX);
 
 	if (unicodeMatch) {

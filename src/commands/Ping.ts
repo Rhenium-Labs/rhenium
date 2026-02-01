@@ -1,4 +1,8 @@
-import { ApplicationCommandType, ApplicationIntegrationType, InteractionContextType } from "discord.js";
+import {
+	ApplicationCommandType,
+	ApplicationIntegrationType,
+	InteractionContextType
+} from "discord.js";
 
 import { ApplyOptions, Command } from "#rhenium";
 import type { InteractionReplyData } from "#utils/Types.js";
@@ -18,7 +22,9 @@ export default class Ping extends Command {
 		};
 	}
 
-	public async interactionRun(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	public async interactionRun(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const start = performance.now();
 		await interaction.deferReply();
 		const end = performance.now();

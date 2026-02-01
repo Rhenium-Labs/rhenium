@@ -30,7 +30,8 @@ export const ContentFilterVerbosity = {
 	Medium: "Medium",
 	Verbose: "Verbose"
 } as const;
-export type ContentFilterVerbosity = (typeof ContentFilterVerbosity)[keyof typeof ContentFilterVerbosity];
+export type ContentFilterVerbosity =
+	(typeof ContentFilterVerbosity)[keyof typeof ContentFilterVerbosity];
 export const ContentFilterStatus = {
 	Pending: "Pending",
 	Resolved: "Resolved",

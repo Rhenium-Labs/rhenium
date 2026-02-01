@@ -83,10 +83,15 @@ export default class GlobalConfig {
 			cronTime: delete_cron,
 			onTick: async () => {
 				const createdAtThreshold = new Date(Date.now() - ttl);
-				const createdAtStr = createdAtThreshold.toLocaleDateString(undefined, LOG_DATE_FORMAT);
+				const createdAtStr = createdAtThreshold.toLocaleDateString(
+					undefined,
+					LOG_DATE_FORMAT
+				);
 				const durationStr = ms(ttl, { long: true });
 
-				Logger.info(`Deleting messages created before ${createdAtStr} (older than ${durationStr})...`);
+				Logger.info(
+					`Deleting messages created before ${createdAtStr} (older than ${durationStr})...`
+				);
 
 				const { numDeletedRows } = await kysely
 					.deleteFrom("Message")
@@ -121,10 +126,14 @@ export default class GlobalConfig {
 					.execute();
 
 				for (const { guild_id } of guilds) {
-					const config = (await ConfigManager.get(guild_id)).getMessageReportsConfig();
+					const config = (
+						await ConfigManager.get(guild_id)
+					).getMessageReportsConfig();
 					if (!config || config.auto_disregard_after <= 0) continue;
 
-					const threshold = new Date(now.getTime() - Number(config.auto_disregard_after));
+					const threshold = new Date(
+						now.getTime() - Number(config.auto_disregard_after)
+					);
 
 					const { numUpdatedRows } = await kysely
 						.updateTable("MessageReport")

@@ -8,21 +8,6 @@ import type { LoggingWebhook } from "#kysely/Schema.js";
 import Logger from "./Logger.js";
 import ConfigManager from "#config/ConfigManager.js";
 
-export interface CreateLoggingWebhookOptions {
-	/** The Discord webhook ID. */
-	id: string;
-	/** The full webhook URL. */
-	url: string;
-	/** The webhook token. */
-	token: string;
-	/** The channel ID where the webhook is located. */
-	channelId: string;
-	/** The guild ID. */
-	guildId: string;
-	/** The events this webhook should receive. */
-	events: LoggingEvent[];
-}
-
 export default class WebhookUtils {
 	/**
 	 * Gets a specific logging webhook by ID.
@@ -45,7 +30,6 @@ export default class WebhookUtils {
 	 */
 
 	static async getWebhooks(guildId: string, event?: LoggingEvent): Promise<LoggingWebhook[]> {
-		// Prettier-ignore
 		const config = await ConfigManager.get(guildId);
 		const webhooks = config.data.logging_webhooks;
 
@@ -126,22 +110,24 @@ export default class WebhookUtils {
 /**
  * Sends a log message to all webhooks configured for the specified event.
  *
- * @param event The logging event type.
- * @param guildId The ID of the guild.
- * @param message The webhook message options to send.
+ * @param data The log data.
  * @returns The sent messages or null.
  */
-export async function log(
-	event: LoggingEvent,
-	guildId: string,
-	message: WebhookMessageCreateOptions
-): Promise<APIMessage[] | null> {
+export async function log(data: {
+	event: LoggingEvent;
+	guildId: string;
+	message: WebhookMessageCreateOptions;
+}): Promise<APIMessage[] | null> {
+	const { event, guildId, message } = data;
+
 	const webhooks = await WebhookUtils.getWebhooks(guildId, event);
 	if (!webhooks.length) return null;
 
 	try {
 		const webhookClients = webhooks.map(webhook => new WebhookClient({ url: webhook.url }));
-		return Promise.all(webhookClients.map(client => client.send(message).finally(() => client.destroy())));
+		return Promise.all(
+			webhookClients.map(client => client.send(message).finally(() => client.destroy()))
+		);
 	} catch (error) {
 		const sentryId = captureException(error, {
 			extra: { event, guildId, message }

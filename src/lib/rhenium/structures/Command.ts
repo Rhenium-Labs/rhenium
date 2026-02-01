@@ -59,7 +59,10 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * @return The constructed command instance.
 	 */
 
-	public constructor(context: AliasPiece.LoaderContext<"commands">, options: Options = {} as Options) {
+	public constructor(
+		context: AliasPiece.LoaderContext<"commands">,
+		options: Options = {} as Options
+	) {
 		const name = options.name ?? context.name;
 		super(context, { ...options, name });
 
@@ -124,7 +127,10 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * @returns An object containing the flags and options.
 	 */
 
-	private static _getStrategyOptions(flags: CommandFlag[]): { flags: string[]; options: string[] } {
+	private static _getStrategyOptions(flags: CommandFlag[]): {
+		flags: string[];
+		options: string[];
+	} {
 		return flags.reduce<{ flags: string[]; options: string[] }>(
 			(acc, flag) => {
 				const destination = flag.acceptsValue ? acc.options : acc.flags;
@@ -156,9 +162,10 @@ export namespace Command {
 	export type Options = CommandOptions;
 	export type Args = ArgumentParser;
 	export type Message = DjsMessage<true>;
-	export type Interaction<T extends InteractionGeneric = InteractionGeneric> = T extends "chatInput"
-		? ChatInputCommandInteraction<"cached">
-		: T extends "messageContextMenu"
-			? MessageContextMenuCommandInteraction<"cached">
-			: UserContextMenuCommandInteraction<"cached">;
+	export type Interaction<T extends InteractionGeneric = InteractionGeneric> =
+		T extends "chatInput"
+			? ChatInputCommandInteraction<"cached">
+			: T extends "messageContextMenu"
+				? MessageContextMenuCommandInteraction<"cached">
+				: UserContextMenuCommandInteraction<"cached">;
 }

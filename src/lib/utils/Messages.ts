@@ -72,7 +72,8 @@ export default class Messages {
 				: {
 						messageReference: message,
 						failIfNotExists:
-							Reflect.get(options, "failIfNotExists") ?? message.client.options.failIfNotExists
+							Reflect.get(options, "failIfNotExists") ??
+							message.client.options.failIfNotExists
 					};
 
 		return this._handle(message, options, { reply: replyOptions });
@@ -178,8 +179,13 @@ export default class Messages {
 	 * @param limit The maximum number of messages to return.
 	 * @returns An array of serialized messages.
 	 */
-	static async getForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
-		const cachedMessages = this._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
+	static async getForChannel(
+		channelId: Snowflake,
+		limit: number = 30
+	): Promise<SerializedMessage[]> {
+		const cachedMessages = this._cache.filter(
+			msg => msg.channel_id === channelId && !msg.deleted
+		);
 
 		const messages = await kysely
 			.selectFrom("Message")
@@ -236,7 +242,9 @@ export default class Messages {
 	 * @returns The updated messages.
 	 */
 	static async bulkDelete(ids: Snowflake[]): Promise<SerializedMessage[]> {
-		const messages = this._cache.filter(message => ids.includes(message.id) && !message.deleted);
+		const messages = this._cache.filter(
+			message => ids.includes(message.id) && !message.deleted
+		);
 
 		const deletedMessages = messages.map(message => {
 			message.deleted = true;
@@ -298,7 +306,9 @@ export default class Messages {
 			return;
 		}
 
-		Logger.info(`Storing cached messages ${event ? `before exiting due to ${event}` : ""}...`);
+		Logger.info(
+			`Storing cached messages ${event ? `before exiting due to ${event}` : ""}...`
+		);
 
 		// Prettier-ignore
 		const inserted = await kysely
@@ -452,7 +462,9 @@ export default class Messages {
 	 * @param options The message options (string or object).
 	 * @returns The resolved payload options.
 	 */
-	private static _resolveSendPayload<T extends MessageOptions>(options: string | MessageOptions): T {
+	private static _resolveSendPayload<T extends MessageOptions>(
+		options: string | MessageOptions
+	): T {
 		return typeof options === "string"
 			? ({ content: options, components: [] } as unknown as T)
 			: ({ components: [], ...options } as T);
@@ -465,7 +477,10 @@ export default class Messages {
 	 * @param options The edit options.
 	 * @returns The resolved edit payload.
 	 */
-	private static _resolveEditPayload(response: Message, options: string | MessageEditOptions): MessageEditOptions {
+	private static _resolveEditPayload(
+		response: Message,
+		options: string | MessageEditOptions
+	): MessageEditOptions {
 		const resolved = this._resolveSendPayload<MessageEditOptions>(options);
 
 		if (response.embeds.length) resolved.embeds ??= [];
@@ -482,7 +497,11 @@ export default class Messages {
 	 * @param payload The message payload.
 	 * @returns The edited or newly sent message.
 	 */
-	private static async _tryEdit(message: Message, response: Message, payload: MessagePayload): Promise<Message> {
+	private static async _tryEdit(
+		message: Message,
+		response: Message,
+		payload: MessagePayload
+	): Promise<Message> {
 		try {
 			return await response.edit(payload);
 		} catch (error) {
@@ -513,6 +532,8 @@ export default class Messages {
 	 * @returns The sent message.
 	 */
 	private static _trySend(message: Message, payload: MessagePayload): Promise<Message> {
-		return (message.channel as Exclude<Message["channel"], PartialGroupDMChannel>).send(payload);
+		return (message.channel as Exclude<Message["channel"], PartialGroupDMChannel>).send(
+			payload
+		);
 	}
 }

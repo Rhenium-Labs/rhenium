@@ -48,9 +48,12 @@ export default class ArgumentParser {
 
 		return this._parser
 			.singleParseAsync<GuildMember | null, null>(async parameter => {
-				const memberId = UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
+				const memberId =
+					UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
 				const member = memberId
-					? await this._message.guild.members.fetch(memberId[1] as Snowflake).catch(() => null)
+					? await this._message.guild.members
+							.fetch(memberId[1] as Snowflake)
+							.catch(() => null)
 					: null;
 
 				return Result.ok(member);
@@ -69,9 +72,12 @@ export default class ArgumentParser {
 
 		return this._parser
 			.singleParseAsync<User | null, null>(async parameter => {
-				const userId = UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
+				const userId =
+					UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
 				const user = userId
-					? await this._message.client.users.fetch(userId[1] as Snowflake).catch(() => null)
+					? await this._message.client.users
+							.fetch(userId[1] as Snowflake)
+							.catch(() => null)
 					: null;
 
 				return Result.ok(user);
@@ -114,7 +120,10 @@ export default class ArgumentParser {
 				}
 
 				// Clamp the number between min and max if provided
-				const clampedNumber = Math.min(max ?? Infinity, Math.max(min ?? -Infinity, number));
+				const clampedNumber = Math.min(
+					max ?? Infinity,
+					Math.max(min ?? -Infinity, number)
+				);
 				return Result.ok(clampedNumber);
 			})
 			.unwrap();

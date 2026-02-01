@@ -115,7 +115,10 @@ export default class RequestAction extends Command {
 
 		const targetMember = interaction.guild.members.cache.get(target.id);
 
-		if (targetMember && config.immune_roles.some(role => targetMember.roles.cache.has(role))) {
+		if (
+			targetMember &&
+			config.immune_roles.some(role => targetMember.roles.cache.has(role))
+		) {
 			return { error: "The provided target is immune to ban requests." };
 		}
 
@@ -130,7 +133,11 @@ export default class RequestAction extends Command {
 		const duration = parseDurationString(rawDuration);
 
 		if (duration) {
-			const durationValidation = validateDuration({ duration, minimum: "1s", maximum: "5y" });
+			const durationValidation = validateDuration({
+				duration,
+				minimum: "1s",
+				maximum: "5y"
+			});
 
 			if (!durationValidation.ok) {
 				return { error: durationValidation.message };
@@ -190,7 +197,10 @@ export default class RequestAction extends Command {
 			.setTimestamp();
 
 		if (duration) {
-			embed.spliceFields(2, 0, { name: "Duration", value: ms(Number(duration), { long: true }) });
+			embed.spliceFields(2, 0, {
+				name: "Duration",
+				value: ms(Number(duration), { long: true })
+			});
 		}
 
 		const acceptButton = new ButtonBuilder()
@@ -222,7 +232,9 @@ export default class RequestAction extends Command {
 
 		const webhook = new WebhookClient({ url: config.webhook_url });
 		const content =
-			config.notify_roles.length > 0 ? config.notify_roles.map(r => roleMention(r)).join(", ") : undefined;
+			config.notify_roles.length > 0
+				? config.notify_roles.map(r => roleMention(r)).join(", ")
+				: undefined;
 
 		const log = await webhook
 			.send({
@@ -246,7 +258,10 @@ export default class RequestAction extends Command {
 
 			if (targetMember) {
 				muted = await targetMember
-					.timeout(ms("28d"), `Automatic timeout for ban request review - ID ${log.id}`)
+					.timeout(
+						ms("28d"),
+						`Automatic timeout for ban request review - ID ${log.id}`
+					)
 					.catch(() => false)
 					.then(() => true);
 			}
@@ -290,13 +305,18 @@ export default class RequestAction extends Command {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const target = await client.users.fetch(request.target_id).catch(() => null);
-		const targetMember = await interaction.guild.members.fetch(request.target_id).catch(() => null);
+		const targetMember = await interaction.guild.members
+			.fetch(request.target_id)
+			.catch(() => null);
 
 		switch (action) {
 			case BanRequestAction.Disregard: {
 				if (request.target_muted_automatically) {
 					void targetMember
-						?.timeout(null, `[${request.id}] Automatic unmute after ban request disregard`)
+						?.timeout(
+							null,
+							`[${request.id}] Automatic unmute after ban request disregard`
+						)
 						.catch(() => null);
 				}
 
@@ -338,7 +358,9 @@ export default class RequestAction extends Command {
 				}
 
 				const currentDate = Date.now();
-				const expiresAt = request.duration ? new Date(currentDate + Number(request.duration)) : null;
+				const expiresAt = request.duration
+					? new Date(currentDate + Number(request.duration))
+					: null;
 
 				const banned = await interaction.guild.bans
 					.create(target, {
@@ -401,7 +423,10 @@ export default class RequestAction extends Command {
 			case BanRequestAction.Deny: {
 				if (targetMember && request.target_muted_automatically) {
 					void targetMember
-						.timeout(null, `Automatic unmute after ban request denial - ID ${request.id}`)
+						.timeout(
+							null,
+							`Automatic unmute after ban request denial - ID ${request.id}`
+						)
 						.catch(() => null);
 				}
 
