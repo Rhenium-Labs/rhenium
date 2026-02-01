@@ -51,7 +51,7 @@ export default class Messages {
 	 * @param options The options for the message sending, identical to `TextBasedChannel#send`'s options.
 	 * @returns The response message.
 	 */
-	static async send(message: Message, options: string | MessageOptions): Promise<Message> {
+	static send(message: Message, options: string | MessageOptions): Promise<Message> {
 		return this._handle(message, options);
 	}
 
@@ -62,7 +62,7 @@ export default class Messages {
 	 * @param options The options for the message sending, identical to `TextBasedChannel#send`'s options.
 	 * @returns The response message.
 	 */
-	static async reply(message: Message, options: string | MessageOptions): Promise<Message> {
+	static reply(message: Message, options: string | MessageOptions): Promise<Message> {
 		const replyOptions: ReplyOptions =
 			typeof options === "string"
 				? {
@@ -89,7 +89,7 @@ export default class Messages {
 	 *
 	 * @param ids The message IDs to exclude.
 	 */
-	static async addPurgeExclusions(ids: Snowflake[]): Promise<void> {
+	static addPurgeExclusions(ids: Snowflake[]): void {
 		for (const id of ids) {
 			this.purgeExclusions.add(id);
 		}
@@ -100,7 +100,7 @@ export default class Messages {
 	 *
 	 * @param ids The message IDs to remove from exclusions.
 	 */
-	static async removePurgeExclusions(ids: Snowflake[]): Promise<void> {
+	static removePurgeExclusions(ids: Snowflake[]): void {
 		if (ids.length === 0) return;
 
 		for (const id of ids) {
@@ -113,7 +113,7 @@ export default class Messages {
 	 *
 	 * @param message The message to queue.
 	 */
-	static async enqueue(message: Message<true>): Promise<void> {
+	static enqueue(message: Message<true>): void {
 		const messageEntry = Messages.serialize(message);
 		this._cache.set(message.id, messageEntry);
 	}
@@ -179,7 +179,8 @@ export default class Messages {
 	 * @returns An array of serialized messages.
 	 */
 	static async getForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
-		const cachedMessages = this._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
+		const cachedMessages = this._cache
+			.filter(msg => msg.channel_id === channelId && !msg.deleted);
 
 		const messages = await kysely
 			.selectFrom("Message")
@@ -300,11 +301,11 @@ export default class Messages {
 
 		Logger.info(`Storing cached messages ${event ? `before exiting due to ${event}` : ""}...`);
 
-		// prettier-ignore
+		// Prettier-ignore
 		const inserted = await kysely
 			.insertInto("Message")
 			.values(Array.from(this._cache.values()))
-			.returning('Message.id')
+			.returning("Message.id")
 			.execute();
 
 		// Clear the cache.
@@ -324,7 +325,7 @@ export default class Messages {
 	 * @returns The serialized message.
 	 */
 	static serialize(message: Message<true>): SerializedMessage {
-		const stickerId = message.stickers?.first()?.id ?? null;
+		const stickerId = message.stickers.first()?.id ?? null;
 		const referenceId = message.reference?.messageId ?? null;
 		const content = Messages.cleanContent(message.content, message.channel);
 
@@ -512,7 +513,7 @@ export default class Messages {
 	 * @param payload The message payload.
 	 * @returns The sent message.
 	 */
-	private static async _trySend(message: Message, payload: MessagePayload): Promise<Message> {
+	private static _trySend(message: Message, payload: MessagePayload): Promise<Message> {
 		return (message.channel as Exclude<Message["channel"], PartialGroupDMChannel>).send(payload);
 	}
 }

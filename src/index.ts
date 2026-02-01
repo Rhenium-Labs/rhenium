@@ -37,7 +37,7 @@ export const client = new Rhenium({
 	sweepers: {
 		users: {
 			interval: 3600,
-			filter: () => () => true // Sweeps everything.
+			filter: () => (): boolean => true // Sweeps everything.
 		},
 		guildMembers: {
 			interval: 3600,
@@ -58,7 +58,7 @@ export const kysely = new Kysely<DB>({
 });
 
 /** LMDB KV. */
-export const kv = open<Object, string>({
+export const kv = open<object, string>({
 	encoding: "json",
 	compression: true
 });

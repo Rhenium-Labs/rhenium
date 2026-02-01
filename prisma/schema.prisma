@@ -57,6 +57,16 @@ enum UserPermission {
   UseQuickPurge
 }
 
+enum LoggingEvent {
+  MessageReportReviewed
+  BanRequestReviewed
+  BanRequestResult
+  QuickPurgeResult
+  QuickPurgeExecuted
+  QuickMuteResult
+  QuickMuteExecuted
+}
+
 model Guild {
   id String @id
 
@@ -76,6 +86,7 @@ model Guild {
   permission_scopes     PermissionScope[]
   content_filter_alerts ContentFilterAlert[]
   content_filter_logs   ContentFilterLog[]
+  webhooks              LoggingWebhook[]
 }
 
 model Whitelist {
@@ -166,7 +177,7 @@ model ContentFilterAlert {
   alert_message_id String
   alert_channel_id String
   offender_id      String
-  detectors        Detector[]
+  detectors        Detector[]          @default([])
   highest_score    Float               @default(0)
   mod_status       ContentFilterStatus @default(Pending)
   del_status       ContentFilterStatus @default(Pending)
@@ -253,8 +264,8 @@ model HighlightConfig {
 model Highlight {
   user_id         String
   guild_id        String
-  patterns        String[]
-  user_blacklist  String[]
+  patterns        String[]                  @default([])
+  user_blacklist  String[]                  @default([])
   channel_scoping HighlightChannelScoping[]
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
@@ -360,9 +371,20 @@ model Message {
 model PermissionScope {
   guild_id            String
   role_id             String
-  allowed_permissions UserPermission[]
+  allowed_permissions UserPermission[] @default([])
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 
   @@id([guild_id, role_id])
+}
+
+model LoggingWebhook {
+  id         String         @unique
+  url        String
+  token      String
+  channel_id String
+  guild_id   String
+  events     LoggingEvent[] @default([])
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }

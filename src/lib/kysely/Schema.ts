@@ -5,14 +5,15 @@ export type Generated<T> =
 		: ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-import type {
-	RequestStatus,
-	ReportStatus,
-	Detector,
-	DetectorMode,
-	ContentFilterVerbosity,
-	ContentFilterStatus,
-	UserPermission
+import {
+	type RequestStatus,
+	type ReportStatus,
+	type Detector,
+	type DetectorMode,
+	type ContentFilterVerbosity,
+	type ContentFilterStatus,
+	type UserPermission,
+	type LoggingEvent
 } from "./Enums.js";
 
 export type BanRequestTable = {
@@ -249,6 +250,17 @@ export type WhitelistTable = {
 };
 export type Whitelist = Selectable<WhitelistTable>;
 
+export type LoggingWebhookTable = {
+	id: string;
+	url: string;
+	token: string;
+	channel_id: string;
+	guild_id: string;
+	events: Generated<LoggingEvent[]>;
+};
+
+export type LoggingWebhook = Selectable<LoggingWebhookTable>;
+
 export type DB = {
 	BanRequest: BanRequestTable;
 	BanRequestConfig: BanRequestConfigTable;
@@ -272,4 +284,5 @@ export type DB = {
 	QuickPurgeConfig: QuickPurgeConfigTable;
 	TemporaryBan: TemporaryBanTable;
 	Whitelist: WhitelistTable;
+	LoggingWebhook: LoggingWebhookTable;
 };

@@ -5,6 +5,7 @@ import type {
 	ContentFilterChannelScoping,
 	ContentFilterConfig,
 	HighlightConfig,
+	LoggingWebhook,
 	MessageReportConfig,
 	PermissionScope,
 	QuickMuteChannelScoping,
@@ -12,7 +13,7 @@ import type {
 	QuickPurgeChannelScoping,
 	QuickPurgeConfig
 } from "#kysely/Schema.js";
-import type { UserPermission } from "#kysely/Enums.js";
+import type { LoggingEvent, UserPermission } from "#kysely/Enums.js";
 
 export default class GuildConfig {
 	/**
@@ -144,6 +145,16 @@ export default class GuildConfig {
 
 		return false;
 	}
+
+	/**
+	 * Check if a specific logging event can be logged.
+	 *
+	 * @param event The logging event to check.
+	 * @returns True if the event can be logged, false otherwise.
+	 */
+	public canLogEvent(event: LoggingEvent): boolean {
+		return this.data.logging_webhooks.some(wh => wh.events.includes(event));
+	}
 }
 
 export type GuildConfigData = {
@@ -155,6 +166,7 @@ export type GuildConfigData = {
 	quick_mutes: QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] };
 	quick_purges: QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] };
 	permission_scopes: PermissionScope[];
+	logging_webhooks: LoggingWebhook[];
 };
 
 // Validated Config Types

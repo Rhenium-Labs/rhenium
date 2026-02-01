@@ -234,7 +234,8 @@ const TablesWithGuildId = [
 	"QuickMuteChannelScoping",
 	"QuickPurgeChannelScoping",
 	"ContentFilterChannelScoping",
-	"PermissionScope"
+	"PermissionScope",
+	"LoggingWebhook"
 ] as const;
 
 /** Tables that use their "id" column as the primary key. */
@@ -252,7 +253,8 @@ const GuildIdToConfigKey: Record<string, ConfigKeys> = {
 	QuickMuteChannelScoping: ConfigKeys.QuickMutes,
 	QuickPurgeChannelScoping: ConfigKeys.QuickPurges,
 	ContentFilterChannelScoping: ConfigKeys.ContentFilter,
-	PermissionScope: ConfigKeys.PermissionScopes
+	PermissionScope: ConfigKeys.PermissionScopes,
+	LoggingWebhook: ConfigKeys.LoggingWebhooks
 };
 
 /** Mapping of table names to ConfigKeys for tables with "id" primary key. */
