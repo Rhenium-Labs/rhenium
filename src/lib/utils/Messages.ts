@@ -179,8 +179,7 @@ export default class Messages {
 	 * @returns An array of serialized messages.
 	 */
 	static async getForChannel(channelId: Snowflake, limit: number = 30): Promise<SerializedMessage[]> {
-		const cachedMessages = this._cache
-			.filter(msg => msg.channel_id === channelId && !msg.deleted);
+		const cachedMessages = this._cache.filter(msg => msg.channel_id === channelId && !msg.deleted);
 
 		const messages = await kysely
 			.selectFrom("Message")

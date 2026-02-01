@@ -1,8 +1,10 @@
 generator kysely {
-  provider     = "prisma-kysely"
-  output       = "../src/lib/kysely"
-  fileName     = "Schema.ts"
-  enumFileName = "Enums.ts"
+  provider           = "prisma-kysely"
+  output             = "../src/lib/kysely"
+  fileName           = "Schema.ts"
+  enumFileName       = "Enums.ts"
+  importExtension    = ".js"
+  exportWrappedTypes = true
 }
 
 datasource db {
@@ -102,6 +104,7 @@ model MessageReportConfig {
   enabled              Boolean @default(false)
   webhook_url          String?
   log_webhook_url      String?
+  /// @kyselyType(bigint)
   auto_disregard_after BigInt  @default(0)
 
   immune_roles       String[] @default([])
@@ -216,6 +219,7 @@ model BanRequest {
   requested_at DateTime @default(now())
   requested_by String
 
+  /// @kyselyType(bigint)
   duration BigInt?
   reason   String
 
@@ -311,6 +315,7 @@ model QuickMute {
   user_id      String
   guild_id     String
   reaction     String
+  /// @kyselyType(bigint)
   duration     BigInt
   reason       String
   purge_amount Int    @default(0)

@@ -46,7 +46,6 @@ export const UserPermission = {
 	UseQuickPurge: "UseQuickPurge"
 } as const;
 export type UserPermission = (typeof UserPermission)[keyof typeof UserPermission];
-
 export const LoggingEvent = {
 	MessageReportReviewed: "MessageReportReviewed",
 	BanRequestReviewed: "BanRequestReviewed",
