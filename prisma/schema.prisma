@@ -135,7 +135,6 @@ model BanRequestConfig {
   notify_roles String[] @default([])
 
   enforce_submission_reason Boolean @default(true)
-  enforce_accept_reason     Boolean @default(true)
   enforce_deny_reason       Boolean @default(true)
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
