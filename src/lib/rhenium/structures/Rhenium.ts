@@ -9,9 +9,9 @@ import CommandStore from "../stores/Commands.js";
 
 export class Rhenium extends Client<true> {
 	/** Store registry. */
-	public stores: StoreRegistry;
+	stores: StoreRegistry;
 
-	public constructor(options: ClientOptions) {
+	constructor(options: ClientOptions) {
 		super(options);
 
 		/** Register all stores. */
@@ -27,7 +27,7 @@ export class Rhenium extends Client<true> {
 	 * @returns A promise that resolves when all pieces are loaded.
 	 */
 
-	public async loadPieces() {
+	init(): Promise<void[]> {
 		// Register the `src` directory as a pieces path.
 		this.stores.registerPath(path.join(getRootData().root));
 		return Promise.all([...this.stores.values()].map(store => store.loadAll()));

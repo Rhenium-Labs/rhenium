@@ -15,6 +15,7 @@ import {
 
 import { log } from "./Webhooks.js";
 import { kysely } from "#root/index.js";
+import { EMPTY_MESSAGE_CONTENT } from "./Constants.js";
 import { LoggingEvent, ReportStatus } from "#kysely/Enums.js";
 import { cropLines, userMentionWithId } from "./index.js";
 
@@ -107,10 +108,22 @@ export default class MessageReportUtils {
 				})
 				.catch(() => null);
 
+			await kysely
+				.updateTable("MessageReport")
+				.set({
+					additional_reporters: [...originalReport.additional_reporters, reporter.id]
+				})
+				.where("id", "=", originalReport.id)
+				.execute();
+
 			return { ok: true };
 		}
 
-		const messageContent = Messages.cleanContent(message.content, message.channel);
+		const messageContent = Messages.cleanContent(
+			message.content ?? EMPTY_MESSAGE_CONTENT,
+			message.channel
+		);
+
 		const croppedContent = cropLines(messageContent, 5);
 		const stickerId = message.stickers.first()?.id ?? null;
 
@@ -258,7 +271,7 @@ export default class MessageReportUtils {
 				message_url: message.url,
 				channel_id: message.channel.id,
 				author_id: message.author.id,
-				content: content ?? null,
+				content: formattedContent,
 				reported_at: new Date(),
 				reported_by: reporter.id,
 				report_reason: reason ?? "No reason provided.",

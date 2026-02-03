@@ -39,6 +39,7 @@ export type BanRequestConfigTable = {
 	id: string;
 	enabled: Generated<boolean>;
 	webhook_url: string | null;
+	webhook_channel: string | null;
 	log_webhook_url: string | null;
 	decision_webhook_url: string | null;
 	automatically_timeout: Generated<boolean>;
@@ -178,6 +179,7 @@ export type MessageReportTable = {
 	reported_at: Timestamp;
 	reported_by: string;
 	report_reason: string;
+	additional_reporters: Generated<string[]>;
 	status: Generated<ReportStatus>;
 	resolved_at: Timestamp | null;
 	resolved_by: string | null;
@@ -189,6 +191,7 @@ export type MessageReportConfigTable = {
 	id: string;
 	enabled: Generated<boolean>;
 	webhook_url: string | null;
+	webhook_channel: string | null;
 	log_webhook_url: string | null;
 	/**
 	 * @kyselyType(bigint)

@@ -10,25 +10,25 @@ export abstract class EventListener<
 	 * The client this listener is attached to.
 	 */
 
-	public client = client;
+	client = client;
 
 	/**
 	 * Kysely client instance.
 	 */
 
-	public kysely = kysely;
+	kysely = kysely;
 
 	/**
 	 * The event this listener listens to.
 	 */
 
-	public readonly event: Events | string;
+	readonly event: Events | string;
 
 	/**
 	 * Whether this listener should only run once.
 	 */
 
-	public readonly once: boolean;
+	readonly once: boolean;
 
 	/**
 	 * Constructs a new event listener.
@@ -38,7 +38,7 @@ export abstract class EventListener<
 	 * @returns The constructed event listener.
 	 */
 
-	public constructor(context: Piece.LoaderContext<"events">, options: Options = {} as Options) {
+	constructor(context: Piece.LoaderContext<"events">, options: Options = {} as Options) {
 		super(context, options);
 
 		this.event = options.event;
@@ -52,7 +52,7 @@ export abstract class EventListener<
 	 * @returns Unknown.
 	 */
 
-	public abstract onEmit(...args: unknown[]): Awaitable<unknown>;
+	abstract onEmit(...args: unknown[]): Awaitable<unknown>;
 }
 
 interface EventListenerOptions extends Piece.Options {

@@ -2275,6 +2275,12 @@ export default class Config extends Command {
 				};
 			}
 
+			await kysely
+				.updateTable("MessageReportConfig")
+				.set({ webhook_channel: channel.id })
+				.where("id", "=", interaction.guild.id)
+				.execute();
+
 			return {
 				content: `Successfully moved the review channel webhook to ${channel}.`
 			};
@@ -2292,7 +2298,7 @@ export default class Config extends Command {
 
 			await kysely
 				.updateTable("MessageReportConfig")
-				.set({ webhook_url: newWebhook.url })
+				.set({ webhook_channel: channel.id, webhook_url: newWebhook.url })
 				.where("id", "=", interaction.guild.id)
 				.execute();
 
@@ -2439,6 +2445,12 @@ export default class Config extends Command {
 				};
 			}
 
+			await kysely
+				.updateTable("BanRequestConfig")
+				.set({ webhook_channel: channel.id })
+				.where("id", "=", interaction.guild.id)
+				.execute();
+
 			return {
 				content: `Successfully moved the review channel webhook to ${channel}.`
 			};
@@ -2456,7 +2468,7 @@ export default class Config extends Command {
 
 			await kysely
 				.updateTable("BanRequestConfig")
-				.set({ webhook_url: newWebhook.url })
+				.set({ webhook_url: newWebhook.url, webhook_channel: channel.id })
 				.where("id", "=", interaction.guild.id)
 				.execute();
 

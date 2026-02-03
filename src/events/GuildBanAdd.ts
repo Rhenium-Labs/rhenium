@@ -5,17 +5,22 @@ import {
 	EmbedBuilder,
 	Events,
 	GuildTextBasedChannel,
-	WebhookClient
+	messageLink
 } from "discord.js";
+
+import ms from "ms";
 
 import { log } from "#utils/Webhooks.js";
 import { LoggingEvent } from "#kysely/Enums.js";
 import { client, kysely } from "#root/index.js";
+import { EMPTY_MESSAGE_CONTENT } from "#utils/Constants.js";
 import { ApplyOptions, EventListener } from "#rhenium";
+import { cropLines, userMentionWithId } from "#utils/index.js";
 
-import ConfigManager from "#root/lib/config/ConfigManager.js";
-import GuildConfig from "#root/lib/config/GuildConfig.js";
 import Logger from "#utils/Logger.js";
+import Messages from "#utils/Messages.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.GuildBanAdd
@@ -26,8 +31,8 @@ export default class GuildBanAdd extends EventListener {
 
 		try {
 			await Promise.all([
-				GuildBanAdd._clearMessageReports(ban, config),
-				GuildBanAdd._clearBanRequests(ban, config)
+				GuildBanAdd._resolvePendingReports(ban, config),
+				GuildBanAdd._resolvePendingBanRequests(ban, config)
 			]);
 		} catch (error) {
 			const sentryId = captureException(error, {
@@ -47,7 +52,10 @@ export default class GuildBanAdd extends EventListener {
 		}
 	}
 
-	private static async _clearMessageReports(ban: GuildBan, config: GuildConfig): Promise<void> {
+	private static async _resolvePendingReports(
+		ban: GuildBan,
+		config: GuildConfig
+	): Promise<void> {
 		if (
 			!config.getMessageReportsConfig() ||
 			!config.canLogEvent(LoggingEvent.MessageReportReviewed)
@@ -69,56 +77,97 @@ export default class GuildBanAdd extends EventListener {
 
 		if (reports.length === 0) return;
 
-		const reportSubmissions: string[] = [];
-		const webhook = new WebhookClient({ url: config.data.message_reports.webhook_url! });
-
-		let reportChannelId!: string;
-
 		for (const report of reports) {
-			const message = await webhook.fetchMessage(report.id).catch(() => null);
-			if (!message) continue;
+			const additionalReporters =
+				report.additional_reporters.length > 0
+					? report.additional_reporters.map(id => userMentionWithId(id)).join("\n")
+					: "";
 
-			const embedIdx = message.embeds.length > 1 ? 1 : 0;
-			const currentEmbed = message.embeds.at(embedIdx);
+			const embeds: EmbedBuilder[] = [];
 
-			if (!currentEmbed) continue;
-
-			const primaryEmbed = new EmbedBuilder(currentEmbed)
-				.setAuthor({ name: "Message Report Automatically Resolved" })
+			const primaryEmbed = new EmbedBuilder()
+				.setAuthor({ name: "Message Report AutoResolved" })
 				.setColor(Colors.Green)
-				.setFooter({
-					text: `Reviewed by @${client.user.username} (${client.user.id})`
-				})
+				.setThumbnail(ban.user.displayAvatarURL())
+				.setFields([
+					{
+						name: "Reported By",
+						value: `${userMentionWithId(report.reported_by)}${additionalReporters}`
+					},
+					{
+						name: "Report Reason",
+						value: report.report_reason
+					},
+					{
+						name: "Message Author",
+						value: userMentionWithId(ban.user.id)
+					},
+					{
+						name: "Message Content",
+						value: report.content ?? EMPTY_MESSAGE_CONTENT
+					}
+				])
+				.setFooter({ text: `Reviewed by @${client.user.username} (${client.user.id})` })
 				.setTimestamp();
 
-			const secondaryEmbed = embedIdx === 1 ? message.embeds.at(0) : undefined;
+			embeds.push(primaryEmbed);
 
-			reportSubmissions.push(message.id);
-			reportChannelId = message.channel_id;
+			const reference = report.reference_id && (await Messages.get(report.reference_id));
+
+			if (reference) {
+				const croppedContent = cropLines(reference.content ?? EMPTY_MESSAGE_CONTENT, 5);
+				const url = messageLink(reference.channel_id, reference.id, reference.guild_id);
+
+				const formattedReferenceContent = await Messages.formatContent({
+					url,
+					content: croppedContent,
+					stickerId: reference.sticker_id,
+					createdAt: reference.created_at
+				});
+
+				const referenceEmbed = new EmbedBuilder()
+					.setAuthor({ name: "Message Reference" })
+					.setColor(Colors.NotQuiteBlack)
+					.setFields([
+						{
+							name: "Reference Author",
+							value: userMentionWithId(reference.author_id)
+						},
+						{
+							name: "Reference Content",
+							value: formattedReferenceContent
+						}
+					])
+					.setTimestamp();
+
+				embeds.push(referenceEmbed);
+			}
 
 			void log({
 				event: LoggingEvent.MessageReportReviewed,
 				guildId: ban.guild.id,
-				message: {
-					embeds: secondaryEmbed ? [secondaryEmbed, primaryEmbed] : [primaryEmbed]
-				}
+				message: { embeds }
 			});
 		}
 
-		const reportChannel = (await client.channels
-			.fetch(reportChannelId)
+		if (!config.data.message_reports.webhook_channel) return;
+
+		const reportsChannel = (await client.channels
+			.fetch(config.data.message_reports.webhook_channel)
 			.catch(() => null)) as GuildTextBasedChannel | null;
 
-		// If the channel somehow doesn't exist anymore, just return.
-		if (!reportChannel) return;
+		if (!reportsChannel) return;
 
 		// prettier-ignore
-		return void reportChannel
-			.bulkDelete(reportSubmissions, true)
+		return void reportsChannel
+			.bulkDelete(reports.map(r => r.id), true)
 			.catch(() => null);
 	}
 
-	private static async _clearBanRequests(ban: GuildBan, config: GuildConfig): Promise<void> {
+	private static async _resolvePendingBanRequests(
+		ban: GuildBan,
+		config: GuildConfig
+	): Promise<void> {
 		if (
 			!config.getBanRequestsConfig() ||
 			!config.canLogEvent(LoggingEvent.BanRequestReviewed)
@@ -140,43 +189,45 @@ export default class GuildBanAdd extends EventListener {
 
 		if (requests.length === 0) return;
 
-		const requestSubmissions: string[] = [];
-		const webhook = new WebhookClient({ url: config.data.ban_requests.webhook_url! });
-
-		let requestChannelId!: string;
-
 		for (const request of requests) {
-			const message = await webhook.fetchMessage(request.id).catch(() => null);
-			if (!message) continue;
-
-			const resolvedEmbed = new EmbedBuilder(message.embeds[0])
-				.setAuthor({ name: "Ban Request Automatically Resolved" })
+			const embed = new EmbedBuilder()
 				.setColor(Colors.Green)
-				.setFooter({
-					text: `Reviewed by @${client.user.username} (${client.user.id})`
-				})
+				.setAuthor({ name: "Ban Request AutoResolved" })
+				.setThumbnail(ban.user.displayAvatarURL())
+				.setFields([
+					{ name: "Target", value: userMentionWithId(ban.user.id) },
+					{ name: "Requested By", value: userMentionWithId(request.requested_by) },
+					{ name: "Reason", value: request.reason },
+					{ name: "Reviewer Reason", value: "Resolved automatically from user ban." }
+				])
+				.setFooter({ text: `Reviewed by @${client.user.username} (${client.user.id})` })
 				.setTimestamp();
 
-			requestSubmissions.push(message.id);
-			requestChannelId = message.channel_id;
+			if (request.duration) {
+				embed.spliceFields(2, 0, {
+					name: "Duration",
+					value: ms(Number(request.duration), { long: true })
+				});
+			}
 
 			void log({
 				event: LoggingEvent.BanRequestReviewed,
 				guildId: ban.guild.id,
-				message: { embeds: [resolvedEmbed] }
+				message: { embeds: [embed] }
 			});
 		}
 
-		const requestChannel = (await client.channels
-			.fetch(requestChannelId)
+		if (!config.data.ban_requests.webhook_channel) return;
+
+		const requestsChannel = (await client.channels
+			.fetch(config.data.ban_requests.webhook_channel)
 			.catch(() => null)) as GuildTextBasedChannel | null;
 
-		// If the channel somehow doesn't exist anymore, just return.
-		if (!requestChannel) return;
+		if (!requestsChannel) return;
 
 		// prettier-ignore
-		return void requestChannel
-			.bulkDelete(requestSubmissions, true)
+		return void requestsChannel
+			.bulkDelete(requests.map(r => r.id), true)
 			.catch(() => null);
 	}
 }

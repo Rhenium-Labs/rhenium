@@ -20,13 +20,15 @@ export default class GuildConfig {
 	 * Data representing the guild configuration.
 	 */
 
-	public readonly data: GuildConfigData;
+	readonly data: GuildConfigData;
 
 	/**
-	 * Creates an instance of GuildConfig.
+	 * Constructs a new GuildConfig instance.
+	 *
 	 * @param data The guild configuration data.
+	 * @return The constructed GuildConfig instance.
 	 */
-	public constructor(data: GuildConfigData) {
+	constructor(data: GuildConfigData) {
 		this.data = data;
 	}
 
@@ -39,7 +41,7 @@ export default class GuildConfig {
 	 *
 	 * @return The message report configuration or null.
 	 */
-	public getMessageReportsConfig(): ValidatedMessageReportsConfig | null {
+	getMessageReportsConfig(): ValidatedMessageReportsConfig | null {
 		if (!this.data.message_reports.enabled || !this.data.message_reports.webhook_url) {
 			return null;
 		}
@@ -56,7 +58,7 @@ export default class GuildConfig {
 	 *
 	 * @return The ban request configuration or null.
 	 */
-	public getBanRequestsConfig(): ValidatedBanRequestsConfig | null {
+	getBanRequestsConfig(): ValidatedBanRequestsConfig | null {
 		if (!this.data.ban_requests.enabled || !this.data.ban_requests.webhook_url) {
 			return null;
 		}
@@ -74,7 +76,7 @@ export default class GuildConfig {
 	 *
 	 * @return The quick mutes configuration or null.
 	 */
-	public getQuickMutesConfig(): ValidatedQuickMutesConfig | null {
+	getQuickMutesConfig(): ValidatedQuickMutesConfig | null {
 		if (
 			!this.data.quick_mutes.enabled ||
 			!this.data.quick_mutes.webhook_url ||
@@ -95,7 +97,7 @@ export default class GuildConfig {
 	 * - Quick purge result webhook URL is not configured.
 	 */
 
-	public getQuickPurgesConfig(): ValidatedQuickPurgesConfig | null {
+	getQuickPurgesConfig(): ValidatedQuickPurgesConfig | null {
 		if (
 			!this.data.quick_purges.enabled ||
 			!this.data.quick_purges.webhook_url ||
@@ -116,7 +118,7 @@ export default class GuildConfig {
 	 *
 	 * @return The content filter configuration or null.
 	 */
-	public getContentFilterConfig(): ValidatedContentFilterConfig | null {
+	getContentFilterConfig(): ValidatedContentFilterConfig | null {
 		if (!this.data.content_filter.enabled || !this.data.content_filter.webhook_url) {
 			return null;
 		}
@@ -131,7 +133,7 @@ export default class GuildConfig {
 	 * @param permission The permission to check for.
 	 * @returns True if the member has the permission scope, false otherwise.
 	 */
-	public hasPermission(member: GuildMember, permission: UserPermission): boolean {
+	hasPermission(member: GuildMember, permission: UserPermission): boolean {
 		const scopes = this.data.permission_scopes;
 		const scopesLen = scopes.length;
 
@@ -155,7 +157,7 @@ export default class GuildConfig {
 	 * @param event The logging event to check.
 	 * @returns True if the event can be logged, false otherwise.
 	 */
-	public canLogEvent(event: LoggingEvent): boolean {
+	canLogEvent(event: LoggingEvent): boolean {
 		return this.data.logging_webhooks.some(wh => wh.events.includes(event));
 	}
 }

@@ -36,10 +36,12 @@ export default class InteractionCreate extends EventListener {
 		if (!whitelisted && !GlobalConfig.isDeveloper(interaction.user.id)) return;
 
 		const config = await ConfigManager.get(interaction.guild.id);
+		const result = await Result.fromAsync(() =>
+			InteractionCreate._handle(interaction, config)
+		);
 
-		try {
-			await InteractionCreate._handle(interaction, config);
-		} catch (error) {
+		if (result.isErr()) {
+			const error = result.unwrapErr();
 			const sentryId = captureException(error, {
 				user: {
 					id: interaction.user.id,
@@ -57,6 +59,7 @@ export default class InteractionCreate extends EventListener {
 
 			const content = `An error occurred while executing this interaction. Please use this ID when reporting the bug: \`${sentryId}\`.`;
 
+			// We wrap the calls in `Result.fromAsync` to avoid Unknown Interaction errors.
 			if (interaction.deferred || interaction.replied) {
 				Result.fromAsync(() => interaction.editReply({ content }));
 			} else {
@@ -65,7 +68,7 @@ export default class InteractionCreate extends EventListener {
 				);
 			}
 
-			Logger.tracable(sentryId, error);
+			Logger.tracable(sentryId, `An error occurred while handling an interaction:`, error);
 			return;
 		}
 	}
@@ -102,7 +105,6 @@ export default class InteractionCreate extends EventListener {
 			embeds
 		};
 
-		// We wrap the call in Result.fromAsync to prevent "Unknown Interaction" errors.
 		if (interaction.deferred || interaction.replied) {
 			const { flags, ...editOptions } = options;
 			await Result.fromAsync(() => interaction.editReply(editOptions));

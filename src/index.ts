@@ -17,7 +17,6 @@ import {
 import { open } from "lmdb";
 import { Sweepers } from "discord.js";
 
-import { sleep } from "#utils/index.js";
 import { Rhenium } from "#rhenium";
 import {
 	CLIENT_CACHE_OPTIONS,
@@ -76,14 +75,18 @@ async function main(): Promise<void> {
 	// Cache global configuration.
 	await GlobalConfig.cache();
 
-	// Load pieces.
-	await client.loadPieces();
+	// Load all pieces.
+	await client.init();
 
 	// Attempt to connect to the database.
 	// We run a simple test query to ensure the connection is valid.
 	try {
-		await kysely.selectFrom("Message").selectAll().limit(1).executeTakeFirst();
-		Logger.info("Connected to the database.");
+		await kysely
+			.selectFrom("Message")
+			.selectAll()
+			.limit(1)
+			.executeTakeFirst()
+			.then(() => Logger.info("Connected to the database."));
 	} catch (error) {
 		Logger.fatal("Failed to connect to the database:", error);
 		process.exit(1);
@@ -106,10 +109,6 @@ async function main(): Promise<void> {
 
 	// Log in to Discord.
 	await client.login(process.env.BOT_TOKEN);
-
-	// Wait for the client to stabilize, then register application commands.
-	await sleep(2000);
-	await client.stores.get("commands").register();
 }
 
 void main();

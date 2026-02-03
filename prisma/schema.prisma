@@ -103,6 +103,7 @@ model MessageReportConfig {
   // Whether message reporting is enabled.
   enabled              Boolean @default(false)
   webhook_url          String?
+  webhook_channel      String?
   log_webhook_url      String?
   /// @kyselyType(bigint)
   auto_disregard_after BigInt  @default(0)
@@ -125,6 +126,7 @@ model BanRequestConfig {
   enabled Boolean @default(false)
 
   webhook_url           String?
+  webhook_channel       String?
   log_webhook_url       String?
   decision_webhook_url  String?
   automatically_timeout Boolean @default(false)
@@ -244,9 +246,10 @@ model MessageReport {
   author_id    String
   content      String?
 
-  reported_at   DateTime
-  reported_by   String
-  report_reason String
+  reported_at          DateTime
+  reported_by          String
+  report_reason        String
+  additional_reporters String[] @default([])
 
   status ReportStatus @default(Pending)
 

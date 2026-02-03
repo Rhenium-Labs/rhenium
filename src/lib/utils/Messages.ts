@@ -19,7 +19,9 @@ import {
 } from "discord.js";
 
 import { client, kysely } from "#root/index.js";
+import { EMPTY_MESSAGE_CONTENT } from "./Constants.js";
 import { hastebin, inflect, truncate } from "./index.js";
+
 import type { Message as SerializedMessage } from "#kysely/Schema.js";
 
 import Logger from "./Logger.js";
@@ -278,7 +280,7 @@ export default class Messages {
 		const message = this._cache.get(id);
 
 		if (message) {
-			const oldContent = message.content ?? "No message content.";
+			const oldContent = message.content ?? EMPTY_MESSAGE_CONTENT;
 			message.content = newContent;
 
 			return oldContent;
@@ -292,7 +294,7 @@ export default class Messages {
 			.returning(eb => eb.selectFrom("old").select("content").as("old_content"))
 			.executeTakeFirst();
 
-		return result?.old_content ?? "No message content.";
+		return result?.old_content ?? EMPTY_MESSAGE_CONTENT;
 	}
 
 	/**
@@ -336,7 +338,10 @@ export default class Messages {
 	static serialize(message: Message<true>): SerializedMessage {
 		const stickerId = message.stickers.first()?.id ?? null;
 		const referenceId = message.reference?.messageId ?? null;
-		const content = Messages.cleanContent(message.content, message.channel);
+		const content = Messages.cleanContent(
+			message.content ?? EMPTY_MESSAGE_CONTENT,
+			message.channel
+		);
 
 		return {
 			id: message.id,
