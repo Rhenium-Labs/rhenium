@@ -1,12 +1,6 @@
 import { captureException } from "@sentry/node";
 import { AliasStore, LoaderStrategy } from "@sapphire/pieces";
-import {
-	MessageFlags,
-	PermissionFlagsBits,
-	type ApplicationCommandData,
-	type CommandInteraction,
-	type Message
-} from "discord.js";
+import { PermissionFlagsBits, type ApplicationCommandData, type Message } from "discord.js";
 
 import { client } from "#root/index.js";
 import { inflect } from "#utils/index.js";
@@ -49,83 +43,6 @@ export default class CommandStore extends AliasStore<Command, "commands"> {
 		Logger.success(
 			`Registered ${commands.length} ${inflect(commands.length, "application command")}.`
 		);
-	}
-
-	/** Handles command execution for application commands. */
-	public async handleApplicationCommand(
-		interaction: CommandInteraction<"cached">
-	): Promise<any> {
-		const command = this.get(interaction.commandName);
-
-		if (!command) {
-			const sentryId = captureException(new Error("Unknown Command Interaction."), {
-				user: {
-					id: interaction.user.id,
-					username: interaction.user.username
-				},
-				extra: {
-					interactionId: interaction.id,
-					interactionIdentifier: interaction.commandName,
-					channelId: interaction.channel?.id,
-					guildId: interaction.guild.id
-				}
-			});
-
-			return interaction.reply({
-				content: `An error occurred while executing this command. Please include this ID when reporting the bug: \`${sentryId}\`.`,
-				flags: [MessageFlags.Ephemeral]
-			});
-		}
-
-		if (!command.interactionRun) {
-			const sentryId = captureException(new Error("Command Missing Handler."), {
-				user: {
-					id: interaction.user.id,
-					username: interaction.user.username
-				},
-				extra: {
-					channelId: interaction.channel?.id,
-					guildId: interaction.guild.id,
-					interactionId: interaction.id,
-					interactionIdentifier: interaction.commandName
-				}
-			});
-
-			return interaction.reply({
-				content: `An error occurred while executing this command. Please include this ID when reporting the bug: \`${sentryId}\`.`,
-				flags: [MessageFlags.Ephemeral]
-			});
-		}
-
-		const config = await ConfigManager.get(interaction.guild.id);
-
-		try {
-			const response = await command.interactionRun(interaction, config);
-			return processResponse("Interaction", { interaction, response });
-		} catch (error) {
-			const sentryId = captureException(error, {
-				user: {
-					id: interaction.user.id,
-					username: interaction.user.username
-				},
-				extra: {
-					channelId: interaction.channel?.id,
-					guildId: interaction.guild.id,
-					interactionId: interaction.id,
-					interactionIdentifier: interaction.commandName
-				}
-			});
-
-			Logger.error(`Error executing command "${command.name}":`, error);
-
-			const content = `An error occurred while executing this command. Please include this ID when reporting the bug: \`${sentryId}\`.`;
-
-			if (interaction.deferred || interaction.replied) {
-				await interaction.editReply({ content: content });
-			} else {
-				await interaction.reply({ content: content, flags: [MessageFlags.Ephemeral] });
-			}
-		}
 	}
 
 	/** Handles execution for message commands. */
