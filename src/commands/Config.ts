@@ -181,20 +181,6 @@ export default class Config extends Command {
 							]
 						},
 						{
-							name: ConfigSubcommand.SetLogChannel,
-							description: "Set the log channel for reports.",
-							type: ApplicationCommandOptionType.Subcommand,
-							options: [
-								{
-									name: "channel",
-									description: "The channel.",
-									type: ApplicationCommandOptionType.Channel,
-									channel_types: [ChannelType.GuildText],
-									required: true
-								}
-							]
-						},
-						{
 							name: ConfigSubcommand.AddImmuneRole,
 							description: "Make a role immune to reports.",
 							type: ApplicationCommandOptionType.Subcommand,
@@ -291,36 +277,8 @@ export default class Config extends Command {
 							]
 						},
 						{
-							name: ConfigSubcommand.SetLogChannel,
-							description: "Set the log channel for ban requests.",
-							type: ApplicationCommandOptionType.Subcommand,
-							options: [
-								{
-									name: "channel",
-									description: "The channel.",
-									type: ApplicationCommandOptionType.Channel,
-									channel_types: [ChannelType.GuildText],
-									required: true
-								}
-							]
-						},
-						{
 							name: ConfigSubcommand.SetReviewChannel,
 							description: "Set the review channel for ban requests.",
-							type: ApplicationCommandOptionType.Subcommand,
-							options: [
-								{
-									name: "channel",
-									description: "The channel.",
-									type: ApplicationCommandOptionType.Channel,
-									channel_types: [ChannelType.GuildText],
-									required: true
-								}
-							]
-						},
-						{
-							name: ConfigSubcommand.SetDecisionChannel,
-							description: "Set the decision channel for ban requests.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
@@ -523,34 +481,6 @@ export default class Config extends Command {
 							name: ConfigSubcommand.ListChannelScopings,
 							description: "List all quick purge channel scopes.",
 							type: ApplicationCommandOptionType.Subcommand
-						},
-						{
-							name: ConfigSubcommand.SetLogChannel,
-							description: "Set the log channel for quick purges.",
-							type: ApplicationCommandOptionType.Subcommand,
-							options: [
-								{
-									name: "channel",
-									description: "The channel.",
-									type: ApplicationCommandOptionType.Channel,
-									channel_types: [ChannelType.GuildText],
-									required: true
-								}
-							]
-						},
-						{
-							name: ConfigSubcommand.SetResultChannel,
-							description: "Set the result channel for quick purges.",
-							type: ApplicationCommandOptionType.Subcommand,
-							options: [
-								{
-									name: "channel",
-									description: "The channel.",
-									type: ApplicationCommandOptionType.Channel,
-									channel_types: [ChannelType.GuildText],
-									required: true
-								}
-							]
 						}
 					]
 				},
@@ -629,34 +559,6 @@ export default class Config extends Command {
 							name: ConfigSubcommand.ListChannelScopings,
 							description: "List all quick mute channel scopes.",
 							type: ApplicationCommandOptionType.Subcommand
-						},
-						{
-							name: ConfigSubcommand.SetLogChannel,
-							description: "Set the log channel for quick mutes.",
-							type: ApplicationCommandOptionType.Subcommand,
-							options: [
-								{
-									name: "channel",
-									description: "The channel.",
-									type: ApplicationCommandOptionType.Channel,
-									channel_types: [ChannelType.GuildText],
-									required: true
-								}
-							]
-						},
-						{
-							name: ConfigSubcommand.SetResultChannel,
-							description: "Set the result channel for quick mutes.",
-							type: ApplicationCommandOptionType.Subcommand,
-							options: [
-								{
-									name: "channel",
-									description: "The channel.",
-									type: ApplicationCommandOptionType.Channel,
-									channel_types: [ChannelType.GuildText],
-									required: true
-								}
-							]
 						}
 					]
 				},
@@ -852,10 +754,6 @@ export default class Config extends Command {
 			// Quick Mutes Group
 			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.Toggle}`]: () =>
 				this._toggleQuickMutes(interaction, config),
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetLogChannel}`]: () =>
-				this._setQuickMuteLogChannel(interaction, config),
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetResultChannel}`]: () =>
-				this._setQuickMuteResultChannel(interaction, config),
 			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetPurgeLimit}`]: () =>
 				this._setQuickMutePurgeLimit(interaction, config),
 			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.AddChannelScoping}`]: () =>
@@ -868,10 +766,6 @@ export default class Config extends Command {
 			// Quick Purges Group
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.Toggle}`]: () =>
 				this._toggleQuickPurges(interaction, config),
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetLogChannel}`]: () =>
-				this._setQuickPurgeLogChannel(interaction, config),
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetResultChannel}`]: () =>
-				this._setQuickPurgeResultChannel(interaction, config),
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetLimit}`]: () =>
 				this._setQuickPurgeLimit(interaction, config),
 			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.AddChannelScoping}`]: () =>
@@ -914,18 +808,12 @@ export default class Config extends Command {
 				this._toggleReports(interaction, config),
 			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.SetReviewChannel}`]: () =>
 				this._setReportReviewChannel(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.SetLogChannel}`]: () =>
-				this._setReportLogChannel(interaction, config),
 
 			// Ban Requests Group
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.Toggle}`]: () =>
 				this._toggleRequests(interaction, config),
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.SetReviewChannel}`]: () =>
 				this._setRequestReviewChannel(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.SetDecisionChannel}`]: () =>
-				this._setRequestDecisionChannel(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.SetLogChannel}`]: () =>
-				this._setRequestLogChannel(interaction, config),
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.AutomaticallyTimeout}`]: () =>
 				this._toggleAutomaticallyTimeout(interaction, config),
 			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.AddImmuneRole}`]: () =>
@@ -1346,238 +1234,6 @@ export default class Config extends Command {
 		return {
 			content: `Successfully ${enable ? "enabled" : "disabled"} highlights.`
 		};
-	}
-
-	private async _setQuickPurgeLogChannel(
-		interaction: Command.Interaction<"chatInput">,
-		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
-		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
-		const config = configClass.data.quick_purges;
-
-		const webhooks = await interaction.guild.fetchWebhooks();
-		const webhook = webhooks.find(wh => wh.url === config.webhook_url);
-
-		if (webhook) {
-			if (webhook.channelId === channel.id) {
-				return {
-					error: `The quick purge log channel is already set to ${channel}.`
-				};
-			}
-
-			const set = await webhook
-				.edit({
-					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
-				})
-				.catch(() => null);
-
-			if (!set) {
-				return {
-					error: "Failed to move the existing webhook to the specified channel."
-				};
-			}
-
-			return {
-				content: `Successfully moved the quick purge log channel webhook to ${channel}.`
-			};
-		} else {
-			const newWebhook = await channel
-				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
-				})
-				.catch(() => null);
-
-			if (!newWebhook) {
-				return { error: "Failed to create a webhook in the specified channel." };
-			}
-
-			await kysely
-				.updateTable("QuickPurgeConfig")
-				.set({ webhook_url: newWebhook.url })
-				.where("id", "=", interaction.guild.id)
-				.execute();
-
-			return {
-				content: `Successfully set the quick purge log channel to ${channel}.`
-			};
-		}
-	}
-
-	private async _setQuickPurgeResultChannel(
-		interaction: Command.Interaction<"chatInput">,
-		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
-		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
-		const config = configClass.data.quick_purges;
-
-		const webhooks = await interaction.guild.fetchWebhooks();
-		const webhook = webhooks.find(wh => wh.url === config.result_webhook_url);
-
-		if (webhook) {
-			if (webhook.channelId === channel.id) {
-				return {
-					error: `The quick purge result channel is already set to ${channel}.`
-				};
-			}
-
-			const set = await webhook
-				.edit({
-					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
-				})
-				.catch(() => null);
-
-			if (!set) {
-				return {
-					error: "Failed to move the existing webhook to the specified channel."
-				};
-			}
-
-			return {
-				content: `Successfully moved the quick purge result channel webhook to ${channel}.`
-			};
-		} else {
-			const newWebhook = await channel
-				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
-				})
-				.catch(() => null);
-
-			if (!newWebhook) {
-				return { error: "Failed to create a webhook in the specified channel." };
-			}
-
-			await kysely
-				.updateTable("QuickPurgeConfig")
-				.set({ result_webhook_url: newWebhook.url })
-				.where("id", "=", interaction.guild.id)
-				.execute();
-
-			return {
-				content: `Successfully set the quick purge result channel to ${channel}.`
-			};
-		}
-	}
-
-	private async _setQuickMuteLogChannel(
-		interaction: Command.Interaction<"chatInput">,
-		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
-		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
-		const config = configClass.data.quick_mutes;
-
-		const webhooks = await interaction.guild.fetchWebhooks();
-		const webhook = webhooks.find(wh => wh.url === config.webhook_url);
-
-		if (webhook) {
-			if (webhook.channelId === channel.id) {
-				return {
-					error: `The quick mute log channel is already set to ${channel}.`
-				};
-			}
-
-			const set = await webhook
-				.edit({
-					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
-				})
-				.catch(() => null);
-
-			if (!set) {
-				return {
-					error: "Failed to move the existing webhook to the specified channel."
-				};
-			}
-
-			return {
-				content: `Successfully moved the quick mute log channel webhook to ${channel}.`
-			};
-		} else {
-			const newWebhook = await channel
-				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
-				})
-				.catch(() => null);
-
-			if (!newWebhook) {
-				return { error: "Failed to create a webhook in the specified channel." };
-			}
-
-			await kysely
-				.updateTable("QuickMuteConfig")
-				.set({ webhook_url: newWebhook.url })
-				.where("id", "=", interaction.guild.id)
-				.execute();
-
-			return {
-				content: `Successfully set the quick mute log channel to ${channel}.`
-			};
-		}
-	}
-
-	private async _setQuickMuteResultChannel(
-		interaction: Command.Interaction<"chatInput">,
-		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
-		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
-		const config = configClass.data.quick_mutes;
-
-		const webhooks = await interaction.guild.fetchWebhooks();
-		const webhook = webhooks.find(wh => wh.url === config.result_webhook_url);
-
-		if (webhook) {
-			if (webhook.channelId === channel.id) {
-				return {
-					error: `The quick mute result channel is already set to ${channel}.`
-				};
-			}
-
-			const set = await webhook
-				.edit({
-					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
-				})
-				.catch(() => null);
-
-			if (!set) {
-				return {
-					error: "Failed to move the existing webhook to the specified channel."
-				};
-			}
-
-			return {
-				content: `Successfully moved the quick mute result channel webhook to ${channel}.`
-			};
-		} else {
-			const newWebhook = await channel
-				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
-				})
-				.catch(() => null);
-
-			if (!newWebhook) {
-				return { error: "Failed to create a webhook in the specified channel." };
-			}
-
-			await kysely
-				.updateTable("QuickMuteConfig")
-				.set({ result_webhook_url: newWebhook.url })
-				.where("id", "=", interaction.guild.id)
-				.execute();
-
-			return {
-				content: `Successfully set the quick mute result channel to ${channel}.`
-			};
-		}
 	}
 
 	private async _setQuickMutePurgeLimit(
@@ -2308,64 +1964,6 @@ export default class Config extends Command {
 		}
 	}
 
-	private async _setReportLogChannel(
-		interaction: Command.Interaction<"chatInput">,
-		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
-		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
-		const config = configClass.data.message_reports;
-
-		const webhooks = await interaction.guild.fetchWebhooks();
-		const webhook = webhooks.find(wh => wh.url === config.log_webhook_url);
-
-		if (webhook) {
-			if (webhook.channelId === channel.id) {
-				return {
-					error: `The log channel is already set to ${channel}.`
-				};
-			}
-
-			const set = await webhook
-				.edit({
-					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
-				})
-				.catch(() => null);
-
-			if (!set) {
-				return {
-					error: "Failed to move the existing webhook to the specified channel."
-				};
-			}
-
-			return {
-				content: `Successfully moved the log channel webhook to ${channel}.`
-			};
-		} else {
-			const newWebhook = await channel
-				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
-				})
-				.catch(() => null);
-
-			if (!newWebhook) {
-				return { error: "Failed to create a webhook in the specified channel." };
-			}
-
-			await kysely
-				.updateTable("MessageReportConfig")
-				.set({ log_webhook_url: newWebhook.url })
-				.where("id", "=", interaction.guild.id)
-				.execute();
-
-			return {
-				content: `Successfully set the log channel to ${channel}.`
-			};
-		}
-	}
-
 	private async _toggleRequests(
 		interaction: Command.Interaction<"chatInput">,
 		configClass: GuildConfig
@@ -2474,122 +2072,6 @@ export default class Config extends Command {
 
 			return {
 				content: `Successfully set the review channel to ${channel}.`
-			};
-		}
-	}
-
-	private async _setRequestDecisionChannel(
-		interaction: Command.Interaction<"chatInput">,
-		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
-		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
-		const config = configClass.data.ban_requests;
-
-		const webhooks = await interaction.guild.fetchWebhooks();
-		const webhook = webhooks.find(wh => wh.url === config.decision_webhook_url);
-
-		if (webhook) {
-			if (webhook.channelId === channel.id) {
-				return {
-					error: `The decision channel is already set to ${channel}.`
-				};
-			}
-
-			const set = await webhook
-				.edit({
-					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
-				})
-				.catch(() => null);
-
-			if (!set) {
-				return {
-					error: "Failed to move the existing webhook to the specified channel."
-				};
-			}
-
-			return {
-				content: `Successfully moved the decision channel webhook to ${channel}.`
-			};
-		} else {
-			const newWebhook = await channel
-				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
-				})
-				.catch(() => null);
-
-			if (!newWebhook) {
-				return { error: "Failed to create a webhook in the specified channel." };
-			}
-
-			await kysely
-				.updateTable("BanRequestConfig")
-				.set({ decision_webhook_url: newWebhook.url })
-				.where("id", "=", interaction.guild.id)
-				.execute();
-
-			return {
-				content: `Successfully set the decision channel to ${channel}.`
-			};
-		}
-	}
-
-	private async _setRequestLogChannel(
-		interaction: Command.Interaction<"chatInput">,
-		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
-		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
-		const config = configClass.data.ban_requests;
-
-		const webhooks = await interaction.guild.fetchWebhooks();
-		const webhook = webhooks.find(wh => wh.url === config.log_webhook_url);
-
-		if (webhook) {
-			if (webhook.channelId === channel.id) {
-				return {
-					error: `The log channel is already set to ${channel}.`
-				};
-			}
-
-			const set = await webhook
-				.edit({
-					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
-				})
-				.catch(() => null);
-
-			if (!set) {
-				return {
-					error: "Failed to move the existing webhook to the specified channel."
-				};
-			}
-
-			return {
-				content: `Successfully moved the log channel webhook to ${channel}.`
-			};
-		} else {
-			const newWebhook = await channel
-				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
-				})
-				.catch(() => null);
-
-			if (!newWebhook) {
-				return { error: "Failed to create a webhook in the specified channel." };
-			}
-
-			await kysely
-				.updateTable("BanRequestConfig")
-				.set({ log_webhook_url: newWebhook.url })
-				.where("id", "=", interaction.guild.id)
-				.execute();
-
-			return {
-				content: `Successfully set the log channel to ${channel}.`
 			};
 		}
 	}
@@ -2792,8 +2274,6 @@ const ConfigSubcommand = {
 	SetMaxPatterns: "set-max-patterns",
 	SetLimit: "set-limit",
 	SetPurgeLimit: "set-purge-limit",
-	SetLogChannel: "set-log-channel",
-	SetResultChannel: "set-result-channel",
 	SetDefaultReason: "set-default-reason",
 	AutomaticallyTimeout: "automatically-timeout",
 	AddChannelScoping: "add-channel-scoping",

@@ -20,7 +20,7 @@ export default class ContentFilterButton extends Component {
 		interaction: Component.Interaction<"button">,
 		config: GuildConfig
 	): Promise<InteractionReplyData | null> {
-		const contentFilterConfig = config.parseContentFilterConfig()
+		const contentFilterConfig = config.parseContentFilterConfig();
 
 		if (!contentFilterConfig) {
 			return { error: "Content filter is not configured for this server." };

@@ -99,14 +99,14 @@ model Whitelist {
 
 model MessageReportConfig {
   // ID of the guild.
-  id                   String  @id
+  id              String  @id
   // Whether message reporting is enabled.
-  enabled              Boolean @default(false)
-  webhook_url          String?
-  webhook_channel      String?
-  log_webhook_url      String?
+  enabled         Boolean @default(false)
+  webhook_url     String?
+  webhook_channel String?
+
   /// @kyselyType(bigint)
-  auto_disregard_after BigInt  @default(0)
+  auto_disregard_after BigInt @default(0)
 
   immune_roles       String[] @default([])
   notify_roles       String[] @default([])
@@ -127,8 +127,6 @@ model BanRequestConfig {
 
   webhook_url           String?
   webhook_channel       String?
-  log_webhook_url       String?
-  decision_webhook_url  String?
   automatically_timeout Boolean @default(false)
 
   immune_roles String[] @default([])
@@ -294,11 +292,9 @@ model QuickMuteConfig {
   // ID of the guild.
   id String @id
 
-  enabled            Boolean                   @default(false)
-  purge_limit        Int                       @default(100)
-  webhook_url        String?
-  result_webhook_url String?
-  channel_scoping    QuickMuteChannelScoping[]
+  enabled         Boolean                   @default(false)
+  purge_limit     Int                       @default(100)
+  channel_scoping QuickMuteChannelScoping[]
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
 }
@@ -330,11 +326,9 @@ model QuickMute {
 model QuickPurgeConfig {
   id String @id
 
-  enabled            Boolean                    @default(false)
-  max_limit          Int                        @default(100)
-  webhook_url        String?
-  result_webhook_url String?
-  channel_scoping    QuickPurgeChannelScoping[]
+  enabled         Boolean                    @default(false)
+  max_limit       Int                        @default(100)
+  channel_scoping QuickPurgeChannelScoping[]
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
 }

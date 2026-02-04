@@ -40,13 +40,10 @@ export type BanRequestConfigTable = {
 	enabled: Generated<boolean>;
 	webhook_url: string | null;
 	webhook_channel: string | null;
-	log_webhook_url: string | null;
-	decision_webhook_url: string | null;
 	automatically_timeout: Generated<boolean>;
 	immune_roles: Generated<string[]>;
 	notify_roles: Generated<string[]>;
 	enforce_submission_reason: Generated<boolean>;
-	enforce_accept_reason: Generated<boolean>;
 	enforce_deny_reason: Generated<boolean>;
 };
 export type BanRequestConfig = Selectable<BanRequestConfigTable>;
@@ -192,7 +189,6 @@ export type MessageReportConfigTable = {
 	enabled: Generated<boolean>;
 	webhook_url: string | null;
 	webhook_channel: string | null;
-	log_webhook_url: string | null;
 	/**
 	 * @kyselyType(bigint)
 	 */
@@ -244,8 +240,6 @@ export type QuickMuteConfigTable = {
 	id: string;
 	enabled: Generated<boolean>;
 	purge_limit: Generated<number>;
-	webhook_url: string | null;
-	result_webhook_url: string | null;
 };
 export type QuickMuteConfig = Selectable<QuickMuteConfigTable>;
 export type NewQuickMuteConfig = Insertable<QuickMuteConfigTable>;
@@ -274,8 +268,6 @@ export type QuickPurgeConfigTable = {
 	id: string;
 	enabled: Generated<boolean>;
 	max_limit: Generated<number>;
-	webhook_url: string | null;
-	result_webhook_url: string | null;
 };
 export type QuickPurgeConfig = Selectable<QuickPurgeConfigTable>;
 export type NewQuickPurgeConfig = Insertable<QuickPurgeConfigTable>;
