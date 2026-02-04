@@ -25,16 +25,21 @@ export default class MessageCreate extends EventListener {
 
 		const whitelisted = await getWhitelistStatus(message.guild.id);
 		const config = await ConfigManager.get(message.guild.id);
-		const contentFilter = config.getContentFilterConfig();
+		const contentFilterConfig = config.parseContentFilterConfig();
 
 		if (!whitelisted && !GlobalConfig.isDeveloper(message.author.id)) return;
 
-		if (contentFilter) {
+		if (contentFilterConfig) {
 			const serializedMessage = Messages.serialize(message);
 
 			void Promise.all([
-				AutomatedScanner.enqueueForScan(message, contentFilter, serializedMessage),
-				HeuristicScanner.triggerScan(message, contentFilter)
+				AutomatedScanner.enqueueForScan(
+					message,
+					contentFilterConfig,
+					serializedMessage
+				),
+
+				HeuristicScanner.triggerScan(message, contentFilterConfig)
 			]);
 		}
 

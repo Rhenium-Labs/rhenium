@@ -7,7 +7,7 @@ import { channelInScope, parseChannelScoping, userMentionWithId } from "#utils/i
 
 import type { ChannelScanState, ContentPredictions } from "./Types.js";
 import type { Message as SerializedMessage } from "#kysely/Schema.js";
-import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 
 import Logger from "#utils/Logger.js";
 import MinimumHeap from "#utils/MinimumHeap.js";
@@ -156,7 +156,7 @@ export default class AutomatedScanner {
 	 */
 	static enqueueForScan(
 		message: Message<true>,
-		config: ValidatedContentFilterConfig,
+		config: ParsedContentFilterConfig,
 		serializedMessage: SerializedMessage
 	): void {
 		if (!config.enabled || !config.webhook_url) return;
@@ -240,7 +240,7 @@ export default class AutomatedScanner {
 				}
 
 				const guildConfig = await ConfigManager.get(entry.guildId);
-				const contentFilterConfig = guildConfig.getContentFilterConfig();
+				const contentFilterConfig = guildConfig.parseContentFilterConfig();
 
 				if (contentFilterConfig) {
 					const predictions = await ContentFilter.runDetectors(
@@ -333,7 +333,7 @@ export default class AutomatedScanner {
 	static async automatedScan(
 		channel: TextChannel,
 		message: Message<true>,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
@@ -398,7 +398,7 @@ export default class AutomatedScanner {
 	static async prepareChannelForScan(
 		channel: TextChannel,
 		message: Message<true>,
-		config: ValidatedContentFilterConfig,
+		config: ParsedContentFilterConfig,
 		now: number,
 		options?: { risk?: number; force?: boolean }
 	): Promise<{
@@ -531,7 +531,7 @@ export default class AutomatedScanner {
 	 */
 	static async sendPriorityUserWarning(
 		message: Message<true>,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<any> {
 		if (!config.webhook_url) return;
 
@@ -560,7 +560,7 @@ export default class AutomatedScanner {
 	static async sendScanRateChangeLog(
 		channel: TextChannel,
 		newRate: number,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<any> {
 		if (!config.webhook_url) return;
 

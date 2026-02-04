@@ -17,10 +17,9 @@ import {
 
 import ms from "ms";
 
-import { log } from "./Webhooks.js";
 import { kysely } from "#root/index.js";
 import { LoggingEvent, RequestStatus } from "#kysely/Enums.js";
-import { parseDurationString, userMentionWithId, validateDuration } from "./index.js";
+import { parseDurationString, userMentionWithId, validateDuration, log } from "./index.js";
 
 import type { BanRequest, BanRequestUpdate } from "#kysely/Schema.js";
 import type { SimpleResult } from "./Types.js";
@@ -93,11 +92,12 @@ export default class BanRequestUtils {
 				};
 		}
 
-		const result = ModerationUtils.validateAction({
+		// prettier-ignore
+		const result = ModerationUtils.validateAction(
 			target,
 			executor,
-			action: "Ban"
-		});
+			"Ban"
+		);
 
 		if (!result.ok)
 			return {
@@ -214,7 +214,7 @@ export default class BanRequestUtils {
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
 		config: GuildConfig,
 		action: BanRequestAction,
-		reviewReason: string | null
+		reviewReason: string | null = null
 	): Promise<SimpleResult> {
 		if (!config.hasPermission(interaction.member, "ReviewBanRequests"))
 			return { ok: false, message: "You don't have permission to review ban requests." };
@@ -405,7 +405,7 @@ export default class BanRequestUtils {
 
 		return void log({
 			event: LoggingEvent.BanRequestResult,
-			guildId: config.data.id,
+			config,
 			message: { content, allowedMentions: { users: [request.requested_by] } }
 		});
 	}
@@ -448,7 +448,7 @@ export default class BanRequestUtils {
 
 		return void log({
 			event: LoggingEvent.BanRequestReviewed,
-			guildId: config.data.id,
+			config,
 			message: { embeds: [updatedEmbed] }
 		});
 	}

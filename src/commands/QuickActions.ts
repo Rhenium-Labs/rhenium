@@ -210,7 +210,7 @@ export default class QuickActions extends Command {
 		const reason = interaction.options.getString("reason", true);
 		const purgeAmount = interaction.options.getInteger("purge_amount") ?? 0;
 
-		const muteConfig = config.getQuickMutesConfig();
+		const muteConfig = config.parseQuickActionConfig("quick_mutes");
 
 		if (!muteConfig) {
 			return {
@@ -408,7 +408,7 @@ export default class QuickActions extends Command {
 	): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const purgeAmount = interaction.options.getInteger("amount", true);
-		const purgeConfig = config.getQuickPurgesConfig();
+		const purgeConfig = config.parseQuickActionConfig("quick_purges");
 
 		if (!purgeConfig) {
 			return {

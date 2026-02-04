@@ -13,11 +13,10 @@ import {
 	WebhookClient
 } from "discord.js";
 
-import { log } from "./Webhooks.js";
 import { kysely } from "#root/index.js";
 import { EMPTY_MESSAGE_CONTENT } from "./Constants.js";
 import { LoggingEvent, ReportStatus } from "#kysely/Enums.js";
-import { cropLines, userMentionWithId } from "./index.js";
+import { cropLines, userMentionWithId, log } from "./index.js";
 
 import type { SimpleResult } from "./Types.js";
 import type { MessageReportUpdate } from "#kysely/Schema.js";
@@ -68,14 +67,14 @@ export default class MessageReportUtils {
 			.where("status", "=", ReportStatus.Pending)
 			.executeTakeFirst();
 
+		const webhook = new WebhookClient({ url: messageReports.webhook_url! });
+
 		if (originalReport) {
 			if (originalReport.reported_by === reporter.id)
 				return { ok: false, message: "You have already reported this message." };
 
 			// At any step of the process, if we fail we still return `ok: true` to avoid
 			// letting the user know what has happened internally.
-
-			const webhook = new WebhookClient({ url: messageReports.webhook_url! });
 			const message = await webhook.fetchMessage(originalReport.id).catch(() => null);
 
 			if (!message) return { ok: true };
@@ -239,7 +238,6 @@ export default class MessageReportUtils {
 			);
 		}
 
-		const webhook = new WebhookClient({ url: messageReports.webhook_url! });
 		const content =
 			messageReports.notify_roles.length > 0
 				? messageReports.notify_roles.map(roleMention).join(", ")
@@ -380,7 +378,7 @@ export default class MessageReportUtils {
 
 		return void log({
 			event: LoggingEvent.MessageReportReviewed,
-			guildId: config.data.id,
+			config,
 			message: {
 				embeds: secondaryEmbed ? [secondaryEmbed, primaryEmbed] : [primaryEmbed]
 			}

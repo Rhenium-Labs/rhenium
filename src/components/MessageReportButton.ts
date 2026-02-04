@@ -18,7 +18,7 @@ export default class MessageReportButton extends Component {
 	): Promise<InteractionReplyData | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		if (!config.getMessageReportsConfig())
+		if (!config.parseReportsConfig())
 			return { error: "Message reports have not been configured on this server." };
 
 		const reportAction = interaction.customId
@@ -29,7 +29,7 @@ export default class MessageReportButton extends Component {
 		const result = await MessageReportUtils.handle(
 			interaction,
 			reportAction,
-			config,
+			config
 		);
 
 		if (!result.ok) {

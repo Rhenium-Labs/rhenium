@@ -6,7 +6,7 @@ import { CF_CONSTANTS } from "./Constants.js";
 import { ContentFilterAlert, Message } from "#kysely/Schema.js";
 import { ContentFilterStatus, DetectorMode } from "#kysely/Enums.js";
 
-import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 
 export default class ContentFilterUtils {
 	/**
@@ -16,7 +16,7 @@ export default class ContentFilterUtils {
 	 * @param message The serialized message data.
 	 * @returns The computed risk score.
 	 */
-	static computeMessageRisk(config: ValidatedContentFilterConfig, message: Message): number {
+	static computeMessageRisk(config: ParsedContentFilterConfig, message: Message): number {
 		const riskIncreaseStep =
 			config.detector_mode === DetectorMode.Lenient
 				? CF_CONSTANTS.HEURISTIC_LENIENT_RISK_INCREASE
@@ -89,7 +89,7 @@ export default class ContentFilterUtils {
 	 * @param config The content filter configuration.
 	 * @returns The minimum score threshold.
 	 */
-	static getMinScore(config: ValidatedContentFilterConfig): number {
+	static getMinScore(config: ParsedContentFilterConfig): number {
 		let base =
 			config.detector_mode === DetectorMode.Lenient
 				? CF_CONSTANTS.HEURISTIC_LENIENT_SCORE
@@ -109,7 +109,7 @@ export default class ContentFilterUtils {
 	 * @returns The adjusted minimum score threshold.
 	 */
 	static getMinScoreWithState(
-		config: ValidatedContentFilterConfig,
+		config: ParsedContentFilterConfig,
 		state: ChannelScanState | null,
 		authorId: Snowflake
 	): number {

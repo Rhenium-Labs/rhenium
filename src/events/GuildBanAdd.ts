@@ -10,12 +10,11 @@ import {
 
 import ms from "ms";
 
-import { log } from "#utils/Webhooks.js";
 import { LoggingEvent } from "#kysely/Enums.js";
 import { client, kysely } from "#root/index.js";
 import { EMPTY_MESSAGE_CONTENT } from "#utils/Constants.js";
 import { ApplyOptions, EventListener } from "#rhenium";
-import { cropLines, userMentionWithId } from "#utils/index.js";
+import { cropLines, userMentionWithId, log } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
 import Messages from "#utils/Messages.js";
@@ -57,7 +56,7 @@ export default class GuildBanAdd extends EventListener {
 		config: GuildConfig
 	): Promise<void> {
 		if (
-			!config.getMessageReportsConfig() ||
+			!config.parseReportsConfig() ||
 			!config.canLogEvent(LoggingEvent.MessageReportReviewed)
 		)
 			return;
@@ -145,7 +144,7 @@ export default class GuildBanAdd extends EventListener {
 
 			void log({
 				event: LoggingEvent.MessageReportReviewed,
-				guildId: ban.guild.id,
+				config,
 				message: { embeds }
 			});
 		}
@@ -169,7 +168,7 @@ export default class GuildBanAdd extends EventListener {
 		config: GuildConfig
 	): Promise<void> {
 		if (
-			!config.getBanRequestsConfig() ||
+			!config.parseBanRequestsConfig() ||
 			!config.canLogEvent(LoggingEvent.BanRequestReviewed)
 		)
 			return;
@@ -212,7 +211,7 @@ export default class GuildBanAdd extends EventListener {
 
 			void log({
 				event: LoggingEvent.BanRequestReviewed,
-				guildId: ban.guild.id,
+				config,
 				message: { embeds: [embed] }
 			});
 		}

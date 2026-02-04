@@ -23,7 +23,7 @@ export default class BanRequestButton extends Component {
 		interaction: Component.Interaction<"button">,
 		config: GuildConfig
 	): Promise<InteractionReplyData | null> {
-		if (!config.getBanRequestsConfig())
+		if (!config.parseBanRequestsConfig())
 			return { error: "Ban requests have not been configured on this server." };
 
 		if (!config.data.ban_requests.enforce_deny_reason)
@@ -36,11 +36,11 @@ export default class BanRequestButton extends Component {
 		switch (requestAction) {
 			case BanRequestAction.Disregard:
 			case BanRequestAction.Accept: {
+				// prettier-ignore
 				const result = await BanRequestUtils.handle(
 					interaction,
 					config,
-					requestAction,
-					null
+					requestAction
 				);
 
 				if (!result.ok) {
@@ -77,11 +77,11 @@ export default class BanRequestButton extends Component {
 					return interaction.showModal(modal).then(() => null);
 				}
 
+				// prettier-ignore
 				const result = await BanRequestUtils.handle(
 					interaction,
 					config,
-					requestAction,
-					null
+					requestAction
 				);
 
 				if (!result.ok) {

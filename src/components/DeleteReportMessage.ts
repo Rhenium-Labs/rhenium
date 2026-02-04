@@ -26,7 +26,10 @@ export default class DeleteReportMessage extends Component {
 		await interaction.deferUpdate();
 
 		const gracefully = async (content: string): Promise<null> => {
-			const components = this._getUpdatedComponents(interaction.message.components, type);
+			const components = DeleteReportMessage._getUpdatedComponents(
+				interaction.message.components,
+				type
+			);
 
 			return Promise.all([
 				interaction.editReply({ embeds: interaction.message.embeds, components }),
@@ -75,8 +78,12 @@ export default class DeleteReportMessage extends Component {
 				.then(() => null);
 		}
 
-		const components = this._getUpdatedComponents(interaction.message.components, type);
-		const embeds = this._getUpdatedEmbeds(
+		const components = DeleteReportMessage._getUpdatedComponents(
+			interaction.message.components,
+			type
+		);
+
+		const embeds = DeleteReportMessage._getUpdatedEmbeds(
 			interaction.message.embeds,
 			interaction.user.id,
 			type
@@ -99,7 +106,7 @@ export default class DeleteReportMessage extends Component {
 	 * @returns The updated components with the delete button disabled.
 	 */
 
-	private _getUpdatedComponents(
+	private static _getUpdatedComponents(
 		components: TopLevelComponent[],
 		type: "original" | "reference"
 	) {
@@ -129,7 +136,7 @@ export default class DeleteReportMessage extends Component {
 	 * @returns The updated embeds with deletion notes.
 	 */
 
-	private _getUpdatedEmbeds(
+	private static _getUpdatedEmbeds(
 		embeds: Embed[],
 		userId: string,
 		type: "original" | "reference"

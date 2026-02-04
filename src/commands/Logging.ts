@@ -15,9 +15,10 @@ import { client, kysely } from "#root/index.js";
 import { ApplyOptions, Command } from "#rhenium";
 import { LoggingEvent } from "#kysely/Enums.js";
 
+import type { LoggingWebhook } from "#kysely/Schema.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
-import WebhookUtils from "#utils/Webhooks.js";
+import GuildConfig from "#config/GuildConfig.js";
 
 @ApplyOptions<Command.Options>({
 	name: "logging",
@@ -158,7 +159,8 @@ export default class Logging extends Command {
 	}
 
 	async interactionRun(
-		interaction: Command.Interaction<"chatInput">
+		interaction: Command.Interaction<"chatInput">,
+		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const subcommand = interaction.options.getSubcommand(true) as LoggingSubcommand;
 		const subcommandGroup = interaction.options.getSubcommandGroup(
@@ -171,38 +173,34 @@ export default class Logging extends Command {
 			case LoggingSubcommandGroup.Webhooks:
 				switch (subcommand) {
 					case LoggingSubcommand.Create:
-						return Logging._createWebhook(interaction);
+						return Logging._createWebhook(interaction, config);
 					case LoggingSubcommand.Delete:
-						return Logging._deleteWebhook(interaction);
+						return Logging._deleteWebhook(interaction, config);
 					case LoggingSubcommand.List:
-						return Logging._listWebhooks(interaction);
-					default:
-						return { error: "Unknown subcommand." };
+						return Logging._listWebhooks(interaction, config);
 				}
 			case LoggingSubcommandGroup.Events:
 				switch (subcommand) {
 					case LoggingSubcommand.Add:
-						return Logging._addEvent(interaction);
+						return Logging._addEvent(interaction, config);
 					case LoggingSubcommand.Remove:
-						return Logging._removeEvent(interaction);
+						return Logging._removeEvent(interaction, config);
 					case LoggingSubcommand.View:
-						return Logging._viewWebhook(interaction);
-					default:
-						return { error: "Unknown subcommand." };
+						return Logging._viewWebhook(interaction, config);
 				}
-			default:
-				return { error: "Unknown subcommand group." };
 		}
+
+		return { error: "An unknown error occurred." };
 	}
 
 	private static async _createWebhook(
-		interaction: Command.Interaction<"chatInput">
+		interaction: Command.Interaction<"chatInput">,
+		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
-		// Check if a webhook already exists for this channel.
-		const existingWebhooks = await WebhookUtils.getWebhooks(interaction.guildId);
+		const existingWebhooks = config.data.logging_webhooks;
 		const existingWebhook = existingWebhooks.find(wh => wh.channel_id === channel.id);
 
 		if (existingWebhook) {
@@ -211,7 +209,6 @@ export default class Logging extends Command {
 			};
 		}
 
-		// Create a new webhook in the channel
 		const webhook = await channel
 			.createWebhook({
 				name: client.user.username,
@@ -223,7 +220,6 @@ export default class Logging extends Command {
 			return { error: `Failed to create a webhook in ${channel}.` };
 		}
 
-		// Store the webhook in the database
 		await kysely
 			.insertInto("LoggingWebhook")
 			.values({
@@ -235,7 +231,7 @@ export default class Logging extends Command {
 				events: [event]
 			})
 			.returningAll()
-			.executeTakeFirstOrThrow();
+			.execute();
 
 		return {
 			content: `Successfully created a logging webhook in ${channel} with the event \`${formatEventName(event)}\`.`
@@ -243,19 +239,18 @@ export default class Logging extends Command {
 	}
 
 	private static async _deleteWebhook(
-		interaction: Command.Interaction<"chatInput">
+		interaction: Command.Interaction<"chatInput">,
+		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 
-		// Find the webhook for this channel
-		const webhooks = await WebhookUtils.getWebhooks(interaction.guildId);
+		const webhooks = config.data.logging_webhooks;
 		const webhook = webhooks.find(wh => wh.channel_id === channel.id);
 
 		if (!webhook) {
 			return { error: `No logging webhook found in ${channel}.` };
 		}
 
-		// Try to delete the Discord webhook
 		const guildWebhooks = await interaction.guild.fetchWebhooks().catch(() => null);
 
 		if (guildWebhooks) {
@@ -266,7 +261,6 @@ export default class Logging extends Command {
 			}
 		}
 
-		// Delete from the database
 		await kysely
 			.deleteFrom("LoggingWebhook")
 			.where("id", "=", webhook.id)
@@ -279,9 +273,10 @@ export default class Logging extends Command {
 	}
 
 	private static async _listWebhooks(
-		interaction: Command.Interaction<"chatInput">
+		interaction: Command.Interaction<"chatInput">,
+		config: GuildConfig
 	): Promise<InteractionReplyData> {
-		const webhooks = await WebhookUtils.getWebhooks(interaction.guildId);
+		const webhooks = config.data.logging_webhooks;
 
 		if (webhooks.length === 0) {
 			return { content: "There are no logging webhooks configured for this guild." };
@@ -313,13 +308,13 @@ export default class Logging extends Command {
 	}
 
 	private static async _addEvent(
-		interaction: Command.Interaction<"chatInput">
+		interaction: Command.Interaction<"chatInput">,
+		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
-		// Find the webhook for this channel
-		const webhooks = await WebhookUtils.getWebhooks(interaction.guildId);
+		const webhooks = config.data.logging_webhooks;
 		const webhook = webhooks.find(wh => wh.channel_id === channel.id);
 
 		if (!webhook) {
@@ -334,7 +329,7 @@ export default class Logging extends Command {
 			};
 		}
 
-		await WebhookUtils.addEvents(webhook.id, interaction.guildId, [event]);
+		await addEvents(webhook.id, interaction.guildId, [event]);
 
 		return {
 			content: `Successfully added the event \`${formatEventName(event)}\` to the webhook in ${channel}.`
@@ -342,13 +337,13 @@ export default class Logging extends Command {
 	}
 
 	private static async _removeEvent(
-		interaction: Command.Interaction<"chatInput">
+		interaction: Command.Interaction<"chatInput">,
+		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
-		// Find the webhook for this channel
-		const webhooks = await WebhookUtils.getWebhooks(interaction.guildId);
+		const webhooks = config.data.logging_webhooks;
 		const webhook = webhooks.find(wh => wh.channel_id === channel.id);
 
 		if (!webhook) {
@@ -361,9 +356,7 @@ export default class Logging extends Command {
 			};
 		}
 
-		const updatedWebhook = await WebhookUtils.removeEvents(webhook.id, interaction.guildId, [
-			event
-		]);
+		const updatedWebhook = await removeEvents(webhook.id, interaction.guildId, [event]);
 
 		if (updatedWebhook && updatedWebhook.events.length === 0) {
 			return {
@@ -377,12 +370,12 @@ export default class Logging extends Command {
 	}
 
 	private static async _viewWebhook(
-		interaction: Command.Interaction<"chatInput">
+		interaction: Command.Interaction<"chatInput">,
+		config: GuildConfig
 	): Promise<InteractionReplyData> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 
-		// Find the webhook for this channel
-		const webhooks = await WebhookUtils.getWebhooks(interaction.guildId);
+		const webhooks = config.data.logging_webhooks;
 		const webhook = webhooks.find(wh => wh.channel_id === channel.id);
 
 		if (!webhook) {
@@ -410,6 +403,74 @@ export default class Logging extends Command {
 
 		return { embeds: [embed] };
 	}
+}
+
+/**
+ * Adds events to an existing logging webhook.
+ *
+ * @param webhookId The ID of the webhook.
+ * @param guildId The ID of the guild.
+ * @param events The events to add.
+ * @returns The updated LoggingWebhook record, or null if not found.
+ */
+async function addEvents(
+	webhookId: string,
+	guildId: string,
+	events: LoggingEvent[]
+): Promise<LoggingWebhook | null> {
+	const webhook = await kysely
+		.selectFrom("LoggingWebhook")
+		.selectAll()
+		.where("id", "=", webhookId)
+		.where("guild_id", "=", guildId)
+		.executeTakeFirst();
+
+	if (!webhook) {
+		return null;
+	}
+
+	const uniqueEvents = [...new Set([...webhook.events, ...events])];
+
+	return kysely
+		.updateTable("LoggingWebhook")
+		.set({ events: uniqueEvents })
+		.where("id", "=", webhookId)
+		.where("guild_id", "=", guildId)
+		.returningAll()
+		.executeTakeFirstOrThrow();
+}
+
+/**
+ * Removes events from an existing logging webhook.
+ *
+ * @param webhookId The ID of the webhook.
+ * @param guildId The ID of the guild.
+ * @param events The events to remove.
+ * @returns The updated LoggingWebhook record, or null if not found.
+ */
+async function removeEvents(
+	webhookId: string,
+	guildId: string,
+	events: LoggingEvent[]
+): Promise<LoggingWebhook | null> {
+	const webhook = await kysely
+		.selectFrom("LoggingWebhook")
+		.selectAll()
+		.where("id", "=", webhookId)
+		.where("guild_id", "=", guildId)
+		.executeTakeFirst();
+
+	if (!webhook) return null;
+
+	const remainingEvents = webhook.events.filter(e => !events.includes(e));
+
+	return kysely
+		.updateTable("LoggingWebhook")
+		.set({ events: remainingEvents })
+		.where("id", "=", webhookId)
+		.where("guild_id", "=", guildId)
+		.returningAll()
+		.executeTakeFirstOrThrow();
 }
 
 /**

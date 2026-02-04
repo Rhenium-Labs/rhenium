@@ -4,11 +4,9 @@ import {
 	type PartialMessage,
 	type PartialMessageReaction,
 	type Snowflake,
-	type WebhookMessageCreateOptions,
+	type Message,
+	type TextChannel,
 	Events,
-	Message,
-	WebhookClient,
-	TextChannel,
 	EmbedBuilder,
 	Colors,
 	ActionRowBuilder,
@@ -25,11 +23,13 @@ import {
 	getEmojiIdentifier,
 	hastebin,
 	inflect,
+	log,
 	parseChannelScoping,
 	sleep,
 	truncate,
 	userMentionWithId
 } from "#utils/index.js";
+import { LoggingEvent } from "#kysely/Enums.js";
 import { client, kysely } from "#root/index.js";
 import { LOG_DATE_FORMAT } from "#utils/Constants.js";
 import { ApplyOptions, EventListener } from "#rhenium";
@@ -107,7 +107,7 @@ export default class MessageReactionAdd extends EventListener {
 		quickMuteActionLocks.add(message.author.id);
 
 		try {
-			const quickMuteGuildConfig = config.getQuickMutesConfig();
+			const quickMuteGuildConfig = config.parseQuickActionConfig("quick_mutes");
 			if (!quickMuteGuildConfig) return;
 
 			const executor = await message.guild.members.fetch(user.id).catch(() => null);
@@ -135,33 +135,40 @@ export default class MessageReactionAdd extends EventListener {
 			const target = await message.guild.members
 				.fetch(message.author.id)
 				.catch(() => null);
+
 			if (!target) return;
 
-			const resultWebhook = new WebhookClient({
-				url: quickMuteGuildConfig.result_webhook_url
-			});
-
 			if (target.isCommunicationDisabled()) {
-				return temporaryReply(resultWebhook, {
-					content: `${executor}, ${target} is already muted.`
+				return log({
+					event: LoggingEvent.QuickMuteResult,
+					config,
+					message: { content: `${executor}, ${target} is already muted.` }
 				});
 			}
 
 			if (!executor.guild.members.me!.permissions.has("ModerateMembers")) {
-				return temporaryReply(resultWebhook, {
-					content: `${executor}, I do not have the "Timeout Members" permission which is required to mute ${target}.`
+				return log({
+					event: LoggingEvent.QuickMuteResult,
+					config,
+					message: {
+						content: `${executor}, I do not have the "Timeout Members" permission which is required to mute ${target}.`
+					}
 				});
 			}
 
-			const validationResult = ModerationUtils.validateAction({
+			const validationResult = ModerationUtils.validateAction(
 				target,
 				executor,
-				action: "Quick Mute"
-			});
+				"Quick Mute"
+			);
 
 			if (!validationResult.ok) {
-				return temporaryReply(resultWebhook, {
-					content: `${executor}, ${validationResult.message}`
+				return log({
+					event: LoggingEvent.QuickMuteResult,
+					config,
+					message: {
+						content: `${executor}, ${validationResult.message}`
+					}
 				});
 			}
 
@@ -177,8 +184,10 @@ export default class MessageReactionAdd extends EventListener {
 				.catch(() => ({ ok: false }));
 
 			if (!result.ok) {
-				return temporaryReply(resultWebhook, {
-					content: `${executor}, failed to quick mute ${target}.`
+				return log({
+					event: LoggingEvent.QuickMuteResult,
+					config,
+					message: { content: `${executor}, failed to quick mute ${target}.` }
 				});
 			}
 
@@ -228,8 +237,6 @@ export default class MessageReactionAdd extends EventListener {
 				});
 			}
 
-			const logWebhook = new WebhookClient({ url: quickMuteGuildConfig.webhook_url });
-
 			const content =
 				purgeResult?.ok && purgeResult.deleted > 0
 					? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} in ${message.channel}.`
@@ -250,24 +257,29 @@ export default class MessageReactionAdd extends EventListener {
 					components.push(row);
 				}
 
-				return Promise.all([
-					logWebhook.send({ embeds: [embed] }).catch(() => null),
-					resultWebhook
-						.send({
-							content,
-							components,
-							files: [attachment]
-						})
-						.catch(() => null)
-				]);
+				void log({
+					event: LoggingEvent.QuickMuteExecuted,
+					config,
+					message: { embeds: [embed] }
+				});
+
+				void log({
+					event: LoggingEvent.QuickMuteResult,
+					config,
+					message: { content, components, files: [attachment] }
+				});
 			}
 
-			return Promise.all([
-				logWebhook.send({ embeds: [embed] }).catch(() => null),
-				resultWebhook.send({ content }).catch(() => null)
-			]).then(() => {
-				logWebhook.destroy();
-				resultWebhook.destroy();
+			await log({
+				event: LoggingEvent.QuickMuteResult,
+				config,
+				message: { content }
+			});
+
+			await log({
+				event: LoggingEvent.QuickMuteExecuted,
+				config,
+				message: { embeds: [embed] }
 			});
 		} catch {
 			quickMuteActionLocks.delete(message.author.id);
@@ -295,7 +307,7 @@ export default class MessageReactionAdd extends EventListener {
 		quickPurgeActionLocks.add(message.author.id);
 
 		try {
-			const quickPurgeGuildConfig = config.getQuickPurgesConfig();
+			const quickPurgeGuildConfig = config.parseQuickActionConfig("quick_purges");
 			if (!quickPurgeGuildConfig) return;
 
 			const executor = await message.guild.members.fetch(user.id).catch(() => null);
@@ -325,19 +337,23 @@ export default class MessageReactionAdd extends EventListener {
 				.catch(() => null);
 			if (!target) return;
 
-			const resultWebhook = new WebhookClient({
-				url: quickPurgeGuildConfig.result_webhook_url
-			});
-
 			if (!message.channel.permissionsFor(executor).has("ManageMessages")) {
-				return temporaryReply(resultWebhook, {
-					content: `${executor}, you do not have permission to manage messages in ${message.channel}.`
+				return log({
+					event: LoggingEvent.QuickPurgeResult,
+					config,
+					message: {
+						content: `${executor}, you do not have permission to manage messages in ${message.channel}.`
+					}
 				});
 			}
 
 			if (!executor.guild.members.me!.permissions.has("ManageMessages")) {
-				return temporaryReply(resultWebhook, {
-					content: `${executor}, I do not have permission to manage messages in ${message.channel}, which is required to purge messages.`
+				return log({
+					event: LoggingEvent.QuickPurgeResult,
+					config,
+					message: {
+						content: `${executor}, I do not have permission to manage messages in ${message.channel}, which is required to purge messages.`
+					}
 				});
 			}
 
@@ -354,8 +370,12 @@ export default class MessageReactionAdd extends EventListener {
 			});
 
 			if (!purgeResult.ok || purgeResult.deleted === 0) {
-				return temporaryReply(resultWebhook, {
-					content: `${executor}, failed to quick purge messages for ${target}: ${purgeResult.message}`
+				return log({
+					event: LoggingEvent.QuickPurgeResult,
+					config,
+					message: {
+						content: `${executor}, failed to quick purge messages for ${target}: ${purgeResult.message}`
+					}
 				});
 			}
 
@@ -400,16 +420,16 @@ export default class MessageReactionAdd extends EventListener {
 				components.push(row);
 			}
 
-			const logWebhook = new WebhookClient({ url: quickPurgeGuildConfig.webhook_url });
+			await log({
+				event: LoggingEvent.QuickPurgeResult,
+				config,
+				message: { content, components, files: [attachment] }
+			});
 
-			return Promise.all([
-				logWebhook.send({ embeds: [embed] }).catch(() => null),
-				resultWebhook
-					.send({ content, components, files: [attachment] })
-					.catch(() => null)
-			]).then(() => {
-				logWebhook.destroy();
-				resultWebhook.destroy();
+			await log({
+				event: LoggingEvent.QuickPurgeExecuted,
+				config,
+				message: { embeds: [embed] }
 			});
 		} catch {
 			quickPurgeActionLocks.delete(message.author.id);
@@ -789,24 +809,4 @@ export default class MessageReactionAdd extends EventListener {
 
 		return [parsedReaction, parsedMessage] as const;
 	}
-}
-
-/**
- * Sends a temporary reply using a webhook that deletes itself after a short duration.
- *
- * @param webhook The webhook client to use for sending the message.
- * @param options The options for the message.
- * @returns A promise that resolves when the message has been sent and scheduled for deletion.
- */
-
-async function temporaryReply(
-	webhook: WebhookClient,
-	options: WebhookMessageCreateOptions
-): Promise<void> {
-	const message = await webhook.send(options).catch(() => null);
-	if (!message) return;
-
-	setTimeout(async () => {
-		await webhook.deleteMessage(message.id).catch(() => null);
-	}, 7500);
 }

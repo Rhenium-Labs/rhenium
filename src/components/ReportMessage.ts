@@ -14,7 +14,7 @@ export default class ReportMessage extends Component {
 		interaction: Component.Interaction<"modalSubmit">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
-		if (!config.getMessageReportsConfig()) {
+		if (!config.parseReportsConfig()) {
 			return { error: "Message reports have not been configured on this server." };
 		}
 

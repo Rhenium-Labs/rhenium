@@ -14,7 +14,7 @@ export default class BanRequestDenyModal extends Component {
 		interaction: Component.Interaction<"modalSubmit">,
 		config: GuildConfig
 	): Promise<InteractionReplyData | null> {
-		if (!config.getBanRequestsConfig())
+		if (!config.parseBanRequestsConfig())
 			return { error: "Ban requests have not been configured on this server." };
 
 		const requestAction = interaction.customId

@@ -29,7 +29,7 @@ export default class ReportMessageCtx extends Command {
 		interaction: Command.Interaction<"messageContextMenu">,
 		config: GuildConfig
 	): Promise<InteractionReplyData | null> {
-		if (!config.getMessageReportsConfig()) {
+		if (!config.parseReportsConfig()) {
 			return {
 				error: "Message reports have not been configured on this server."
 			};

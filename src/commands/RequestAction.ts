@@ -63,7 +63,7 @@ export default class RequestAction extends Command {
 		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
-		if (!config.getBanRequestsConfig())
+		if (!config.parseBanRequestsConfig())
 			return {
 				error: "Ban requests have not been configured on this server."
 			};

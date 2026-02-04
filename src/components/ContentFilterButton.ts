@@ -18,11 +18,11 @@ import AutomatedScanner from "#cf/AutomatedScanner.js";
 export default class ContentFilterButton extends Component {
 	public async run(
 		interaction: Component.Interaction<"button">,
-		configClass: GuildConfig
+		config: GuildConfig
 	): Promise<InteractionReplyData | null> {
-		const config = configClass.getContentFilterConfig();
+		const contentFilterConfig = config.parseContentFilterConfig()
 
-		if (!config) {
+		if (!contentFilterConfig) {
 			return { error: "Content filter is not configured for this server." };
 		}
 

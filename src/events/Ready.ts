@@ -9,6 +9,7 @@ import Logger from "#utils/Logger.js";
 import GlobalConfig from "#root/lib/config/GlobalConfig.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 import HeuristicScanner from "#cf/HeuristicScanner.js";
+import { up } from "#root/migration.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.ClientReady
@@ -24,6 +25,10 @@ export default class Ready extends EventListener {
 			GlobalConfig.startMessageReportDisregardCronJob(),
 			GlobalConfig.startMessageRetentionCronJobs()
 		]);
+
+		await sleep(3000);
+
+		await up();
 	}
 
 	/** Registers application commands with Discord. */

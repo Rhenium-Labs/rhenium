@@ -6,7 +6,7 @@ import { CF_CONSTANTS } from "#utils/Constants.js";
 import { channelInScope, parseChannelScoping } from "#utils/index.js";
 
 import type { Message } from "#kysely/Schema.js";
-import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 import type { ContentPredictions, HeuristicData, HeuristicMessageData } from "./Types.js";
 
 import Logger from "#utils/Logger.js";
@@ -288,7 +288,7 @@ export default class HeuristicScanner {
 	 */
 	static async triggerScan(
 		message: DiscordMessage<true>,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
@@ -351,7 +351,7 @@ export default class HeuristicScanner {
 	 */
 	private static async _heuristicScan(
 		channel: TextChannel,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 

@@ -13,12 +13,11 @@ export default class ModerationUtils {
 	 * @returns The result of the validation.
 	 */
 
-	static validateAction(data: {
-		target: GuildMember | User;
-		executor: GuildMember;
-		action: "Ban" | "Mute" | "Quick Mute";
-	}): SimpleResult {
-		const { target, executor, action } = data;
+	static validateAction(
+		target: GuildMember | User,
+		executor: GuildMember,
+		action: "Ban" | "Mute" | "Quick Mute"
+	): SimpleResult {
 		const actionLower = action.toLowerCase();
 
 		if (target.id === executor.id) {
