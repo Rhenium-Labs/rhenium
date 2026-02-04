@@ -7,7 +7,9 @@ import Messages from "#utils/Messages.js";
 	event: Events.MessageBulkDelete
 })
 export default class MessageBulkDelete extends EventListener {
-	public async onEmit(deletedMessages: Collection<Snowflake, PartialMessage<true>>): Promise<any> {
+	public async onEmit(
+		deletedMessages: Collection<Snowflake, PartialMessage<true>>
+	): Promise<any> {
 		const messageIds = deletedMessages
 			.filter(message => !(message.author?.bot || message.webhookId || message.system))
 			.map(message => message.id);

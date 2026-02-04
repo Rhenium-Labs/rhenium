@@ -6,6 +6,7 @@ import type {
 	ContentFilterChannelScoping,
 	ContentFilterConfig,
 	HighlightConfig,
+	LoggingWebhook,
 	MessageReportConfig,
 	PermissionScope,
 	QuickMuteChannelScoping,
@@ -21,7 +22,7 @@ export default class ConfigManager {
 	 * Cache for all guild configurations.
 	 */
 
-	private static _cache: Collection<string, GuildConfig> = new Collection();
+	private static readonly _cache: Collection<string, GuildConfig> = new Collection();
 
 	/**
 	 * Retrieves a guild configuration from the cache, or computes it if not present.
@@ -31,11 +32,11 @@ export default class ConfigManager {
 	 */
 
 	static async get(guildId: string): Promise<GuildConfig> {
-		let config = this._cache.get(guildId);
+		let config = ConfigManager._cache.get(guildId);
 
 		if (!config) {
-			config = await this._compute(guildId);
-			this._cache.set(guildId, config);
+			config = await ConfigManager._compute(guildId);
+			ConfigManager._cache.set(guildId, config);
 		}
 
 		return config;
@@ -49,19 +50,16 @@ export default class ConfigManager {
 	 * @returns void
 	 */
 	static async reload(guildId: string, feature: ConfigFeature): Promise<void> {
-		const config = this._cache.get(guildId);
+		const config = ConfigManager._cache.get(guildId);
+		if (!config) return;
 
-		if (!config) {
-			return;
-		}
-
-		const featureData = await this._getFeatureData(guildId, feature);
+		const featureData = await ConfigManager._getFeatureData(guildId, feature);
 		const updatedData: GuildConfigData = {
 			...config.data,
 			[feature]: featureData
 		};
 
-		this._cache.set(guildId, new GuildConfig(updatedData));
+		ConfigManager._cache.set(guildId, new GuildConfig(updatedData));
 	}
 
 	/**
@@ -84,20 +82,29 @@ export default class ConfigManager {
 				.execute();
 		}
 
+		if (feature === "logging_webhooks") {
+			// prettier-ignore
+			return kysely
+				.selectFrom("LoggingWebhook")
+				.selectAll()
+				.where("guild_id", "=", guildId)
+				.execute();
+		}
+
 		const { table, scopingTable } = FeatureTableMap[feature];
 
-		// prettier-ignore
+		// Prettier-ignore
 		const result = await kysely
 			.selectFrom(table)
 			.selectAll()
 			.where("id", "=", guildId)
-			.executeTakeFirst()
+			.executeTakeFirst();
 
 		if (!scopingTable) {
 			return result as ConfigFeatureMap[ConfigFeature];
 		}
 
-		// prettier-ignore
+		// Prettier-ignore
 		const scoping = await kysely
 			.selectFrom(scopingTable)
 			.selectAll()
@@ -135,7 +142,8 @@ export default class ConfigManager {
 			permissionScopes,
 			quickMuteScoping,
 			quickPurgeScoping,
-			contentFilterScoping
+			contentFilterScoping,
+			loggingWebhooks
 		] = await kysely.transaction().execute(async trx =>
 			Promise.all([
 				trx
@@ -174,10 +182,31 @@ export default class ConfigManager {
 					.onConflict(oc => oc.column("id").doUpdateSet({ id: guildId }))
 					.returningAll()
 					.executeTakeFirstOrThrow(),
-				trx.selectFrom("PermissionScope").selectAll().where("guild_id", "=", guildId).execute(),
-				trx.selectFrom("QuickMuteChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
-				trx.selectFrom("QuickPurgeChannelScoping").selectAll().where("guild_id", "=", guildId).execute(),
-				trx.selectFrom("ContentFilterChannelScoping").selectAll().where("guild_id", "=", guildId).execute()
+				trx
+					.selectFrom("PermissionScope")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute(),
+				trx
+					.selectFrom("QuickMuteChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute(),
+				trx
+					.selectFrom("QuickPurgeChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute(),
+				trx
+					.selectFrom("ContentFilterChannelScoping")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute(),
+				trx
+					.selectFrom("LoggingWebhook")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute()
 			])
 		);
 
@@ -198,7 +227,8 @@ export default class ConfigManager {
 				...contentFilter,
 				channel_scoping: contentFilterScoping
 			},
-			permission_scopes: permissionScopes
+			permission_scopes: permissionScopes,
+			logging_webhooks: loggingWebhooks
 		};
 
 		return new GuildConfig(data);
@@ -224,6 +254,7 @@ type ConfigFeatureMap = {
 	highlights: HighlightConfig;
 	content_filter: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] };
 	permission_scopes: PermissionScope[];
+	logging_webhooks: LoggingWebhook[];
 };
 
 type ConfigFeature = keyof ConfigFeatureMap;
@@ -235,6 +266,7 @@ export const ConfigKeys = {
 	QuickPurges: "quick_purges",
 	Highlights: "highlights",
 	ContentFilter: "content_filter",
-	PermissionScopes: "permission_scopes"
+	PermissionScopes: "permission_scopes",
+	LoggingWebhooks: "logging_webhooks"
 } as const;
 export type ConfigKeys = (typeof ConfigKeys)[keyof typeof ConfigKeys];

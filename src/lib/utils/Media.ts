@@ -42,9 +42,13 @@ export default class MediaUtils {
 		message: Message,
 		options: { validate: boolean }
 	): Promise<MessageMediaMetadata[] | null> {
-		const stickers = [...message.stickers.values()].filter(sticker => sticker.type !== StickerType.Standard);
+		const stickers = [...message.stickers.values()].filter(
+			sticker => sticker.type !== StickerType.Standard
+		);
 
-		const serialized = await Promise.all(stickers.map(sticker => this._processMediaUrl(sticker.url, options)));
+		const serialized = await Promise.all(
+			stickers.map(sticker => this._processMediaUrl(sticker.url, options))
+		);
 
 		const valid = serialized.filter((item): item is MessageMediaMetadata => item !== null);
 		return valid.length ? valid : null;
@@ -86,7 +90,9 @@ export default class MediaUtils {
 		options: { validate: boolean }
 	): Promise<MessageMediaMetadata[] | null> {
 		const serialized = await Promise.all(
-			[...message.attachments.values()].map(attachment => this._processMediaUrl(attachment.url, options))
+			[...message.attachments.values()].map(attachment =>
+				this._processMediaUrl(attachment.url, options)
+			)
 		);
 
 		const valid = serialized.filter((item): item is MessageMediaMetadata => item !== null);
@@ -100,7 +106,10 @@ export default class MediaUtils {
 	 * @param options Validation options.
 	 * @returns A collection of all serialized media, or null if none found.
 	 */
-	static async serializeMedia(message: Message, options: { validate: boolean }): Promise<MessageMedia | null> {
+	static async serializeMedia(
+		message: Message,
+		options: { validate: boolean }
+	): Promise<MessageMedia | null> {
 		const [emojis, stickers, attachments, embeds] = await Promise.all([
 			this.serializeEmojis(message, options),
 			this.serializeStickers(message, options),
@@ -148,7 +157,10 @@ export default class MediaUtils {
 			media.map(async metadata => {
 				try {
 					if (!metadata.buffer || !metadata.extension) return;
-					const converted = await this.mediaConversion(metadata.buffer, metadata.extension);
+					const converted = await this.mediaConversion(
+						metadata.buffer,
+						metadata.extension
+					);
 					if (converted.length) processedMedia.push(...converted);
 				} catch (error) {
 					Logger.error("Failed to process media item:", error);
@@ -167,7 +179,10 @@ export default class MediaUtils {
 	 * @param format The format of the input buffer.
 	 * @returns A list of processed media metadata.
 	 */
-	static async mediaConversion(buffer: Uint8Array, format: Extensions): Promise<MessageMediaMetadata[]> {
+	static async mediaConversion(
+		buffer: Uint8Array,
+		format: Extensions
+	): Promise<MessageMediaMetadata[]> {
 		switch (format) {
 			case Extensions.MP4:
 			case Extensions.AVI:
@@ -239,7 +254,10 @@ export default class MediaUtils {
 	}
 
 	/** Determines the file extension based on the file signature and content type. */
-	private static _getExtension(fileSignature: Uint8Array, contentType: string | null): Extensions | null {
+	private static _getExtension(
+		fileSignature: Uint8Array,
+		contentType: string | null
+	): Extensions | null {
 		const relevantMimeTypes = SUPPORTED_MIME_TYPES.filter(({ mime }) => mime === contentType);
 
 		return (
@@ -289,11 +307,17 @@ export default class MediaUtils {
 			ffmpeg(inputStream)
 				.inputFormat("image2pipe")
 				.outputOptions("-f", "image2pipe", "-vcodec", "png")
-				.on("error", err => reject(new Error(`FFmpeg conversion failed: ${err.message}`)))
+				.on("error", err =>
+					reject(new Error(`FFmpeg conversion failed: ${err.message}`))
+				)
 				.on("end", async () => {
 					try {
-						const resized = await this._resizeAndCompressPng(Buffer.concat(chunks));
-						resolve([{ base64: resized.toString("base64"), extension: Extensions.PNG }]);
+						const resized = await this._resizeAndCompressPng(
+							Buffer.concat(chunks)
+						);
+						resolve([
+							{ base64: resized.toString("base64"), extension: Extensions.PNG }
+						]);
 					} catch (err) {
 						reject(err);
 					}
@@ -301,12 +325,16 @@ export default class MediaUtils {
 				.pipe(outputStream, { end: true });
 
 			outputStream.on("data", chunk => chunks.push(chunk));
-			outputStream.on("error", err => reject(new Error(`Output stream error: ${err.message}`)));
+			outputStream.on("error", err =>
+				reject(new Error(`Output stream error: ${err.message}`))
+			);
 		});
 	}
 
 	/** Processes animated images (GIF, WebP) to extract key frames as PNGs. */
-	private static async _processAnimatedImage(buffer: Uint8Array): Promise<MessageMediaMetadata[]> {
+	private static async _processAnimatedImage(
+		buffer: Uint8Array
+	): Promise<MessageMediaMetadata[]> {
 		try {
 			const metadata = await sharp(buffer).metadata();
 			const pages = metadata.pages || 0;
@@ -344,7 +372,8 @@ export default class MediaUtils {
 			stream.end(buffer);
 
 			ffmpeg(stream).ffprobe((err, metadata) => {
-				if (err) return reject(new Error(`Error getting video metadata: ${err.message}`));
+				if (err)
+					return reject(new Error(`Error getting video metadata: ${err.message}`));
 				resolve(metadata.format.duration ?? null);
 			});
 		});
@@ -368,17 +397,24 @@ export default class MediaUtils {
 				.seekInput(timestamp)
 				.frames(1)
 				.outputOptions("-f", "image2pipe", "-vcodec", "png")
-				.on("error", err => reject(new Error(`Error during frame extraction: ${err.message}`)))
+				.on("error", err =>
+					reject(new Error(`Error during frame extraction: ${err.message}`))
+				)
 				.on("end", () => resolve(Buffer.concat(chunks)))
 				.pipe(outputStream, { end: true });
 
 			outputStream.on("data", chunk => chunks.push(chunk));
-			outputStream.on("error", err => reject(new Error(`Output stream error: ${err.message}`)));
+			outputStream.on("error", err =>
+				reject(new Error(`Output stream error: ${err.message}`))
+			);
 		});
 	}
 
 	/** Extracts key PNG frames from a video buffer. */
-	private static async _getVideoPngFrames(buffer: Uint8Array, format: Extensions): Promise<MessageMediaMetadata[]> {
+	private static async _getVideoPngFrames(
+		buffer: Uint8Array,
+		format: Extensions
+	): Promise<MessageMediaMetadata[]> {
 		const frameBuffers: MessageMediaMetadata[] = [];
 
 		try {
@@ -390,7 +426,10 @@ export default class MediaUtils {
 			for (const timestamp of timestamps) {
 				const frameBuffer = await this._getVideoPngFrame(buffer, format, timestamp);
 				const resized = await this._resizeAndCompressPng(frameBuffer);
-				frameBuffers.push({ base64: resized.toString("base64"), extension: Extensions.PNG });
+				frameBuffers.push({
+					base64: resized.toString("base64"),
+					extension: Extensions.PNG
+				});
 			}
 		} catch (error) {
 			Logger.error("Error processing video frames:", error);

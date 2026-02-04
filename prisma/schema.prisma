@@ -1,8 +1,10 @@
 generator kysely {
-  provider     = "prisma-kysely"
-  output       = "../src/lib/kysely"
-  fileName     = "Schema.ts"
-  enumFileName = "Enums.ts"
+  provider           = "prisma-kysely"
+  output             = "../src/lib/kysely"
+  fileName           = "Schema.ts"
+  enumFileName       = "Enums.ts"
+  importExtension    = ".js"
+  exportWrappedTypes = true
 }
 
 datasource db {
@@ -57,6 +59,16 @@ enum UserPermission {
   UseQuickPurge
 }
 
+enum LoggingEvent {
+  MessageReportReviewed
+  BanRequestReviewed
+  BanRequestResult
+  QuickPurgeResult
+  QuickPurgeExecuted
+  QuickMuteResult
+  QuickMuteExecuted
+}
+
 model Guild {
   id String @id
 
@@ -76,6 +88,7 @@ model Guild {
   permission_scopes     PermissionScope[]
   content_filter_alerts ContentFilterAlert[]
   content_filter_logs   ContentFilterLog[]
+  webhooks              LoggingWebhook[]
 }
 
 model Whitelist {
@@ -86,12 +99,14 @@ model Whitelist {
 
 model MessageReportConfig {
   // ID of the guild.
-  id                   String  @id
+  id              String  @id
   // Whether message reporting is enabled.
-  enabled              Boolean @default(false)
-  webhook_url          String?
-  log_webhook_url      String?
-  auto_disregard_after BigInt  @default(0)
+  enabled         Boolean @default(false)
+  webhook_url     String?
+  webhook_channel String?
+
+  /// @kyselyType(bigint)
+  auto_disregard_after BigInt @default(0)
 
   immune_roles       String[] @default([])
   notify_roles       String[] @default([])
@@ -111,15 +126,13 @@ model BanRequestConfig {
   enabled Boolean @default(false)
 
   webhook_url           String?
-  log_webhook_url       String?
-  decision_webhook_url  String?
+  webhook_channel       String?
   automatically_timeout Boolean @default(false)
 
   immune_roles String[] @default([])
   notify_roles String[] @default([])
 
   enforce_submission_reason Boolean @default(true)
-  enforce_accept_reason     Boolean @default(true)
   enforce_deny_reason       Boolean @default(true)
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
@@ -166,7 +179,7 @@ model ContentFilterAlert {
   alert_message_id String
   alert_channel_id String
   offender_id      String
-  detectors        Detector[]
+  detectors        Detector[]          @default([])
   highest_score    Float               @default(0)
   mod_status       ContentFilterStatus @default(Pending)
   del_status       ContentFilterStatus @default(Pending)
@@ -205,6 +218,7 @@ model BanRequest {
   requested_at DateTime @default(now())
   requested_by String
 
+  /// @kyselyType(bigint)
   duration BigInt?
   reason   String
 
@@ -229,9 +243,10 @@ model MessageReport {
   author_id    String
   content      String?
 
-  reported_at   DateTime
-  reported_by   String
-  report_reason String
+  reported_at          DateTime
+  reported_by          String
+  report_reason        String
+  additional_reporters String[] @default([])
 
   status ReportStatus @default(Pending)
 
@@ -253,8 +268,8 @@ model HighlightConfig {
 model Highlight {
   user_id         String
   guild_id        String
-  patterns        String[]
-  user_blacklist  String[]
+  patterns        String[]                  @default([])
+  user_blacklist  String[]                  @default([])
   channel_scoping HighlightChannelScoping[]
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
@@ -277,11 +292,9 @@ model QuickMuteConfig {
   // ID of the guild.
   id String @id
 
-  enabled            Boolean                   @default(false)
-  purge_limit        Int                       @default(100)
-  webhook_url        String?
-  result_webhook_url String?
-  channel_scoping    QuickMuteChannelScoping[]
+  enabled         Boolean                   @default(false)
+  purge_limit     Int                       @default(100)
+  channel_scoping QuickMuteChannelScoping[]
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
 }
@@ -300,6 +313,7 @@ model QuickMute {
   user_id      String
   guild_id     String
   reaction     String
+  /// @kyselyType(bigint)
   duration     BigInt
   reason       String
   purge_amount Int    @default(0)
@@ -312,11 +326,9 @@ model QuickMute {
 model QuickPurgeConfig {
   id String @id
 
-  enabled            Boolean                    @default(false)
-  max_limit          Int                        @default(100)
-  webhook_url        String?
-  result_webhook_url String?
-  channel_scoping    QuickPurgeChannelScoping[]
+  enabled         Boolean                    @default(false)
+  max_limit       Int                        @default(100)
+  channel_scoping QuickPurgeChannelScoping[]
 
   guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
 }
@@ -360,9 +372,20 @@ model Message {
 model PermissionScope {
   guild_id            String
   role_id             String
-  allowed_permissions UserPermission[]
+  allowed_permissions UserPermission[] @default([])
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 
   @@id([guild_id, role_id])
+}
+
+model LoggingWebhook {
+  id         String         @unique
+  url        String
+  token      String
+  channel_id String
+  guild_id   String
+  events     LoggingEvent[] @default([])
+
+  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }

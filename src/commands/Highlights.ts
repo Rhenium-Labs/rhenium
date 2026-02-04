@@ -106,7 +106,8 @@ export default class Highlights extends Command {
 								},
 								{
 									name: "type",
-									description: "Include or exclude highlights from this channel.",
+									description:
+										"Include or exclude highlights from this channel.",
 									type: ApplicationCommandOptionType.Integer,
 									required: true,
 									choices: [
@@ -192,7 +193,8 @@ export default class Highlights extends Command {
 		interaction: Command.Interaction<"chatInput">,
 		config: GuildConfig
 	): Promise<InteractionReplyData> {
-		const subcommandGroup = interaction.options.getSubcommandGroup() as HighlightSubcommandGroup | null;
+		const subcommandGroup =
+			interaction.options.getSubcommandGroup() as HighlightSubcommandGroup | null;
 		const subcommand = interaction.options.getSubcommand() as HighlightSubcommand;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -271,7 +273,11 @@ export default class Highlights extends Command {
 						.selectFrom("HighlightChannelScoping")
 						.select(["channel_id", "type"])
 						.whereRef("HighlightChannelScoping.user_id", "=", "Highlight.user_id")
-						.whereRef("HighlightChannelScoping.guild_id", "=", "Highlight.guild_id")
+						.whereRef(
+							"HighlightChannelScoping.guild_id",
+							"=",
+							"Highlight.guild_id"
+						)
 				).as("channel_scoping")
 			])
 			.where("guild_id", "=", guildId)
@@ -297,7 +303,9 @@ export default class Highlights extends Command {
 			if (userBlacklist.includes(messageAuthorId)) continue;
 
 			// Check if the highlight user can view the channel.
-			const highlightMember = await message.guild.members.fetch(highlight.user_id).catch(() => null);
+			const highlightMember = await message.guild.members
+				.fetch(highlight.user_id)
+				.catch(() => null);
 
 			if (!highlightMember) continue;
 
@@ -449,7 +457,9 @@ export default class Highlights extends Command {
 		return { content: `Successfully added \`${pattern}\` to your highlights.` };
 	}
 
-	private static async _removePattern(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _removePattern(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const pattern = interaction.options.getString("pattern", true);
 		const highlight = await kysely
 			.selectFrom("Highlight")
@@ -476,7 +486,9 @@ export default class Highlights extends Command {
 		return { content: `Successfully removed \`${pattern}\` from your highlights.` };
 	}
 
-	private static async _clearPatterns(interaction: Command.Interaction<"chatInput">): Promise<InteractionReplyData> {
+	private static async _clearPatterns(
+		interaction: Command.Interaction<"chatInput">
+	): Promise<InteractionReplyData> {
 		const highlight = await kysely
 			.selectFrom("Highlight")
 			.select(["patterns"])
@@ -638,7 +650,11 @@ export default class Highlights extends Command {
 				patterns: [],
 				user_blacklist: updatedBlacklist
 			})
-			.onConflict(oc => oc.columns(["guild_id", "user_id"]).doUpdateSet({ user_blacklist: updatedBlacklist }))
+			.onConflict(oc =>
+				oc
+					.columns(["guild_id", "user_id"])
+					.doUpdateSet({ user_blacklist: updatedBlacklist })
+			)
 			.execute();
 
 		return { content: `Successfully blacklisted ${user} from triggering your highlights.` };
@@ -713,7 +729,11 @@ export default class Highlights extends Command {
 						.selectFrom("HighlightChannelScoping")
 						.select(["channel_id", "type"])
 						.whereRef("HighlightChannelScoping.user_id", "=", "Highlight.user_id")
-						.whereRef("HighlightChannelScoping.guild_id", "=", "Highlight.guild_id")
+						.whereRef(
+							"HighlightChannelScoping.guild_id",
+							"=",
+							"Highlight.guild_id"
+						)
 				).as("channel_scoping")
 			])
 			.selectAll()

@@ -22,7 +22,7 @@ import { ContentFilterButtonNames, ContentFilterFieldNames, ScanType } from "./E
 
 import type { Detector } from "#kysely/Enums.js";
 import type { ContentPredictionData, ContentPredictions } from "./Types.js";
-import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 
 import Logger from "#utils/Logger.js";
 import MediaUtils, { MessageMediaMetadata } from "#utils/Media.js";
@@ -45,7 +45,7 @@ export default class ContentFilter {
 		predictions: ContentPredictions[],
 		scanType: ScanType,
 		message: Message<true>,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
@@ -76,7 +76,9 @@ export default class ContentFilter {
 		const scanResults: string[] = [];
 
 		for (const prediction of predictions) {
-			const detectorLabel = prediction.detector ? `[${prediction.detector}]` : "[HEURISTIC]";
+			const detectorLabel = prediction.detector
+				? `[${prediction.detector}]`
+				: "[HEURISTIC]";
 			for (const data of prediction.data) {
 				const line = data.score
 					? `${detectorLabel} ${data.content} (${data.score})`
@@ -165,7 +167,9 @@ export default class ContentFilter {
 		);
 
 		const notificationContent =
-			config.notify_roles.length > 0 ? config.notify_roles.map(r => roleMention(r)).join(", ") : undefined;
+			config.notify_roles.length > 0
+				? config.notify_roles.map(r => roleMention(r)).join(", ")
+				: undefined;
 
 		const webhook = new WebhookClient({ url: config.webhook_url });
 
@@ -239,7 +243,7 @@ export default class ContentFilter {
 	static async scanMessage(
 		message: Message<true>,
 		detector: Detector,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<ContentPredictions | null> {
 		const predictionData: ContentPredictionData[] = [];
 		const problematicContent: string[] = [];
@@ -295,7 +299,9 @@ export default class ContentFilter {
 			}
 		}
 
-		return predictionData.length ? { data: predictionData, detector, content: problematicContent } : null;
+		return predictionData.length
+			? { data: predictionData, detector, content: problematicContent }
+			: null;
 	}
 
 	/**
@@ -307,7 +313,7 @@ export default class ContentFilter {
 	 */
 	private static async _runOcrScan(
 		media: MessageMediaMetadata[],
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<{ predictions: ContentPredictionData[]; content: string[] }> {
 		const predictions: ContentPredictionData[] = [];
 		const matchedContent: string[] = [];
@@ -378,7 +384,7 @@ export default class ContentFilter {
 	 */
 	static async openAiScan(
 		content: ModerationMultiModalInput[] | string,
-		config: ValidatedContentFilterConfig,
+		config: ParsedContentFilterConfig,
 		message?: Message<true>
 	): Promise<ContentPredictionData[]> {
 		if (this.openAiRateLimitedUntil && Date.now() < this.openAiRateLimitedUntil) {
@@ -427,7 +433,10 @@ export default class ContentFilter {
 	 * @param minScore The minimum score threshold for flagging.
 	 * @returns The content prediction data.
 	 */
-	static parseOpenAiModerationResults(results: Moderation[], minScore: number): ContentPredictionData[] {
+	static parseOpenAiModerationResults(
+		results: Moderation[],
+		minScore: number
+	): ContentPredictionData[] {
 		const predictions: ContentPredictionData[] = [];
 
 		for (const result of results) {
@@ -458,7 +467,7 @@ export default class ContentFilter {
 	static async runDetectors(
 		_channel: TextBasedChannel,
 		message: Message<true>,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<ContentPredictions[]> {
 		const predictions: ContentPredictions[] = [];
 
@@ -468,7 +477,9 @@ export default class ContentFilter {
 		// Check if the author has immune roles
 		if (config.immune_roles && config.immune_roles.length > 0) {
 			try {
-				const member = await message.guild.members.fetch(message.author.id).catch(() => null);
+				const member = await message.guild.members
+					.fetch(message.author.id)
+					.catch(() => null);
 				if (member && member.roles.cache.hasAny(...config.immune_roles)) {
 					return predictions;
 				}

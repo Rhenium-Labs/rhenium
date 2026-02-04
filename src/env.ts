@@ -8,9 +8,12 @@ export const envZodSchema = z.object({
 	BOT_TOKEN: z.string(),
 	PG_URL: z
 		.string()
-		.regex(/^(postgres(?:ql)?:\/\/)([^:@\/\s]+)(?::([^@\/\s]*))?@([^:\/\s]+)(?::(\d+))?\/([^?\s]+)(\?.*)?$/, {
-			error: "Invalid PostgreSQL connection URL"
-		}),
+		.regex(
+			/^(postgres(?:ql)?:\/\/)([^:@\/\s]+)(?::([^@\/\s]*))?@([^:\/\s]+)(?::(\d+))?\/([^?\s]+)(\?.*)?$/,
+			{
+				error: "Invalid PostgreSQL connection URL"
+			}
+		),
 	SENTRY_DSN: z.string(),
 	OPENAI_API_KEY: z.string()
 });

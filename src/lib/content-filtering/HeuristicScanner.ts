@@ -6,7 +6,7 @@ import { CF_CONSTANTS } from "#utils/Constants.js";
 import { channelInScope, parseChannelScoping } from "#utils/index.js";
 
 import type { Message } from "#kysely/Schema.js";
-import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 import type { ContentPredictions, HeuristicData, HeuristicMessageData } from "./Types.js";
 
 import Logger from "#utils/Logger.js";
@@ -69,9 +69,14 @@ export default class HeuristicScanner {
 
 		// Enforce max size with LRU eviction
 		if (this._lastScanTimestamps.size > MAX_TIMER_CHANNELS) {
-			const entries = Array.from(this._lastScanTimestamps.entries()).sort((a, b) => a[1] - b[1]); // Sort by oldest first
+			const entries = Array.from(this._lastScanTimestamps.entries()).sort(
+				(a, b) => a[1] - b[1]
+			); // Sort by oldest first
 
-			const toRemove = entries.slice(0, this._lastScanTimestamps.size - MAX_TIMER_CHANNELS);
+			const toRemove = entries.slice(
+				0,
+				this._lastScanTimestamps.size - MAX_TIMER_CHANNELS
+			);
 
 			for (const [channelId] of toRemove) {
 				this._lastScanTimestamps.delete(channelId);
@@ -95,7 +100,10 @@ export default class HeuristicScanner {
 		const recentMessages = this.getRecentMessages(messages);
 		const previousMessages = this.getPreviousMessages(messages);
 
-		return recentMessages.length - previousMessages.length >= CF_CONSTANTS.MESSAGE_PACE_INCREASE_THRESHOLD;
+		return (
+			recentMessages.length - previousMessages.length >=
+			CF_CONSTANTS.MESSAGE_PACE_INCREASE_THRESHOLD
+		);
 	}
 
 	/**
@@ -106,7 +114,9 @@ export default class HeuristicScanner {
 	 */
 	static getRecentMessages(messages: Message[]): Message[] {
 		const now = Date.now();
-		return messages.filter(m => m.created_at.getTime() >= now - CF_CONSTANTS.MESSAGE_QUEUE_TIME_RANGE);
+		return messages.filter(
+			m => m.created_at.getTime() >= now - CF_CONSTANTS.MESSAGE_QUEUE_TIME_RANGE
+		);
 	}
 
 	/**
@@ -157,7 +167,10 @@ export default class HeuristicScanner {
 
 			if (current.content && next.content && current.author_id !== next.author_id) {
 				// Use Levenshtein distance - if distance is less than threshold, consider similar.
-				const dist = distance(current.content.toLowerCase(), next.content.toLowerCase());
+				const dist = distance(
+					current.content.toLowerCase(),
+					next.content.toLowerCase()
+				);
 				const maxLen = Math.max(current.content.length, next.content.length);
 				const similarity = 1 - dist / maxLen;
 
@@ -189,7 +202,9 @@ export default class HeuristicScanner {
 
 		for (const message of [...reactionMessages, ...matchingMessages]) {
 			if (message.reference_id) {
-				const idx = referenceData.findIndex(reference => reference.message.id === message.reference_id);
+				const idx = referenceData.findIndex(
+					reference => reference.message.id === message.reference_id
+				);
 
 				if (idx !== -1) {
 					referenceData[idx].score++;
@@ -271,7 +286,10 @@ export default class HeuristicScanner {
 	 * @param config The content filter configuration.
 	 * @return void
 	 */
-	static async triggerScan(message: DiscordMessage<true>, config: ValidatedContentFilterConfig): Promise<void> {
+	static async triggerScan(
+		message: DiscordMessage<true>,
+		config: ParsedContentFilterConfig
+	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
 		const channel = message.channel as TextChannel;
@@ -285,13 +303,17 @@ export default class HeuristicScanner {
 		const state = AutomatedScanner.getOrInitChannelState(channelId);
 
 		// Use EWMA message-per-minute as chat rate when available.
-		const chatRate = Math.max(1, Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE));
+		const chatRate = Math.max(
+			1,
+			Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE)
+		);
 
 		// Map chatRate [1..20+] to debounce window between configured min/max.
 		let debounceMs = Math.floor(
 			CF_CONSTANTS.HEURISTIC_SCAN_DEBOUNCE_MIN +
 				(Math.min(chatRate, 20) / 20) *
-					(CF_CONSTANTS.HEURISTIC_SCAN_DEBOUNCE_MAX - CF_CONSTANTS.HEURISTIC_SCAN_DEBOUNCE_MIN)
+					(CF_CONSTANTS.HEURISTIC_SCAN_DEBOUNCE_MAX -
+						CF_CONSTANTS.HEURISTIC_SCAN_DEBOUNCE_MIN)
 		);
 		debounceMs = Math.max(debounceMs, CF_CONSTANTS.HEURISTIC_SCAN_DEBOUNCE_MIN_DELAY);
 
@@ -327,7 +349,10 @@ export default class HeuristicScanner {
 	/**
 	 * Perform a heuristic scan on a channel based on recent message activity and content.
 	 */
-	private static async _heuristicScan(channel: TextChannel, config: ValidatedContentFilterConfig): Promise<void> {
+	private static async _heuristicScan(
+		channel: TextChannel,
+		config: ParsedContentFilterConfig
+	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
 		const channelId = channel.id;
@@ -339,7 +364,10 @@ export default class HeuristicScanner {
 		state.scanTimestamps.push(now);
 
 		// Dynamic window size based on observed traffic.
-		const traffic = Math.max(1, Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE));
+		const traffic = Math.max(
+			1,
+			Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE)
+		);
 		const multiplier = Math.min(
 			CF_CONSTANTS.HEURISTIC_DYNAMIC_WINDOW_MULT_MAX,
 			traffic / Math.max(1, CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE)
@@ -361,12 +389,22 @@ export default class HeuristicScanner {
 		const reactionMessages = this.findReactionMessages(serializedMessages);
 		const matchingMessages = this.findMatchingMessages(serializedMessages);
 
-		const heur = await this.calculateHeuristics(reactionMessages, matchingMessages, chatRateIncreased);
+		const heur = await this.calculateHeuristics(
+			reactionMessages,
+			matchingMessages,
+			chatRateIncreased
+		);
 
 		const scanRate = state.scanRate ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE;
-		const trafficForThreshold = Math.max(1, Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE));
+		const trafficForThreshold = Math.max(
+			1,
+			Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE)
+		);
 		const ratio = trafficForThreshold / Math.max(1, scanRate);
-		const dynamicThreshold = Math.max(1, Math.round(CF_CONSTANTS.HEURISTIC_SCORE_THRESHOLD * Math.sqrt(ratio)));
+		const dynamicThreshold = Math.max(
+			1,
+			Math.round(CF_CONSTANTS.HEURISTIC_SCORE_THRESHOLD * Math.sqrt(ratio))
+		);
 
 		// Collect candidate message IDs for scanning.
 		const candidateIds = new Set<Snowflake>();
@@ -400,7 +438,11 @@ export default class HeuristicScanner {
 				if (!actualMessage || !actualMessage.inGuild()) continue;
 
 				// Run detectors.
-				const predictions = await ContentFilter.runDetectors(channel, actualMessage, config);
+				const predictions = await ContentFilter.runDetectors(
+					channel,
+					actualMessage,
+					config
+				);
 
 				if (predictions.length) {
 					// Update predictions with heuristic data.

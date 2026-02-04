@@ -25,31 +25,31 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * The client this command belongs to.
 	 */
 
-	public client = client;
+	client = client;
 
 	/**
 	 * Kysely client instance.
 	 */
 
-	public kysely = kysely;
+	kysely = kysely;
 
 	/**
 	 * The description of the command.
 	 */
 
-	public readonly description: string;
+	readonly description: string;
 
 	/**
 	 * The lexer of the command.
 	 */
 
-	private readonly lexer: Lexer;
+	private readonly _lexer: Lexer;
 
 	/**
 	 * The strategy to use for the parser.
 	 */
 
-	private readonly strategy: IUnorderedStrategy;
+	private readonly _strategy: IUnorderedStrategy;
 
 	/**
 	 * Constructs a new command instance.
@@ -59,13 +59,13 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * @return The constructed command instance.
 	 */
 
-	public constructor(context: AliasPiece.LoaderContext<"commands">, options: Options = {} as Options) {
+	constructor(context: AliasPiece.LoaderContext<"commands">, options: Options = {} as Options) {
 		const name = options.name ?? context.name;
 		super(context, { ...options, name });
 
 		this.description = options.description;
-		this.lexer = new Lexer({ quotes: [] });
-		this.strategy = new FlagStrategy(Command._getStrategyOptions(options.flags ?? []));
+		this._lexer = new Lexer({ quotes: [] });
+		this._strategy = new FlagStrategy(Command._getStrategyOptions(options.flags ?? []));
 	}
 
 	/**
@@ -76,9 +76,9 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * @param parameters The parameters passed to the command.
 	 */
 
-	public getArgumentParser(message: DjsMessage<true>, parameters: string): ArgumentParser {
-		const parser = new Parser(this.strategy);
-		const stream = new ArgumentStream(parser.run(this.lexer.run(parameters)));
+	getArgumentParser(message: DjsMessage<true>, parameters: string): ArgumentParser {
+		const parser = new Parser(this._strategy);
+		const stream = new ArgumentStream(parser.run(this._lexer.run(parameters)));
 		return new ArgumentParser(message, stream);
 	}
 
@@ -87,7 +87,7 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * This method should be implemented by subclasses to provide the command's data.
 	 */
 
-	public register?(): ApplicationCommandData;
+	register?(): ApplicationCommandData;
 
 	/**
 	 * Handles interaction based command execution.
@@ -97,7 +97,7 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * @return The result of the command execution.
 	 */
 
-	public interactionRun?(
+	interactionRun?(
 		interaction: CommandInteraction<"cached">,
 		config: GuildConfig
 	): Awaitable<InteractionReplyData | null>;
@@ -111,7 +111,7 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * @return The result of the command execution.
 	 */
 
-	public messageRun?(
+	messageRun?(
 		message: DjsMessage<true>,
 		args: ArgumentParser,
 		config: GuildConfig
@@ -124,7 +124,10 @@ export abstract class Command<Options extends Command.Options = Command.Options>
 	 * @returns An object containing the flags and options.
 	 */
 
-	private static _getStrategyOptions(flags: CommandFlag[]): { flags: string[]; options: string[] } {
+	private static _getStrategyOptions(flags: CommandFlag[]): {
+		flags: string[];
+		options: string[];
+	} {
 		return flags.reduce<{ flags: string[]; options: string[] }>(
 			(acc, flag) => {
 				const destination = flag.acceptsValue ? acc.options : acc.flags;
@@ -156,9 +159,10 @@ export namespace Command {
 	export type Options = CommandOptions;
 	export type Args = ArgumentParser;
 	export type Message = DjsMessage<true>;
-	export type Interaction<T extends InteractionGeneric = InteractionGeneric> = T extends "chatInput"
-		? ChatInputCommandInteraction<"cached">
-		: T extends "messageContextMenu"
-			? MessageContextMenuCommandInteraction<"cached">
-			: UserContextMenuCommandInteraction<"cached">;
+	export type Interaction<T extends InteractionGeneric = InteractionGeneric> =
+		T extends "chatInput"
+			? ChatInputCommandInteraction<"cached">
+			: T extends "messageContextMenu"
+				? MessageContextMenuCommandInteraction<"cached">
+				: UserContextMenuCommandInteraction<"cached">;
 }

@@ -24,7 +24,7 @@ export default class ArgumentParser {
 	 * @returns A new Args instance.
 	 */
 
-	public constructor(message: Message<true>, parser: ArgumentStream) {
+	constructor(message: Message<true>, parser: ArgumentStream) {
 		this._message = message;
 		this._parser = parser;
 	}
@@ -33,7 +33,7 @@ export default class ArgumentParser {
 	 * Whether all the arguments have been consumed.
 	 */
 
-	public get finished(): boolean {
+	get finished(): boolean {
 		return this._parser?.finished ?? true;
 	}
 
@@ -41,16 +41,19 @@ export default class ArgumentParser {
 	 * Retrieves a member from the available arguments.
 	 */
 
-	public async getMember(): Promise<GuildMember | null> {
+	async getMember(): Promise<GuildMember | null> {
 		if (this._parser.finished) {
 			return null;
 		}
 
 		return this._parser
 			.singleParseAsync<GuildMember | null, null>(async parameter => {
-				const memberId = UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
+				const memberId =
+					UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
 				const member = memberId
-					? await this._message.guild.members.fetch(memberId[1] as Snowflake).catch(() => null)
+					? await this._message.guild.members
+							.fetch(memberId[1] as Snowflake)
+							.catch(() => null)
 					: null;
 
 				return Result.ok(member);
@@ -62,16 +65,19 @@ export default class ArgumentParser {
 	 * Retrieves a user from the available arguments.
 	 */
 
-	public async getUser(): Promise<User | null> {
+	async getUser(): Promise<User | null> {
 		if (this._parser.finished) {
 			return null;
 		}
 
 		return this._parser
 			.singleParseAsync<User | null, null>(async parameter => {
-				const userId = UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
+				const userId =
+					UserOrMemberMentionRegex.exec(parameter) ?? SnowflakeRegex.exec(parameter);
 				const user = userId
-					? await this._message.client.users.fetch(userId[1] as Snowflake).catch(() => null)
+					? await this._message.client.users
+							.fetch(userId[1] as Snowflake)
+							.catch(() => null)
 					: null;
 
 				return Result.ok(user);
@@ -83,7 +89,7 @@ export default class ArgumentParser {
 	 * Retrieves a string from the available arguments.
 	 */
 
-	public getString(): string | null {
+	getString(): string | null {
 		return this._parser.finished
 			? null
 			: this._parser
@@ -100,7 +106,7 @@ export default class ArgumentParser {
 	 * @param max The maximum number to return. If not provided, no maximum is enforced.
 	 */
 
-	public getNumber(min?: number, max?: number): number | null {
+	getNumber(min?: number, max?: number): number | null {
 		if (this._parser.finished) {
 			return null;
 		}
@@ -114,7 +120,10 @@ export default class ArgumentParser {
 				}
 
 				// Clamp the number between min and max if provided
-				const clampedNumber = Math.min(max ?? Infinity, Math.max(min ?? -Infinity, number));
+				const clampedNumber = Math.min(
+					max ?? Infinity,
+					Math.max(min ?? -Infinity, number)
+				);
 				return Result.ok(clampedNumber);
 			})
 			.unwrap();
@@ -123,7 +132,7 @@ export default class ArgumentParser {
 	/**
 	 * Retrieves a boolean from the available arguments.
 	 */
-	public getBoolean(): boolean | null {
+	getBoolean(): boolean | null {
 		if (this._parser.finished) {
 			return null;
 		}
@@ -147,7 +156,7 @@ export default class ArgumentParser {
 	 * Retrieves all of the remaining arguments as a single string.
 	 */
 
-	public restString(): string | null {
+	restString(): string | null {
 		if (this._parser.finished) {
 			return null;
 		}
@@ -163,7 +172,7 @@ export default class ArgumentParser {
 
      * @param keys The name(s) of the option.
      */
-	public getOption(...keys: readonly string[]): string | null {
+	getOption(...keys: readonly string[]): string | null {
 		return this._parser.option(...keys).unwrapOr(null) || null;
 	}
 
@@ -172,7 +181,7 @@ export default class ArgumentParser {
 	 *
 	 * @param keys The name(s) of the flag.
 	 */
-	public getFlags(...keys: readonly string[]): boolean {
+	getFlags(...keys: readonly string[]): boolean {
 		return this._parser.flag(...keys) ?? false;
 	}
 }

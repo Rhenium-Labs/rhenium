@@ -62,7 +62,8 @@ export const CLIENT_CACHE_OPTIONS = Options.cacheWithLimits({
  */
 
 export const DISCORD_EMOJI_REGEX: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/;
-export const DISCORD_EMOJI_REGEX_GLOBAL: Readonly<RegExp> = /<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/g;
+export const DISCORD_EMOJI_REGEX_GLOBAL: Readonly<RegExp> =
+	/<a?:(?<name>[a-zA-Z0-9_]+):(?<id>\d{17,19})>/g;
 
 /**
  * Regex pattern for matching Unicode emojis.
@@ -107,6 +108,9 @@ export const PROCESS_EXIT_EVENTS: readonly NodeJS.Signals[] = [
 	"SIGUSR2",
 	"SIGTERM"
 ];
+
+/** Default message content used when a message has no content. */
+export const EMPTY_MESSAGE_CONTENT: string = "Unknown message content.";
 
 const HEURISTIC_LOGGING_SMOOTH_ALPHA: Readonly<number> = 0.25;
 

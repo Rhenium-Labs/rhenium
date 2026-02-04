@@ -30,7 +30,8 @@ export const ContentFilterVerbosity = {
 	Medium: "Medium",
 	Verbose: "Verbose"
 } as const;
-export type ContentFilterVerbosity = (typeof ContentFilterVerbosity)[keyof typeof ContentFilterVerbosity];
+export type ContentFilterVerbosity =
+	(typeof ContentFilterVerbosity)[keyof typeof ContentFilterVerbosity];
 export const ContentFilterStatus = {
 	Pending: "Pending",
 	Resolved: "Resolved",
@@ -46,3 +47,13 @@ export const UserPermission = {
 	UseQuickPurge: "UseQuickPurge"
 } as const;
 export type UserPermission = (typeof UserPermission)[keyof typeof UserPermission];
+export const LoggingEvent = {
+	MessageReportReviewed: "MessageReportReviewed",
+	BanRequestReviewed: "BanRequestReviewed",
+	BanRequestResult: "BanRequestResult",
+	QuickPurgeResult: "QuickPurgeResult",
+	QuickPurgeExecuted: "QuickPurgeExecuted",
+	QuickMuteResult: "QuickMuteResult",
+	QuickMuteExecuted: "QuickMuteExecuted"
+} as const;
+export type LoggingEvent = (typeof LoggingEvent)[keyof typeof LoggingEvent];

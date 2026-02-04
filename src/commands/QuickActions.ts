@@ -60,7 +60,8 @@ export default class QuickActions extends Command {
 								},
 								{
 									name: "duration",
-									description: "The duration for the mute (e.g., 10m, 1h, 1d).",
+									description:
+										"The duration for the mute (e.g., 10m, 1h, 1d).",
 									type: ApplicationCommandOptionType.String,
 									required: true
 								},
@@ -73,7 +74,8 @@ export default class QuickActions extends Command {
 								},
 								{
 									name: "purge_amount",
-									description: "Number of messages to purge (0 = none, default: 0).",
+									description:
+										"Number of messages to purge (0 = none, default: 0).",
 									type: ApplicationCommandOptionType.Integer,
 									required: false,
 									min_value: 0,
@@ -208,7 +210,7 @@ export default class QuickActions extends Command {
 		const reason = interaction.options.getString("reason", true);
 		const purgeAmount = interaction.options.getInteger("purge_amount") ?? 0;
 
-		const muteConfig = config.getQuickMutesConfig();
+		const muteConfig = config.parseQuickActionConfig("quick_mutes");
 
 		if (!muteConfig) {
 			return {
@@ -364,7 +366,8 @@ export default class QuickActions extends Command {
 			.setTimestamp();
 
 		for (const qm of quickMutes) {
-			const emojiDisplay = (await getEmojiDisplay(qm.reaction, interaction.guildId)) ?? "unknown";
+			const emojiDisplay =
+				(await getEmojiDisplay(qm.reaction, interaction.guildId)) ?? "unknown";
 
 			const formattedDuration = ms(Number(qm.duration), { long: true });
 			const purgeInfo = qm.purge_amount > 0 ? ` + purge ${qm.purge_amount}` : "";
@@ -405,7 +408,7 @@ export default class QuickActions extends Command {
 	): Promise<InteractionReplyData> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const purgeAmount = interaction.options.getInteger("amount", true);
-		const purgeConfig = config.getQuickPurgesConfig();
+		const purgeConfig = config.parseQuickActionConfig("quick_purges");
 
 		if (!purgeConfig) {
 			return {
@@ -541,7 +544,8 @@ export default class QuickActions extends Command {
 			.setTimestamp();
 
 		for (const qp of quickPurges) {
-			const emojiDisplay = (await getEmojiDisplay(qp.reaction, interaction.guildId)) ?? "unknown";
+			const emojiDisplay =
+				(await getEmojiDisplay(qp.reaction, interaction.guildId)) ?? "unknown";
 
 			embed.addFields({
 				name: emojiDisplay,

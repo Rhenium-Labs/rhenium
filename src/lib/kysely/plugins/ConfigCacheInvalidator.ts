@@ -70,7 +70,9 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 	 * @returns The query result.
 	 */
 
-	public async transformResult(args: PluginTransformResultArgs): Promise<QueryResult<UnknownRow>> {
+	public async transformResult(
+		args: PluginTransformResultArgs
+	): Promise<QueryResult<UnknownRow>> {
 		const { queryId, result } = args;
 
 		const metadata = this._queryMetadata.get(queryId);
@@ -179,7 +181,11 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 		return null;
 	}
 
-	private extractValueFromInsert(valuesNode: any, columns: any[] | null, columnName: string): string | null {
+	private extractValueFromInsert(
+		valuesNode: any,
+		columns: any[] | null,
+		columnName: string
+	): string | null {
 		if (!valuesNode) return null;
 
 		// Handle ValuesNode with items array
@@ -200,7 +206,9 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 		// If we have columns, find by index
 		if (columns && columns.length > 0) {
 			// Column structure: { kind: "ColumnNode", column: { kind: "IdentifierNode", name: "guild_id" } }
-			const columnIndex = columns.findIndex((col: any) => col?.column?.name === columnName);
+			const columnIndex = columns.findIndex(
+				(col: any) => col?.column?.name === columnName
+			);
 			if (columnIndex === -1 || columnIndex >= values.length) return null;
 
 			const targetValue = values[columnIndex];
@@ -219,8 +227,9 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 
 	private isTrackedTable(tableName: string): boolean {
 		return (
-			TablesWithIdPrimaryKey.includes(tableName as (typeof TablesWithIdPrimaryKey)[number]) ||
-			TablesWithGuildId.includes(tableName as (typeof TablesWithGuildId)[number])
+			TablesWithIdPrimaryKey.includes(
+				tableName as (typeof TablesWithIdPrimaryKey)[number]
+			) || TablesWithGuildId.includes(tableName as (typeof TablesWithGuildId)[number])
 		);
 	}
 
@@ -234,7 +243,8 @@ const TablesWithGuildId = [
 	"QuickMuteChannelScoping",
 	"QuickPurgeChannelScoping",
 	"ContentFilterChannelScoping",
-	"PermissionScope"
+	"PermissionScope",
+	"LoggingWebhook"
 ] as const;
 
 /** Tables that use their "id" column as the primary key. */
@@ -252,7 +262,8 @@ const GuildIdToConfigKey: Record<string, ConfigKeys> = {
 	QuickMuteChannelScoping: ConfigKeys.QuickMutes,
 	QuickPurgeChannelScoping: ConfigKeys.QuickPurges,
 	ContentFilterChannelScoping: ConfigKeys.ContentFilter,
-	PermissionScope: ConfigKeys.PermissionScopes
+	PermissionScope: ConfigKeys.PermissionScopes,
+	LoggingWebhook: ConfigKeys.LoggingWebhooks
 };
 
 /** Mapping of table names to ConfigKeys for tables with "id" primary key. */

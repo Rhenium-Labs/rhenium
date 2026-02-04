@@ -1,6 +1,14 @@
-import type { Emoji, GuildBasedChannel, GuildMember, Snowflake } from "discord.js";
+import {
+	WebhookClient,
+	type APIMessage,
+	type Emoji,
+	type GuildBasedChannel,
+	type GuildMember,
+	type Snowflake,
+	type WebhookMessageCreateOptions
+} from "discord.js";
 import { CronJob, CronJobParams } from "cron";
-import { cron } from "@sentry/node";
+import { captureException, cron } from "@sentry/node";
 
 import ms, { type StringValue } from "ms";
 import fs from "node:fs";
@@ -11,6 +19,8 @@ import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants.js";
 
 import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types.js";
 import Logger from "./Logger.js";
+import { LoggingEvent } from "#kysely/Enums.js";
+import GuildConfig from "#config/GuildConfig.js";
 
 /**
  * Checks a guild's whitelist status.
@@ -155,7 +165,11 @@ export function parseDurationString(str: string | null): number | null {
  * @param data The duration data to validate.
  * @returns The result of the validation.
  */
-export function validateDuration(data: { duration: number; minimum?: string; maximum?: string }): SimpleResult {
+export function validateDuration(data: {
+	duration: number;
+	minimum?: string;
+	maximum?: string;
+}): SimpleResult {
 	const { duration, minimum, maximum } = data;
 
 	const minMs = minimum ? ms(minimum as StringValue) : undefined;
@@ -259,7 +273,10 @@ export function channelInScope(channel: GuildBasedChannel, scoping: ChannelScopi
 }
 
 /** Helper function to determine if a channel is included in scope. */
-function channelIsIncludedInScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
+function channelIsIncludedInScope(
+	channelData: ChannelScopingParams,
+	scoping: ChannelScoping
+): boolean {
 	const { channelId, threadId, categoryId } = channelData;
 
 	return (
@@ -271,7 +288,10 @@ function channelIsIncludedInScope(channelData: ChannelScopingParams, scoping: Ch
 }
 
 /** Helper function to determine if a channel is excluded from scope. */
-function channelIsExcludedFromScope(channelData: ChannelScopingParams, scoping: ChannelScoping): boolean {
+function channelIsExcludedFromScope(
+	channelData: ChannelScopingParams,
+	scoping: ChannelScoping
+): boolean {
 	const { channelId, threadId, categoryId } = channelData;
 
 	return (
@@ -287,7 +307,9 @@ function channelIsExcludedFromScope(channelData: ChannelScopingParams, scoping: 
  * @param emoji A partial emoji object containing optional `id` and `name` properties.
  * @returns The emoji's ID if available, otherwise its name, or `null` if neither exists.
  */
-export function getEmojiIdentifier(emoji: Partial<Pick<Emoji, "id" | "name">>): Snowflake | string | null {
+export function getEmojiIdentifier(
+	emoji: Partial<Pick<Emoji, "id" | "name">>
+): Snowflake | string | null {
 	return emoji.id ?? emoji.name ?? null;
 }
 
@@ -301,7 +323,10 @@ export function getEmojiIdentifier(emoji: Partial<Pick<Emoji, "id" | "name">>): 
  * @param guildId The guild ID to check custom emoji membership against.
  * @returns A validated emoji object, or `null` if validation fails.
  */
-export async function validateEmoji(emoji: string, guildId: Snowflake): Promise<ValidatedEmoji | null> {
+export async function validateEmoji(
+	emoji: string,
+	guildId: Snowflake
+): Promise<ValidatedEmoji | null> {
 	const unicodeMatch = emoji.match(UNICODE_EMOJI_REGEX);
 
 	if (unicodeMatch) {
@@ -433,3 +458,40 @@ type CronJobOptions = {
 	cronTime: CronJobParams["cronTime"];
 	onTick: () => Promise<void> | void;
 };
+
+/**
+ * Sends a log message to all webhooks configured for the specified event.
+ *
+ * @param data The logging options.
+ * @returns The sent messages or null.
+ */
+export async function log(options: {
+	event: LoggingEvent;
+	config: GuildConfig;
+	message: WebhookMessageCreateOptions;
+}): Promise<APIMessage[] | null> {
+	const { event, config, message } = options;
+
+	const webhooks = config.data.logging_webhooks.filter(webhook =>
+		webhook.events.includes(event)
+	);
+
+	if (!webhooks.length) return null;
+
+	try {
+		const webhookClients = webhooks.map(webhook => new WebhookClient({ url: webhook.url }));
+		return Promise.all(
+			webhookClients.map(client => client.send(message).finally(() => client.destroy()))
+		);
+	} catch (error) {
+		const sentryId = captureException(error, {
+			extra: { guildId: config.data.id, event, message }
+		});
+
+		Logger.tracable(
+			sentryId,
+			`Failed to log event "${event}" for guild "${config.data.id}".`
+		);
+		return null;
+	}
+}

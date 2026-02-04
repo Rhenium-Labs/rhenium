@@ -8,19 +8,22 @@ import { PostgresJSDialect } from "kysely-postgres-js";
 
 import {
 	init,
-	prismaIntegration,
 	consoleIntegration,
 	nodeContextIntegration,
 	consoleLoggingIntegration,
-	postgresIntegration,
+	postgresJsIntegration,
 	captureException
 } from "@sentry/node";
 import { open } from "lmdb";
 import { Sweepers } from "discord.js";
 
-import { sleep } from "#utils/index.js";
 import { Rhenium } from "#rhenium";
-import { CLIENT_CACHE_OPTIONS, CLIENT_INTENTS, CLIENT_PARTIALS, PROCESS_EXIT_EVENTS } from "#utils/Constants.js";
+import {
+	CLIENT_CACHE_OPTIONS,
+	CLIENT_INTENTS,
+	CLIENT_PARTIALS,
+	PROCESS_EXIT_EVENTS
+} from "#utils/Constants.js";
 
 import type { DB } from "./lib/kysely/Schema.js";
 
@@ -37,7 +40,7 @@ export const client = new Rhenium({
 	sweepers: {
 		users: {
 			interval: 3600,
-			filter: () => () => true // Sweeps everything.
+			filter: () => (): boolean => true // Sweeps everything.
 		},
 		guildMembers: {
 			interval: 3600,
@@ -58,7 +61,7 @@ export const kysely = new Kysely<DB>({
 });
 
 /** LMDB KV. */
-export const kv = open<Object, string>({
+export const kv = open<object, string>({
 	encoding: "json",
 	compression: true
 });
@@ -72,14 +75,18 @@ async function main(): Promise<void> {
 	// Cache global configuration.
 	await GlobalConfig.cache();
 
-	// Load pieces.
-	await client.loadPieces();
+	// Load all pieces.
+	await client.init();
 
 	// Attempt to connect to the database.
 	// We run a simple test query to ensure the connection is valid.
 	try {
-		await kysely.selectFrom("Message").selectAll().limit(1).executeTakeFirst();
-		Logger.info("Connected to the database.");
+		await kysely
+			.selectFrom("Message")
+			.selectAll()
+			.limit(1)
+			.executeTakeFirst()
+			.then(() => Logger.info("Connected to the database."));
 	} catch (error) {
 		Logger.fatal("Failed to connect to the database:", error);
 		process.exit(1);
@@ -96,17 +103,12 @@ async function main(): Promise<void> {
 			nodeContextIntegration(),
 			consoleIntegration(),
 			consoleLoggingIntegration(),
-			prismaIntegration(),
-			postgresIntegration()
+			postgresJsIntegration()
 		]
 	});
 
 	// Log in to Discord.
 	await client.login(process.env.BOT_TOKEN);
-
-	// Wait for the client to stabilize, then register application commands.
-	await sleep(2000);
-	await client.stores.get("commands").register();
 }
 
 void main();

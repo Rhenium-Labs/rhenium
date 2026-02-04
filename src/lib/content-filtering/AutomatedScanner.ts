@@ -7,7 +7,7 @@ import { channelInScope, parseChannelScoping, userMentionWithId } from "#utils/i
 
 import type { ChannelScanState, ContentPredictions } from "./Types.js";
 import type { Message as SerializedMessage } from "#kysely/Schema.js";
-import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 
 import Logger from "#utils/Logger.js";
 import MinimumHeap from "#utils/MinimumHeap.js";
@@ -51,11 +51,17 @@ export default class AutomatedScanner {
 	static startTickLoop(): void {
 		if (this._tickInterval) return;
 
-		this._tickInterval = setInterval(() => this.tick(), CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS);
+		this._tickInterval = setInterval(
+			() => this.tick(),
+			CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS
+		);
 
 		// Start cleanup interval to prune inactive channel states
 		if (!this._cleanupInterval) {
-			this._cleanupInterval = setInterval(() => this.pruneInactiveChannelStates(), 5 * 60 * 1000);
+			this._cleanupInterval = setInterval(
+				() => this.pruneInactiveChannelStates(),
+				5 * 60 * 1000
+			);
 		}
 	}
 
@@ -87,7 +93,9 @@ export default class AutomatedScanner {
 
 		// Also enforce max size limit using LRU eviction
 		if (this._channelScanStates.size > MAX_CHANNEL_STATES) {
-			const entries = Array.from(this._channelLastActivity.entries()).sort((a, b) => a[1] - b[1]); // Sort by oldest first
+			const entries = Array.from(this._channelLastActivity.entries()).sort(
+				(a, b) => a[1] - b[1]
+			); // Sort by oldest first
 
 			const toRemove = entries.slice(0, this._channelScanStates.size - MAX_CHANNEL_STATES);
 
@@ -148,7 +156,7 @@ export default class AutomatedScanner {
 	 */
 	static enqueueForScan(
 		message: Message<true>,
-		config: ValidatedContentFilterConfig,
+		config: ParsedContentFilterConfig,
 		serializedMessage: SerializedMessage
 	): void {
 		if (!config.enabled || !config.webhook_url) return;
@@ -167,7 +175,11 @@ export default class AutomatedScanner {
 		);
 
 		const measuredMpm = state.messageTimestamps.length;
-		state.ewmaMpm = this._ewma(state.ewmaMpm, measuredMpm, CF_CONSTANTS.HEURISTIC_EWMA_MPM_ALPHA);
+		state.ewmaMpm = this._ewma(
+			state.ewmaMpm,
+			measuredMpm,
+			CF_CONSTANTS.HEURISTIC_EWMA_MPM_ALPHA
+		);
 
 		const risk = ContentFilterUtils.computeMessageRisk(config, serializedMessage);
 		const next = this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
@@ -189,7 +201,10 @@ export default class AutomatedScanner {
 		const now = Date.now();
 		const globalRate = Math.min(
 			CF_CONSTANTS.HEURISTIC_MAX_SCAN_RATE,
-			Math.max(CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE, this._aggregateChannelScanRateEstimate())
+			Math.max(
+				CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE,
+				this._aggregateChannelScanRateEstimate()
+			)
 		);
 		const scansPerSecond = globalRate / 60;
 		const tickDuration = CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS;
@@ -215,7 +230,9 @@ export default class AutomatedScanner {
 					continue;
 				}
 
-				const message = await (channel as TextChannel).messages.fetch(entry.messageId).catch(() => null);
+				const message = await (channel as TextChannel).messages
+					.fetch(entry.messageId)
+					.catch(() => null);
 
 				if (!message || !message.inGuild()) {
 					processed++;
@@ -223,7 +240,7 @@ export default class AutomatedScanner {
 				}
 
 				const guildConfig = await ConfigManager.get(entry.guildId);
-				const contentFilterConfig = guildConfig.getContentFilterConfig();
+				const contentFilterConfig = guildConfig.parseContentFilterConfig();
 
 				if (contentFilterConfig) {
 					const predictions = await ContentFilter.runDetectors(
@@ -242,7 +259,8 @@ export default class AutomatedScanner {
 
 						// Update state with predictions.
 						const state = this.getOrInitChannelState(entry.channelId);
-						const smoothedFP = this._smoothedFalsePositive.get(entry.channelId) ?? 0;
+						const smoothedFP =
+							this._smoothedFalsePositive.get(entry.channelId) ?? 0;
 						await this.applyPredictionsToState(
 							state,
 							entry.userId,
@@ -278,8 +296,10 @@ export default class AutomatedScanner {
 		const incA = wasFalse ? 1 : 0;
 		const incB = wasFalse ? 0 : 1;
 
-		const targetA = prevA + Math.min(CF_CONSTANTS.HEURISTIC_MAX_BETA_INCREMENT_PER_CALL, incA);
-		const targetB = prevB + Math.min(CF_CONSTANTS.HEURISTIC_MAX_BETA_INCREMENT_PER_CALL, incB);
+		const targetA =
+			prevA + Math.min(CF_CONSTANTS.HEURISTIC_MAX_BETA_INCREMENT_PER_CALL, incA);
+		const targetB =
+			prevB + Math.min(CF_CONSTANTS.HEURISTIC_MAX_BETA_INCREMENT_PER_CALL, incB);
 
 		state.betaA = Math.max(
 			1,
@@ -296,7 +316,8 @@ export default class AutomatedScanner {
 
 		this._smoothedFalsePositive.set(
 			channelId,
-			(this._smoothedFalsePositive.get(channelId) ?? 0) * (1 - CF_CONSTANTS.HEURISTIC_SMOOTHED_FP_ALPHA) +
+			(this._smoothedFalsePositive.get(channelId) ?? 0) *
+				(1 - CF_CONSTANTS.HEURISTIC_SMOOTHED_FP_ALPHA) +
 				mean * CF_CONSTANTS.HEURISTIC_SMOOTHED_FP_ALPHA
 		);
 	}
@@ -312,7 +333,7 @@ export default class AutomatedScanner {
 	static async automatedScan(
 		channel: TextChannel,
 		message: Message<true>,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
@@ -337,10 +358,22 @@ export default class AutomatedScanner {
 
 		if (predictions.length > 0) {
 			// Update state with predictions.
-			await this.applyPredictionsToState(state, message.author.id, predictions, now, riskScore, smoothed);
+			await this.applyPredictionsToState(
+				state,
+				message.author.id,
+				predictions,
+				now,
+				riskScore,
+				smoothed
+			);
 
 			// Create alert.
-			await ContentFilter.createContentFilterAlert(predictions, ScanTypes.Automated, message, config);
+			await ContentFilter.createContentFilterAlert(
+				predictions,
+				ScanTypes.Automated,
+				message,
+				config
+			);
 
 			// Adjust scan rate based on results
 			const shouldLog = this.adjustScanRate(state, now, smoothed);
@@ -365,7 +398,7 @@ export default class AutomatedScanner {
 	static async prepareChannelForScan(
 		channel: TextChannel,
 		message: Message<true>,
-		config: ValidatedContentFilterConfig,
+		config: ParsedContentFilterConfig,
 		now: number,
 		options?: { risk?: number; force?: boolean }
 	): Promise<{
@@ -388,13 +421,17 @@ export default class AutomatedScanner {
 		let falsePositiveRatio = 0;
 
 		try {
-			const traffic = Math.max(1, Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE));
+			const traffic = Math.max(
+				1,
+				Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE)
+			);
 			const windowMs = Math.max(
 				CF_CONSTANTS.HEURISTIC_WINDOW_MIN_MS,
 				Math.min(
 					CF_CONSTANTS.HEURISTIC_WINDOW_MAX_MS,
 					Math.round(
-						CF_CONSTANTS.HEURISTIC_WINDOW_BASE_MS * (CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE / traffic)
+						CF_CONSTANTS.HEURISTIC_WINDOW_BASE_MS *
+							(CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE / traffic)
 					)
 				)
 			);
@@ -408,7 +445,10 @@ export default class AutomatedScanner {
 				);
 
 			falsePositiveRatio = ratio;
-			trafficEstimate = Math.max(1, Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE));
+			trafficEstimate = Math.max(
+				1,
+				Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE)
+			);
 
 			if (highestScore && effectiveRisk === undefined) {
 				effectiveRisk = Math.min(1, highestScore / 10);
@@ -427,7 +467,10 @@ export default class AutomatedScanner {
 		const priorityThresholdFinal = this.computePriorityThreshold(state, smoothed);
 
 		// Read the user entry from userScores.
-		const existingEntry = state.userScores.get(message.author.id) ?? { score: 0, lastScan: 0 };
+		const existingEntry = state.userScores.get(message.author.id) ?? {
+			score: 0,
+			lastScan: 0
+		};
 		let userScore = existingEntry.score;
 
 		// Decay user score if > 0.
@@ -446,8 +489,14 @@ export default class AutomatedScanner {
 				shouldScan = true;
 			} else {
 				const baseScanRate = this.getDynamicBaseScanRateForState(state);
-				const samplingFactor = Math.min(1, Math.max(CF_CONSTANTS.HEURISTIC_MIN_SAMPLING_FACTOR, riskScore));
-				const probability = Math.min(1, (baseScanRate / Math.max(trafficEstimate, 1)) * samplingFactor);
+				const samplingFactor = Math.min(
+					1,
+					Math.max(CF_CONSTANTS.HEURISTIC_MIN_SAMPLING_FACTOR, riskScore)
+				);
+				const probability = Math.min(
+					1,
+					(baseScanRate / Math.max(trafficEstimate, 1)) * samplingFactor
+				);
 				shouldScan = Math.random() < probability;
 			}
 		}
@@ -480,13 +529,18 @@ export default class AutomatedScanner {
 	 * @param message The message from the priority user.
 	 * @param config The content filter configuration.
 	 */
-	static async sendPriorityUserWarning(message: Message<true>, config: ValidatedContentFilterConfig): Promise<any> {
+	static async sendPriorityUserWarning(
+		message: Message<true>,
+		config: ParsedContentFilterConfig
+	): Promise<any> {
 		if (!config.webhook_url) return;
 
 		const embed = new EmbedBuilder()
 			.setColor(Colors.Orange)
 			.setTitle(`⚠️ ${ScanTypes.Heuristic}: Priority User Alert`)
-			.setDescription(`User ${userMentionWithId(message.author.id)} has been prioritized for scanning.`)
+			.setDescription(
+				`User ${userMentionWithId(message.author.id)} has been prioritized for scanning.`
+			)
 			.setTimestamp();
 
 		const webhook = new WebhookClient({ url: config.webhook_url });
@@ -506,7 +560,7 @@ export default class AutomatedScanner {
 	static async sendScanRateChangeLog(
 		channel: TextChannel,
 		newRate: number,
-		config: ValidatedContentFilterConfig
+		config: ParsedContentFilterConfig
 	): Promise<any> {
 		if (!config.webhook_url) return;
 
@@ -537,12 +591,17 @@ export default class AutomatedScanner {
 
 		const raw = Math.round(
 			CF_CONSTANTS.HEURISTIC_K_TRAFFIC * ewmaMpm +
-				CF_CONSTANTS.HEURISTIC_K_CONF * (1 - beta) * CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE
+				CF_CONSTANTS.HEURISTIC_K_CONF *
+					(1 - beta) *
+					CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE
 		);
 
 		return Math.max(
 			1,
-			Math.min(CF_CONSTANTS.HEURISTIC_MAX_SCAN_RATE, raw || CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE)
+			Math.min(
+				CF_CONSTANTS.HEURISTIC_MAX_SCAN_RATE,
+				raw || CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE
+			)
 		);
 	}
 
@@ -554,7 +613,11 @@ export default class AutomatedScanner {
 	 * @param riskScore The risk score of the message (0 to 1).
 	 * @returns The computed dynamic weight.
 	 */
-	static computeDynamicWeight(detectorWeight: number, severity: number, riskScore: number): number {
+	static computeDynamicWeight(
+		detectorWeight: number,
+		severity: number,
+		riskScore: number
+	): number {
 		const w =
 			detectorWeight *
 			(CF_CONSTANTS.HEURISTIC_DYNAMIC_WEIGHT_BASE +
@@ -619,7 +682,11 @@ export default class AutomatedScanner {
 	 * @param smoothedFalsePositive The smoothed false positive ratio for the channel.
 	 * @returns Whether the scan rate change should be logged.
 	 */
-	static adjustScanRate(state: ChannelScanState, now: number, smoothedFalsePositive = 0): boolean {
+	static adjustScanRate(
+		state: ChannelScanState,
+		now: number,
+		smoothedFalsePositive = 0
+	): boolean {
 		// Decay beta priors toward uninformative prior over time.
 		try {
 			const last = state.betaLastUpdate ?? now;
@@ -627,7 +694,8 @@ export default class AutomatedScanner {
 
 			if (dt > 0) {
 				const decayFactor = Math.exp(
-					-Math.LN2 * (dt / Math.max(1, CF_CONSTANTS.HEURISTIC_BETA_DECAY_HALF_LIFE_MS))
+					-Math.LN2 *
+						(dt / Math.max(1, CF_CONSTANTS.HEURISTIC_BETA_DECAY_HALF_LIFE_MS))
 				);
 				state.betaA = Math.max(1, (state.betaA ?? 1) * decayFactor);
 				state.betaB = Math.max(1, (state.betaB ?? 1) * decayFactor);
@@ -638,27 +706,50 @@ export default class AutomatedScanner {
 		}
 
 		const beta = this._betaMean(state);
-		const ewmaMpm = Math.max(1, Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE));
+		const ewmaMpm = Math.max(
+			1,
+			Math.round(state.ewmaMpm ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE)
+		);
 
 		const trafficScale = 1 + Math.min(2, Math.log10(1 + ewmaMpm) * 0.25);
-		let Kp = CF_CONSTANTS.HEURISTIC_PID_BASE_KP * (1 + (1 - Math.min(1, beta)) * 0.4) * trafficScale;
-		Kp = Math.max(CF_CONSTANTS.HEURISTIC_PID_KP_MIN, Math.min(CF_CONSTANTS.HEURISTIC_PID_KP_MAX, Kp));
+		let Kp =
+			CF_CONSTANTS.HEURISTIC_PID_BASE_KP *
+			(1 + (1 - Math.min(1, beta)) * 0.4) *
+			trafficScale;
+		Kp = Math.max(
+			CF_CONSTANTS.HEURISTIC_PID_KP_MIN,
+			Math.min(CF_CONSTANTS.HEURISTIC_PID_KP_MAX, Kp)
+		);
 
 		let Ki = CF_CONSTANTS.HEURISTIC_PID_BASE_KI / Math.max(1, Math.log10(1 + ewmaMpm) * 0.5);
-		Ki = Math.max(CF_CONSTANTS.HEURISTIC_PID_KI_MIN, Math.min(CF_CONSTANTS.HEURISTIC_PID_KI_MAX, Ki));
+		Ki = Math.max(
+			CF_CONSTANTS.HEURISTIC_PID_KI_MIN,
+			Math.min(CF_CONSTANTS.HEURISTIC_PID_KI_MAX, Ki)
+		);
 
-		let Kd = CF_CONSTANTS.HEURISTIC_PID_BASE_KD * (1 + Math.min(1, Math.log10(1 + ewmaMpm) * 0.1));
-		Kd = Math.max(CF_CONSTANTS.HEURISTIC_PID_KD_MIN, Math.min(CF_CONSTANTS.HEURISTIC_PID_KD_MAX, Kd));
+		let Kd =
+			CF_CONSTANTS.HEURISTIC_PID_BASE_KD *
+			(1 + Math.min(1, Math.log10(1 + ewmaMpm) * 0.1));
+		Kd = Math.max(
+			CF_CONSTANTS.HEURISTIC_PID_KD_MIN,
+			Math.min(CF_CONSTANTS.HEURISTIC_PID_KD_MAX, Kd)
+		);
 
 		const maxStep = Math.max(
 			1,
-			Math.round(CF_CONSTANTS.HEURISTIC_RATE_INCREASE_STEP * (1 + (1 - Math.min(1, smoothedFalsePositive))))
+			Math.round(
+				CF_CONSTANTS.HEURISTIC_RATE_INCREASE_STEP *
+					(1 + (1 - Math.min(1, smoothedFalsePositive)))
+			)
 		);
 
 		const baseRate = this.getDynamicBaseScanRateForState(state);
 		const minRate = Math.max(CF_CONSTANTS.HEURISTIC_MIN_SCAN_RATE, baseRate);
 
-		const adaptiveThreshold = this._estimateAdaptiveThreshold(state.scanTimestamps ?? [], now);
+		const adaptiveThreshold = this._estimateAdaptiveThreshold(
+			state.scanTimestamps ?? [],
+			now
+		);
 
 		const error = state.alertCount - adaptiveThreshold;
 		const nowMs = now;
@@ -672,7 +763,10 @@ export default class AutomatedScanner {
 		if (step === 0 && error !== 0) step = error > 0 ? 1 : -1;
 
 		const oldRate = state.scanRate;
-		state.scanRate = Math.max(minRate, Math.min(CF_CONSTANTS.HEURISTIC_MAX_SCAN_RATE, state.scanRate + step));
+		state.scanRate = Math.max(
+			minRate,
+			Math.min(CF_CONSTANTS.HEURISTIC_MAX_SCAN_RATE, state.scanRate + step)
+		);
 
 		if (state.scanRate > oldRate) {
 			state.lastRateIncrease = now;
@@ -706,7 +800,8 @@ export default class AutomatedScanner {
 		const newRate = state.scanRate;
 		const loggedEwmaPrev = state.loggedRateEwma ?? oldRate;
 		const absChangeFromLogged = Math.abs(newRate - loggedEwmaPrev);
-		const significantChange = absChangeFromLogged >= CF_CONSTANTS.HEURISTIC_MIN_ABS_CHANGE_FOR_LOG;
+		const significantChange =
+			absChangeFromLogged >= CF_CONSTANTS.HEURISTIC_MIN_ABS_CHANGE_FOR_LOG;
 		const lastLog = state.lastRateLog ?? 0;
 
 		let shouldLog = false;
@@ -742,7 +837,9 @@ export default class AutomatedScanner {
 
 		if (state.flaggedUsers) {
 			for (const [userId, timestamps] of state.flaggedUsers.entries()) {
-				const pruned = timestamps.filter((ts: number) => now - ts < CF_CONSTANTS.HEURISTIC_SCAN_WINDOW);
+				const pruned = timestamps.filter(
+					(ts: number) => now - ts < CF_CONSTANTS.HEURISTIC_SCAN_WINDOW
+				);
 
 				if (pruned.length > 0) {
 					state.flaggedUsers.set(userId, pruned);
@@ -773,9 +870,9 @@ export default class AutomatedScanner {
 			}
 
 			if (state.userScores.size > CF_CONSTANTS.HEURISTIC_USER_SCORES_MAX_SIZE) {
-				const candidates: Array<[Snowflake, number]> = Array.from(state.userScores.entries()).map(
-					([uid, entry]) => [uid, entry?.lastScan ?? 0]
-				);
+				const candidates: Array<[Snowflake, number]> = Array.from(
+					state.userScores.entries()
+				).map(([uid, entry]) => [uid, entry?.lastScan ?? 0]);
 				candidates.sort((a, b) => a[1] - b[1]);
 
 				const target = Math.floor(CF_CONSTANTS.HEURISTIC_USER_SCORES_MAX_SIZE * 0.9);
@@ -790,26 +887,47 @@ export default class AutomatedScanner {
 		}
 	}
 
-	private static _scheduleNextScan(now: number, scanRate: number, risk: number, observedTraffic?: number): number {
+	private static _scheduleNextScan(
+		now: number,
+		scanRate: number,
+		risk: number,
+		observedTraffic?: number
+	): number {
 		const effective = Math.min(scanRate, observedTraffic ?? scanRate);
-		const msgsPerMinute = Math.max(CF_CONSTANTS.HEURISTIC_MIN_SCAN_RATE, Math.round(effective));
+		const msgsPerMinute = Math.max(
+			CF_CONSTANTS.HEURISTIC_MIN_SCAN_RATE,
+			Math.round(effective)
+		);
 		const baseInterval = CF_CONSTANTS.HEURISTIC_SCAN_WINDOW / msgsPerMinute;
 
 		const riskClamped = Math.max(0, Math.min(1, risk));
 		const multiplier =
 			CF_CONSTANTS.HEURISTIC_RISK_MULTIPLIER_MIN +
 			(1 - riskClamped) *
-				(CF_CONSTANTS.HEURISTIC_RISK_MULTIPLIER_MAX - CF_CONSTANTS.HEURISTIC_RISK_MULTIPLIER_MIN);
+				(CF_CONSTANTS.HEURISTIC_RISK_MULTIPLIER_MAX -
+					CF_CONSTANTS.HEURISTIC_RISK_MULTIPLIER_MIN);
 
-		const jitterMax = Math.min(1000, Math.floor(baseInterval * CF_CONSTANTS.HEURISTIC_JITTER_PCT));
+		const jitterMax = Math.min(
+			1000,
+			Math.floor(baseInterval * CF_CONSTANTS.HEURISTIC_JITTER_PCT)
+		);
 		const jitter = Math.floor(Math.random() * Math.max(0, jitterMax));
 
 		return (
-			now + Math.max(CF_CONSTANTS.HEURISTIC_MIN_SCHEDULE_DELAY, Math.floor(baseInterval * multiplier)) + jitter
+			now +
+			Math.max(
+				CF_CONSTANTS.HEURISTIC_MIN_SCHEDULE_DELAY,
+				Math.floor(baseInterval * multiplier)
+			) +
+			jitter
 		);
 	}
 
-	private static _ewma(prev: number | undefined, value: number, alpha = CF_CONSTANTS.HEURISTIC_EWMA_ALPHA): number {
+	private static _ewma(
+		prev: number | undefined,
+		value: number,
+		alpha = CF_CONSTANTS.HEURISTIC_EWMA_ALPHA
+	): number {
 		if (prev === undefined || prev === null) return value;
 		return prev * (1 - alpha) + value * alpha;
 	}
@@ -818,7 +936,10 @@ export default class AutomatedScanner {
 		const a = state.betaA ?? 1;
 		const b = state.betaB ?? 1;
 		const mean = a / (a + b);
-		return Math.max(CF_CONSTANTS.HEURISTIC_BETA_MEAN_MIN, Math.min(CF_CONSTANTS.HEURISTIC_BETA_MEAN_MAX, mean));
+		return Math.max(
+			CF_CONSTANTS.HEURISTIC_BETA_MEAN_MIN,
+			Math.min(CF_CONSTANTS.HEURISTIC_BETA_MEAN_MAX, mean)
+		);
 	}
 
 	private static _aggregateChannelScanRateEstimate(): number {
@@ -828,14 +949,21 @@ export default class AutomatedScanner {
 		let count = 0;
 
 		for (const [, s] of this._channelScanStates.entries()) {
-			total += this.getDynamicBaseScanRateForState(s) ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE;
+			total +=
+				this.getDynamicBaseScanRateForState(s) ?? CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE;
 			count++;
 		}
 
-		return Math.max(CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE, Math.round(total / Math.max(1, count)));
+		return Math.max(
+			CF_CONSTANTS.HEURISTIC_BASE_SCAN_RATE,
+			Math.round(total / Math.max(1, count))
+		);
 	}
 
-	private static _computeDecayFactor(state: ChannelScanState, smoothedFalsePositive: number): number {
+	private static _computeDecayFactor(
+		state: ChannelScanState,
+		smoothedFalsePositive: number
+	): number {
 		const base = CF_CONSTANTS.HEURISTIC_DECAY_BASE;
 		const fpInfluence = Math.min(
 			CF_CONSTANTS.HEURISTIC_DECAY_FP_INFLUENCE_MAX,
@@ -860,7 +988,10 @@ export default class AutomatedScanner {
 	 * @param smoothedFalsePositive The smoothed false positive ratio for the channel.
 	 * @returns The computed priority threshold.
 	 */
-	static computePriorityThreshold(state: ChannelScanState, smoothedFalsePositive: number): number {
+	static computePriorityThreshold(
+		state: ChannelScanState,
+		smoothedFalsePositive: number
+	): number {
 		const base = CF_CONSTANTS.HEURISTIC_PRIORITY_USER_FLAG_THRESHOLD || 2;
 		const multiplier =
 			1 +

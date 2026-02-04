@@ -11,14 +11,20 @@ import type { InteractionReplyData } from "#utils/Types.js";
 })
 export default class UserInfo extends Component {
 	public async run(interaction: Component.Interaction<"button">): Promise<InteractionReplyData> {
-		const targetId = interaction.customId.split("-")[2];
-		const targetUser = await interaction.client.users.fetch(targetId).catch(() => null);
+		const targetUserId = interaction.customId.split("-")[2];
+
+		// prettier-ignore
+		const targetUser = await interaction.client.users
+			.fetch(targetUserId)
+			.catch(() => null);
 
 		if (!targetUser) {
 			return { error: "Failed to fetch user information." };
 		}
 
-		const targetMember = await interaction.guild.members.fetch(targetId).catch(() => null);
+		const targetMember = await interaction.guild.members
+			.fetch(targetUserId)
+			.catch(() => null);
 
 		const embed = new EmbedBuilder()
 			.setColor(Colors.NotQuiteBlack)
@@ -56,14 +62,17 @@ export default class UserInfo extends Component {
 			]);
 		}
 
-		const banned = await interaction.guild.bans.fetch(targetId).catch(() => null);
+		// prettier-ignore
+		const isBanned = await interaction.guild.bans
+			.fetch(targetUserId)
+			.catch(() => null);
 
-		if (banned) {
+		if (isBanned) {
 			embed.setColor(Colors.DarkRed);
 			embed.addFields([
 				{
 					name: "Banned",
-					value: `${banned.reason ?? "No reason provided"}.`,
+					value: `${isBanned.reason ?? "No reason provided"}.`,
 					inline: true
 				}
 			]);
@@ -74,7 +83,7 @@ export default class UserInfo extends Component {
 				trx
 					.selectFrom("MessageReport")
 					.select(eb => eb.fn.countAll<number>().as("count"))
-					.where("author_id", "=", targetId)
+					.where("author_id", "=", targetUserId)
 					.where("guild_id", "=", interaction.guild.id)
 					.where("status", "=", "Pending")
 					.executeTakeFirstOrThrow()
@@ -82,7 +91,7 @@ export default class UserInfo extends Component {
 				trx
 					.selectFrom("MessageReport")
 					.select(eb => eb.fn.countAll<number>().as("count"))
-					.where("author_id", "=", targetId)
+					.where("author_id", "=", targetUserId)
 					.where("guild_id", "=", interaction.guild.id)
 					.where("status", "!=", "Pending")
 					.executeTakeFirstOrThrow()

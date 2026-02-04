@@ -8,7 +8,8 @@ export const ContentFilterFieldNames = {
 	ScanStatus: "Scan status",
 	ScanResults: "Scan results"
 } as const;
-export type ContentFilterFieldName = (typeof ContentFilterFieldNames)[keyof typeof ContentFilterFieldNames];
+export type ContentFilterFieldName =
+	(typeof ContentFilterFieldNames)[keyof typeof ContentFilterFieldNames];
 
 export const ContentFilterButtonNames = {
 	Content: "View content",
@@ -16,7 +17,8 @@ export const ContentFilterButtonNames = {
 	False: "False positive",
 	Resolve: "Resolve"
 } as const;
-export type ContentFilterButtonName = (typeof ContentFilterButtonNames)[keyof typeof ContentFilterButtonNames];
+export type ContentFilterButtonName =
+	(typeof ContentFilterButtonNames)[keyof typeof ContentFilterButtonNames];
 
 export const ScanTypes = {
 	Automated: "Automated scan",

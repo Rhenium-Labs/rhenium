@@ -1,14 +1,25 @@
 import { captureException } from "@sentry/node";
-import { type GuildBan, Colors, EmbedBuilder, Events, WebhookClient } from "discord.js";
+import {
+	type GuildBan,
+	Colors,
+	EmbedBuilder,
+	Events,
+	GuildTextBasedChannel,
+	messageLink
+} from "discord.js";
 
+import ms from "ms";
+
+import { LoggingEvent } from "#kysely/Enums.js";
 import { client, kysely } from "#root/index.js";
+import { EMPTY_MESSAGE_CONTENT } from "#utils/Constants.js";
 import { ApplyOptions, EventListener } from "#rhenium";
+import { cropLines, userMentionWithId, log } from "#utils/index.js";
 
-import ConfigManager from "#root/lib/config/ConfigManager.js";
-import GuildConfig from "#root/lib/config/GuildConfig.js";
 import Logger from "#utils/Logger.js";
-
-const CONCURRENCY_LIMIT = 3;
+import Messages from "#utils/Messages.js";
+import GuildConfig from "#root/lib/config/GuildConfig.js";
+import ConfigManager from "#root/lib/config/ConfigManager.js";
 
 @ApplyOptions<EventListener.Options>({
 	event: Events.GuildBanAdd
@@ -19,8 +30,8 @@ export default class GuildBanAdd extends EventListener {
 
 		try {
 			await Promise.all([
-				GuildBanAdd._clearMessageReports(ban, config),
-				GuildBanAdd._clearBanRequests(ban, config)
+				GuildBanAdd._resolvePendingReports(ban, config),
+				GuildBanAdd._resolvePendingBanRequests(ban, config)
 			]);
 		} catch (error) {
 			const sentryId = captureException(error, {
@@ -33,13 +44,22 @@ export default class GuildBanAdd extends EventListener {
 				}
 			});
 
-			Logger.tracable(sentryId, `Failed cleanup operations for @${ban.user.username} (${ban.user.id}).`);
+			return Logger.tracable(
+				sentryId,
+				`Failed cleanup operations for @${ban.user.username} (${ban.user.id}).`
+			);
 		}
 	}
 
-	private static async _clearMessageReports(ban: GuildBan, guildConfig: GuildConfig): Promise<void> {
-		const config = guildConfig.getMessageReportsConfig();
-		if (!config || !config.log_webhook_url) return;
+	private static async _resolvePendingReports(
+		ban: GuildBan,
+		config: GuildConfig
+	): Promise<void> {
+		if (
+			!config.parseReportsConfig() ||
+			!config.canLogEvent(LoggingEvent.MessageReportReviewed)
+		)
+			return;
 
 		const reports = await kysely
 			.updateTable("MessageReport")
@@ -56,53 +76,102 @@ export default class GuildBanAdd extends EventListener {
 
 		if (reports.length === 0) return;
 
-		const reportIds = reports.map(r => r.id);
+		for (const report of reports) {
+			const additionalReporters =
+				report.additional_reporters.length > 0
+					? report.additional_reporters.map(id => userMentionWithId(id)).join("\n")
+					: "";
 
-		const [primaryWebhook, secondaryWebhook] = [
-			new WebhookClient({ url: config.webhook_url }),
-			new WebhookClient({ url: config.log_webhook_url })
-		];
+			const embeds: EmbedBuilder[] = [];
 
-		for (let i = 0; i < reportIds.length; i += CONCURRENCY_LIMIT) {
-			const batch = reportIds.slice(i, i + CONCURRENCY_LIMIT);
-			await Promise.allSettled(
-				batch.map(async id => {
-					const message = await primaryWebhook.fetchMessage(id).catch(() => null);
-					if (!message) return;
+			const primaryEmbed = new EmbedBuilder()
+				.setAuthor({ name: "Message Report AutoResolved" })
+				.setColor(Colors.Green)
+				.setThumbnail(ban.user.displayAvatarURL())
+				.setFields([
+					{
+						name: "Reported By",
+						value: `${userMentionWithId(report.reported_by)}${additionalReporters}`
+					},
+					{
+						name: "Report Reason",
+						value: report.report_reason
+					},
+					{
+						name: "Message Author",
+						value: userMentionWithId(ban.user.id)
+					},
+					{
+						name: "Message Content",
+						value: report.content ?? EMPTY_MESSAGE_CONTENT
+					}
+				])
+				.setFooter({ text: `Reviewed by @${client.user.username} (${client.user.id})` })
+				.setTimestamp();
 
-					const embedIndex = message.embeds.length > 1 ? 1 : 0;
-					const embed = message.embeds.at(embedIndex);
+			embeds.push(primaryEmbed);
 
-					if (!embed) return;
+			const reference = report.reference_id && (await Messages.get(report.reference_id));
 
-					const resolvedEmbed = new EmbedBuilder(embed)
-						.setAuthor({ name: "Message Report AutoResolved" })
-						.setColor(Colors.Green)
-						.setFooter({
-							text: `Reviewed by @${client.user.username} (${client.user.id})`
-						})
-						.setTimestamp();
+			if (reference) {
+				const croppedContent = cropLines(reference.content ?? EMPTY_MESSAGE_CONTENT, 5);
+				const url = messageLink(reference.channel_id, reference.id, reference.guild_id);
 
-					const embeds =
-						message.embeds.length > 1
-							? [new EmbedBuilder(message.embeds.at(0)), resolvedEmbed]
-							: [resolvedEmbed];
+				const formattedReferenceContent = await Messages.formatContent({
+					url,
+					content: croppedContent,
+					stickerId: reference.sticker_id,
+					createdAt: reference.created_at
+				});
 
-					void Promise.all([
-						secondaryWebhook.send({ embeds }).catch(() => null),
-						primaryWebhook.deleteMessage(id).catch(() => null)
-					]).then(() => {
-						primaryWebhook.destroy();
-						secondaryWebhook.destroy();
-					});
-				})
-			);
+				const referenceEmbed = new EmbedBuilder()
+					.setAuthor({ name: "Message Reference" })
+					.setColor(Colors.NotQuiteBlack)
+					.setFields([
+						{
+							name: "Reference Author",
+							value: userMentionWithId(reference.author_id)
+						},
+						{
+							name: "Reference Content",
+							value: formattedReferenceContent
+						}
+					])
+					.setTimestamp();
+
+				embeds.push(referenceEmbed);
+			}
+
+			void log({
+				event: LoggingEvent.MessageReportReviewed,
+				config,
+				message: { embeds }
+			});
 		}
+
+		if (!config.data.message_reports.webhook_channel) return;
+
+		const reportsChannel = (await client.channels
+			.fetch(config.data.message_reports.webhook_channel)
+			.catch(() => null)) as GuildTextBasedChannel | null;
+
+		if (!reportsChannel) return;
+
+		// prettier-ignore
+		return void reportsChannel
+			.bulkDelete(reports.map(r => r.id), true)
+			.catch(() => null);
 	}
 
-	private static async _clearBanRequests(ban: GuildBan, guildConfig: GuildConfig): Promise<void> {
-		const config = guildConfig.getBanRequestsConfig();
-		if (!config || !config.log_webhook_url) return;
+	private static async _resolvePendingBanRequests(
+		ban: GuildBan,
+		config: GuildConfig
+	): Promise<void> {
+		if (
+			!config.parseBanRequestsConfig() ||
+			!config.canLogEvent(LoggingEvent.BanRequestReviewed)
+		)
+			return;
 
 		const requests = await kysely
 			.updateTable("BanRequest")
@@ -119,37 +188,45 @@ export default class GuildBanAdd extends EventListener {
 
 		if (requests.length === 0) return;
 
-		const requestIds = requests.map(r => r.id);
+		for (const request of requests) {
+			const embed = new EmbedBuilder()
+				.setColor(Colors.Green)
+				.setAuthor({ name: "Ban Request AutoResolved" })
+				.setThumbnail(ban.user.displayAvatarURL())
+				.setFields([
+					{ name: "Target", value: userMentionWithId(ban.user.id) },
+					{ name: "Requested By", value: userMentionWithId(request.requested_by) },
+					{ name: "Reason", value: request.reason },
+					{ name: "Reviewer Reason", value: "Resolved automatically from user ban." }
+				])
+				.setFooter({ text: `Reviewed by @${client.user.username} (${client.user.id})` })
+				.setTimestamp();
 
-		const [primaryWebhook, secondaryWebhook] = [
-			new WebhookClient({ url: config.webhook_url }),
-			new WebhookClient({ url: config.log_webhook_url })
-		];
+			if (request.duration) {
+				embed.spliceFields(2, 0, {
+					name: "Duration",
+					value: ms(Number(request.duration), { long: true })
+				});
+			}
 
-		for (let i = 0; i < requestIds.length; i += CONCURRENCY_LIMIT) {
-			const batch = requestIds.slice(i, i + CONCURRENCY_LIMIT);
-			await Promise.allSettled(
-				batch.map(async id => {
-					const message = await primaryWebhook.fetchMessage(id).catch(() => null);
-					if (!message) return;
-
-					const resolvedEmbed = new EmbedBuilder(message.embeds[0])
-						.setAuthor({ name: "Ban Request AutoResolved" })
-						.setColor(Colors.Green)
-						.setFooter({
-							text: `Reviewed by @${client.user.username} (${client.user.id})`
-						})
-						.setTimestamp();
-
-					return Promise.all([
-						secondaryWebhook.send({ embeds: [resolvedEmbed] }).catch(() => null),
-						primaryWebhook.deleteMessage(id).catch(() => null)
-					]).then(() => {
-						primaryWebhook.destroy();
-						secondaryWebhook.destroy();
-					});
-				})
-			);
+			void log({
+				event: LoggingEvent.BanRequestReviewed,
+				config,
+				message: { embeds: [embed] }
+			});
 		}
+
+		if (!config.data.ban_requests.webhook_channel) return;
+
+		const requestsChannel = (await client.channels
+			.fetch(config.data.ban_requests.webhook_channel)
+			.catch(() => null)) as GuildTextBasedChannel | null;
+
+		if (!requestsChannel) return;
+
+		// prettier-ignore
+		return void requestsChannel
+			.bulkDelete(requests.map(r => r.id), true)
+			.catch(() => null);
 	}
 }

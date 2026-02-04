@@ -54,7 +54,10 @@ export default class Stats extends Command {
 
 		const embed = new EmbedBuilder()
 			.setColor("NotQuiteBlack")
-			.setAuthor({ name: this.client.user.username, iconURL: this.client.user.displayAvatarURL() })
+			.setAuthor({
+				name: this.client.user.username,
+				iconURL: this.client.user.displayAvatarURL()
+			})
 			.setFields([
 				{
 					name: "Heartbeat",

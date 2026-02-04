@@ -158,7 +158,8 @@ export default class MinimumHeap {
 			if (rightIdx < length) {
 				const rightHasHigherPriority =
 					(swapIdx === null && this._compare(this.heap[rightIdx], entry) < 0) ||
-					(swapIdx !== null && this._compare(this.heap[rightIdx], this.heap[leftIdx]) < 0);
+					(swapIdx !== null &&
+						this._compare(this.heap[rightIdx], this.heap[leftIdx]) < 0);
 
 				if (rightHasHigherPriority) {
 					swapIdx = rightIdx;

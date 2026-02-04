@@ -7,7 +7,7 @@ import { client } from "#root/index.js";
 import Logger from "#utils/Logger.js";
 
 export default class EventListenerStore extends Store<EventListener, "events"> {
-	public constructor() {
+	constructor() {
 		super(EventListener, {
 			name: "events",
 			strategy: new EventListenerLoaderStrategy()
@@ -17,11 +17,11 @@ export default class EventListenerStore extends Store<EventListener, "events"> {
 
 /** Custom loader strategy for event listeners. */
 class EventListenerLoaderStrategy extends LoaderStrategy<EventListener> {
-	public override async onLoadAll(store: EventListenerStore) {
+	override async onLoadAll(store: EventListenerStore) {
 		return Logger.info(`Mounted ${store.size} ${inflect(store.size, "event listener")}.`);
 	}
 
-	public override async onLoad(_: EventListenerStore, piece: EventListener) {
+	override async onLoad(_: EventListenerStore, piece: EventListener) {
 		let logLevel: string;
 
 		if (piece.once) {

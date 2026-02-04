@@ -6,7 +6,7 @@ import { CF_CONSTANTS } from "./Constants.js";
 import { ContentFilterAlert, Message } from "#kysely/Schema.js";
 import { ContentFilterStatus, DetectorMode } from "#kysely/Enums.js";
 
-import type { ValidatedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 
 export default class ContentFilterUtils {
 	/**
@@ -16,7 +16,7 @@ export default class ContentFilterUtils {
 	 * @param message The serialized message data.
 	 * @returns The computed risk score.
 	 */
-	static computeMessageRisk(config: ValidatedContentFilterConfig, message: Message): number {
+	static computeMessageRisk(config: ParsedContentFilterConfig, message: Message): number {
 		const riskIncreaseStep =
 			config.detector_mode === DetectorMode.Lenient
 				? CF_CONSTANTS.HEURISTIC_LENIENT_RISK_INCREASE
@@ -69,7 +69,9 @@ export default class ContentFilterUtils {
 				let sleep = delay;
 
 				if (jitter) {
-					sleep = Math.floor(delay * (1 + Math.random() * CF_CONSTANTS.DEFAULT_RETRY_JITTER));
+					sleep = Math.floor(
+						delay * (1 + Math.random() * CF_CONSTANTS.DEFAULT_RETRY_JITTER)
+					);
 				}
 
 				await new Promise(res => setTimeout(res, sleep));
@@ -87,7 +89,7 @@ export default class ContentFilterUtils {
 	 * @param config The content filter configuration.
 	 * @returns The minimum score threshold.
 	 */
-	static getMinScore(config: ValidatedContentFilterConfig): number {
+	static getMinScore(config: ParsedContentFilterConfig): number {
 		let base =
 			config.detector_mode === DetectorMode.Lenient
 				? CF_CONSTANTS.HEURISTIC_LENIENT_SCORE
@@ -107,7 +109,7 @@ export default class ContentFilterUtils {
 	 * @returns The adjusted minimum score threshold.
 	 */
 	static getMinScoreWithState(
-		config: ValidatedContentFilterConfig,
+		config: ParsedContentFilterConfig,
 		state: ChannelScanState | null,
 		authorId: Snowflake
 	): number {
@@ -136,7 +138,10 @@ export default class ContentFilterUtils {
 	 * @param threshold Optional date to filter alerts created before this time.
 	 * @returns An array of pending ContentFilterAlert records.
 	 */
-	static async fetchPendingAlerts(guildId: Snowflake, threshold?: Date): Promise<ContentFilterAlert[]> {
+	static async fetchPendingAlerts(
+		guildId: Snowflake,
+		threshold?: Date
+	): Promise<ContentFilterAlert[]> {
 		const query = kysely
 			.selectFrom("ContentFilterAlert")
 			.selectAll()
@@ -164,7 +169,11 @@ export default class ContentFilterUtils {
 		guildId: string,
 		channelId: string,
 		since: Date
-	): Promise<{ alerts: ContentFilterAlert[]; falsePositiveRatio: number; highestScore: number }> {
+	): Promise<{
+		alerts: ContentFilterAlert[];
+		falsePositiveRatio: number;
+		highestScore: number;
+	}> {
 		const alerts = await kysely
 			.selectFrom("ContentFilterAlert")
 			.selectAll()
@@ -202,7 +211,9 @@ export default class ContentFilterUtils {
 	 * @param ttl Time-to-live in milliseconds. Defaults to CONTENT_FILTER_ALERT_TTL.
 	 * @returns The number of deleted alerts.
 	 */
-	static async deleteOldAlerts(ttl: number = CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL): Promise<number> {
+	static async deleteOldAlerts(
+		ttl: number = CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL
+	): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
 		const result = await kysely
 			.deleteFrom("ContentFilterAlert")
@@ -219,7 +230,9 @@ export default class ContentFilterUtils {
 	 * @param ttl Time-to-live in milliseconds. Defaults to CONTENT_FILTER_LOG_TTL.
 	 * @returns The number of deleted logs.
 	 */
-	static async deleteOldContentLogs(ttl: number = CF_CONSTANTS.CONTENT_FILTER_LOG_TTL): Promise<number> {
+	static async deleteOldContentLogs(
+		ttl: number = CF_CONSTANTS.CONTENT_FILTER_LOG_TTL
+	): Promise<number> {
 		const threshold = new Date(Date.now() - ttl);
 		const result = await kysely
 			.deleteFrom("ContentFilterLog")
@@ -238,7 +251,10 @@ export default class ContentFilterUtils {
 	 * @param target The desired status to transition to.
 	 * @returns The resulting status after applying the transition rules.
 	 */
-	static handleAlertModStatus(original: ContentFilterStatus, target: ContentFilterStatus): ContentFilterStatus {
+	static handleAlertModStatus(
+		original: ContentFilterStatus,
+		target: ContentFilterStatus
+	): ContentFilterStatus {
 		if (target === ContentFilterStatus.Resolved) {
 			switch (original) {
 				case ContentFilterStatus.Pending:

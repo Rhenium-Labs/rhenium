@@ -1,32 +1,36 @@
 import { Piece } from "@sapphire/pieces";
-import type { Awaitable, ButtonInteraction, MessageComponentInteraction, ModalSubmitInteraction } from "discord.js";
+import type {
+	Awaitable,
+	ButtonInteraction,
+	MessageComponentInteraction,
+	ModalSubmitInteraction
+} from "discord.js";
 
 import { client, kysely } from "#root/index.js";
 import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#config/GuildConfig.js";
 
-export abstract class Component<Options extends Component.Options = Component.Options> extends Piece<
-	Options,
-	"components"
-> {
+export abstract class Component<
+	Options extends Component.Options = Component.Options
+> extends Piece<Options, "components"> {
 	/**
 	 * The client this component is associated with.
 	 */
 
-	public client = client;
+	client = client;
 
 	/**
 	 * Kysely client instance.
 	 */
 
-	public kysely = kysely;
+	kysely = kysely;
 
 	/**
 	 * The component's custom ID
 	 */
 
-	public readonly id: Component.CustomID;
+	readonly id: Component.CustomID;
 
 	/**
 	 * Constructs a new component.
@@ -36,7 +40,7 @@ export abstract class Component<Options extends Component.Options = Component.Op
 	 * @returns A new Component instance.
 	 */
 
-	public constructor(context: Piece.LoaderContext<"components">, options: Options = {} as Options) {
+	constructor(context: Piece.LoaderContext<"components">, options: Options = {} as Options) {
 		super(context, options);
 
 		this.id = options.id;
@@ -51,10 +55,35 @@ export abstract class Component<Options extends Component.Options = Component.Op
 	 * @returns The result of the component interaction.
 	 */
 
-	public abstract run(
+	abstract run(
 		interaction: ComponentInteraction,
 		config: GuildConfig
 	): Awaitable<InteractionReplyData | null>;
+
+	/**
+	 * Parses a string/object custom ID to a string.
+	 *
+	 * @param customId The custom ID to parse.
+	 * @returns The parsed custom ID as a string.
+	 */
+	static parseCustomId(customId: ComponentCustomID): string {
+		if (typeof customId === "string") {
+			return customId;
+		}
+
+		switch (true) {
+			case "matches" in customId:
+				return `matches(${customId.matches.toString()})`;
+			case "startsWith" in customId:
+				return `startsWith(${customId.startsWith})`;
+			case "endsWith" in customId:
+				return `endsWith(${customId.endsWith})`;
+			case "includes" in customId:
+				return `includes(${customId.includes})`;
+			default:
+				return "unknown";
+		}
+	}
 }
 
 interface ComponentOptions extends Piece.Options {
@@ -72,7 +101,9 @@ export type ComponentCustomID =
 	| { includes: string }
 	| { matches: RegExp };
 
-export type ComponentInteraction = MessageComponentInteraction<"cached"> | ModalSubmitInteraction<"cached">;
+export type ComponentInteraction =
+	| MessageComponentInteraction<"cached">
+	| ModalSubmitInteraction<"cached">;
 
 type InteractionGeneric = "button" | "modalSubmit";
 

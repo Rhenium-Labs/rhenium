@@ -13,12 +13,11 @@ export default class ModerationUtils {
 	 * @returns The result of the validation.
 	 */
 
-	static validateAction(data: {
-		target: GuildMember | User;
-		executor: GuildMember;
-		action: "Ban" | "Mute" | "Quick Mute";
-	}): SimpleResult {
-		const { target, executor, action } = data;
+	static validateAction(
+		target: GuildMember | User,
+		executor: GuildMember,
+		action: "Ban" | "Mute" | "Quick Mute"
+	): SimpleResult {
 		const actionLower = action.toLowerCase();
 
 		if (target.id === executor.id) {
@@ -35,7 +34,10 @@ export default class ModerationUtils {
 
 		if (target instanceof GuildMember) {
 			if (!hierarchyCheck(executor, target)) {
-				return { ok: false, message: `You cannot ${actionLower} a member with higher or equal roles.` };
+				return {
+					ok: false,
+					message: `You cannot ${actionLower} a member with higher or equal roles.`
+				};
 			}
 
 			if (!hierarchyCheck(executor.guild.members.me!, target)) {
