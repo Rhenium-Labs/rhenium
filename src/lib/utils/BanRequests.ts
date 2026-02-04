@@ -182,8 +182,8 @@ export default class BanRequestUtils {
 		if (config.data.ban_requests.automatically_timeout && targetMember) {
 			muted = await targetMember
 				.timeout(ms("28d"), `Automatic timeout for ban request - ID ${log.id}`)
-				.catch(() => false)
-				.then(() => true);
+				.then(() => true)
+				.catch(() => false);
 		}
 
 		await kysely
