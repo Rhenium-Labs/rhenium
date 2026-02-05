@@ -1,5 +1,7 @@
 import {
 	type Message,
+	type ApplicationCommandData,
+	type ChatInputCommandInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -14,16 +16,20 @@ import { jsonArrayFrom } from "kysely/helpers/postgres";
 import safe from "safe-regex";
 
 import { client, kysely } from "#root/index.js";
-import { ApplyOptions, Command } from "#rhenium";
 import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "#utils/index.js";
 
 import type { Highlight } from "#kysely/Schema.js";
-import type { InteractionReplyData } from "#utils/Types.js";
+
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
 import Messages from "#utils/Messages.js";
 import RateLimiter from "#utils/RateLimiter.js";
-import GuildConfig from "#root/lib/config/GuildConfig.js";
-import ConfigManager from "#root/lib/config/ConfigManager.js";
+import GuildConfig from "#config/GuildConfig.js";
+import ConfigManager from "#config/ConfigManager.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
@@ -35,12 +41,16 @@ const regexCacheOrder: string[] = [];
 /** Maximum size of the regex cache. */
 const REGEX_CACHE_MAX_SIZE = 100;
 
-@ApplyOptions<Command.Options>({
-	name: "highlights",
-	description: "Manage your message highlights."
-})
 export default class Highlights extends Command {
-	public register(): Command.Data {
+	constructor() {
+		super({
+			name: "highlights",
+			category: CommandCategory.Utility,
+			description: "Manage highlight patterns and settings."
+		});
+	}
+
+	override register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			description: this.description,
@@ -189,10 +199,10 @@ export default class Highlights extends Command {
 		};
 	}
 
-	public async interactionRun(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	override async executeInteraction({
+		interaction,
+		config
+	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {
 		const subcommandGroup =
 			interaction.options.getSubcommandGroup() as HighlightSubcommandGroup | null;
 		const subcommand = interaction.options.getSubcommand() as HighlightSubcommand;
@@ -400,9 +410,9 @@ export default class Highlights extends Command {
 	}
 
 	private static async _addPattern(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		let highlight = await kysely
 			.selectFrom("Highlight")
 			.selectAll()
@@ -458,8 +468,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _removePattern(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const pattern = interaction.options.getString("pattern", true);
 		const highlight = await kysely
 			.selectFrom("Highlight")
@@ -487,8 +497,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _clearPatterns(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const highlight = await kysely
 			.selectFrom("Highlight")
 			.select(["patterns"])
@@ -515,8 +525,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _addChannelScoping(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true);
 		const scopeType = interaction.options.getInteger("type", true);
 		const stringifiedType = scopeType === 0 ? "include" : "exclude";
@@ -570,8 +580,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _removeChannelScoping(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true);
 		const scoping = await kysely
 			.selectFrom("HighlightChannelScoping")
@@ -597,8 +607,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _clearChannelScoping(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const { numDeletedRows } = await kysely
 			.deleteFrom("HighlightChannelScoping")
 			.where("user_id", "=", interaction.user.id)
@@ -617,8 +627,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _addUserBlacklist(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const user = interaction.options.getUser("user", true);
 
 		if (user.id === interaction.user.id) {
@@ -661,8 +671,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _removeUserBlacklist(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const user = interaction.options.getUser("user", true);
 
 		const highlight = await kysely
@@ -691,8 +701,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _clearUserBlacklist(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const highlight = await kysely
 			.selectFrom("Highlight")
 			.select(["user_blacklist"])
@@ -719,8 +729,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _listHighlights(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const highlights = await kysely
 			.selectFrom("Highlight")
 			.select(eb => [
@@ -805,8 +815,8 @@ export default class Highlights extends Command {
 	}
 
 	private static async _clearAllHighlights(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const { numDeletedRows } = await kysely.transaction().execute(async trx => {
 			const scopingResult = await trx
 				.deleteFrom("HighlightChannelScoping")

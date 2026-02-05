@@ -398,7 +398,7 @@ export const MessageReportActionToPastTenseMap: Record<MessageReportAction, stri
 
 const MessageReportActionToColorMap: Record<MessageReportAction, ColorResolvable> = {
 	[MessageReportAction.Resolve]: Colors.Green,
-	[MessageReportAction.Disregard]: Colors.NotQuiteBlack
+	[MessageReportAction.Disregard]: Colors.Blurple
 };
 
 const MessageReportActionToStatusMap: Record<MessageReportAction, ReportStatus> = {

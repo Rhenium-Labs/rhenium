@@ -15,25 +15,28 @@ import {
 	captureException
 } from "@sentry/node";
 import { open } from "lmdb";
-import { Sweepers } from "discord.js";
+import { Client, Sweepers } from "discord.js";
 
-import { Rhenium } from "#rhenium";
 import {
-	CLIENT_CACHE_OPTIONS,
 	CLIENT_INTENTS,
 	CLIENT_PARTIALS,
-	PROCESS_EXIT_EVENTS
+	PROCESS_EXIT_EVENTS,
+	CLIENT_CACHE_OPTIONS
 } from "#utils/Constants.js";
+import { sleep } from "#utils/index.js";
 
-import type { DB } from "./lib/kysely/Schema.js";
+import type { DB } from "#kysely/Schema.js";
 
 import Logger from "#utils/Logger.js";
 import Messages from "#utils/Messages.js";
 import GlobalConfig from "#config/GlobalConfig.js";
-import ConfigCacheInvalidatorPlugin from "#kysely/plugins/ConfigCacheInvalidator.js";
+import CommandManager from "#managers/commands/CommandManager.js";
+import ComponentManager from "#managers/components/ComponentManager.js";
+import EventListenerManager from "#managers/events/EventListenerManager.js";
+import ConfigCacheInvalidatorPlugin from "#managers/database/Invalidator.js";
 
 /** The Discord client instance. */
-export const client = new Rhenium({
+export const client = new Client<true>({
 	intents: CLIENT_INTENTS,
 	partials: CLIENT_PARTIALS,
 	makeCache: CLIENT_CACHE_OPTIONS,
@@ -75,8 +78,14 @@ async function main(): Promise<void> {
 	// Cache global configuration.
 	await GlobalConfig.cache();
 
-	// Load all pieces.
-	await client.init();
+	// Cache commands.
+	await CommandManager.cache();
+
+	// Cache components.
+	await ComponentManager.cache();
+
+	// Mount event listeners.
+	await EventListenerManager.mount();
 
 	// Attempt to connect to the database.
 	// We run a simple test query to ensure the connection is valid.
@@ -109,6 +118,10 @@ async function main(): Promise<void> {
 
 	// Log in to Discord.
 	await client.login(process.env.BOT_TOKEN);
+
+	// Register application commands.
+	await sleep(2000); // Short delay since this likes to fail if done immediately.
+	await CommandManager.register();
 }
 
 void main();

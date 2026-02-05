@@ -1,18 +1,26 @@
 import {
+	type ApplicationCommandData,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
 	InteractionContextType
 } from "discord.js";
 
-import { ApplyOptions, Command } from "#rhenium";
-import type { InteractionReplyData } from "#utils/Types.js";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
-@ApplyOptions<Command.Options>({
-	name: "ping",
-	description: "Get the websocket heartbeat and roundtrip latency."
-})
 export default class Ping extends Command {
-	public register(): Command.Data {
+	constructor() {
+		super({
+			name: "ping",
+			category: CommandCategory.Utility,
+			description: "Get the websocket heartbeat and roundtrip latency."
+		});
+	}
+
+	override register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			description: this.description,
@@ -22,9 +30,9 @@ export default class Ping extends Command {
 		};
 	}
 
-	public async interactionRun(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+	override async executeInteraction({
+		interaction
+	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {
 		const start = performance.now();
 		await interaction.deferReply();
 		const end = performance.now();

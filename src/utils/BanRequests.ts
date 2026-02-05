@@ -264,7 +264,7 @@ export default class BanRequestUtils {
 
 				// prettier-ignore
 				void BanRequestUtils
-                    ._log(interaction, action, config, null)
+                    ._log(interaction, action, config)
                     .then(() => interaction.message?.delete().catch(() => null));
 
 				await kysely
@@ -328,9 +328,9 @@ export default class BanRequestUtils {
 
 				// prettier-ignore
 				void BanRequestUtils
-                    ._log(interaction, action, config, null)
+                    ._log(interaction, action, config)
                     .then(() => interaction.message?.delete().catch(() => null));
-				void BanRequestUtils._notify(config, action, request, null);
+				void BanRequestUtils._notify(config, action, request);
 
 				const data: BanRequestUpdate = {
 					status: RequestStatus.Accepted,
@@ -392,7 +392,7 @@ export default class BanRequestUtils {
 		config: GuildConfig,
 		action: Exclude<BanRequestAction, "Disregard">,
 		request: BanRequest,
-		reviewReason: string | null
+		reviewReason: string | null = null
 	): Promise<void> {
 		if (!config.canLogEvent(LoggingEvent.BanRequestResult)) return;
 
@@ -423,7 +423,7 @@ export default class BanRequestUtils {
 		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
 		action: BanRequestAction,
 		config: GuildConfig,
-		reason: string | null
+		reason: string | null = null
 	): Promise<void> {
 		if (!config.canLogEvent(LoggingEvent.BanRequestReviewed)) return;
 
@@ -469,5 +469,5 @@ export const BanRequestActionToPastTenseMap: Record<BanRequestAction, string> = 
 const BanRequestActionToColorMap: Record<BanRequestAction, ColorResolvable> = {
 	[BanRequestAction.Accept]: Colors.Green,
 	[BanRequestAction.Deny]: Colors.Red,
-	[BanRequestAction.Disregard]: Colors.NotQuiteBlack
+	[BanRequestAction.Disregard]: Colors.Blurple
 };

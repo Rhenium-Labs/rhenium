@@ -2,24 +2,25 @@ import { Result } from "@sapphire/result";
 import { Events, Message } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import { client } from "#root/index.js";
 import { getWhitelistStatus } from "#utils/index.js";
-import { ApplyOptions, EventListener } from "#rhenium";
 
 import Logger from "#utils/Logger.js";
 import Messages from "#utils/Messages.js";
 import Highlights from "#root/commands/Highlights.js";
 import GuildConfig from "#config/GuildConfig.js";
-import GlobalConfig from "#root/lib/config/GlobalConfig.js";
-import ConfigManager from "#root/lib/config/ConfigManager.js";
+import GlobalConfig from "#config/GlobalConfig.js";
+import ConfigManager from "#config/ConfigManager.js";
+import EventListener from "#managers/events/EventListener.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 import HeuristicScanner from "#cf/HeuristicScanner.js";
+import CommandManager from "#managers/commands/CommandManager.js";
 
-@ApplyOptions<EventListener.Options>({
-	event: Events.MessageCreate
-})
 export default class MessageCreate extends EventListener {
-	public async onEmit(message: Message<true>): Promise<void> {
+	constructor() {
+		super(Events.MessageCreate);
+	}
+
+	async execute(message: Message<true>): Promise<void> {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author.bot || message.webhookId || message.system) return;
 
@@ -69,10 +70,7 @@ export default class MessageCreate extends EventListener {
 		const commandName = spaceIdx === -1 ? trimmedContent : trimmedContent.slice(0, spaceIdx);
 		if (!commandName.length) return;
 
-		// prettier-ignore
-		const command = client.stores
-			.get("commands")
-			.get(commandName);
+		const command = CommandManager.get(commandName);
 
 		// Unlike interactions, we don't need to acknowledge "unknown" commands here.
 		// They might be using a different prefix or just typing random text.
@@ -80,13 +78,13 @@ export default class MessageCreate extends EventListener {
 
 		// We also don't need to acknowledge commands without a handler.
 		// They're simply not meant to be used as message commands.
-		if (!command.messageRun) return;
+		if (!command.executeMessage) return;
 
 		const parameters = spaceIdx === -1 ? "" : trimmedContent.substring(spaceIdx + 1).trim();
-		const args = command.getArgumentParser(message, parameters);
+		const args = command.constructArgumentParser(message, parameters);
 
 		const result = await Result.fromAsync(async () => {
-			const response = await command.messageRun!(message, args, config);
+			const response = await command.executeMessage!({ message, args, config });
 
 			// The reply to the command was handled manually.
 			if (!response) return;

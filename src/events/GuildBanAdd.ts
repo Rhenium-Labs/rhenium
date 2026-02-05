@@ -1,10 +1,10 @@
 import { captureException } from "@sentry/node";
 import {
 	type GuildBan,
+	type GuildTextBasedChannel,
 	Colors,
 	EmbedBuilder,
 	Events,
-	GuildTextBasedChannel,
 	messageLink
 } from "discord.js";
 
@@ -13,19 +13,20 @@ import ms from "ms";
 import { LoggingEvent } from "#kysely/Enums.js";
 import { client, kysely } from "#root/index.js";
 import { EMPTY_MESSAGE_CONTENT } from "#utils/Constants.js";
-import { ApplyOptions, EventListener } from "#rhenium";
 import { cropLines, userMentionWithId, log } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
 import Messages from "#utils/Messages.js";
-import GuildConfig from "#root/lib/config/GuildConfig.js";
-import ConfigManager from "#root/lib/config/ConfigManager.js";
+import GuildConfig from "#config/GuildConfig.js";
+import ConfigManager from "#config/ConfigManager.js";
+import EventListener from "#managers/events/EventListener.js";
 
-@ApplyOptions<EventListener.Options>({
-	event: Events.GuildBanAdd
-})
 export default class GuildBanAdd extends EventListener {
-	public async onEmit(ban: GuildBan) {
+	constructor() {
+		super(Events.GuildBanAdd);
+	}
+
+	async execute(ban: GuildBan) {
 		const config = await ConfigManager.get(ban.guild.id);
 
 		try {
@@ -158,7 +159,7 @@ export default class GuildBanAdd extends EventListener {
 		if (!reportsChannel) return;
 
 		// prettier-ignore
-		return void reportsChannel
+		void reportsChannel
 			.bulkDelete(reports.map(r => r.id), true)
 			.catch(() => null);
 	}
@@ -225,7 +226,7 @@ export default class GuildBanAdd extends EventListener {
 		if (!requestsChannel) return;
 
 		// prettier-ignore
-		return void requestsChannel
+		void requestsChannel
 			.bulkDelete(requests.map(r => r.id), true)
 			.catch(() => null);
 	}

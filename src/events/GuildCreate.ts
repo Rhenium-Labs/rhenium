@@ -1,14 +1,15 @@
 import { Events, type Guild } from "discord.js";
-import { ApplyOptions, EventListener } from "#rhenium";
 
-import ConfigManager from "#root/lib/config/ConfigManager.js";
+import ConfigManager from "#config/ConfigManager.js";
+import EventListener from "#managers/events/EventListener.js";
 
-@ApplyOptions<EventListener.Options>({
-	event: Events.GuildCreate
-})
 export default class GuildCreate extends EventListener {
-	public async onEmit(guild: Guild) {
+	constructor() {
+		super(Events.GuildCreate);
+	}
+
+	execute(guild: Guild): void {
 		// Trigger the creation/loading of the guild config.
-		void ConfigManager.get(guild.id);
+		ConfigManager.get(guild.id);
 	}
 }

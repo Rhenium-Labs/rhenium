@@ -1,4 +1,5 @@
 import {
+	type ApplicationCommandData,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -7,18 +8,23 @@ import {
 } from "discord.js";
 
 import { kysely } from "#root/index.js";
-import { ApplyOptions, Command } from "#rhenium";
 
-import type { InteractionReplyData } from "#utils/Types.js";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
-import GuildConfig from "#config/GuildConfig.js";
-
-@ApplyOptions<Command.Options>({
-	name: "reports",
-	description: "Manage the report system."
-})
 export default class Reports extends Command {
-	public register(): Command.Data {
+	constructor() {
+		super({
+			name: "reports",
+			category: CommandCategory.Moderation,
+			description: "Manage the report system."
+		});
+	}
+
+	override register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			description: this.description,
@@ -57,10 +63,10 @@ export default class Reports extends Command {
 		};
 	}
 
-	public async interactionRun(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	override async executeInteraction({
+		interaction,
+		config
+	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {
 		const subcommand = interaction.options.getSubcommand(true) as ReportSubcommand;
 		const reportsConfig = config.parseReportsConfig();
 

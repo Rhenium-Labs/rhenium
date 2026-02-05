@@ -1,4 +1,6 @@
 import {
+	type ApplicationCommandData,
+	type ChatInputCommandInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -22,18 +24,25 @@ import {
 } from "#utils/index.js";
 
 import { kysely } from "#root/index.js";
-import { ApplyOptions, Command } from "#rhenium";
 
-import type { InteractionReplyData } from "#utils/Types.js";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
-import GuildConfig from "#root/lib/config/GuildConfig.js";
+import GuildConfig from "#config/GuildConfig.js";
 
-@ApplyOptions<Command.Options>({
-	name: "quick",
-	description: "Manage your quick action reactions."
-})
 export default class QuickActions extends Command {
-	public register(): Command.Data {
+	constructor() {
+		super({
+			name: "quick",
+			category: CommandCategory.Moderation,
+			description: "Manage your quick action reactions."
+		});
+	}
+
+	override register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			description: this.description,
@@ -163,10 +172,10 @@ export default class QuickActions extends Command {
 		};
 	}
 
-	public async interactionRun(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	override async executeInteraction({
+		interaction,
+		config
+	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {
 		const group = interaction.options.getSubcommandGroup(true) as QuickActionSubcommandGroup;
 		const subcommand = interaction.options.getSubcommand(true) as QuickActionSubcommand;
 
@@ -202,9 +211,9 @@ export default class QuickActions extends Command {
 	}
 
 	private static async _addQuickMute(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const durationInput = interaction.options.getString("duration", true);
 		const reason = interaction.options.getString("reason", true);
@@ -300,8 +309,8 @@ export default class QuickActions extends Command {
 	}
 
 	private static async _removeQuickMute(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const validatedEmoji = await validateEmoji(reactionInput, interaction.guildId);
 
@@ -342,8 +351,8 @@ export default class QuickActions extends Command {
 	}
 
 	private static async _listQuickMutes(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const quickMutes = await kysely
 			.selectFrom("QuickMute")
 			.selectAll()
@@ -383,8 +392,8 @@ export default class QuickActions extends Command {
 	}
 
 	private static async _clearQuickMutes(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const { numDeletedRows } = await kysely
 			.deleteFrom("QuickMute")
 			.where("user_id", "=", interaction.user.id)
@@ -403,9 +412,9 @@ export default class QuickActions extends Command {
 	}
 
 	private static async _addQuickPurge(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const purgeAmount = interaction.options.getInteger("amount", true);
 		const purgeConfig = config.parseQuickActionConfig("quick_purges");
@@ -477,8 +486,8 @@ export default class QuickActions extends Command {
 	}
 
 	private static async _removeQuickPurge(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const reactionInput = interaction.options.getString("reaction", true);
 		const validatedEmoji = await validateEmoji(reactionInput, interaction.guildId);
 
@@ -520,8 +529,8 @@ export default class QuickActions extends Command {
 	}
 
 	private static async _listQuickPurges(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const quickPurges = await kysely
 			.selectFrom("QuickPurge")
 			.selectAll()
@@ -558,8 +567,8 @@ export default class QuickActions extends Command {
 	}
 
 	private static async _clearQuickPurges(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const { numDeletedRows } = await kysely
 			.deleteFrom("QuickPurge")
 			.where("user_id", "=", interaction.user.id)

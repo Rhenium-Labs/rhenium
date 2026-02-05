@@ -1,4 +1,6 @@
 import {
+	type ApplicationCommandData,
+	type ChatInputCommandInteraction,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -11,21 +13,28 @@ import {
 	channelMention
 } from "discord.js";
 
-import { client, kysely } from "#root/index.js";
-import { ApplyOptions, Command } from "#rhenium";
 import { LoggingEvent } from "#kysely/Enums.js";
+import { client, kysely } from "#root/index.js";
 
 import type { LoggingWebhook } from "#kysely/Schema.js";
-import type { InteractionReplyData } from "#utils/Types.js";
 
 import GuildConfig from "#config/GuildConfig.js";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
-@ApplyOptions<Command.Options>({
-	name: "logging",
-	description: "Manage logging webhooks for the guild."
-})
 export default class Logging extends Command {
-	register(): Command.Data {
+	constructor() {
+		super({
+			name: "logging",
+			description: "Manage logging webhooks and their events.",
+			category: CommandCategory.Management
+		});
+	}
+
+	register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			description: this.description,
@@ -158,10 +167,10 @@ export default class Logging extends Command {
 		};
 	}
 
-	async interactionRun(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	async executeInteraction({
+		interaction,
+		config
+	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {
 		const subcommand = interaction.options.getSubcommand(true) as LoggingSubcommand;
 		const subcommandGroup = interaction.options.getSubcommandGroup(
 			true
@@ -190,13 +199,13 @@ export default class Logging extends Command {
 				}
 		}
 
-		return { error: "An unknown error occurred." };
+		return { error: "Unknown subcommand." };
 	}
 
 	private static async _createWebhook(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
@@ -239,9 +248,9 @@ export default class Logging extends Command {
 	}
 
 	private static async _deleteWebhook(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 
 		const webhooks = config.data.logging_webhooks;
@@ -273,9 +282,9 @@ export default class Logging extends Command {
 	}
 
 	private static async _listWebhooks(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const webhooks = config.data.logging_webhooks;
 
 		if (webhooks.length === 0) {
@@ -308,9 +317,9 @@ export default class Logging extends Command {
 	}
 
 	private static async _addEvent(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
@@ -337,9 +346,9 @@ export default class Logging extends Command {
 	}
 
 	private static async _removeEvent(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const event = interaction.options.getString("event", true) as LoggingEvent;
 
@@ -370,9 +379,9 @@ export default class Logging extends Command {
 	}
 
 	private static async _viewWebhook(
-		interaction: Command.Interaction<"chatInput">,
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 
 		const webhooks = config.data.logging_webhooks;

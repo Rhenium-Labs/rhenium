@@ -6,23 +6,23 @@ import {
 	TextInputStyle
 } from "discord.js";
 
-import { ApplyOptions, Component } from "#rhenium";
-import type { InteractionReplyData } from "#utils/Types.js";
+import type { ResponseData } from "#managers/commands/Command.js";
 
-import GuildConfig from "#root/lib/config/GuildConfig.js";
 import BanRequestUtils, {
 	BanRequestAction,
 	BanRequestActionToPastTenseMap
 } from "#utils/BanRequests.js";
+import Component, { type ComponentExecutionContext } from "#managers/components/Component.js";
 
-@ApplyOptions<Component.Options>({
-	id: { matches: /^ban-request-(accept|deny|disregard)$/m }
-})
 export default class BanRequestButton extends Component {
-	public async run(
-		interaction: Component.Interaction<"button">,
-		config: GuildConfig
-	): Promise<InteractionReplyData | null> {
+	constructor() {
+		super({ matches: /^ban-request-(accept|deny|disregard)$/m });
+	}
+
+	async execute({
+		interaction,
+		config
+	}: ComponentExecutionContext<"button">): Promise<ResponseData<"interaction"> | null> {
 		if (!config.parseBanRequestsConfig())
 			return { error: "Ban requests have not been configured on this server." };
 

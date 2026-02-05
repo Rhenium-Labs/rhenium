@@ -8,22 +8,29 @@ import {
 
 import { hastebin } from "#utils/index.js";
 import { kv, kysely } from "#root/index.js";
-import { ApplyOptions, Command } from "#rhenium";
 
-import type { MessageReplyData } from "#utils/Types.js";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
-import GlobalConfig from "#root/lib/config/GlobalConfig.js";
+import GlobalConfig from "#config/GlobalConfig.js";
 
-@ApplyOptions<Command.Options>({
-	name: "whitelist",
-	aliases: ["wl"],
-	description: "Manage the guild whitelists."
-})
 export default class Whitelist extends Command {
-	public async messageRun(
-		message: Command.Message,
-		args: Command.Args
-	): Promise<MessageReplyData> {
+	constructor() {
+		super({
+			name: "whitelist",
+			aliases: ["wl"],
+			category: CommandCategory.Developer,
+			description: "Manage the guild whitelists."
+		});
+	}
+
+	override async executeMessage({
+		message,
+		args
+	}: CommandExecutionContext<"message">): Promise<ResponseData<"message">> {
 		if (!GlobalConfig.isDeveloper(message.author.id)) {
 			return { error: "You do not have permission to use this command." };
 		}
@@ -63,7 +70,7 @@ export default class Whitelist extends Command {
 		}
 	}
 
-	private static async _create(guildId: string): Promise<MessageReplyData> {
+	private static async _create(guildId: string): Promise<ResponseData<"message">> {
 		// prettier-ignore
 		const exists = await kysely
 			.selectFrom("Whitelist")
@@ -88,7 +95,7 @@ export default class Whitelist extends Command {
 		};
 	}
 
-	private static async _delete(guildId: string): Promise<MessageReplyData> {
+	private static async _delete(guildId: string): Promise<ResponseData<"message">> {
 		// prettier-ignore
 		const exists = await kysely
 			.selectFrom("Whitelist")
@@ -113,7 +120,7 @@ export default class Whitelist extends Command {
 		};
 	}
 
-	private static async _check(guildId: string): Promise<MessageReplyData> {
+	private static async _check(guildId: string): Promise<ResponseData<"message">> {
 		const cacheEntry = kv.get(`whitelists:${guildId}`) as { status: boolean } | undefined;
 
 		let isWhitelisted: boolean;
@@ -142,7 +149,7 @@ export default class Whitelist extends Command {
 		};
 	}
 
-	private static async _list(): Promise<MessageReplyData> {
+	private static async _list(): Promise<ResponseData<"message">> {
 		// prettier-ignore
 		const whitelists = await kysely
 			.selectFrom("Whitelist")

@@ -32,13 +32,13 @@ import {
 import { LoggingEvent } from "#kysely/Enums.js";
 import { client, kysely } from "#root/index.js";
 import { LOG_DATE_FORMAT } from "#utils/Constants.js";
-import { ApplyOptions, EventListener } from "#rhenium";
 
 import type { Message as SerializedMessage } from "#kysely/Schema.js";
 
 import Messages from "#utils/Messages.js";
 import GuildConfig from "#config/GuildConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
+import EventListener from "#managers/events/EventListener.js";
 import ModerationUtils from "#utils/Moderation.js";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */
@@ -72,11 +72,12 @@ interface QuickPurgeResult {
 	logUrl?: string;
 }
 
-@ApplyOptions<EventListener.Options>({
-	event: Events.MessageReactionAdd
-})
 export default class MessageReactionAdd extends EventListener {
-	public async onEmit(rec: MessageReaction, user: User) {
+	constructor() {
+		super(Events.MessageReactionAdd);
+	}
+
+	async execute(rec: MessageReaction, user: User) {
 		const [reaction, message] = await MessageReactionAdd._parseEventProps(rec, rec.message);
 		if (!reaction || !message || !message.inGuild()) return;
 

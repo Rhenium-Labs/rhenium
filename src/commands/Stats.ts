@@ -4,20 +4,29 @@ import { sql } from "kysely";
 import ms from "ms";
 
 import { kysely } from "#root/index.js";
-import { ApplyOptions, Command } from "#rhenium";
 
-import type { MessageReplyData } from "#utils/Types.js";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
 import Messages from "#utils/Messages.js";
-import GlobalConfig from "#root/lib/config/GlobalConfig.js";
+import GlobalConfig from "#config/GlobalConfig.js";
 
-@ApplyOptions<Command.Options>({
-	name: "stats",
-	aliases: ["proc", "process"],
-	description: "Get information about the current process."
-})
 export default class Stats extends Command {
-	public async messageRun(message: Command.Message): Promise<MessageReplyData | null> {
+	constructor() {
+		super({
+			name: "stats",
+			aliases: ["proc", "process"],
+			category: CommandCategory.Developer,
+			description: "Get information about the current process."
+		});
+	}
+
+	override async executeMessage({
+		message
+	}: CommandExecutionContext<"message">): Promise<ResponseData<"message"> | null> {
 		if (!GlobalConfig.isDeveloper(message.author.id)) {
 			return null;
 		}
