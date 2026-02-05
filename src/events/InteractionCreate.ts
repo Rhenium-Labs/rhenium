@@ -9,22 +9,25 @@ import {
 } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import { client } from "#root/index.js";
 import { getWhitelistStatus } from "#utils/index.js";
-import { ApplyOptions, ComponentInteraction, EventListener } from "#rhenium";
 
-import type { InteractionReplyData } from "#utils/Types.js";
+import type { ResponseData } from "#managers/commands/Command.js";
+import type { ComponentInteraction } from "#managers/components/Component.js";
 
 import Logger from "#utils/Logger.js";
 import GuildConfig from "#config/GuildConfig.js";
 import GlobalConfig from "#config/GlobalConfig.js";
+import EventListener from "#managers/events/EventListener.js";
 import ConfigManager from "#config/ConfigManager.js";
+import CommandManager from "#managers/commands/CommandManager.js";
+import ComponentManager from "#managers/components/ComponentManager.js";
 
-@ApplyOptions<EventListener.Options>({
-	event: Events.InteractionCreate
-})
 export default class InteractionCreate extends EventListener {
-	public async onEmit(interaction: Interaction): Promise<void> {
+	constructor() {
+		super(Events.InteractionCreate);
+	}
+
+	async execute(interaction: Interaction): Promise<void> {
 		if (!interaction.inCachedGuild()) return;
 
 		// Autocomplete isn't supported yet.
@@ -77,7 +80,7 @@ export default class InteractionCreate extends EventListener {
 		interaction: CommandInteraction<"cached"> | ComponentInteraction,
 		config: GuildConfig
 	): Promise<void> {
-		let response: InteractionReplyData | null = null;
+		let response: ResponseData<"interaction"> | null = null;
 
 		if (interaction.isCommand()) {
 			response = await InteractionCreate._handleCommand(interaction, config);
@@ -122,34 +125,32 @@ export default class InteractionCreate extends EventListener {
 	private static async _handleCommand(
 		interaction: CommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData | null> {
-		// prettier-ignore
-		const command = client.stores
-			.get('commands')
-			.get(interaction.commandName);
+	): Promise<ResponseData<"interaction"> | null> {
+		const command = CommandManager.get(interaction.commandName);
 
-		if (!command) throw new Error(`Command '${interaction.commandName}' not found in store.`);
+		if (!command) throw new Error(`Command '${interaction.commandName}' not found.`);
 
-		if (!command.interactionRun)
+		if (!command.executeInteraction)
 			throw new Error(
-				`Command '${interaction.commandName}' has been registered without an interactionRun method.`
+				`Command '${interaction.commandName}' has been registered without an executeInteraction method.`
 			);
 
-		return command.interactionRun(interaction, config);
+		// @ts-ignore - We know the type here is correct no matter what TS thinks.
+		// I hate that I have to add a ts-ignore here though.
+		return command.executeInteraction({ interaction, config });
 	}
 
 	private static async _handleComponent(
 		interaction: ComponentInteraction,
 		config: GuildConfig
-	): Promise<InteractionReplyData | null> {
-		// prettier-ignore
-		const component = client.stores
-			.get('components')
-			.get(interaction.customId);
+	): Promise<ResponseData<"interaction"> | null> {
+		const component = ComponentManager.get(interaction.customId);
 
 		if (!component)
 			throw new Error(`Component '${interaction.customId}' not found in store.`);
 
-		return component.run(interaction, config);
+		// @ts-ignore - We know the type here is correct no matter what TS thinks.
+		// I hate that I have to add a ts-ignore here as well.
+		return component.execute({ interaction, config });
 	}
 }

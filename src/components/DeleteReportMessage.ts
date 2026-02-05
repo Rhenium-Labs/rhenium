@@ -9,16 +9,17 @@ import {
 	userMention
 } from "discord.js";
 
-import { ApplyOptions, Component } from "#rhenium";
-import type { InteractionReplyData } from "#utils/Types.js";
+import type { ResponseData } from "#managers/commands/Command.js";
+import Component, { type ComponentExecutionContext } from "#managers/components/Component.js";
 
-@ApplyOptions<Component.Options>({
-	id: { matches: /^delete-(original|reference)-report-message-\d{17,19}-\d{17,19}$/m }
-})
 export default class DeleteReportMessage extends Component {
-	public async run(
-		interaction: Component.Interaction<"button">
-	): Promise<InteractionReplyData | null> {
+	constructor() {
+		super({ matches: /^delete-(original|reference)-report-message-\d{17,19}-\d{17,19}$/m });
+	}
+
+	async execute({
+		interaction
+	}: ComponentExecutionContext<"button">): Promise<ResponseData<"interaction"> | null> {
 		const type = interaction.customId.split("-")[1] as "original" | "reference";
 		const channelId = interaction.customId.split("-")[4];
 		const messageId = interaction.customId.split("-")[5];

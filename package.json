@@ -66,11 +66,11 @@
 		"typescript": "5.9.3"
 	},
 	"imports": {
-		"#config/*": "./dist/lib/config/*",
-		"#rhenium": "./dist/lib/rhenium/index.js",
-		"#kysely/*": "./dist/lib/kysely/*",
-		"#utils/*": "./dist/lib/utils/*",
-		"#cf/*": "./dist/lib/content-filtering/*",
+		"#config/*": "./dist/managers/config/*",
+		"#kysely/*": "./dist/managers/database/*",
+		"#utils/*": "./dist/utils/*",
+		"#cf/*": "./dist/managers/content-filtering/*",
+		"#managers/*": "./dist/managers/*",
 		"#root/*": "./dist/*"
 	}
 }

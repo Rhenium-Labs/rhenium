@@ -31,7 +31,7 @@ export default class RateLimiter {
 	 * @param window The time window in milliseconds.
 	 * @returns A new RateLimiter instance.
 	 */
-	public constructor(limit: number, window: number) {
+	constructor(limit: number, window: number) {
 		this._limit = limit;
 		this._window = window;
 
@@ -50,7 +50,7 @@ export default class RateLimiter {
 	}
 
 	/** Unregister this rate limiter instance. */
-	public destroy(): void {
+	destroy(): void {
 		RateLimiter._instances.delete(this);
 		this._cache.clear();
 	}
@@ -61,7 +61,7 @@ export default class RateLimiter {
 	 * @param key The unique identifier for the rate limit bucket.
 	 * @returns The result of the rate limit check.
 	 */
-	public limit(key: string): RateLimitResult {
+	limit(key: string): RateLimitResult {
 		const now = performance.now();
 		const entry = this._cache.get(key);
 
@@ -101,7 +101,7 @@ export default class RateLimiter {
 	 * @param key The unique identifier for the rate limit bucket.
 	 * @returns The result of the rate limit check.
 	 */
-	public check(key: string): RateLimitResult {
+	check(key: string): RateLimitResult {
 		const now = performance.now();
 		const entry = this._cache.get(key);
 
@@ -125,14 +125,14 @@ export default class RateLimiter {
 	 *
 	 * @param key The unique identifier for the rate limit bucket.
 	 */
-	public reset(key: string): void {
+	reset(key: string): void {
 		this._cache.delete(key);
 	}
 
 	/**
 	 * Clear all rate limit entries.
 	 */
-	public clear(): void {
+	clear(): void {
 		this._cache.clear();
 	}
 
@@ -140,7 +140,7 @@ export default class RateLimiter {
 	 * Remove expired entries from the cache.
 	 * Also enforces max size limit.
 	 */
-	public prune(): void {
+	prune(): void {
 		const now = performance.now();
 
 		// First, remove all expired entries

@@ -1,25 +1,31 @@
-import { Colors, EmbedBuilder, MessageFlags, ComponentType } from "discord.js";
+import {
+	Colors,
+	EmbedBuilder,
+	MessageFlags,
+	ComponentType,
+	type ButtonInteraction
+} from "discord.js";
 
 import { ContentFilterStatus } from "#kysely/Enums.js";
-import { ApplyOptions, Component } from "#rhenium";
 import { ContentFilterFieldNames } from "#cf/Enums.js";
 import { hastebin, userMentionWithId } from "#utils/index.js";
 
-import type { InteractionReplyData } from "#utils/Types.js";
+import type { ResponseData } from "#managers/commands/Command.js";
 
 import Messages from "#utils/Messages.js";
-import GuildConfig from "#root/lib/config/GuildConfig.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
+import Component, { type ComponentExecutionContext } from "#managers/components/Component.js";
 
-@ApplyOptions<Component.Options>({
-	id: { matches: /^cf-(delete|resolve|false|content)-[\d-]+$/m }
-})
 export default class ContentFilterButton extends Component {
-	public async run(
-		interaction: Component.Interaction<"button">,
-		config: GuildConfig
-	): Promise<InteractionReplyData | null> {
+	constructor() {
+		super({ matches: /^cf-(delete|resolve|false|content)-[\d-]+$/m });
+	}
+
+	async execute({
+		interaction,
+		config
+	}: ComponentExecutionContext<"button">): Promise<ResponseData<"interaction"> | null> {
 		const contentFilterConfig = config.parseContentFilterConfig();
 
 		if (!contentFilterConfig) {
@@ -52,9 +58,9 @@ export default class ContentFilterButton extends Component {
 	 * @param parts The custom ID parts.
 	 */
 	private async _handleDelete(
-		interaction: Component.Interaction<"button">,
+		interaction: ButtonInteraction<"cached">,
 		parts: string[]
-	): Promise<InteractionReplyData | null> {
+	): Promise<ResponseData<"interaction"> | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const messageId = parts[2];
@@ -141,9 +147,9 @@ export default class ContentFilterButton extends Component {
 	 * @param parts The custom ID parts.
 	 */
 	private async _handleResolve(
-		interaction: Component.Interaction<"button">,
+		interaction: ButtonInteraction<"cached">,
 		parts: string[]
-	): Promise<InteractionReplyData | null> {
+	): Promise<ResponseData<"interaction"> | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const messageId = parts[2];
@@ -199,9 +205,9 @@ export default class ContentFilterButton extends Component {
 	 * @param parts The custom ID parts.
 	 */
 	private async _handleFalsePositive(
-		interaction: Component.Interaction<"button">,
+		interaction: ButtonInteraction<"cached">,
 		parts: string[]
-	): Promise<InteractionReplyData | null> {
+	): Promise<ResponseData<"interaction"> | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const channelId = parts[2];
@@ -277,9 +283,9 @@ export default class ContentFilterButton extends Component {
 	 * @param parts The custom ID parts.
 	 */
 	private async _handleViewContent(
-		interaction: Component.Interaction<"button">,
+		interaction: ButtonInteraction<"cached">,
 		parts: string[]
-	): Promise<InteractionReplyData | null> {
+	): Promise<ResponseData<"interaction"> | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const messageId = parts[2];

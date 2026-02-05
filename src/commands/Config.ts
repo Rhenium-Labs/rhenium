@@ -1,4 +1,6 @@
 import {
+	type ChatInputCommandInteraction,
+	type ApplicationCommandData,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -11,20 +13,26 @@ import {
 	roleMention
 } from "discord.js";
 
-import { kysely } from "#root/index.js";
-import { ApplyOptions, Command } from "#rhenium";
+import { kysely, client } from "#root/index.js";
 import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#kysely/Enums.js";
 
-import type { InteractionReplyData } from "#utils/Types.js";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
+import GuildConfig from "#config/GuildConfig.js";
 
-import GuildConfig from "#root/lib/config/GuildConfig.js";
-
-@ApplyOptions<Command.Options>({
-	name: "config",
-	description: "Manage the guild configuration."
-})
 export default class Config extends Command {
-	public register(): Command.Data {
+	constructor() {
+		super({
+			name: "config",
+			category: CommandCategory.Management,
+			description: "Manage the guild's configuration."
+		});
+	}
+
+	override register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			description: this.description,
@@ -735,133 +743,153 @@ export default class Config extends Command {
 		};
 	}
 
-	public async interactionRun(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	override async executeInteraction({
+		interaction,
+		config
+	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {
 		const subcommandGroup = interaction.options.getSubcommandGroup() as ConfigSubcommandGroup;
 		const subcommand = interaction.options.getSubcommand() as ConfigSubcommand;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		const handlers: Record<string, () => Promise<InteractionReplyData>> = {
-			// Highlights Group
-			[`${ConfigSubcommandGroup.Highlights}:${ConfigSubcommand.SetMaxPatterns}`]: () =>
-				this._setMaxHighlightPatterns(interaction, config),
-			[`${ConfigSubcommandGroup.Highlights}:${ConfigSubcommand.Toggle}`]: () =>
-				this._toggleHighlights(interaction, config),
+		switch (subcommandGroup) {
+			case ConfigSubcommandGroup.Permissions:
+				switch (subcommand) {
+					case ConfigSubcommand.Create:
+						return Config._createPermissionScope(interaction);
+					case ConfigSubcommand.Delete:
+						return Config._deletePermissionScope(interaction);
+					case ConfigSubcommand.List:
+						return Config._listPermissionScopes(interaction, config);
+					case ConfigSubcommand.Grant:
+						return Config._addPermissionToScope(interaction);
+					case ConfigSubcommand.Revoke:
+						return Config._removePermissionFromScope(interaction);
+				}
+				break;
 
-			// Quick Mutes Group
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.Toggle}`]: () =>
-				this._toggleQuickMutes(interaction, config),
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.SetPurgeLimit}`]: () =>
-				this._setQuickMutePurgeLimit(interaction, config),
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.AddChannelScoping}`]: () =>
-				this._addQuickMuteChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.RemoveChannelScoping}`]:
-				() => this._removeQuickMuteChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.QuickMutes}:${ConfigSubcommand.ListChannelScopings}`]:
-				() => this._listQuickMuteChannelScopings(interaction, config),
+			case ConfigSubcommandGroup.Reports:
+				switch (subcommand) {
+					case ConfigSubcommand.Toggle:
+						return Config._toggleReports(interaction, config);
+					case ConfigSubcommand.SetDefaultReason:
+						return Config._setReportsDefaultReason(interaction, config);
+					case ConfigSubcommand.EnforceReason:
+						return Config._toggleReportsEnforceReason(interaction, config);
+					case ConfigSubcommand.AddImmuneRole:
+						return Config._addReportsImmuneRole(interaction, config);
+					case ConfigSubcommand.RemoveImmuneRole:
+						return Config._removeReportsImmuneRole(interaction, config);
+					case ConfigSubcommand.ListImmuneRoles:
+						return Config._listReportImmuneRoles(interaction, config);
+					case ConfigSubcommand.AddNotifyRole:
+						return Config._addReportNotifyRole(interaction, config);
+					case ConfigSubcommand.RemoveNotifyRole:
+						return Config._removeReportNotifyRole(interaction, config);
+					case ConfigSubcommand.ListNotifyRoles:
+						return Config._listReportNotifyRoles(interaction, config);
+					case ConfigSubcommand.SetReviewChannel:
+						return Config._setReportReviewChannel(interaction, config);
+				}
+				break;
 
-			// Quick Purges Group
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.Toggle}`]: () =>
-				this._toggleQuickPurges(interaction, config),
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.SetLimit}`]: () =>
-				this._setQuickPurgeLimit(interaction, config),
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.AddChannelScoping}`]: () =>
-				this._addQuickPurgeChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.RemoveChannelScoping}`]:
-				() => this._removeQuickPurgeChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.QuickPurges}:${ConfigSubcommand.ListChannelScopings}`]:
-				() => this._listQuickPurgeChannelScopings(interaction, config),
+			case ConfigSubcommandGroup.Requests:
+				switch (subcommand) {
+					case ConfigSubcommand.Toggle:
+						return Config._toggleRequests(interaction, config);
+					case ConfigSubcommand.SetReviewChannel:
+						return Config._setRequestReviewChannel(interaction, config);
+					case ConfigSubcommand.AutomaticallyTimeout:
+						return Config._toggleAutomaticallyTimeout(interaction, config);
+					case ConfigSubcommand.AddImmuneRole:
+						return Config._addRequestImmuneRole(interaction, config);
+					case ConfigSubcommand.RemoveImmuneRole:
+						return Config._removeRequestImmuneRole(interaction, config);
+					case ConfigSubcommand.ListImmuneRoles:
+						return Config._listRequestImmuneRoles(interaction, config);
+					case ConfigSubcommand.AddNotifyRole:
+						return Config._addRequestNotifyRole(interaction, config);
+					case ConfigSubcommand.RemoveNotifyRole:
+						return Config._removeRequestNotifyRole(interaction, config);
+					case ConfigSubcommand.ListNotifyRoles:
+						return Config._listRequestNotifyRoles(interaction, config);
+				}
+				break;
 
-			// Permission Group
-			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Create}`]: () =>
-				this._createPermissionScope(interaction),
-			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Delete}`]: () =>
-				this._deletePermissionScope(interaction),
-			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.List}`]: () =>
-				this._listPermissionScopes(interaction, config),
-			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Grant}`]: () =>
-				this._addPermissionToScope(interaction),
-			[`${ConfigSubcommandGroup.Permissions}:${ConfigSubcommand.Revoke}`]: () =>
-				this._removePermissionFromScope(interaction),
+			case ConfigSubcommandGroup.Highlights:
+				switch (subcommand) {
+					case ConfigSubcommand.Toggle:
+						return Config._toggleHighlights(interaction, config);
+					case ConfigSubcommand.SetMaxPatterns:
+						return Config._setMaxHighlightPatterns(interaction, config);
+				}
+				break;
 
-			// Message Reports Group
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.EnforceReason}`]: () =>
-				this._toggleReportsEnforceReason(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.AddImmuneRole}`]: () =>
-				this._addReportsImmuneRole(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.SetDefaultReason}`]: () =>
-				this._setReportsDefaultReason(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.RemoveImmuneRole}`]: () =>
-				this._removeReportsImmuneRole(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.ListImmuneRoles}`]: () =>
-				this._listReportImmuneRoles(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.AddNotifyRole}`]: () =>
-				this._addReportNotifyRole(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.RemoveNotifyRole}`]: () =>
-				this._removeReportNotifyRole(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.ListNotifyRoles}`]: () =>
-				this._listReportNotifyRoles(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.Toggle}`]: () =>
-				this._toggleReports(interaction, config),
-			[`${ConfigSubcommandGroup.Reports}:${ConfigSubcommand.SetReviewChannel}`]: () =>
-				this._setReportReviewChannel(interaction, config),
+			case ConfigSubcommandGroup.QuickPurges:
+				switch (subcommand) {
+					case ConfigSubcommand.Toggle:
+						return Config._toggleQuickPurges(interaction, config);
+					case ConfigSubcommand.SetLimit:
+						return Config._setQuickPurgeLimit(interaction, config);
+					case ConfigSubcommand.AddChannelScoping:
+						return Config._addQuickPurgeChannelScoping(interaction, config);
+					case ConfigSubcommand.RemoveChannelScoping:
+						return Config._removeQuickPurgeChannelScoping(interaction, config);
+					case ConfigSubcommand.ListChannelScopings:
+						return Config._listQuickPurgeChannelScopings(interaction, config);
+				}
+				break;
 
-			// Ban Requests Group
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.Toggle}`]: () =>
-				this._toggleRequests(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.SetReviewChannel}`]: () =>
-				this._setRequestReviewChannel(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.AutomaticallyTimeout}`]: () =>
-				this._toggleAutomaticallyTimeout(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.AddImmuneRole}`]: () =>
-				this._addRequestImmuneRole(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.RemoveImmuneRole}`]: () =>
-				this._removeRequestImmuneRole(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.ListImmuneRoles}`]: () =>
-				this._listRequestImmuneRoles(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.AddNotifyRole}`]: () =>
-				this._addRequestNotifyRole(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.RemoveNotifyRole}`]: () =>
-				this._removeRequestNotifyRole(interaction, config),
-			[`${ConfigSubcommandGroup.Requests}:${ConfigSubcommand.ListNotifyRoles}`]: () =>
-				this._listRequestNotifyRoles(interaction, config),
+			case ConfigSubcommandGroup.QuickMutes:
+				switch (subcommand) {
+					case ConfigSubcommand.Toggle:
+						return Config._toggleQuickMutes(interaction, config);
+					case ConfigSubcommand.SetPurgeLimit:
+						return Config._setQuickMutePurgeLimit(interaction, config);
+					case ConfigSubcommand.AddChannelScoping:
+						return Config._addQuickMuteChannelScoping(interaction, config);
+					case ConfigSubcommand.RemoveChannelScoping:
+						return Config._removeQuickMuteChannelScoping(interaction, config);
+					case ConfigSubcommand.ListChannelScopings:
+						return Config._listQuickMuteChannelScopings(interaction, config);
+				}
+				break;
 
-			// Content Filter Group
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.Toggle}`]: () =>
-				this._toggleContentFilter(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetReviewChannel}`]:
-				() => this._setContentFilterReviewChannel(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.AddImmuneRole}`]: () =>
-				this._addContentFilterImmuneRole(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveImmuneRole}`]:
-				() => this._removeContentFilterImmuneRole(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ListImmuneRoles}`]: () =>
-				this._listContentFilterImmuneRoles(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.AddChannelScoping}`]:
-				() => this._addContentFilterChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.RemoveChannelScoping}`]:
-				() => this._removeContentFilterChannelScoping(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ListChannelScopings}`]:
-				() => this._listContentFilterChannelScopings(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.ToggleDetector}`]: () =>
-				this._toggleContentFilterDetector(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetDetectorMode}`]: () =>
-				this.setContentFilterDetectorMode(interaction, config),
-			[`${ConfigSubcommandGroup.ContentFilter}:${ConfigSubcommand.SetVerbosity}`]: () =>
-				this._setContentFilterVerbosity(interaction, config)
-		};
+			case ConfigSubcommandGroup.ContentFilter:
+				switch (subcommand) {
+					case ConfigSubcommand.Toggle:
+						return Config._toggleContentFilter(interaction, config);
+					case ConfigSubcommand.SetReviewChannel:
+						return Config._setContentFilterReviewChannel(interaction, config);
+					case ConfigSubcommand.AddImmuneRole:
+						return Config._addContentFilterImmuneRole(interaction, config);
+					case ConfigSubcommand.RemoveImmuneRole:
+						return Config._removeContentFilterImmuneRole(interaction, config);
+					case ConfigSubcommand.ListImmuneRoles:
+						return Config._listContentFilterImmuneRoles(interaction, config);
+					case ConfigSubcommand.AddChannelScoping:
+						return Config._addContentFilterChannelScoping(interaction, config);
+					case ConfigSubcommand.RemoveChannelScoping:
+						return Config._removeContentFilterChannelScoping(interaction, config);
+					case ConfigSubcommand.ListChannelScopings:
+						return Config._listContentFilterChannelScopings(interaction, config);
+					case ConfigSubcommand.ToggleDetector:
+						return Config._toggleContentFilterDetector(interaction, config);
+					case ConfigSubcommand.SetDetectorMode:
+						return Config._setContentFilterDetectorMode(interaction, config);
+					case ConfigSubcommand.SetVerbosity:
+						return Config._setContentFilterVerbosity(interaction, config);
+				}
+				break;
+		}
 
-		const handler = handlers[`${subcommandGroup}:${subcommand}`];
-		return handler ? handler() : { error: "Unknown subcommand." };
+		return { error: "Unknown subcommand." };
 	}
 
-	private async setContentFilterDetectorMode(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setContentFilterDetectorMode(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const mode = interaction.options.getString("mode", true) as DetectorMode;
 		const currentMode = configClass.data.content_filter.detector_mode;
 
@@ -878,10 +906,10 @@ export default class Config extends Command {
 		return { content: `Successfully set content filter detector mode to ${mode}.` };
 	}
 
-	private async _setContentFilterVerbosity(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setContentFilterVerbosity(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const level = interaction.options.getString("level", true) as ContentFilterVerbosity;
 		const currentLevel = configClass.data.content_filter.verbosity;
 
@@ -898,10 +926,10 @@ export default class Config extends Command {
 		return { content: `Successfully set content filter verbosity to ${level}.` };
 	}
 
-	private async _toggleContentFilterDetector(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleContentFilterDetector(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const detector = interaction.options.getString("detector", true) as Detector;
 		const enable = interaction.options.getBoolean("value", true);
 		const currentDetectors = configClass.data.content_filter.detectors;
@@ -929,10 +957,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _toggleContentFilter(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleContentFilter(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const enable = interaction.options.getBoolean("value", true);
 		const current = configClass.data.content_filter.enabled;
 
@@ -953,10 +981,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _setContentFilterReviewChannel(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setContentFilterReviewChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const config = configClass.data.content_filter;
 
@@ -973,8 +1001,8 @@ export default class Config extends Command {
 			const set = await webhook
 				.edit({
 					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
+					avatar: client.user.displayAvatarURL(),
+					name: client.user.username
 				})
 				.catch(() => null);
 
@@ -990,8 +1018,8 @@ export default class Config extends Command {
 		} else {
 			const newWebhook = await channel
 				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
+					name: client.user.username,
+					avatar: client.user.displayAvatarURL()
 				})
 				.catch(() => null);
 
@@ -1011,10 +1039,10 @@ export default class Config extends Command {
 		}
 	}
 
-	private async _addContentFilterImmuneRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _addContentFilterImmuneRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.content_filter;
 
@@ -1033,10 +1061,10 @@ export default class Config extends Command {
 		return { content: `Successfully added ${role} to content filter immune roles.` };
 	}
 
-	private async _removeContentFilterImmuneRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _removeContentFilterImmuneRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.content_filter;
 
@@ -1055,10 +1083,10 @@ export default class Config extends Command {
 		return { content: `Successfully removed ${role} from content filter immune roles.` };
 	}
 
-	private async _listContentFilterImmuneRoles(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listContentFilterImmuneRoles(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.content_filter;
 
 		if (!config.immune_roles.length) {
@@ -1080,10 +1108,10 @@ export default class Config extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _addContentFilterChannelScoping(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _addContentFilterChannelScoping(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.content_filter;
 		const channel = interaction.options.getChannel("channel", true);
 		const scopeType = interaction.options.getNumber("type", true);
@@ -1107,10 +1135,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _removeContentFilterChannelScoping(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _removeContentFilterChannelScoping(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.content_filter;
 		const channel = interaction.options.getChannel("channel", true);
 
@@ -1129,10 +1157,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _listContentFilterChannelScopings(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listContentFilterChannelScopings(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.content_filter;
 		const scopings = config.channel_scoping;
 
@@ -1164,10 +1192,10 @@ export default class Config extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _toggleQuickMutes(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleQuickMutes(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const enable = interaction.options.getBoolean("value", true);
 		const current = configClass.data.quick_mutes.enabled;
 
@@ -1188,10 +1216,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _toggleQuickPurges(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleQuickPurges(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const enable = interaction.options.getBoolean("value", true);
 		const current = configClass.data.quick_purges.enabled;
 
@@ -1212,10 +1240,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _toggleHighlights(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleHighlights(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const enable = interaction.options.getBoolean("value", true);
 		const current = configClass.data.highlights.enabled;
 
@@ -1236,10 +1264,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _setQuickMutePurgeLimit(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setQuickMutePurgeLimit(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const amount = interaction.options.getInteger("amount", true);
 		const config = configClass.data.quick_mutes;
 
@@ -1260,10 +1288,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _addQuickMuteChannelScoping(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _addQuickMuteChannelScoping(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.quick_mutes;
 		const channel = interaction.options.getChannel("channel", true);
 		const scopeType = interaction.options.getNumber("type", true);
@@ -1287,10 +1315,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _removeQuickMuteChannelScoping(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _removeQuickMuteChannelScoping(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.quick_mutes;
 		const channel = interaction.options.getChannel("channel", true);
 
@@ -1311,10 +1339,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _listQuickMuteChannelScopings(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listQuickMuteChannelScopings(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.quick_mutes;
 		const scopings = config.channel_scoping;
 
@@ -1348,10 +1376,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _setQuickPurgeLimit(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setQuickPurgeLimit(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const amount = interaction.options.getInteger("amount", true);
 		const config = configClass.data.quick_purges;
 
@@ -1372,10 +1400,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _addQuickPurgeChannelScoping(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _addQuickPurgeChannelScoping(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.quick_purges;
 		const channel = interaction.options.getChannel("channel", true);
 		const scopeType = interaction.options.getNumber("type", true);
@@ -1399,10 +1427,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _removeQuickPurgeChannelScoping(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _removeQuickPurgeChannelScoping(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.quick_purges;
 		const channel = interaction.options.getChannel("channel", true);
 
@@ -1423,10 +1451,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _listQuickPurgeChannelScopings(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listQuickPurgeChannelScopings(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.quick_purges;
 		const scopings = config.channel_scoping;
 
@@ -1460,10 +1488,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _setMaxHighlightPatterns(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setMaxHighlightPatterns(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const amount = interaction.options.getInteger("amount", true);
 		const config = configClass.data.highlights;
 
@@ -1484,9 +1512,9 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _createPermissionScope(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+	private static async _createPermissionScope(
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
@@ -1513,9 +1541,9 @@ export default class Config extends Command {
 		return { content: `Successfully created a permission scope for the ${role} role.` };
 	}
 
-	private async _deletePermissionScope(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+	private static async _deletePermissionScope(
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 
 		const scope = await kysely
@@ -1538,10 +1566,10 @@ export default class Config extends Command {
 		return { content: `Successfully deleted the permission scope for the ${role} role.` };
 	}
 
-	private async _listPermissionScopes(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listPermissionScopes(
+		interaction: ChatInputCommandInteraction<"cached">,
 		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const scopes = config.data.permission_scopes;
 
 		if (scopes.length === 0) {
@@ -1574,9 +1602,9 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _addPermissionToScope(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+	private static async _addPermissionToScope(
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
@@ -1611,9 +1639,9 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _removePermissionFromScope(
-		interaction: Command.Interaction<"chatInput">
-	): Promise<InteractionReplyData> {
+	private static async _removePermissionFromScope(
+		interaction: ChatInputCommandInteraction<"cached">
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
@@ -1654,10 +1682,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _toggleReports(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleReports(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const value = interaction.options.getBoolean("value", true);
 		const config = configClass.data.message_reports;
 
@@ -1678,10 +1706,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _setReportsDefaultReason(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setReportsDefaultReason(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const rawReason = interaction.options.getString("reason", true);
 		const config = configClass.data.message_reports;
 
@@ -1704,10 +1732,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _toggleReportsEnforceReason(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleReportsEnforceReason(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const value = interaction.options.getBoolean("value", true);
 		const config = configClass.data.message_reports;
 
@@ -1728,10 +1756,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _addReportsImmuneRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _addReportsImmuneRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.message_reports;
 
@@ -1758,10 +1786,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _removeReportsImmuneRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _removeReportsImmuneRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.message_reports;
 
@@ -1788,10 +1816,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _listReportImmuneRoles(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listReportImmuneRoles(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.message_reports;
 
 		if (!config.immune_roles.length) {
@@ -1813,10 +1841,10 @@ export default class Config extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _addReportNotifyRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _addReportNotifyRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.message_reports;
 
@@ -1843,10 +1871,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _removeReportNotifyRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _removeReportNotifyRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.message_reports;
 
@@ -1873,10 +1901,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _listReportNotifyRoles(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listReportNotifyRoles(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.message_reports;
 
 		if (config.notify_roles.length === 0) {
@@ -1900,10 +1928,10 @@ export default class Config extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _setReportReviewChannel(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setReportReviewChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const config = configClass.data.message_reports;
 
@@ -1920,8 +1948,8 @@ export default class Config extends Command {
 			const set = await webhook
 				.edit({
 					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
+					avatar: client.user.displayAvatarURL(),
+					name: client.user.username
 				})
 				.catch(() => null);
 
@@ -1943,8 +1971,8 @@ export default class Config extends Command {
 		} else {
 			const newWebhook = await channel
 				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
+					name: client.user.username,
+					avatar: client.user.displayAvatarURL()
 				})
 				.catch(() => null);
 
@@ -1964,10 +1992,10 @@ export default class Config extends Command {
 		}
 	}
 
-	private async _toggleRequests(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleRequests(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const value = interaction.options.getBoolean("value", true);
 		const config = configClass.data.ban_requests;
 
@@ -1988,10 +2016,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _toggleAutomaticallyTimeout(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _toggleAutomaticallyTimeout(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const value = interaction.options.getBoolean("value", true);
 		const config = configClass.data.ban_requests;
 
@@ -2012,10 +2040,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _setRequestReviewChannel(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _setRequestReviewChannel(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const channel = interaction.options.getChannel("channel", true, [ChannelType.GuildText]);
 		const config = configClass.data.ban_requests;
 
@@ -2032,8 +2060,8 @@ export default class Config extends Command {
 			const set = await webhook
 				.edit({
 					channel: channel.id,
-					avatar: this.client.user.displayAvatarURL(),
-					name: this.client.user.username
+					avatar: client.user.displayAvatarURL(),
+					name: client.user.username
 				})
 				.catch(() => null);
 
@@ -2055,8 +2083,8 @@ export default class Config extends Command {
 		} else {
 			const newWebhook = await channel
 				.createWebhook({
-					name: this.client.user.username,
-					avatar: this.client.user.displayAvatarURL()
+					name: client.user.username,
+					avatar: client.user.displayAvatarURL()
 				})
 				.catch(() => null);
 
@@ -2076,10 +2104,10 @@ export default class Config extends Command {
 		}
 	}
 
-	private async _listRequestNotifyRoles(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listRequestNotifyRoles(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.ban_requests;
 
 		if (config.notify_roles.length === 0) {
@@ -2101,10 +2129,10 @@ export default class Config extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _addRequestNotifyRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _addRequestNotifyRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.ban_requests;
 
@@ -2131,10 +2159,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _removeRequestNotifyRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _removeRequestNotifyRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.ban_requests;
 
@@ -2161,10 +2189,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _listRequestImmuneRoles(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _listRequestImmuneRoles(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const config = configClass.data.ban_requests;
 
 		if (!config.immune_roles.length) {
@@ -2186,10 +2214,10 @@ export default class Config extends Command {
 		return { embeds: [embed] };
 	}
 
-	private async _addRequestImmuneRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _addRequestImmuneRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.ban_requests;
 
@@ -2216,10 +2244,10 @@ export default class Config extends Command {
 		};
 	}
 
-	private async _removeRequestImmuneRole(
-		interaction: Command.Interaction<"chatInput">,
+	private static async _removeRequestImmuneRole(
+		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
-	): Promise<InteractionReplyData> {
+	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const config = configClass.data.ban_requests;
 

@@ -1,4 +1,5 @@
 import {
+	type ApplicationCommandData,
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
@@ -7,19 +8,24 @@ import {
 	PermissionFlagsBits
 } from "discord.js";
 
-import { ApplyOptions, Command } from "#rhenium";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
-import type { InteractionReplyData } from "#utils/Types.js";
-
-import GuildConfig from "#config/GuildConfig.js";
 import BanRequestUtils from "#utils/BanRequests.js";
 
-@ApplyOptions<Command.Options>({
-	name: "request",
-	description: "Request a moderation action."
-})
 export default class RequestAction extends Command {
-	public register(): Command.Data {
+	constructor() {
+		super({
+			name: "request",
+			category: CommandCategory.Moderation,
+			description: "Request a moderation action."
+		});
+	}
+
+	override register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			description: this.description,
@@ -59,10 +65,10 @@ export default class RequestAction extends Command {
 		};
 	}
 
-	public async interactionRun(
-		interaction: Command.Interaction<"chatInput">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	override async executeInteraction({
+		interaction,
+		config
+	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {
 		if (!config.parseBanRequestsConfig())
 			return {
 				error: "Ban requests have not been configured on this server."

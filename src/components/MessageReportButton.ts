@@ -1,21 +1,21 @@
 import { MessageFlags } from "discord.js";
-import { ApplyOptions, Component } from "#rhenium";
-import type { InteractionReplyData } from "#utils/Types.js";
+import type { ResponseData } from "#managers/commands/Command.js";
 
 import MessageReportUtils, {
 	MessageReportAction,
 	MessageReportActionToPastTenseMap
 } from "#utils/MessageReports.js";
-import GuildConfig from "#root/lib/config/GuildConfig.js";
+import Component, { type ComponentExecutionContext } from "#managers/components/Component.js";
 
-@ApplyOptions<Component.Options>({
-	id: { matches: /^message-report-(resolve|disregard)$/m }
-})
 export default class MessageReportButton extends Component {
-	public async run(
-		interaction: Component.Interaction<"button">,
-		config: GuildConfig
-	): Promise<InteractionReplyData | null> {
+	constructor() {
+		super({ matches: /^message-report-(resolve|disregard)$/m });
+	}
+
+	async execute({
+		interaction,
+		config
+	}: ComponentExecutionContext<"button">): Promise<ResponseData<"interaction"> | null> {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		if (!config.parseReportsConfig())

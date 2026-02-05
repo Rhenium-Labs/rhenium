@@ -2,15 +2,18 @@ import { Colors, EmbedBuilder, time } from "discord.js";
 
 import { kysely } from "#root/index.js";
 import { inflect } from "#utils/index.js";
-import { ApplyOptions, Component } from "#rhenium";
+import type { ResponseData } from "#managers/commands/Command.js";
 
-import type { InteractionReplyData } from "#utils/Types.js";
+import Component, { type ComponentExecutionContext } from "#managers/components/Component.js";
 
-@ApplyOptions<Component.Options>({
-	id: { matches: /^user-info-\d{17,19}$/m }
-})
 export default class UserInfo extends Component {
-	public async run(interaction: Component.Interaction<"button">): Promise<InteractionReplyData> {
+	constructor() {
+		super({ matches: /^user-info-\d{17,19}$/m });
+	}
+
+	async execute({
+		interaction
+	}: ComponentExecutionContext<"button">): Promise<ResponseData<"interaction">> {
 		const targetUserId = interaction.customId.split("-")[2];
 
 		// prettier-ignore

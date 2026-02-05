@@ -1,15 +1,14 @@
 import { Events, type Collection, type PartialMessage, type Snowflake } from "discord.js";
-import { ApplyOptions, EventListener } from "#rhenium";
 
 import Messages from "#utils/Messages.js";
+import EventListener from "#managers/events/EventListener.js";
 
-@ApplyOptions<EventListener.Options>({
-	event: Events.MessageBulkDelete
-})
 export default class MessageBulkDelete extends EventListener {
-	public async onEmit(
-		deletedMessages: Collection<Snowflake, PartialMessage<true>>
-	): Promise<any> {
+	constructor() {
+		super(Events.MessageBulkDelete);
+	}
+
+	execute(deletedMessages: Collection<Snowflake, PartialMessage<true>>): void {
 		const messageIds = deletedMessages
 			.filter(message => !(message.author?.bot || message.webhookId || message.system))
 			.map(message => message.id);
@@ -18,6 +17,6 @@ export default class MessageBulkDelete extends EventListener {
 		// Skip if any of these messages are being handled by a purge action.
 		if (messageIds.some(id => Messages.purgeExclusions.has(id))) return;
 
-		return Messages.bulkDelete(messageIds);
+		void Messages.bulkDelete(messageIds);
 	}
 }

@@ -1,15 +1,15 @@
+import { kysely } from "#root/index.js";
 import { type Guild, type GuildAuditLogsEntry, AuditLogEvent, Events, Webhook } from "discord.js";
 
-import { kysely } from "#root/index.js";
-import { ApplyOptions, EventListener } from "#rhenium";
-
 import ConfigManager from "#config/ConfigManager.js";
+import EventListener from "#managers/events/EventListener.js";
 
-@ApplyOptions<EventListener.Options>({
-	event: Events.GuildAuditLogEntryCreate
-})
 export default class GuildAuditLogEntryCreate extends EventListener {
-	async onEmit(auditLog: GuildAuditLogsEntry, guild: Guild): Promise<void> {
+	constructor() {
+		super(Events.GuildAuditLogEntryCreate);
+	}
+
+	async execute(auditLog: GuildAuditLogsEntry, guild: Guild): Promise<void> {
 		const { target, executorId, action } = auditLog;
 
 		if (!executorId || executorId === this.client.user.id) return;

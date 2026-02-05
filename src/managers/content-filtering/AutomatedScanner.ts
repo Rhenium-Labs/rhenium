@@ -12,7 +12,7 @@ import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 import Logger from "#utils/Logger.js";
 import MinimumHeap from "#utils/MinimumHeap.js";
 import ContentFilter from "./ContentFilter.js";
-import ConfigManager from "../config/ConfigManager.js";
+import ConfigManager from "#config/ConfigManager.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 
 /** Maximum number of channel states to keep in memory. */

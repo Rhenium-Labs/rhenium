@@ -9,10 +9,10 @@ import type {
 
 import ConfigManager, { ConfigKeys } from "#config/ConfigManager.js";
 
-interface QueryMetadata {
+type QueryMetadata = {
 	tableName: string;
 	guildId: string | null;
-}
+};
 
 export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 	/**
@@ -32,12 +32,12 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 	 * @returns The root operation node.
 	 */
 
-	public transformQuery(args: PluginTransformQueryArgs): RootOperationNode {
+	transformQuery(args: PluginTransformQueryArgs): RootOperationNode {
 		const { node, queryId } = args;
 
-		const tableName = this.extractTableName(node);
+		const tableName = this._extractTableName(node);
 
-		if (!tableName || !this.isTrackedTable(tableName)) {
+		if (!tableName || !this._isTrackedTable(tableName)) {
 			return node;
 		}
 
@@ -54,7 +54,7 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 			return node;
 		}
 
-		const guildId = this.extractGuildId(node, tableName);
+		const guildId = this._extractGuildId(node, tableName);
 
 		if (guildId) {
 			this._queryMetadata.set(queryId, { tableName, guildId });
@@ -70,9 +70,7 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 	 * @returns The query result.
 	 */
 
-	public async transformResult(
-		args: PluginTransformResultArgs
-	): Promise<QueryResult<UnknownRow>> {
+	async transformResult(args: PluginTransformResultArgs): Promise<QueryResult<UnknownRow>> {
 		const { queryId, result } = args;
 
 		const metadata = this._queryMetadata.get(queryId);
@@ -82,7 +80,7 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 			return result;
 		}
 
-		const configKey = this.getConfigKey(metadata.tableName);
+		const configKey = this._getConfigKey(metadata.tableName);
 
 		if (configKey) {
 			// Reload the configuration for the affected guild and config key.
@@ -92,7 +90,7 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 		return result;
 	}
 
-	private extractTableName(node: RootOperationNode): string | null {
+	private _extractTableName(node: RootOperationNode): string | null {
 		if ("table" in node && node.table) {
 			const tableNode = node.table as any;
 
@@ -120,33 +118,33 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 		return null;
 	}
 
-	private extractGuildId(node: RootOperationNode, tableName: string): string | null {
+	private _extractGuildId(node: RootOperationNode, tableName: string): string | null {
 		// Config tables use the `id` column as the guild id.
 		// Scoping related tables use the `guild_id` column.
 		const idColumn = TablesWithIdPrimaryKey.includes(tableName as any) ? "id" : "guild_id";
 
 		// Try to extract from WHERE clause (for UPDATE/DELETE)
 		if ("where" in node && node.where) {
-			const guildId = this.extractValueFromWhere(node.where, idColumn);
+			const guildId = this._extractValueFromWhere(node.where, idColumn);
 			if (guildId) return guildId;
 		}
 
 		// Try to extract from VALUES (for INSERT)
 		if ("values" in node && node.values) {
 			const columns = "columns" in node ? (node.columns as any[]) : null;
-			const guildId = this.extractValueFromInsert(node.values, columns, idColumn);
+			const guildId = this._extractValueFromInsert(node.values, columns, idColumn);
 			if (guildId) return guildId;
 		}
 
 		return null;
 	}
 
-	private extractValueFromWhere(whereNode: any, columnName: string): string | null {
+	private _extractValueFromWhere(whereNode: any, columnName: string): string | null {
 		if (!whereNode) return null;
 
 		// Handle WhereNode wrapper
 		if (whereNode.kind === "WhereNode" && whereNode.where) {
-			return this.extractValueFromWhere(whereNode.where, columnName);
+			return this._extractValueFromWhere(whereNode.where, columnName);
 		}
 
 		// Handle BinaryOperationNode (e.g., id = 'value')
@@ -166,22 +164,22 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 
 		// Handle AndNode - recursively check both sides
 		if (whereNode.kind === "AndNode") {
-			const leftResult = this.extractValueFromWhere(whereNode.left, columnName);
+			const leftResult = this._extractValueFromWhere(whereNode.left, columnName);
 			if (leftResult) return leftResult;
-			return this.extractValueFromWhere(whereNode.right, columnName);
+			return this._extractValueFromWhere(whereNode.right, columnName);
 		}
 
 		// Handle OrNode - recursively check both sides
 		if (whereNode.kind === "OrNode") {
-			const leftResult = this.extractValueFromWhere(whereNode.left, columnName);
+			const leftResult = this._extractValueFromWhere(whereNode.left, columnName);
 			if (leftResult) return leftResult;
-			return this.extractValueFromWhere(whereNode.right, columnName);
+			return this._extractValueFromWhere(whereNode.right, columnName);
 		}
 
 		return null;
 	}
 
-	private extractValueFromInsert(
+	private _extractValueFromInsert(
 		valuesNode: any,
 		columns: any[] | null,
 		columnName: string
@@ -225,7 +223,7 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 		return null;
 	}
 
-	private isTrackedTable(tableName: string): boolean {
+	private _isTrackedTable(tableName: string): boolean {
 		return (
 			TablesWithIdPrimaryKey.includes(
 				tableName as (typeof TablesWithIdPrimaryKey)[number]
@@ -233,7 +231,7 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 		);
 	}
 
-	private getConfigKey(tableName: string): ConfigKeys | null {
+	private _getConfigKey(tableName: string): ConfigKeys | null {
 		return GuildIdToConfigKey[tableName] ?? IdPrimaryKeyToConfigKey[tableName] ?? null;
 	}
 }

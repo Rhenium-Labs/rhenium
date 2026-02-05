@@ -1,19 +1,18 @@
 import { MessageFlags } from "discord.js";
+import type { ResponseData } from "#managers/commands/Command.js";
 
-import { ApplyOptions, Component } from "#rhenium";
-import type { InteractionReplyData } from "#utils/Types.js";
-
-import GuildConfig from "#root/lib/config/GuildConfig.js";
 import MessageReportUtils from "#utils/MessageReports.js";
+import Component, { type ComponentExecutionContext } from "#managers/components/Component.js";
 
-@ApplyOptions<Component.Options>({
-	id: { matches: /^report-message-\d{17,19}-\d{17,19}$/m }
-})
 export default class ReportMessage extends Component {
-	public async run(
-		interaction: Component.Interaction<"modalSubmit">,
-		config: GuildConfig
-	): Promise<InteractionReplyData> {
+	constructor() {
+		super({ matches: /^report-message-\d{17,19}-\d{17,19}$/m });
+	}
+
+	async execute({
+		interaction,
+		config
+	}: ComponentExecutionContext<"modal">): Promise<ResponseData<"interaction">> {
 		if (!config.parseReportsConfig()) {
 			return { error: "Message reports have not been configured on this server." };
 		}

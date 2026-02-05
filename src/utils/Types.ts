@@ -1,12 +1,3 @@
-import type { InteractionReplyOptions, MessageCreateOptions } from "discord.js";
-
-export type InteractionReplyData = InteractionReplyOptions & {
-	error?: string;
-	temporary?: boolean;
-};
-
-export type MessageReplyData = MessageCreateOptions & { error?: string; temporary?: boolean };
-
 export type SimpleResult<T = undefined> =
 	| { ok: false; message: string }
 	| ({ ok: true } & (T extends undefined ? { data?: never } : { data: T }));

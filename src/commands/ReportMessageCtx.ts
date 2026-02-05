@@ -1,4 +1,5 @@
 import {
+	type ApplicationCommandData,
 	ApplicationCommandType,
 	LabelBuilder,
 	MessageFlags,
@@ -7,28 +8,34 @@ import {
 	TextInputStyle
 } from "discord.js";
 
-import { ApplyOptions, Command } from "#rhenium";
-import type { InteractionReplyData } from "#utils/Types.js";
+import Command, {
+	CommandCategory,
+	type ResponseData,
+	type CommandExecutionContext
+} from "#managers/commands/Command.js";
 
-import GuildConfig from "#config/GuildConfig.js";
 import MessageReportUtils from "#utils/MessageReports.js";
 
-@ApplyOptions<Command.Options>({
-	name: "Report Message",
-	description: "Report a message to the server moderators."
-})
 export default class ReportMessageCtx extends Command {
-	public register(): Command.Data {
+	constructor() {
+		super({
+			name: "Report Message",
+			category: CommandCategory.Utility,
+			description: "Report a message to the server moderators."
+		});
+	}
+
+	override register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			type: ApplicationCommandType.Message
 		};
 	}
 
-	public async interactionRun(
-		interaction: Command.Interaction<"messageContextMenu">,
-		config: GuildConfig
-	): Promise<InteractionReplyData | null> {
+	override async executeInteraction({
+		interaction,
+		config
+	}: CommandExecutionContext<"messageCtxMenu">): Promise<ResponseData<"interaction"> | null> {
 		if (!config.parseReportsConfig()) {
 			return {
 				error: "Message reports have not been configured on this server."
