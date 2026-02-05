@@ -18,7 +18,11 @@ export default class Eval extends Command {
 			name: "eval",
 			aliases: ["e", "ev", "evaluate", "exec", "run"],
 			category: CommandCategory.Developer,
-			description: "Evaluates arbitrary JavaScript code."
+			description: "Evaluates arbitrary JavaScript code.",
+			flags: [
+				{ keys: ["async", "a", "silent", "s"], isOption: false },
+				{ keys: ["depth", "d"], isOption: true }
+			]
 		});
 	}
 
