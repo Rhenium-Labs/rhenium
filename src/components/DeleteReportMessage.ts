@@ -35,7 +35,9 @@ export default class DeleteReportMessage extends Component {
 			return Promise.all([
 				interaction.editReply({ embeds: interaction.message.embeds, components }),
 				interaction.followUp({ content, flags: MessageFlags.Ephemeral })
-			]).then(() => null);
+			])
+				.then(() => null)
+				.catch(() => null);
 		};
 
 		const channel = await interaction.guild.channels
@@ -52,11 +54,25 @@ export default class DeleteReportMessage extends Component {
 				.permissionsFor(interaction.guild.members.me!)
 				.has(PermissionFlagsBits.ManageMessages)
 		) {
-			return gracefully(`I do not have permission to manage messages in ${channel}.`);
+			await interaction
+				.followUp({
+					content: `I do not have permission to manage messages in ${channel}.`,
+					flags: MessageFlags.Ephemeral
+				})
+				.catch(() => {});
+
+			return null;
 		}
 
 		if (!channel.permissionsFor(interaction.member).has(PermissionFlagsBits.ManageMessages)) {
-			return gracefully(`You do not have permission to manage messages in ${channel}.`);
+			await interaction
+				.followUp({
+					content: `You do not have permission to manage messages in ${channel}.`,
+					flags: MessageFlags.Ephemeral
+				})
+				.catch(() => {});
+
+			return null;
 		}
 
 		const message = await channel.messages.fetch(messageId).catch(() => null);
@@ -71,12 +87,14 @@ export default class DeleteReportMessage extends Component {
 			.catch(() => ({ ok: false }));
 
 		if (!result.ok) {
-			return interaction
+			await interaction
 				.followUp({
 					content: `Failed to delete message \`${messageId}\` in ${channel}.`,
 					flags: MessageFlags.Ephemeral
 				})
-				.then(() => null);
+				.catch(() => {});
+
+			return null;
 		}
 
 		const components = DeleteReportMessage._getUpdatedComponents(
@@ -96,7 +114,9 @@ export default class DeleteReportMessage extends Component {
 				content: `Successfully deleted message \`${messageId}\` in ${channel}.`,
 				flags: MessageFlags.Ephemeral
 			})
-		]).then(() => null);
+		])
+			.then(() => null)
+			.catch(() => null);
 	}
 
 	/**
