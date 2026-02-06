@@ -301,6 +301,7 @@ export default class Messages {
 	 * Stores all cached messages into the database.
 	 *
 	 * @param event Optional signal that triggered the store operation.
+	 * @returns A promise that resolves when the operation is complete.
 	 */
 	static async store(event?: NodeJS.Signals): Promise<void> {
 		if (this._cache.size === 0) {
@@ -312,20 +313,26 @@ export default class Messages {
 			`Storing cached messages ${event ? `before exiting due to ${event}` : ""}...`
 		);
 
-		// Prettier-ignore
-		const inserted = await kysely
-			.insertInto("Message")
-			.values(Array.from(this._cache.values()))
-			.returning("Message.id")
-			.execute();
+		let insertedCount = 0;
 
-		// Clear the cache.
-		this._cache.clear();
+		try {
+			// Chunk messages into batches of 2500 to not exceed PostgreSQL's parameter limit (65535).
+			for (let i = 0; i < this._cache.size; i += 2500) {
+				const batch = Array.from(this._cache.values()).slice(i, i + 2500);
 
-		if (!inserted.length) {
-			Logger.info("No messages were stored.");
-		} else {
-			Logger.info(`Stored ${inserted.length} ${inflect(inserted.length, "message")}.`);
+				const inserted = await kysely
+					.insertInto("Message")
+					.values(batch)
+					.returning("id")
+					.execute();
+
+				insertedCount += inserted.length;
+			}
+
+			this._cache.clear();
+			Logger.info(`Stored ${insertedCount} ${inflect(insertedCount, "message")}.`);
+		} catch (error) {
+			Logger.error("Failed to store cached messages:", error);
 		}
 	}
 
