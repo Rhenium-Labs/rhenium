@@ -71,7 +71,7 @@ export default class InteractionCreate extends EventListener {
 				);
 			}
 
-			Logger.tracable(sentryId, `An error occurred while handling an interaction:`, error);
+			Logger.traceable(sentryId, `An error occurred while handling an interaction:`, error);
 			return;
 		}
 	}

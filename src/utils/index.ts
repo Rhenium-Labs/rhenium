@@ -488,7 +488,7 @@ export async function log(options: {
 			extra: { guildId: config.data.id, event, message }
 		});
 
-		Logger.tracable(
+		Logger.traceable(
 			sentryId,
 			`Failed to log event "${event}" for guild "${config.data.id}".`
 		);

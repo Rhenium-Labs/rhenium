@@ -61,7 +61,7 @@ export default class Logger {
 		this._log(LogLevel.Error, ...values);
 	}
 
-	static tracable(sentryId: string, ...values: unknown[]): void {
+	static traceable(sentryId: string, ...values: unknown[]): void {
 		const timestamp = new Date().toISOString();
 		const ts = `${LogColor.Grey}[${timestamp}]${LogColor.Reset}`;
 		const color = this._getColor(LogLevel.Error);

@@ -45,7 +45,7 @@ export default class GuildBanAdd extends EventListener {
 				}
 			});
 
-			return Logger.tracable(
+			return Logger.traceable(
 				sentryId,
 				`Failed cleanup operations for @${ban.user.username} (${ban.user.id}).`
 			);

@@ -123,7 +123,7 @@ export default class MessageCreate extends EventListener {
 			const content = `An error occurred while executing this command. Please use this ID when reporting the bug: \`${sentryId}\`.`;
 
 			Result.fromAsync(() => Messages.reply(message, { content }));
-			Logger.tracable(sentryId, `Error executing command "${command.name}":`, error);
+			Logger.traceable(sentryId, `Error executing command "${command.name}":`, error);
 
 			return;
 		}

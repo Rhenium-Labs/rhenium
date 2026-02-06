@@ -142,10 +142,10 @@ PROCESS_EXIT_EVENTS.forEach(event => {
 
 process.on("uncaughtException", error => {
 	const sentryId = captureException(error);
-	Logger.tracable(sentryId, error);
+	Logger.traceable(sentryId, error);
 });
 
 process.on("unhandledRejection", reason => {
 	const sentryId = captureException(reason);
-	Logger.tracable(sentryId, reason);
+	Logger.traceable(sentryId, reason);
 });
