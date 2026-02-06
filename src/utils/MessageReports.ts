@@ -269,7 +269,7 @@ export default class MessageReportUtils {
 				message_url: message.url,
 				channel_id: message.channel.id,
 				author_id: message.author.id,
-				content: formattedContent,
+				content: messageContent,
 				reported_at: new Date(),
 				reported_by: reporter.id,
 				report_reason: reason ?? "No reason provided.",

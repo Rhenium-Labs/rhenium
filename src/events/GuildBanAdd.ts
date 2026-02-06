@@ -85,6 +85,15 @@ export default class GuildBanAdd extends EventListener {
 
 			const embeds: EmbedBuilder[] = [];
 
+			const croppedContent = cropLines(report.content ?? EMPTY_MESSAGE_CONTENT, 5);
+			const formattedContent = await Messages.formatContent({
+				url: report.message_url,
+				content: croppedContent,
+				stickerId: null,
+				includeUrl: true,
+				createdAt: report.reported_at
+			});
+
 			const primaryEmbed = new EmbedBuilder()
 				.setAuthor({ name: "Message Report AutoResolved" })
 				.setColor(Colors.Green)
@@ -104,7 +113,7 @@ export default class GuildBanAdd extends EventListener {
 					},
 					{
 						name: "Message Content",
-						value: report.content ?? EMPTY_MESSAGE_CONTENT
+						value: formattedContent
 					}
 				])
 				.setFooter({ text: `Reviewed by @${client.user.username} (${client.user.id})` })
