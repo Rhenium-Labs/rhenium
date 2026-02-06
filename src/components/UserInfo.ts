@@ -90,7 +90,7 @@ export default class UserInfo extends Component {
 					.where("guild_id", "=", interaction.guild.id)
 					.where("status", "=", "Pending")
 					.executeTakeFirstOrThrow()
-					.then(r => r.count),
+					.then(r => Number(r.count)),
 				trx
 					.selectFrom("MessageReport")
 					.select(eb => eb.fn.countAll<number>().as("count"))
@@ -98,7 +98,7 @@ export default class UserInfo extends Component {
 					.where("guild_id", "=", interaction.guild.id)
 					.where("status", "!=", "Pending")
 					.executeTakeFirstOrThrow()
-					.then(r => r.count)
+					.then(r => Number(r.count))
 			])
 		);
 
