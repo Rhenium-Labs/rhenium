@@ -723,7 +723,8 @@ export default class MessageReactionAdd extends EventListener {
 				messageId: message.id,
 				createdAt: message.created_at,
 				stickerId: null,
-				messageContent: message.content
+				messageContent: message.content,
+				messageAttachments: message.attachments
 			});
 
 			const subEntries = [mainEntry];
@@ -739,7 +740,8 @@ export default class MessageReactionAdd extends EventListener {
 						messageId: reference.id,
 						createdAt: reference.created_at,
 						stickerId: null,
-						messageContent: reference.content
+						messageContent: reference.content,
+						messageAttachments: reference.attachments
 					});
 
 					subEntries.unshift(`REF: ${refEntry}`);
@@ -775,6 +777,7 @@ export default class MessageReactionAdd extends EventListener {
 		messageId: Snowflake;
 		author: User | { username: string; id: Snowflake };
 		messageContent: string | null;
+		messageAttachments: string[];
 	}): Promise<string> {
 		const timestamp = data.createdAt.toLocaleString(undefined, LOG_DATE_FORMAT);
 		const author = data.author;
@@ -796,7 +799,18 @@ export default class MessageReactionAdd extends EventListener {
 		}
 
 		content ??= data.messageContent ?? "No message content.";
-		return `[${data.messageId}] [${timestamp}] @${author.username} (${author.id}) - ${content}`;
+
+		const mainLine = `[${data.messageId}] [${timestamp}] @${author.username} (${author.id}) - ${content}`;
+
+		if (data.messageAttachments.length > 0) {
+			const attachmentLines = data.messageAttachments.map(
+				(url, i) => `   └── #${i + 1}: ${url}`
+			);
+
+			return [mainLine, ...attachmentLines].join("\n");
+		}
+
+		return mainLine;
 	}
 
 	private static async _parseEventProps(
