@@ -73,45 +73,50 @@ export default class ConfigManager {
 		guildId: string,
 		feature: ConfigFeature
 	): Promise<ConfigFeatureMap[ConfigFeature]> {
-		if (feature === "permission_scopes") {
-			// prettier-ignore
-			return kysely
-				.selectFrom("PermissionScope")
-				.selectAll()
-				.where("guild_id", "=", guildId)
-				.execute();
+		switch (feature) {
+			case "logging_webhooks":
+				return kysely
+					.selectFrom("LoggingWebhook")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute();
+
+			case "permission_scopes":
+				return kysely
+					.selectFrom("PermissionScope")
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute();
+
+			case "message_reports":
+			case "ban_requests":
+			case "highlights":
+			case "content_filter":
+			case "quick_mutes":
+			case "quick_purges":
+				const { table, scopingTable } = FeatureTableMap[feature];
+
+				const config = await kysely
+					.selectFrom(table)
+					.selectAll()
+					.where("id", "=", guildId)
+					.executeTakeFirst();
+
+				if (!scopingTable) {
+					return config as ConfigFeatureMap[ConfigFeature];
+				}
+
+				const scoping = await kysely
+					.selectFrom(scopingTable)
+					.selectAll()
+					.where("guild_id", "=", guildId)
+					.execute();
+
+				return {
+					...config,
+					channel_scoping: scoping
+				} as ConfigFeatureMap[ConfigFeature];
 		}
-
-		if (feature === "logging_webhooks") {
-			// prettier-ignore
-			return kysely
-				.selectFrom("LoggingWebhook")
-				.selectAll()
-				.where("guild_id", "=", guildId)
-				.execute();
-		}
-
-		const { table, scopingTable } = FeatureTableMap[feature];
-
-		// Prettier-ignore
-		const result = await kysely
-			.selectFrom(table)
-			.selectAll()
-			.where("id", "=", guildId)
-			.executeTakeFirst();
-
-		if (!scopingTable) {
-			return result as ConfigFeatureMap[ConfigFeature];
-		}
-
-		// Prettier-ignore
-		const scoping = await kysely
-			.selectFrom(scopingTable)
-			.selectAll()
-			.where("guild_id", "=", guildId)
-			.execute();
-
-		return { ...result, channel_scoping: scoping } as ConfigFeatureMap[ConfigFeature];
 	}
 
 	/**

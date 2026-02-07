@@ -12,7 +12,7 @@ import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#managers/commands/Command.js";
+} from "#managers/runtime/commands/Command.js";
 
 import MessageReportUtils from "#utils/MessageReports.js";
 

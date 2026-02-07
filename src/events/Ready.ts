@@ -2,7 +2,7 @@ import { Events } from "discord.js";
 
 import Logger from "#utils/Logger.js";
 import GlobalConfig from "#config/GlobalConfig.js";
-import EventListener from "#managers/events/EventListener.js";
+import EventListener from "#managers/runtime/events/EventListener.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 import HeuristicScanner from "#cf/HeuristicScanner.js";
 

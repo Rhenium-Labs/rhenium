@@ -20,7 +20,7 @@ import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#managers/commands/Command.js";
+} from "#managers/runtime/commands/Command.js";
 import GuildConfig from "#config/GuildConfig.js";
 
 export default class Config extends Command {

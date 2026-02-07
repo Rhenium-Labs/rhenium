@@ -2,9 +2,11 @@ import { Colors, EmbedBuilder, time } from "discord.js";
 
 import { kysely } from "#root/index.js";
 import { inflect } from "#utils/index.js";
-import type { ResponseData } from "#managers/commands/Command.js";
+import type { ResponseData } from "#managers/runtime/commands/Command.js";
 
-import Component, { type ComponentExecutionContext } from "#managers/components/Component.js";
+import Component, {
+	type ComponentExecutionContext
+} from "#managers/runtime/components/Component.js";
 
 export default class UserInfo extends Component {
 	constructor() {

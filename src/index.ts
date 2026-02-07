@@ -30,9 +30,9 @@ import type { DB } from "#kysely/Schema.js";
 import Logger from "#utils/Logger.js";
 import Messages from "#utils/Messages.js";
 import GlobalConfig from "#config/GlobalConfig.js";
-import CommandManager from "#managers/commands/CommandManager.js";
-import ComponentManager from "#managers/components/ComponentManager.js";
-import EventListenerManager from "#managers/events/EventListenerManager.js";
+import CommandManager from "#managers/runtime/commands/CommandManager.js";
+import ComponentManager from "#managers/runtime/components/ComponentManager.js";
+import EventListenerManager from "#managers/runtime/events/EventListenerManager.js";
 import ConfigCacheInvalidatorPlugin from "#managers/database/Invalidator.js";
 
 /** The Discord client instance. */

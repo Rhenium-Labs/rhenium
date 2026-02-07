@@ -38,7 +38,7 @@ import type { Message as SerializedMessage } from "#kysely/Schema.js";
 import Messages from "#utils/Messages.js";
 import GuildConfig from "#config/GuildConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
-import EventListener from "#managers/events/EventListener.js";
+import EventListener from "#managers/runtime/events/EventListener.js";
 import ModerationUtils from "#utils/Moderation.js";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */

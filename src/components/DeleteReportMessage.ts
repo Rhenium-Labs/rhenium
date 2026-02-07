@@ -9,8 +9,8 @@ import {
 	userMention
 } from "discord.js";
 
-import type { ResponseData } from "#managers/commands/Command.js";
-import Component, { type ComponentExecutionContext } from "#managers/components/Component.js";
+import type { ResponseData } from "#managers/runtime/commands/Command.js";
+import Component, { type ComponentExecutionContext } from "#managers/runtime/components/Component.js";
 
 export default class DeleteReportMessage extends Component {
 	constructor() {

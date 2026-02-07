@@ -1,7 +1,7 @@
 import { Events, type Guild } from "discord.js";
 
 import ConfigManager from "#config/ConfigManager.js";
-import EventListener from "#managers/events/EventListener.js";
+import EventListener from "#managers/runtime/events/EventListener.js";
 
 export default class GuildCreate extends EventListener {
 	constructor() {
