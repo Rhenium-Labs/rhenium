@@ -1,4 +1,4 @@
-import { MessageFlags } from "discord.js";
+import { Colors, MessageFlags } from "discord.js";
 import type { ResponseData } from "#managers/commands/Command.js";
 
 import MessageReportUtils, {
@@ -16,10 +16,10 @@ export default class MessageReportButton extends Component {
 		interaction,
 		config
 	}: ComponentExecutionContext<"button">): Promise<ResponseData<"interaction"> | null> {
-		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
 		if (!config.parseReportsConfig())
 			return { error: "Message reports have not been configured on this server." };
+
+		await interaction.deferUpdate();
 
 		const reportAction = interaction.customId
 			.split("-")[2]
@@ -33,15 +33,26 @@ export default class MessageReportButton extends Component {
 		);
 
 		if (!result.ok) {
-			return { error: result.message };
+			await interaction
+				.followUp({
+					embeds: [{ description: result.message, color: Colors.Red }],
+					flags: MessageFlags.Ephemeral
+				})
+				.catch(() => null);
+
+			return null;
 		}
 
 		const formattedReportAction =
 			MessageReportActionToPastTenseMap[reportAction].toLowerCase();
 
-		return {
-			content: `Successfully ${formattedReportAction} report - ID \`${interaction.message.id}\``,
-			temporary: true
-		};
+		await interaction
+			.followUp({
+				content: `Successfully ${formattedReportAction} report - ID \`${interaction.message.id}\``,
+				flags: MessageFlags.Ephemeral
+			})
+			.catch(() => null);
+
+		return null;
 	}
 }

@@ -1,6 +1,6 @@
 generator kysely {
   provider           = "prisma-kysely"
-  output             = "../src/lib/kysely"
+  output             = "../src/managers/database"
   fileName           = "Schema.ts"
   enumFileName       = "Enums.ts"
   importExtension    = ".js"
@@ -106,7 +106,8 @@ model MessageReportConfig {
   webhook_channel String?
 
   /// @kyselyType(bigint)
-  auto_disregard_after BigInt @default(0)
+  auto_disregard_after        BigInt  @default(0)
+  delete_submission_on_handle Boolean @default(true)
 
   immune_roles       String[] @default([])
   notify_roles       String[] @default([])

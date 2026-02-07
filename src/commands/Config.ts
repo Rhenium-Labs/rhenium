@@ -263,6 +263,20 @@ export default class Config extends Command {
 									required: true
 								}
 							]
+						},
+						{
+							name: ConfigSubcommand.DeleteOnHandle,
+							description:
+								"Toggle deletion of the report submission after handling.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "value",
+									description: "True to delete, false to keep.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
 						}
 					]
 				},
@@ -772,6 +786,8 @@ export default class Config extends Command {
 				switch (subcommand) {
 					case ConfigSubcommand.Toggle:
 						return Config._toggleReports(interaction, config);
+					case ConfigSubcommand.DeleteOnHandle:
+						return Config._toggleReportsDeleteOnHandle(interaction, config);
 					case ConfigSubcommand.SetDefaultReason:
 						return Config._setReportsDefaultReason(interaction, config);
 					case ConfigSubcommand.EnforceReason:
@@ -1706,6 +1722,30 @@ export default class Config extends Command {
 		};
 	}
 
+	private static async _toggleReportsDeleteOnHandle(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<ResponseData<"interaction">> {
+		const value = interaction.options.getBoolean("value", true);
+		const config = configClass.data.message_reports;
+
+		if (config.delete_submission_on_handle === value) {
+			return {
+				error: `Message report submission deletion on handle is already ${value ? "enabled" : "disabled"}.`
+			};
+		}
+
+		await kysely
+			.updateTable("MessageReportConfig")
+			.set({ delete_submission_on_handle: value })
+			.where("id", "=", interaction.guild.id)
+			.execute();
+
+		return {
+			content: `Successfully ${value ? "enabled" : "disabled"} message report submission deletion on handle.`
+		};
+	}
+
 	private static async _setReportsDefaultReason(
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
@@ -2308,6 +2348,7 @@ const ConfigSubcommand = {
 	RemoveChannelScoping: "remove-channel-scoping",
 	ListChannelScopings: "list-channel-scoping",
 	EnforceReason: "enforce-reason",
+	DeleteOnHandle: "delete-on-handle",
 	Create: "create",
 	Delete: "delete",
 	List: "list",

@@ -323,10 +323,8 @@ export default class MessageReportUtils {
 			};
 		}
 
-		// prettier-ignore
-		void MessageReportUtils
-            ._log(interaction, action, config)
-            .then(() => interaction.message.delete().catch(() => null));
+		void MessageReportUtils._log(interaction, action, config);
+		void MessageReportUtils._updateSubmissionMessage(interaction, action, config);
 
 		const data: MessageReportUpdate = {
 			resolved_by: interaction.user.id,
@@ -383,6 +381,50 @@ export default class MessageReportUtils {
 				embeds: secondaryEmbed ? [secondaryEmbed, primaryEmbed] : [primaryEmbed]
 			}
 		});
+	}
+
+	/**
+	 * Updates or deletes the original submission message based on the guild configuration.
+	 *
+	 * @param interaction The interaction.
+	 * @param action The action taken on the report.
+	 * @returns The result of the operation.
+	 */
+
+	private static async _updateSubmissionMessage(
+		interaction: ButtonInteraction<"cached">,
+		action: MessageReportAction,
+		config: GuildConfig
+	): Promise<void> {
+		if (config.data.message_reports.delete_submission_on_handle) {
+			void interaction.message.delete().catch(() => null);
+			return;
+		}
+
+		const formattedAction = MessageReportActionToPastTenseMap[action];
+
+		const embedIdx = interaction.message.embeds.length > 1 ? 1 : 0;
+		const currentEmbed = interaction.message.embeds.at(embedIdx);
+
+		if (!currentEmbed) return;
+
+		const primaryEmbed = EmbedBuilder.from(currentEmbed)
+			.setColor(MessageReportActionToColorMap[action])
+			.setAuthor({ name: `Message Report ${formattedAction}` })
+			.setFooter({
+				text: `${formattedAction} by @${interaction.user.username} (${interaction.user.id})`,
+				iconURL: interaction.user.displayAvatarURL()
+			})
+			.setTimestamp();
+
+		const secondaryEmbed = embedIdx === 1 ? interaction.message.embeds.at(0) : undefined;
+
+		void interaction
+			.editReply({
+				embeds: secondaryEmbed ? [secondaryEmbed, primaryEmbed] : [primaryEmbed],
+				components: []
+			})
+			.catch(() => {});
 	}
 }
 
