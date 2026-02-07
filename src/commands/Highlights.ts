@@ -16,9 +16,10 @@ import { jsonArrayFrom } from "kysely/helpers/postgres";
 import safe from "safe-regex";
 
 import { client, kysely } from "#root/index.js";
+import { formatMessageContent } from "#utils/Messages.js";
 import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "#utils/index.js";
 
-import type { Highlight } from "#kysely/Schema.js";
+import type { Highlight } from "#database/Schema.js";
 
 import Command, {
 	CommandCategory,
@@ -26,7 +27,6 @@ import Command, {
 	type CommandExecutionContext
 } from "#managers/runtime/commands/Command.js";
 
-import Messages from "#utils/Messages.js";
 import RateLimiter from "#utils/RateLimiter.js";
 import GuildConfig from "#config/GuildConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
@@ -343,7 +343,7 @@ export default class Highlights extends Command {
 			if (!ratelimiter.limit(`${highlight.user_id}:${messageAuthorId}`).success) continue;
 
 			const user = await client.users.fetch(highlight.user_id).catch(() => null);
-			const formattedContent = await Messages.formatContent({
+			const formattedContent = await formatMessageContent({
 				url: message.url,
 				content: message.content,
 				stickerId: null,

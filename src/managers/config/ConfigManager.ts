@@ -13,7 +13,7 @@ import type {
 	QuickMuteConfig,
 	QuickPurgeChannelScoping,
 	QuickPurgeConfig
-} from "#kysely/Schema.js";
+} from "#database/Schema.js";
 
 import GuildConfig, { type GuildConfigData } from "./GuildConfig.js";
 

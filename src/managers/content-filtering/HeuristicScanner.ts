@@ -5,15 +5,15 @@ import { ScanTypes } from "./Enums.js";
 import { CF_CONSTANTS } from "#utils/Constants.js";
 import { channelInScope, parseChannelScoping } from "#utils/index.js";
 
-import type { Message } from "#kysely/Schema.js";
+import type { Message } from "#database/Schema.js";
 import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 import type { ContentPredictions, HeuristicData, HeuristicMessageData } from "./Types.js";
 
 import Logger from "#utils/Logger.js";
-import Messages from "#utils/Messages.js";
 import ContentFilter from "./ContentFilter.js";
 import AutomatedScanner from "./AutomatedScanner.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
+import MessageManager from "#database/Messages.js";
 
 /** Maximum number of channels to track timers for. */
 const MAX_TIMER_CHANNELS = 100;
@@ -210,7 +210,7 @@ export default class HeuristicScanner {
 					referenceData[idx].score++;
 				} else {
 					// Fetch reference message from Messages.
-					const reference = await Messages.get(message.reference_id);
+					const reference = await MessageManager.get(message.reference_id);
 
 					if (reference) {
 						referenceData.push({
@@ -382,7 +382,7 @@ export default class HeuristicScanner {
 		);
 
 		// Get messages for the channel within the dynamic window.
-		const serializedMessages = await Messages.getForChannel(channelId, windowSize);
+		const serializedMessages = await MessageManager.getForChannel(channelId, windowSize);
 		if (serializedMessages.length === 0) return;
 
 		const chatRateIncreased = this.calculateChatRateIncrease(serializedMessages);

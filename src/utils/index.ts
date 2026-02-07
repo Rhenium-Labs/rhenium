@@ -19,7 +19,7 @@ import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants.js";
 
 import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types.js";
 import Logger from "./Logger.js";
-import { LoggingEvent } from "#kysely/Enums.js";
+import { LoggingEvent } from "#database/Enums.js";
 import GuildConfig from "#config/GuildConfig.js";
 
 /**

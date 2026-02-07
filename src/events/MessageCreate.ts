@@ -2,15 +2,16 @@ import { Result } from "@sapphire/result";
 import { Events, Message } from "discord.js";
 import { captureException } from "@sentry/node";
 
+import { reply } from "#utils/Messages.js";
 import { getWhitelistStatus } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
-import Messages from "#utils/Messages.js";
 import Highlights from "#root/commands/Highlights.js";
 import GuildConfig from "#config/GuildConfig.js";
 import GlobalConfig from "#config/GlobalConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
 import EventListener from "#managers/runtime/events/EventListener.js";
+import MessageManager from "#database/Messages.js";
 import CommandManager from "#managers/runtime/commands/CommandManager.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 import HeuristicScanner from "#cf/HeuristicScanner.js";
@@ -31,7 +32,7 @@ export default class MessageCreate extends EventListener {
 		if (!whitelisted && !GlobalConfig.isDeveloper(message.author.id)) return;
 
 		if (contentFilterConfig) {
-			const serializedMessage = Messages.serialize(message);
+			const serializedMessage = MessageManager.serialize(message);
 
 			void Promise.all([
 				AutomatedScanner.enqueueForScan(
@@ -46,7 +47,7 @@ export default class MessageCreate extends EventListener {
 
 		void Promise.all([
 			MessageCreate._handleCommand(message, config),
-			Messages.enqueue(message),
+			MessageManager.queue(message),
 			Highlights.highlightMessage(message)
 		]);
 	}
@@ -96,12 +97,12 @@ export default class MessageCreate extends EventListener {
 				: baseOptions.embeds;
 
 			const options = { ...baseOptions, embeds };
-			const reply = await Messages.reply(message, options);
+			const rep = await reply(message, options);
 
 			if (error || temporary) {
 				setTimeout(() => {
 					message.delete().catch(() => {});
-					reply.delete().catch(() => {});
+					rep.delete().catch(() => {});
 				}, 7500);
 			}
 		});
@@ -122,7 +123,7 @@ export default class MessageCreate extends EventListener {
 
 			const content = `An error occurred while executing this command. Please use this ID when reporting the bug: \`${sentryId}\`.`;
 
-			Result.fromAsync(() => Messages.reply(message, { content }));
+			Result.fromAsync(() => reply(message, { content }));
 			Logger.traceable(sentryId, `Error executing command "${command.name}":`, error);
 
 			return;

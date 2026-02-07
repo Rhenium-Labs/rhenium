@@ -6,16 +6,18 @@ import {
 	type ButtonInteraction
 } from "discord.js";
 
-import { ContentFilterStatus } from "#kysely/Enums.js";
+import { ContentFilterStatus } from "#database/Enums.js";
 import { ContentFilterFieldNames } from "#cf/Enums.js";
 import { hastebin, userMentionWithId } from "#utils/index.js";
 
 import type { ResponseData } from "#managers/runtime/commands/Command.js";
 
-import Messages from "#utils/Messages.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
-import Component, { type ComponentExecutionContext } from "#managers/runtime/components/Component.js";
+import Component, {
+	type ComponentExecutionContext
+} from "#managers/runtime/components/Component.js";
+import MessageManager from "#database/Messages.js";
 
 export default class ContentFilterButton extends Component {
 	constructor() {
@@ -326,7 +328,7 @@ export default class ContentFilterButton extends Component {
 		}
 
 		// Fall back to the message content in the Message table
-		const dbMessage = await Messages.get(messageId);
+		const dbMessage = await MessageManager.get(messageId);
 
 		if (!dbMessage) {
 			return { error: "Could not find the message content in the database." };

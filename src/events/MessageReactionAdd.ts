@@ -29,16 +29,16 @@ import {
 	truncate,
 	userMentionWithId
 } from "#utils/index.js";
-import { LoggingEvent } from "#kysely/Enums.js";
+import { LoggingEvent } from "#database/Enums.js";
 import { client, kysely } from "#root/index.js";
 import { LOG_DATE_FORMAT } from "#utils/Constants.js";
 
-import type { Message as SerializedMessage } from "#kysely/Schema.js";
+import type { Message as SerializedMessage } from "#database/Schema.js";
 
-import Messages from "#utils/Messages.js";
 import GuildConfig from "#config/GuildConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
 import EventListener from "#managers/runtime/events/EventListener.js";
+import MessageManager from "#database/Messages.js";
 import ModerationUtils from "#utils/Moderation.js";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */
@@ -474,7 +474,7 @@ export default class MessageReactionAdd extends EventListener {
 
 			// Add message IDs to exclusion set before deleting to prevent
 			// duplicate handling from MessageDelete/MessageBulkDelete events.
-			Messages.addPurgeExclusions(messageIds);
+			MessageManager.addExclusions(messageIds);
 
 			const now = Date.now();
 			const bulkDeletableIds: Snowflake[] = [];
@@ -514,17 +514,17 @@ export default class MessageReactionAdd extends EventListener {
 				failed += individualResult.failed;
 			}
 
-			const serializedMessages = await Messages.bulkDelete(messageIds);
+			const serializedMessages = await MessageManager.bulkDelete(messageIds);
 			const entries = await MessageReactionAdd._getMessageLogEntries(serializedMessages);
 			const logUrl = (await hastebin(entries.join("\n\n"))) ?? undefined;
 
 			// Remove exclusions after purge execution is complete.
-			Messages.removePurgeExclusions(messageIds);
+			MessageManager.removeExclusions(messageIds);
 
 			return { ok: true, deleted, failed, entries, logUrl };
 		} catch (error) {
 			// Make sure to clean up exclusions even on error.
-			Messages.removePurgeExclusions(messageIds);
+			MessageManager.removeExclusions(messageIds);
 
 			return {
 				ok: false,
@@ -549,10 +549,10 @@ export default class MessageReactionAdd extends EventListener {
 	}): Promise<Snowflake[]> {
 		const { channelId, authorId, triggerMessageId, limit } = data;
 
-		const cachedMessages = Messages.getForPurge({
+		const cachedMessages = MessageManager.findMatchingMessages({
 			channelId,
 			authorId,
-			triggerMessageId,
+			initialMessageId: triggerMessageId,
 			limit
 		});
 
@@ -731,7 +731,7 @@ export default class MessageReactionAdd extends EventListener {
 
 			// Handle message reference if it exists.
 			if (message.reference_id) {
-				const reference = await Messages.get(message.reference_id);
+				const reference = await MessageManager.get(message.reference_id);
 
 				if (reference) {
 					const refAuthor = await getAuthor(reference.author_id);

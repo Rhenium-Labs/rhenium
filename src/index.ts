@@ -25,11 +25,11 @@ import {
 } from "#utils/Constants.js";
 import { sleep } from "#utils/index.js";
 
-import type { DB } from "#kysely/Schema.js";
+import type { DB } from "#database/Schema.js";
 
 import Logger from "#utils/Logger.js";
-import Messages from "#utils/Messages.js";
 import GlobalConfig from "#config/GlobalConfig.js";
+import MessageManager from "#database/Messages.js";
 import CommandManager from "#managers/runtime/commands/CommandManager.js";
 import ComponentManager from "#managers/runtime/components/ComponentManager.js";
 import EventListenerManager from "#managers/runtime/events/EventListenerManager.js";
@@ -129,7 +129,7 @@ void main();
 /** Handles storing messages on process exit events. */
 PROCESS_EXIT_EVENTS.forEach(event => {
 	process.on(event, async () => {
-		await Messages.store(event)
+		await MessageManager.insert(event)
 			.catch(error => {
 				Logger.error("Error when storing messages on process exit:", error);
 				process.exit(1);

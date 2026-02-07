@@ -12,8 +12,8 @@ import type {
 	QuickMuteConfig,
 	QuickPurgeChannelScoping,
 	QuickPurgeConfig
-} from "#kysely/Schema.js";
-import { LoggingEvent, UserPermission } from "#kysely/Enums.js";
+} from "#database/Schema.js";
+import { LoggingEvent, UserPermission } from "#database/Enums.js";
 
 export default class GuildConfig {
 	/**

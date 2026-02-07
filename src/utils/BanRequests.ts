@@ -18,10 +18,10 @@ import {
 import ms from "ms";
 
 import { kysely } from "#root/index.js";
-import { LoggingEvent, RequestStatus } from "#kysely/Enums.js";
+import { LoggingEvent, RequestStatus } from "#database/Enums.js";
 import { parseDurationString, userMentionWithId, validateDuration, log } from "./index.js";
 
-import type { BanRequest, BanRequestUpdate } from "#kysely/Schema.js";
+import type { BanRequest, BanRequestUpdate } from "#database/Schema.js";
 import type { SimpleResult } from "./Types.js";
 
 import GuildConfig from "#config/GuildConfig.js";

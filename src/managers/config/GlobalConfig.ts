@@ -9,8 +9,8 @@ import { LOG_DATE_FORMAT, ZOD_CRON_REGEX } from "#utils/Constants.js";
 import { inflect, readYamlFile, startCronJob } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
-import Messages from "#utils/Messages.js";
 import ConfigManager from "./ConfigManager.js";
+import MessageManager from "#database/Messages.js";
 
 export default class GlobalConfig {
 	/** Data representing the global configuration. */
@@ -72,7 +72,7 @@ export default class GlobalConfig {
 			monitorSlug: "MESSAGE_INSERT_CRON",
 			cronTime: insert_cron,
 			onTick: async () => {
-				await Messages.store().catch(error => {
+				await MessageManager.insert().catch(error => {
 					Logger.error("Failed to insert messages into the database:", error);
 				});
 			}

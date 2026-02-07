@@ -15,14 +15,14 @@ import {
 
 import { kysely } from "#root/index.js";
 import { EMPTY_MESSAGE_CONTENT } from "./Constants.js";
-import { LoggingEvent, ReportStatus } from "#kysely/Enums.js";
+import { LoggingEvent, ReportStatus } from "#database/Enums.js";
 import { cropLines, userMentionWithId, log } from "./index.js";
 
 import type { SimpleResult } from "./Types.js";
-import type { MessageReportUpdate } from "#kysely/Schema.js";
+import type { MessageReportUpdate } from "#database/Schema.js";
 
-import Messages from "./Messages.js";
 import GuildConfig from "#config/GuildConfig.js";
+import { cleanContent, formatMessageContent } from "./Messages.js";
 
 export default class MessageReportUtils {
 	/**
@@ -118,7 +118,7 @@ export default class MessageReportUtils {
 			return { ok: true };
 		}
 
-		const messageContent = Messages.cleanContent(
+		const messageContent = cleanContent(
 			message.content ?? EMPTY_MESSAGE_CONTENT,
 			message.channel
 		);
@@ -126,7 +126,7 @@ export default class MessageReportUtils {
 		const croppedContent = cropLines(messageContent, 5);
 		const stickerId = message.stickers.first()?.id ?? null;
 
-		const formattedContent = await Messages.formatContent({
+		const formattedContent = await formatMessageContent({
 			url: message.url,
 			content: croppedContent,
 			stickerId: stickerId,
@@ -163,11 +163,11 @@ export default class MessageReportUtils {
 		const actionRow = new ActionRowBuilder<ButtonBuilder>();
 
 		if (reference) {
-			const referenceContent = Messages.cleanContent(reference.content, reference.channel);
+			const referenceContent = cleanContent(reference.content, reference.channel);
 			const croppedReferenceContent = cropLines(referenceContent, 5);
 			const stickerId = reference.stickers.first()?.id ?? null;
 
-			const formattedReferenceContent = await Messages.formatContent({
+			const formattedReferenceContent = await formatMessageContent({
 				url: reference.url,
 				content: croppedReferenceContent,
 				stickerId: stickerId,

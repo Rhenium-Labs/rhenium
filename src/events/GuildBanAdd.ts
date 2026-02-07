@@ -10,16 +10,17 @@ import {
 
 import ms from "ms";
 
-import { LoggingEvent } from "#kysely/Enums.js";
+import { LoggingEvent } from "#database/Enums.js";
 import { client, kysely } from "#root/index.js";
+import { formatMessageContent } from "#utils/Messages.js";
 import { EMPTY_MESSAGE_CONTENT } from "#utils/Constants.js";
 import { cropLines, userMentionWithId, log } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
-import Messages from "#utils/Messages.js";
 import GuildConfig from "#config/GuildConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
 import EventListener from "#managers/runtime/events/EventListener.js";
+import MessageManager from "#database/Messages.js";
 
 export default class GuildBanAdd extends EventListener {
 	constructor() {
@@ -86,7 +87,7 @@ export default class GuildBanAdd extends EventListener {
 			const embeds: EmbedBuilder[] = [];
 
 			const croppedContent = cropLines(report.content ?? EMPTY_MESSAGE_CONTENT, 5);
-			const formattedContent = await Messages.formatContent({
+			const formattedContent = await formatMessageContent({
 				url: report.message_url,
 				content: croppedContent,
 				stickerId: null,
@@ -121,13 +122,14 @@ export default class GuildBanAdd extends EventListener {
 
 			embeds.push(primaryEmbed);
 
-			const reference = report.reference_id && (await Messages.get(report.reference_id));
+			const reference =
+				report.reference_id && (await MessageManager.get(report.reference_id));
 
 			if (reference) {
 				const croppedContent = cropLines(reference.content ?? EMPTY_MESSAGE_CONTENT, 5);
 				const url = messageLink(reference.channel_id, reference.id, reference.guild_id);
 
-				const formattedReferenceContent = await Messages.formatContent({
+				const formattedReferenceContent = await formatMessageContent({
 					url,
 					content: croppedContent,
 					stickerId: reference.sticker_id,

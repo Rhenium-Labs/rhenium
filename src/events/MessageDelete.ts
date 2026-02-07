@@ -1,7 +1,7 @@
 import { Events, type PartialMessage } from "discord.js";
 
-import Messages from "#utils/Messages.js";
 import EventListener from "#managers/runtime/events/EventListener.js";
+import MessageManager from "#database/Messages.js";
 
 export default class MessageDelete extends EventListener {
 	constructor() {
@@ -12,8 +12,8 @@ export default class MessageDelete extends EventListener {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author?.bot || message.webhookId || message.system) return;
 		// Skip if this message is being handled by a purge action.
-		if (Messages.purgeExclusions.has(message.id)) return;
+		if (MessageManager.exclusions.has(message.id)) return;
 
-		void Messages.delete(message.id);
+		void MessageManager.delete(message.id);
 	}
 }

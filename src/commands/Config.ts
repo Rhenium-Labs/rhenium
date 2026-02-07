@@ -14,7 +14,7 @@ import {
 } from "discord.js";
 
 import { kysely, client } from "#root/index.js";
-import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#kysely/Enums.js";
+import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#database/Enums.js";
 
 import Command, {
 	CommandCategory,

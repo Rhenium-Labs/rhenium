@@ -1,7 +1,8 @@
 import { Events, type Message, type PartialMessage } from "discord.js";
+import { cleanContent } from "#utils/Messages.js";
 
-import Messages from "#utils/Messages.js";
 import EventListener from "#managers/runtime/events/EventListener.js";
+import MessageManager from "#database/Messages.js";
 
 export default class MessageUpdate extends EventListener {
 	constructor() {
@@ -14,7 +15,7 @@ export default class MessageUpdate extends EventListener {
 		// Ignore empty updates.
 		if (!newMessage.content) return;
 
-		const updatedContent = Messages.cleanContent(newMessage.content, newMessage.channel);
-		void Messages.update(newMessage.id, updatedContent);
+		const updatedContent = cleanContent(newMessage.content, newMessage.channel);
+		void MessageManager.updateContent(newMessage.id, updatedContent);
 	}
 }

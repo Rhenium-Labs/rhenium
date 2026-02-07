@@ -1,5 +1,5 @@
-import { Message } from "#kysely/Schema.js";
-import { Detector } from "#kysely/Enums.js";
+import { Message } from "#database/Schema.js";
+import { Detector } from "#database/Enums.js";
 
 import { Snowflake } from "discord.js";
 

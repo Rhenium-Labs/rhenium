@@ -11,8 +11,8 @@ import Command, {
 	type CommandExecutionContext
 } from "#managers/runtime/commands/Command.js";
 
-import Messages from "#utils/Messages.js";
 import GlobalConfig from "#config/GlobalConfig.js";
+import MessageManager from "#database/Messages.js";
 
 export default class Stats extends Command {
 	constructor() {
@@ -90,7 +90,7 @@ export default class Stats extends Command {
 				},
 				{
 					name: "Cached Entities",
-					value: `${users.cache.size} Users / ${guilds.cache.size} Guilds / ${channels.cache.size} Channels / ${members} Members / ${Messages.size} Messages`,
+					value: `${users.cache.size} Users / ${guilds.cache.size} Guilds / ${channels.cache.size} Channels / ${members} Members / ${MessageManager.size} Messages`,
 					inline: true
 				},
 				{

@@ -3,8 +3,8 @@ import type { ChannelScanState } from "#cf/Types.js";
 
 import { kysely } from "#root/index.js";
 import { CF_CONSTANTS } from "./Constants.js";
-import { ContentFilterAlert, Message } from "#kysely/Schema.js";
-import { ContentFilterStatus, DetectorMode } from "#kysely/Enums.js";
+import { ContentFilterAlert, Message } from "#database/Schema.js";
+import { ContentFilterStatus, DetectorMode } from "#database/Enums.js";
 
 import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 

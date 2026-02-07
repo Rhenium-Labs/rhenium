@@ -67,7 +67,7 @@
 	},
 	"imports": {
 		"#config/*": "./dist/managers/config/*",
-		"#kysely/*": "./dist/managers/database/*",
+		"#database/*": "./dist/managers/database/*",
 		"#utils/*": "./dist/utils/*",
 		"#cf/*": "./dist/managers/content-filtering/*",
 		"#managers/*": "./dist/managers/*",

@@ -13,10 +13,10 @@ import {
 	channelMention
 } from "discord.js";
 
-import { LoggingEvent } from "#kysely/Enums.js";
+import { LoggingEvent } from "#database/Enums.js";
 import { client, kysely } from "#root/index.js";
 
-import type { LoggingWebhook } from "#kysely/Schema.js";
+import type { LoggingWebhook } from "#database/Schema.js";
 
 import GuildConfig from "#config/GuildConfig.js";
 import Command, {

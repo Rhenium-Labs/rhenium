@@ -20,7 +20,7 @@ import { openAi, kysely } from "#root/index.js";
 import { userMentionWithId } from "#utils/index.js";
 import { ContentFilterButtonNames, ContentFilterFieldNames, ScanType } from "./Enums.js";
 
-import type { Detector } from "#kysely/Enums.js";
+import type { Detector } from "#database/Enums.js";
 import type { ContentPredictionData, ContentPredictions } from "./Types.js";
 import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
 
