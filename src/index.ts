@@ -30,9 +30,9 @@ import type { DB } from "#database/Schema.js";
 import Logger from "#utils/Logger.js";
 import GlobalConfig from "#config/GlobalConfig.js";
 import MessageManager from "#database/Messages.js";
-import CommandManager from "#managers/runtime/commands/CommandManager.js";
-import ComponentManager from "#managers/runtime/components/ComponentManager.js";
-import EventListenerManager from "#managers/runtime/events/EventListenerManager.js";
+import CommandManager from "#commands/CommandManager.js";
+import ComponentManager from "#components/ComponentManager.js";
+import EventListenerManager from "#events/EventListenerManager.js";
 import ConfigCacheInvalidatorPlugin from "#managers/database/Invalidator.js";
 
 /** The Discord client instance. */

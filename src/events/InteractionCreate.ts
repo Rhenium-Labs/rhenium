@@ -11,16 +11,16 @@ import { captureException } from "@sentry/node";
 
 import { getWhitelistStatus } from "#utils/index.js";
 
-import type { ResponseData } from "#managers/runtime/commands/Command.js";
-import type { ComponentInteraction } from "#managers/runtime/components/Component.js";
+import type { ResponseData } from "#commands/Command.js";
+import type { ComponentInteraction } from "#components/Component.js";
 
 import Logger from "#utils/Logger.js";
 import GuildConfig from "#config/GuildConfig.js";
 import GlobalConfig from "#config/GlobalConfig.js";
-import EventListener from "#managers/runtime/events/EventListener.js";
+import EventListener from "#events/EventListener.js";
 import ConfigManager from "#config/ConfigManager.js";
-import CommandManager from "#managers/runtime/commands/CommandManager.js";
-import ComponentManager from "#managers/runtime/components/ComponentManager.js";
+import CommandManager from "#commands/CommandManager.js";
+import ComponentManager from "#components/ComponentManager.js";
 
 export default class InteractionCreate extends EventListener {
 	constructor() {

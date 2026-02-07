@@ -10,13 +10,11 @@ import { ContentFilterStatus } from "#database/Enums.js";
 import { ContentFilterFieldNames } from "#cf/Enums.js";
 import { hastebin, userMentionWithId } from "#utils/index.js";
 
-import type { ResponseData } from "#managers/runtime/commands/Command.js";
+import type { ResponseData } from "#commands/Command.js";
 
 import ContentFilterUtils from "#utils/ContentFilter.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
-import Component, {
-	type ComponentExecutionContext
-} from "#managers/runtime/components/Component.js";
+import Component, { type ComponentExecutionContext } from "#components/Component.js";
 import MessageManager from "#database/Messages.js";
 
 export default class ContentFilterButton extends Component {

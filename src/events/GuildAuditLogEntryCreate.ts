@@ -2,7 +2,7 @@ import { kysely } from "#root/index.js";
 import { type Guild, type GuildAuditLogsEntry, AuditLogEvent, Events, Webhook } from "discord.js";
 
 import ConfigManager from "#config/ConfigManager.js";
-import EventListener from "#managers/runtime/events/EventListener.js";
+import EventListener from "#events/EventListener.js";
 
 export default class GuildAuditLogEntryCreate extends EventListener {
 	constructor() {

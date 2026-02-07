@@ -1,7 +1,7 @@
 import { Events, type Message, type PartialMessage } from "discord.js";
 import { cleanContent } from "#utils/Messages.js";
 
-import EventListener from "#managers/runtime/events/EventListener.js";
+import EventListener from "#events/EventListener.js";
 import MessageManager from "#database/Messages.js";
 
 export default class MessageUpdate extends EventListener {

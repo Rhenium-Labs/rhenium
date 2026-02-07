@@ -10,9 +10,9 @@ import Highlights from "#root/commands/Highlights.js";
 import GuildConfig from "#config/GuildConfig.js";
 import GlobalConfig from "#config/GlobalConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
-import EventListener from "#managers/runtime/events/EventListener.js";
+import EventListener from "#events/EventListener.js";
 import MessageManager from "#database/Messages.js";
-import CommandManager from "#managers/runtime/commands/CommandManager.js";
+import CommandManager from "#commands/CommandManager.js";
 import AutomatedScanner from "#cf/AutomatedScanner.js";
 import HeuristicScanner from "#cf/HeuristicScanner.js";
 

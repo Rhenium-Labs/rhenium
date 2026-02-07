@@ -19,7 +19,7 @@ import { cropLines, userMentionWithId, log } from "#utils/index.js";
 import Logger from "#utils/Logger.js";
 import GuildConfig from "#config/GuildConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
-import EventListener from "#managers/runtime/events/EventListener.js";
+import EventListener from "#events/EventListener.js";
 import MessageManager from "#database/Messages.js";
 
 export default class GuildBanAdd extends EventListener {

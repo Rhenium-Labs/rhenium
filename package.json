@@ -70,6 +70,9 @@
 		"#database/*": "./dist/managers/database/*",
 		"#utils/*": "./dist/utils/*",
 		"#cf/*": "./dist/managers/content-filtering/*",
+		"#commands/*": "./dist/managers/runtime/commands/*",
+		"#components/*": "./dist/managers/runtime/components/*",
+		"#events/*": "./dist/managers/runtime/events/*",
 		"#managers/*": "./dist/managers/*",
 		"#root/*": "./dist/*"
 	}

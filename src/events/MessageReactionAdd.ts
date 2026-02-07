@@ -37,7 +37,7 @@ import type { Message as SerializedMessage } from "#database/Schema.js";
 
 import GuildConfig from "#config/GuildConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
-import EventListener from "#managers/runtime/events/EventListener.js";
+import EventListener from "#events/EventListener.js";
 import MessageManager from "#database/Messages.js";
 import ModerationUtils from "#utils/Moderation.js";
 

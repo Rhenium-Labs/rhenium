@@ -13,7 +13,7 @@ import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#managers/runtime/commands/Command.js";
+} from "#commands/Command.js";
 
 import GlobalConfig from "#config/GlobalConfig.js";
 
