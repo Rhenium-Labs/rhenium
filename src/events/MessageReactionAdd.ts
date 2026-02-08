@@ -147,7 +147,11 @@ export default class MessageReactionAdd extends EventListener {
 				});
 			}
 
-			if (!executor.guild.members.me!.permissions.has("ModerateMembers")) {
+			if (
+				!message.channel
+					.permissionsFor(executor.guild.members.me!)
+					.has("ModerateMembers")
+			) {
 				return log({
 					event: LoggingEvent.QuickMuteResult,
 					config,
@@ -348,7 +352,11 @@ export default class MessageReactionAdd extends EventListener {
 				});
 			}
 
-			if (!executor.guild.members.me!.permissions.has("ManageMessages")) {
+			if (
+				!message.channel
+					.permissionsFor(executor.guild.members.me!)
+					.has("ManageMessages")
+			) {
 				return log({
 					event: LoggingEvent.QuickPurgeResult,
 					config,
@@ -496,6 +504,16 @@ export default class MessageReactionAdd extends EventListener {
 
 			await triggerMessage.delete().catch(() => null);
 
+			// Remove the trigger message from deletion lists since it was already deleted above.
+			const triggerIdx1 = bulkDeletableIds.indexOf(triggerMessage.id);
+			if (triggerIdx1 !== -1) bulkDeletableIds.splice(triggerIdx1, 1);
+
+			const triggerIdx2 = individualDeletableIds.indexOf(triggerMessage.id);
+			if (triggerIdx2 !== -1) individualDeletableIds.splice(triggerIdx2, 1);
+
+			// Count the trigger message as a successful deletion.
+			deleted++;
+
 			if (bulkDeletableIds.length > 0) {
 				const bulkResult = await MessageReactionAdd._bulkDeleteMessages(
 					channel,
@@ -520,6 +538,16 @@ export default class MessageReactionAdd extends EventListener {
 
 			// Remove exclusions after purge execution is complete.
 			MessageManager.removeExclusions(messageIds);
+
+			if (deleted === 0) {
+				return {
+					ok: false,
+					deleted: 0,
+					failed,
+					entries,
+					message: "All message deletions failed."
+				};
+			}
 
 			return { ok: true, deleted, failed, entries, logUrl };
 		} catch (error) {
