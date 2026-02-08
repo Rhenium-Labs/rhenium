@@ -21,34 +21,26 @@ export default class MessageCreate extends EventListener {
 		super(Events.MessageCreate);
 	}
 
-	async execute(message: Message<true>): Promise<void> {
+	async execute(message: Message<true>): Promise<unknown> {
 		// Ignore bot messages, webhooks, and system messages.
 		if (message.author.bot || message.webhookId || message.system) return;
 
+		const serializedMessage = MessageManager.serialize(message);
 		const whitelisted = await getWhitelistStatus(message.guild.id);
 		const config = await ConfigManager.get(message.guild.id);
-		const contentFilterConfig = config.parseContentFilterConfig();
 
-		if (!whitelisted && !GlobalConfig.isDeveloper(message.author.id)) return;
-
-		if (contentFilterConfig) {
-			const serializedMessage = MessageManager.serialize(message);
-
-			void Promise.all([
-				AutomatedScanner.enqueueForScan(
-					message,
-					contentFilterConfig,
-					serializedMessage
-				),
-
-				HeuristicScanner.triggerScan(message, contentFilterConfig)
-			]);
+		if (!whitelisted) {
+			if (!GlobalConfig.isDeveloper(message.author.id)) return;
+			// Developers can run commands regardless of whitelist status.
+			return MessageCreate._handleCommand(message, config);
 		}
 
-		void Promise.all([
-			MessageCreate._handleCommand(message, config),
+		return Promise.all([
+			Highlights.highlightMessage(message),
+			AutomatedScanner.enqueueForScan(message, config, serializedMessage),
+			HeuristicScanner.triggerScan(message, config),
 			MessageManager.queue(message),
-			Highlights.highlightMessage(message)
+			MessageCreate._handleCommand(message, config)
 		]);
 	}
 

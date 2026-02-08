@@ -14,6 +14,7 @@ import ContentFilter from "./ContentFilter.js";
 import AutomatedScanner from "./AutomatedScanner.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 import MessageManager from "#database/Messages.js";
+import GuildConfig from "#config/GuildConfig.js";
 
 /** Maximum number of channels to track timers for. */
 const MAX_TIMER_CHANNELS = 100;
@@ -283,14 +284,15 @@ export default class HeuristicScanner {
 	 * Uses per-channel debouncing to avoid excessive scans.
 	 *
 	 * @param message The message to scan.
-	 * @param config The content filter configuration.
+	 * @param guildConfig The guild configuration.
 	 * @return void
 	 */
 	static async triggerScan(
 		message: DiscordMessage<true>,
-		config: ParsedContentFilterConfig
+		guildConfig: GuildConfig
 	): Promise<void> {
-		if (!config.enabled || !config.webhook_url) return;
+		const config = guildConfig.parseContentFilterConfig();
+		if (!config) return;
 
 		const channel = message.channel as TextChannel;
 		const channelId = channel.id;

@@ -14,6 +14,7 @@ import MinimumHeap from "#utils/MinimumHeap.js";
 import ContentFilter from "./ContentFilter.js";
 import ConfigManager from "#config/ConfigManager.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
+import GuildConfig from "#config/GuildConfig.js";
 
 /** Maximum number of channel states to keep in memory. */
 const MAX_CHANNEL_STATES = 100;
@@ -151,15 +152,16 @@ export default class AutomatedScanner {
 	 * Stores only IDs to minimize memory usage.
 	 *
 	 * @param message The message to enqueue.
-	 * @param config The content filter configuration.
+	 * @param guildConfig The guild configuration.
 	 * @param serializedMessage The serialized message data.
 	 */
 	static enqueueForScan(
 		message: Message<true>,
-		config: ParsedContentFilterConfig,
+		guildConfig: GuildConfig,
 		serializedMessage: SerializedMessage
 	): void {
-		if (!config.enabled || !config.webhook_url) return;
+		const config = guildConfig.parseContentFilterConfig();
+		if (!config) return;
 
 		// Channel scoping check
 		const scoping = parseChannelScoping(config.channel_scoping);
