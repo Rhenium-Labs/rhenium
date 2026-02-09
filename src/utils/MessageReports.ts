@@ -17,12 +17,12 @@ import { kysely } from "#root/index.js";
 import { EMPTY_MESSAGE_CONTENT } from "./Constants.js";
 import { LoggingEvent, ReportStatus } from "#database/Enums.js";
 import { cropLines, userMentionWithId } from "./index.js";
+import { cleanContent, formatMessageContent } from "./Messages.js";
 
 import type { SimpleResult } from "./Types.js";
 import type { MessageReportUpdate } from "#database/Schema.js";
 
 import GuildConfig from "#config/GuildConfig.js";
-import { cleanContent, formatMessageContent } from "./Messages.js";
 
 export default class MessageReportUtils {
 	/**
@@ -70,19 +70,27 @@ export default class MessageReportUtils {
 		const webhook = new WebhookClient({ url: messageReports.webhook_url! });
 
 		if (originalReport) {
-			if (originalReport.reported_by === reporter.id)
+			if (originalReport.reported_by === reporter.id) {
+				webhook.destroy();
 				return { ok: false, message: "You have already reported this message." };
+			}
 
 			// At any step of the process, if we fail we still return `ok: true` to avoid
 			// letting the user know what has happened internally.
 			const message = await webhook.fetchMessage(originalReport.id).catch(() => null);
 
-			if (!message) return { ok: true };
+			if (!message) {
+				webhook.destroy();
+				return { ok: true };
+			}
 
 			const embedIdx = message.embeds.length > 1 ? 1 : 0;
 			const currentEmbed = message.embeds.at(embedIdx);
 
-			if (!currentEmbed) return { ok: true };
+			if (!currentEmbed) {
+				webhook.destroy();
+				return { ok: true };
+			}
 
 			const currentValue =
 				currentEmbed.fields?.find(field => {
@@ -90,7 +98,10 @@ export default class MessageReportUtils {
 				})?.value ?? null;
 
 			// Early return if the value can't be found or the reporter is already listed.
-			if (!currentValue || currentValue.includes(reporter.id)) return { ok: true };
+			if (!currentValue || currentValue.includes(reporter.id)) {
+				webhook.destroy();
+				return { ok: true };
+			}
 
 			const primaryEmbed = EmbedBuilder.from(currentEmbed)
 				.spliceFields(0, 1, {
@@ -115,6 +126,7 @@ export default class MessageReportUtils {
 				.where("id", "=", originalReport.id)
 				.execute();
 
+			webhook.destroy();
 			return { ok: true };
 		}
 
