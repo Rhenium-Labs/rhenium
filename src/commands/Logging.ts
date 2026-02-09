@@ -34,7 +34,7 @@ export default class Logging extends Command {
 		});
 	}
 
-	register(): ApplicationCommandData {
+	override register(): ApplicationCommandData {
 		return {
 			name: this.name,
 			description: this.description,
@@ -167,7 +167,7 @@ export default class Logging extends Command {
 		};
 	}
 
-	async executeInteraction({
+	override async executeInteraction({
 		interaction,
 		config
 	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {

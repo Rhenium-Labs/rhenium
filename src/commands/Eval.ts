@@ -26,7 +26,7 @@ export default class Eval extends Command {
 		});
 	}
 
-	async executeMessage({
+	override async executeMessage({
 		message,
 		args
 	}: CommandExecutionContext<"message">): Promise<ResponseData<"message"> | null> {

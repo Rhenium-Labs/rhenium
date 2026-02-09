@@ -51,7 +51,7 @@ export default class FlagStrategy extends PrefixedStrategy {
 	 * @param s The flag string to match.
 	 * @returns An `Option<string>` containing the matched flag if allowed, or `Option.none` if not.
 	 */
-	matchFlag(s: string): Option<string> {
+	override matchFlag(s: string): Option<string> {
 		const result = super.matchFlag(s);
 		return result.isSomeAnd(value => this._allowedFlag(value)) ? result : Option.none;
 	}
@@ -63,7 +63,7 @@ export default class FlagStrategy extends PrefixedStrategy {
 	 * @param s The input string to match against available options.
 	 * @returns An Option containing the matched key-value pair if allowed, or none.
 	 */
-	matchOption(s: string): Option<readonly [key: string, value: string]> {
+	override matchOption(s: string): Option<readonly [key: string, value: string]> {
 		const result = super.matchOption(s);
 		return result.isSomeAnd(option => this._allowedOption(option[0])) ? result : Option.none;
 	}

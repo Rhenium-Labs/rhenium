@@ -25,6 +25,7 @@
 		// Advanced Options
 		"skipLibCheck": true,
 		"downlevelIteration": true,
+		"noImplicitOverride": true,
 		"allowSyntheticDefaultImports": true,
 
 		// Decorator Options
