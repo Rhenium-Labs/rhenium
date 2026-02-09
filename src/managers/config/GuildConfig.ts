@@ -1,4 +1,10 @@
-import type { GuildMember } from "discord.js";
+import {
+	WebhookClient,
+	type APIMessage,
+	type GuildMember,
+	type WebhookMessageCreateOptions
+} from "discord.js";
+import { captureException } from "@sentry/node";
 
 import type {
 	BanRequestConfig,
@@ -14,6 +20,8 @@ import type {
 	QuickPurgeConfig
 } from "#database/Schema.js";
 import { LoggingEvent, UserPermission } from "#database/Enums.js";
+
+import Logger from "#utils/Logger.js";
 
 export default class GuildConfig {
 	/**
@@ -153,6 +161,42 @@ export default class GuildConfig {
 	 */
 	canLogEvent(event: LoggingEvent): boolean {
 		return this.data.logging_webhooks.some(wh => wh.events.includes(event));
+	}
+
+	/**
+	 * Send a log message to all webhooks configured for a specific event.
+	 *
+	 * @param event The logging event to send.
+	 * @param payload The message payload to send to the webhooks.
+	 * @returns The sent messages, or null if no webhooks are configured for the event.
+	 */
+
+	async log(
+		event: LoggingEvent,
+		payload: WebhookMessageCreateOptions
+	): Promise<APIMessage[] | null> {
+		const webhooks = this.data.logging_webhooks.filter(webhook =>
+			webhook.events.includes(event)
+		);
+
+		if (webhooks.length === 0) return null;
+
+		try {
+			const clients = webhooks.map(webhook => new WebhookClient({ url: webhook.url }));
+			return Promise.all(
+				clients.map(client => client.send(payload).finally(() => client.destroy()))
+			);
+		} catch (error) {
+			const sentryId = captureException(error, {
+				extra: { guildId: this.data.id, event, payload }
+			});
+
+			Logger.traceable(
+				sentryId,
+				`Failed to log event "${event}" for guild "${this.data.id}".`
+			);
+			return null;
+		}
 	}
 }
 

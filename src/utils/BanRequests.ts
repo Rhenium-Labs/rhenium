@@ -19,7 +19,7 @@ import ms from "ms";
 
 import { kysely } from "#root/index.js";
 import { LoggingEvent, RequestStatus } from "#database/Enums.js";
-import { parseDurationString, userMentionWithId, validateDuration, log } from "./index.js";
+import { parseDurationString, userMentionWithId, validateDuration } from "./index.js";
 
 import type { BanRequest, BanRequestUpdate } from "#database/Schema.js";
 import type { SimpleResult } from "./Types.js";
@@ -403,10 +403,9 @@ export default class BanRequestUtils {
 			request.target_id
 		)} has been ${formattedAction}${formattedReason ? ` - ${formattedReason}` : "."}`;
 
-		return void log({
-			event: LoggingEvent.BanRequestResult,
-			config,
-			message: { content, allowedMentions: { users: [request.requested_by] } }
+		return void config.log(LoggingEvent.BanRequestResult, {
+			content,
+			allowedMentions: { users: [request.requested_by] }
 		});
 	}
 
@@ -446,10 +445,8 @@ export default class BanRequestUtils {
 			updatedEmbed.addFields({ name: "Reviewer Reason", value: reason });
 		}
 
-		return void log({
-			event: LoggingEvent.BanRequestReviewed,
-			config,
-			message: { embeds: [updatedEmbed] }
+		return void config.log(LoggingEvent.BanRequestReviewed, {
+			embeds: [updatedEmbed]
 		});
 	}
 }

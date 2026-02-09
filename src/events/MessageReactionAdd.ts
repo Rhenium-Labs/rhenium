@@ -23,7 +23,6 @@ import {
 	getEmojiIdentifier,
 	hastebin,
 	inflect,
-	log,
 	parseChannelScoping,
 	sleep,
 	truncate,
@@ -140,10 +139,8 @@ export default class MessageReactionAdd extends EventListener {
 			if (!target) return;
 
 			if (target.isCommunicationDisabled()) {
-				return log({
-					event: LoggingEvent.QuickMuteResult,
-					config,
-					message: { content: `${executor}, ${target} is already muted.` }
+				return config.log(LoggingEvent.QuickMuteResult, {
+					content: `${executor}, ${target} is already muted.`
 				});
 			}
 
@@ -152,12 +149,8 @@ export default class MessageReactionAdd extends EventListener {
 					.permissionsFor(executor.guild.members.me!)
 					.has("ModerateMembers")
 			) {
-				return log({
-					event: LoggingEvent.QuickMuteResult,
-					config,
-					message: {
-						content: `${executor}, I do not have the "Timeout Members" permission which is required to mute ${target}.`
-					}
+				return config.log(LoggingEvent.QuickMuteResult, {
+					content: `${executor}, I do not have the "Timeout Members" permission which is required to mute ${target}.`
 				});
 			}
 
@@ -168,12 +161,8 @@ export default class MessageReactionAdd extends EventListener {
 			);
 
 			if (!validationResult.ok) {
-				return log({
-					event: LoggingEvent.QuickMuteResult,
-					config,
-					message: {
-						content: `${executor}, ${validationResult.message}`
-					}
+				return config.log(LoggingEvent.QuickMuteResult, {
+					content: `${executor}, ${validationResult.message}`
 				});
 			}
 
@@ -189,10 +178,8 @@ export default class MessageReactionAdd extends EventListener {
 				.catch(() => ({ ok: false }));
 
 			if (!result.ok) {
-				return log({
-					event: LoggingEvent.QuickMuteResult,
-					config,
-					message: { content: `${executor}, failed to quick mute ${target}.` }
+				return config.log(LoggingEvent.QuickMuteResult, {
+					content: `${executor}, failed to quick mute ${target}.`
 				});
 			}
 
@@ -262,29 +249,21 @@ export default class MessageReactionAdd extends EventListener {
 					components.push(row);
 				}
 
-				void log({
-					event: LoggingEvent.QuickMuteExecuted,
-					config,
-					message: { embeds: [embed] }
-				});
+				void config.log(LoggingEvent.QuickMuteExecuted, { embeds: [embed] });
 
-				void log({
-					event: LoggingEvent.QuickMuteResult,
-					config,
-					message: { content, components, files: [attachment] }
+				void config.log(LoggingEvent.QuickMuteResult, {
+					content,
+					components,
+					files: [attachment]
 				});
 			}
 
-			await log({
-				event: LoggingEvent.QuickMuteResult,
-				config,
-				message: { content }
+			void config.log(LoggingEvent.QuickMuteResult, {
+				content
 			});
 
-			await log({
-				event: LoggingEvent.QuickMuteExecuted,
-				config,
-				message: { embeds: [embed] }
+			void config.log(LoggingEvent.QuickMuteExecuted, {
+				embeds: [embed]
 			});
 		} catch {
 			quickMuteActionLocks.delete(message.author.id);
@@ -343,12 +322,8 @@ export default class MessageReactionAdd extends EventListener {
 			if (!target) return;
 
 			if (!message.channel.permissionsFor(executor).has("ManageMessages")) {
-				return log({
-					event: LoggingEvent.QuickPurgeResult,
-					config,
-					message: {
-						content: `${executor}, you do not have permission to manage messages in ${message.channel}.`
-					}
+				return config.log(LoggingEvent.QuickPurgeResult, {
+					content: `${executor}, you do not have permission to manage messages in ${message.channel}.`
 				});
 			}
 
@@ -357,12 +332,8 @@ export default class MessageReactionAdd extends EventListener {
 					.permissionsFor(executor.guild.members.me!)
 					.has("ManageMessages")
 			) {
-				return log({
-					event: LoggingEvent.QuickPurgeResult,
-					config,
-					message: {
-						content: `${executor}, I do not have permission to manage messages in ${message.channel}, which is required to purge messages.`
-					}
+				return config.log(LoggingEvent.QuickPurgeResult, {
+					content: `${executor}, I do not have permission to manage messages in ${message.channel}, which is required to purge messages.`
 				});
 			}
 
@@ -379,12 +350,8 @@ export default class MessageReactionAdd extends EventListener {
 			});
 
 			if (!purgeResult.ok || purgeResult.deleted === 0) {
-				return log({
-					event: LoggingEvent.QuickPurgeResult,
-					config,
-					message: {
-						content: `${executor}, failed to quick purge messages for ${target}: ${purgeResult.message}`
-					}
+				return config.log(LoggingEvent.QuickPurgeResult, {
+					content: `${executor}, failed to quick purge messages for ${target}: ${purgeResult.message}`
 				});
 			}
 
@@ -429,16 +396,14 @@ export default class MessageReactionAdd extends EventListener {
 				components.push(row);
 			}
 
-			await log({
-				event: LoggingEvent.QuickPurgeResult,
-				config,
-				message: { content, components, files: [attachment] }
+			void config.log(LoggingEvent.QuickPurgeResult, {
+				content,
+				components,
+				files: [attachment]
 			});
 
-			await log({
-				event: LoggingEvent.QuickPurgeExecuted,
-				config,
-				message: { embeds: [embed] }
+			void config.log(LoggingEvent.QuickPurgeExecuted, {
+				embeds: [embed]
 			});
 		} catch {
 			quickPurgeActionLocks.delete(message.author.id);

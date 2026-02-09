@@ -16,7 +16,7 @@ import {
 import { kysely } from "#root/index.js";
 import { EMPTY_MESSAGE_CONTENT } from "./Constants.js";
 import { LoggingEvent, ReportStatus } from "#database/Enums.js";
-import { cropLines, userMentionWithId, log } from "./index.js";
+import { cropLines, userMentionWithId } from "./index.js";
 
 import type { SimpleResult } from "./Types.js";
 import type { MessageReportUpdate } from "#database/Schema.js";
@@ -374,12 +374,8 @@ export default class MessageReportUtils {
 
 		const secondaryEmbed = embedIdx === 1 ? interaction.message.embeds.at(0) : undefined;
 
-		return void log({
-			event: LoggingEvent.MessageReportReviewed,
-			config,
-			message: {
-				embeds: secondaryEmbed ? [secondaryEmbed, primaryEmbed] : [primaryEmbed]
-			}
+		return void config.log(LoggingEvent.MessageReportReviewed, {
+			embeds: secondaryEmbed ? [secondaryEmbed, primaryEmbed] : [primaryEmbed]
 		});
 	}
 

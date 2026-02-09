@@ -1,16 +1,8 @@
-import {
-	WebhookClient,
-	type APIMessage,
-	type Emoji,
-	type GuildBasedChannel,
-	type GuildMember,
-	type Snowflake,
-	type WebhookMessageCreateOptions
-} from "discord.js";
+import { type Emoji, type GuildBasedChannel, type GuildMember, type Snowflake } from "discord.js";
 import { CronJob, CronJobParams } from "cron";
-import { captureException, cron } from "@sentry/node";
+import { cron } from "@sentry/node";
 
-import ms, { type StringValue } from "ms";
+import ms from "ms";
 import fs from "node:fs";
 import YAML from "yaml";
 
@@ -18,9 +10,8 @@ import { client, kv, kysely } from "#root/index.js";
 import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants.js";
 
 import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types.js";
+
 import Logger from "./Logger.js";
-import { LoggingEvent } from "#database/Enums.js";
-import GuildConfig from "#config/GuildConfig.js";
 
 /**
  * Checks a guild's whitelist status.
@@ -156,7 +147,7 @@ export function parseDurationString(str: string | null): number | null {
 	const numericValue = Number(str);
 	if (!isNaN(numericValue)) return numericValue * 1000;
 
-	return ms(str as StringValue) ?? null;
+	return ms(str as ms.StringValue) ?? null;
 }
 
 /**
@@ -172,8 +163,8 @@ export function validateDuration(data: {
 }): SimpleResult {
 	const { duration, minimum, maximum } = data;
 
-	const minMs = minimum ? ms(minimum as StringValue) : undefined;
-	const maxMs = maximum ? ms(maximum as StringValue) : undefined;
+	const minMs = minimum ? ms(minimum as ms.StringValue) : undefined;
+	const maxMs = maximum ? ms(maximum as ms.StringValue) : undefined;
 
 	if (minMs && duration < minMs) {
 		return { ok: false, message: `Duration must be at least ${minimum}.` };
@@ -458,40 +449,3 @@ type CronJobOptions = {
 	cronTime: CronJobParams["cronTime"];
 	onTick: () => Promise<void> | void;
 };
-
-/**
- * Sends a log message to all webhooks configured for the specified event.
- *
- * @param data The logging options.
- * @returns The sent messages or null.
- */
-export async function log(options: {
-	event: LoggingEvent;
-	config: GuildConfig;
-	message: WebhookMessageCreateOptions;
-}): Promise<APIMessage[] | null> {
-	const { event, config, message } = options;
-
-	const webhooks = config.data.logging_webhooks.filter(webhook =>
-		webhook.events.includes(event)
-	);
-
-	if (!webhooks.length) return null;
-
-	try {
-		const webhookClients = webhooks.map(webhook => new WebhookClient({ url: webhook.url }));
-		return Promise.all(
-			webhookClients.map(client => client.send(message).finally(() => client.destroy()))
-		);
-	} catch (error) {
-		const sentryId = captureException(error, {
-			extra: { guildId: config.data.id, event, message }
-		});
-
-		Logger.traceable(
-			sentryId,
-			`Failed to log event "${event}" for guild "${config.data.id}".`
-		);
-		return null;
-	}
-}

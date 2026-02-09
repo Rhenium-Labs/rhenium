@@ -14,7 +14,7 @@ import { LoggingEvent } from "#database/Enums.js";
 import { client, kysely } from "#root/index.js";
 import { formatMessageContent } from "#utils/Messages.js";
 import { EMPTY_MESSAGE_CONTENT } from "#utils/Constants.js";
-import { cropLines, userMentionWithId, log } from "#utils/index.js";
+import { cropLines, userMentionWithId } from "#utils/index.js";
 
 import Logger from "#utils/Logger.js";
 import GuildConfig from "#config/GuildConfig.js";
@@ -154,11 +154,7 @@ export default class GuildBanAdd extends EventListener {
 				embeds.push(referenceEmbed);
 			}
 
-			void log({
-				event: LoggingEvent.MessageReportReviewed,
-				config,
-				message: { embeds }
-			});
+			void config.log(LoggingEvent.MessageReportReviewed, { embeds });
 		}
 
 		if (!config.data.message_reports.webhook_channel) return;
@@ -221,11 +217,7 @@ export default class GuildBanAdd extends EventListener {
 				});
 			}
 
-			void log({
-				event: LoggingEvent.BanRequestReviewed,
-				config,
-				message: { embeds: [embed] }
-			});
+			void config.log(LoggingEvent.BanRequestReviewed, { embeds: [embed] });
 		}
 
 		if (!config.data.ban_requests.webhook_channel) return;
