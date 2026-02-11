@@ -2,25 +2,30 @@ import {
 	type ButtonInteraction,
 	type ColorResolvable,
 	type Message,
+	type GuildMember,
 	type User,
+	type EmbedField,
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
 	Colors,
 	EmbedBuilder,
+	escapeCodeBlock,
+	messageLink,
 	roleMention,
 	time,
 	WebhookClient
 } from "discord.js";
 
-import { kysely } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import { EMPTY_MESSAGE_CONTENT } from "./Constants.js";
 import { LoggingEvent, ReportStatus } from "#database/Enums.js";
-import { cropLines, userMentionWithId } from "./index.js";
+import { cropLines, truncate, userMentionWithId } from "./index.js";
 import { cleanContent, formatMessageContent } from "./Messages.js";
 
 import type { SimpleResult } from "./Types.js";
-import type { MessageReportUpdate } from "#database/Schema.js";
+import type { ResponseData } from "#commands/Command.js";
+import type { MessageReport, MessageReportUpdate } from "#database/Schema.js";
 
 import GuildConfig from "#config/GuildConfig.js";
 
@@ -351,6 +356,191 @@ export default class MessageReportUtils {
 			.execute();
 
 		return { ok: true };
+	}
+
+	/**
+	 * Searches for pending message reports in the guild, optionally filtered by a target user.
+	 *
+	 * @param data The search parameters.
+	 * 		- config: The guild configuration.
+	 * 		- controllerId: The ID of the interaction controller, used for pagination button custom IDs.
+	 * 		- target: An optional user to filter reports by their author.
+	 * 		- page: The page number for pagination (1-based).
+	 * @returns The result of the search operation.
+	 */
+
+	static async search(data: {
+		config: GuildConfig;
+		executor: GuildMember;
+		target: User | null;
+		page: number;
+	}): Promise<SimpleResult<ResponseData<"interaction">>> {
+		const { config, executor, target, page } = data;
+
+		const skipMultiplier = page - 1;
+
+		let baseQuery = kysely
+			.selectFrom("MessageReport")
+			.where("guild_id", "=", config.data.id)
+			.where("status", "=", ReportStatus.Pending);
+
+		if (target) {
+			baseQuery = baseQuery.where("author_id", "=", target.id);
+		}
+
+		const totalCount = await baseQuery
+			.select(eb => eb.fn.countAll<number>().as("count"))
+			.executeTakeFirstOrThrow();
+
+		const reports = await baseQuery
+			.selectAll()
+			.orderBy("reported_at", "desc")
+			.limit(5)
+			.offset(skipMultiplier * 5)
+			.execute();
+
+		if (reports.length === 0)
+			return {
+				ok: true,
+				data: { content: "No message reports found." }
+			};
+
+		const embed = new EmbedBuilder()
+			.setColor(Colors.NotQuiteBlack)
+			.setAuthor({
+				name: `Pending Message Reports${target ? ` for @${target.username}` : ""}`,
+				iconURL: target
+					? target.displayAvatarURL()
+					: (executor.guild.iconURL() ?? undefined)
+			})
+			.setTimestamp();
+
+		if (target) {
+			// Pagination relies on this format.
+			embed.setFooter({ text: `User ID: ${target.id}` });
+		}
+
+		const fields = await MessageReportUtils._getSearchFields(reports, config);
+
+		if (fields.length === 0) {
+			embed.setDescription("No pending reports found.");
+		} else {
+			embed.setFields(fields);
+		}
+
+		const components: ActionRowBuilder<ButtonBuilder>[] = [];
+
+		if (totalCount.count > 5) {
+			const totalPages = Math.ceil(totalCount.count / 5);
+			const paginationButtons = MessageReportUtils._getPaginationButtons(
+				page,
+				totalPages,
+				executor.id
+			);
+
+			components.push(paginationButtons);
+		}
+
+		return {
+			ok: true,
+			data: {
+				embeds: [embed],
+				components
+			}
+		};
+	}
+
+	/**
+	 * Retrieves the embed fields for a list of message reports, including reporter information and links to the original report messages if available.
+	 *
+	 * @param reports The list of message reports to generate fields for.
+	 * @param config The guild configuration, used to determine if links to the original report messages can be generated.
+	 * @returns An array of embed fields representing the message reports.
+	 */
+
+	private static async _getSearchFields(reports: MessageReport[], config: GuildConfig) {
+		let fields: EmbedField[] = [];
+
+		for (const report of reports) {
+			const target = await client.users
+				.fetch(report.author_id)
+				.catch(() => ({ username: "unknown", id: report.author_id }));
+
+			const channelId = config.data.message_reports.webhook_channel;
+			const truncatedReason = truncate(report.report_reason, 256);
+
+			const reportURL = channelId
+				? messageLink(channelId, report.id, report.guild_id)
+				: null;
+
+			fields.push({
+				name: `#${report.id}, against @${target.username} (${target.id})`,
+				value: `Created On ${time(report.reported_at, "f")}${reportURL ? ` \`|\` [Jump to Report](${reportURL})` : ""}\n\`${escapeCodeBlock(truncatedReason)}\``,
+				inline: false
+			});
+		}
+
+		return fields;
+	}
+
+	/**
+	 * Generates pagination buttons for the message report search results.
+	 *
+	 * @param page The current page number (1-based).
+	 * @param totalPages The total number of pages available.
+	 * @param controllerId The ID of the interaction controller, used for constructing unique custom IDs for the buttons.
+	 * @returns An ActionRowBuilder containing the pagination buttons.
+	 */
+
+	private static _getPaginationButtons(page: number, totalPages: number, controllerId: string) {
+		const isFirstPage = page === 1;
+		const isLastPage = page === totalPages;
+
+		const pageCountButton = new ButtonBuilder()
+			.setLabel(`${page} / ${totalPages}`)
+			.setDisabled(true)
+			.setStyle(ButtonStyle.Secondary)
+			.setCustomId("report-search-page-count");
+
+		const nextButton = new ButtonBuilder()
+			.setLabel("→")
+			.setCustomId(`report-search-next-${controllerId}`)
+			.setDisabled(isLastPage)
+			.setStyle(ButtonStyle.Primary);
+
+		const previousButton = new ButtonBuilder()
+			.setLabel("←")
+			.setCustomId(`report-search-back-${controllerId}`)
+			.setDisabled(isFirstPage)
+			.setStyle(ButtonStyle.Primary);
+
+		if (totalPages > 2) {
+			const firstPageButton = new ButtonBuilder()
+				.setLabel("«")
+				.setCustomId(`report-search-first-${controllerId}`)
+				.setDisabled(isFirstPage)
+				.setStyle(ButtonStyle.Primary);
+
+			const lastPageButton = new ButtonBuilder()
+				.setLabel("»")
+				.setCustomId(`report-search-last-${controllerId}`)
+				.setDisabled(isLastPage)
+				.setStyle(ButtonStyle.Primary);
+
+			return new ActionRowBuilder<ButtonBuilder>().setComponents(
+				firstPageButton,
+				previousButton,
+				pageCountButton,
+				nextButton,
+				lastPageButton
+			);
+		} else {
+			return new ActionRowBuilder<ButtonBuilder>().setComponents(
+				previousButton,
+				pageCountButton,
+				nextButton
+			);
+		}
 	}
 
 	/**

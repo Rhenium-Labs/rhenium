@@ -4,6 +4,7 @@ import {
 	ApplicationCommandType,
 	ApplicationIntegrationType,
 	InteractionContextType,
+	MessageFlags,
 	PermissionFlagsBits
 } from "discord.js";
 
@@ -14,6 +15,7 @@ import Command, {
 	type ResponseData,
 	type CommandExecutionContext
 } from "#commands/Command.js";
+import MessageReportUtils from "#utils/MessageReports.js";
 
 export default class Reports extends Command {
 	constructor() {
@@ -34,7 +36,7 @@ export default class Reports extends Command {
 			defaultMemberPermissions: PermissionFlagsBits.ModerateMembers,
 			options: [
 				{
-					name: "blacklist",
+					name: ReportSubcommand.Blacklist,
 					description: "Blacklist a user from using the report system.",
 					type: ApplicationCommandOptionType.Subcommand,
 					options: [
@@ -47,7 +49,7 @@ export default class Reports extends Command {
 					]
 				},
 				{
-					name: "unblacklist",
+					name: ReportSubcommand.Unblacklist,
 					description: "Unblacklist a user from using the report system.",
 					type: ApplicationCommandOptionType.Subcommand,
 					options: [
@@ -56,6 +58,19 @@ export default class Reports extends Command {
 							description: "The user to unblacklist.",
 							type: ApplicationCommandOptionType.User,
 							required: true
+						}
+					]
+				},
+				{
+					name: ReportSubcommand.Search,
+					description: "Search for pending reports.",
+					type: ApplicationCommandOptionType.Subcommand,
+					options: [
+						{
+							name: "user",
+							description: "Filter reports by a specific user.",
+							type: ApplicationCommandOptionType.User,
+							required: false
 						}
 					]
 				}
@@ -69,6 +84,8 @@ export default class Reports extends Command {
 	}: CommandExecutionContext<"chatInputCmd">): Promise<ResponseData<"interaction">> {
 		const subcommand = interaction.options.getSubcommand(true) as ReportSubcommand;
 		const reportsConfig = config.parseReportsConfig();
+
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		if (!reportsConfig) {
 			return { error: "Message reports have not been configured on this server." };
@@ -124,11 +141,29 @@ export default class Reports extends Command {
 					content: `Successfully unblacklisted ${user.tag} from using the report system.`
 				};
 			}
+
+			case ReportSubcommand.Search: {
+				const target = interaction.options.getUser("user", false);
+
+				const result = await MessageReportUtils.search({
+					config,
+					executor: interaction.member,
+					target,
+					page: 1
+				});
+
+				if (!result.ok) {
+					return { error: result.message };
+				}
+
+				return result.data;
+			}
 		}
 	}
 }
 
 enum ReportSubcommand {
 	Blacklist = "blacklist",
-	Unblacklist = "unblacklist"
+	Unblacklist = "unblacklist",
+	Search = "search"
 }
