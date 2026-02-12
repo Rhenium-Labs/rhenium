@@ -397,7 +397,7 @@ export default class BanRequestUtils {
 		if (!config.canLogEvent(LoggingEvent.BanRequestResult)) return;
 
 		const formattedReason = reviewReason ? reviewReason.replaceAll("`", "") : null;
-		const formattedAction = BanRequestActionToPastTenseMap[action].toLowerCase();
+		const formattedAction = REQUEST_ACTION_TO_PAST_TENSE[action].toLowerCase();
 
 		const content = `${userMention(request.requested_by)}, your ban request against ${userMentionWithId(
 			request.target_id
@@ -426,8 +426,8 @@ export default class BanRequestUtils {
 	): Promise<void> {
 		if (!config.canLogEvent(LoggingEvent.BanRequestReviewed)) return;
 
-		const color = BanRequestActionToColorMap[action];
-		const pastTenseAction = BanRequestActionToPastTenseMap[action];
+		const color = REQUEST_ACTION_TO_COLOR[action];
+		const pastTenseAction = REQUEST_ACTION_TO_PAST_TENSE[action];
 
 		const currentEmbed = interaction.message?.embeds.at(0);
 		if (!currentEmbed) return;
@@ -457,13 +457,13 @@ export enum BanRequestAction {
 	Disregard = "disregard"
 }
 
-export const BanRequestActionToPastTenseMap: Record<BanRequestAction, string> = {
+export const REQUEST_ACTION_TO_PAST_TENSE: Record<BanRequestAction, string> = {
 	[BanRequestAction.Accept]: "Accepted",
 	[BanRequestAction.Deny]: "Denied",
 	[BanRequestAction.Disregard]: "Disregarded"
 };
 
-const BanRequestActionToColorMap: Record<BanRequestAction, ColorResolvable> = {
+export const REQUEST_ACTION_TO_COLOR: Record<BanRequestAction, ColorResolvable> = {
 	[BanRequestAction.Accept]: Colors.Green,
 	[BanRequestAction.Deny]: Colors.Red,
 	[BanRequestAction.Disregard]: Colors.Blurple

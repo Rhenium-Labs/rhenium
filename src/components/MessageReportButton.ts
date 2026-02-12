@@ -3,7 +3,7 @@ import type { ResponseData } from "#commands/Command.js";
 
 import MessageReportUtils, {
 	MessageReportAction,
-	MessageReportActionToPastTenseMap
+	REPORT_ACTION_TO_PAST_TENSE
 } from "#utils/MessageReports.js";
 import Component, { type ComponentExecutionContext } from "#components/Component.js";
 
@@ -43,8 +43,7 @@ export default class MessageReportButton extends Component {
 			return null;
 		}
 
-		const formattedReportAction =
-			MessageReportActionToPastTenseMap[reportAction].toLowerCase();
+		const formattedReportAction = REPORT_ACTION_TO_PAST_TENSE[reportAction].toLowerCase();
 
 		await interaction
 			.followUp({

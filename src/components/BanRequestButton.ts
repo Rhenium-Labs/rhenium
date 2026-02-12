@@ -10,7 +10,7 @@ import type { ResponseData } from "#commands/Command.js";
 
 import BanRequestUtils, {
 	BanRequestAction,
-	BanRequestActionToPastTenseMap
+	REQUEST_ACTION_TO_PAST_TENSE
 } from "#utils/BanRequests.js";
 import Component, { type ComponentExecutionContext } from "#components/Component.js";
 
@@ -48,7 +48,7 @@ export default class BanRequestButton extends Component {
 				}
 
 				const formattedAction =
-					BanRequestActionToPastTenseMap[requestAction].toLowerCase();
+					REQUEST_ACTION_TO_PAST_TENSE[requestAction].toLowerCase();
 
 				return {
 					content: `Successfully ${formattedAction} ban request - ID \`${interaction.message.id}\``,

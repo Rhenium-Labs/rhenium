@@ -455,28 +455,28 @@ export enum Extensions {
 }
 
 /** Metadata for a processed media item. */
-export interface MessageMediaMetadata {
+export type MessageMediaMetadata = {
 	url?: string;
 	base64?: string;
 	buffer?: Uint8Array;
 	extension?: Extensions;
-}
+};
 
 /** Collection of all media types found in a message. */
-export interface MessageMedia {
+export type MessageMedia = {
 	emojis?: MessageMediaMetadata[];
 	stickers?: MessageMediaMetadata[];
 	attachments?: MessageMediaMetadata[];
 	embeds?: MessageMediaMetadata[];
-}
+};
 
 /** Definition for supported MIME types and their binary signatures. */
-export interface SupportedMimeType {
+export type SupportedMimeType = {
 	mime: string;
 	extension: Extensions;
 	pattern: number[];
 	mask: number[];
-}
+};
 
 /** Supported MIME types and their binary signatures. */
 export const SUPPORTED_MIME_TYPES: Readonly<SupportedMimeType[]> = [

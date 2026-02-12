@@ -346,7 +346,7 @@ export default class MessageReportUtils {
 		const data: MessageReportUpdate = {
 			resolved_by: interaction.user.id,
 			resolved_at: new Date(),
-			status: MessageReportActionToStatusMap[action]
+			status: REPORT_ACTION_TO_STATUS[action]
 		};
 
 		await kysely
@@ -558,7 +558,7 @@ export default class MessageReportUtils {
 	): Promise<void> {
 		if (!config.canLogEvent(LoggingEvent.MessageReportReviewed)) return;
 
-		const formattedAction = MessageReportActionToPastTenseMap[action];
+		const formattedAction = REPORT_ACTION_TO_PAST_TENSE[action];
 
 		const embedIdx = interaction.message.embeds.length > 1 ? 1 : 0;
 		const currentEmbed = interaction.message.embeds.at(embedIdx);
@@ -566,7 +566,7 @@ export default class MessageReportUtils {
 		if (!currentEmbed) return;
 
 		const primaryEmbed = EmbedBuilder.from(currentEmbed)
-			.setColor(MessageReportActionToColorMap[action])
+			.setColor(REPORT_ACTION_TO_COLOR[action])
 			.setAuthor({ name: `Message Report ${formattedAction}` })
 			.setFooter({
 				text: `${formattedAction} by @${interaction.user.username} (${interaction.user.id})`,
@@ -599,7 +599,7 @@ export default class MessageReportUtils {
 			return;
 		}
 
-		const formattedAction = MessageReportActionToPastTenseMap[action];
+		const formattedAction = REPORT_ACTION_TO_PAST_TENSE[action];
 
 		const embedIdx = interaction.message.embeds.length > 1 ? 1 : 0;
 		const currentEmbed = interaction.message.embeds.at(embedIdx);
@@ -607,7 +607,7 @@ export default class MessageReportUtils {
 		if (!currentEmbed) return;
 
 		const primaryEmbed = EmbedBuilder.from(currentEmbed)
-			.setColor(MessageReportActionToColorMap[action])
+			.setColor(REPORT_ACTION_TO_COLOR[action])
 			.setAuthor({ name: `Message Report ${formattedAction}` })
 			.setFooter({
 				text: `${formattedAction} by @${interaction.user.username} (${interaction.user.id})`,
@@ -631,17 +631,17 @@ export enum MessageReportAction {
 	Disregard = "disregard"
 }
 
-export const MessageReportActionToPastTenseMap: Record<MessageReportAction, string> = {
+export const REPORT_ACTION_TO_PAST_TENSE: Record<MessageReportAction, string> = {
 	[MessageReportAction.Resolve]: "Resolved",
 	[MessageReportAction.Disregard]: "Disregarded"
 };
 
-const MessageReportActionToColorMap: Record<MessageReportAction, ColorResolvable> = {
+export const REPORT_ACTION_TO_COLOR: Record<MessageReportAction, ColorResolvable> = {
 	[MessageReportAction.Resolve]: Colors.Green,
 	[MessageReportAction.Disregard]: Colors.Blurple
 };
 
-const MessageReportActionToStatusMap: Record<MessageReportAction, ReportStatus> = {
+export const REPORT_ACTION_TO_STATUS: Record<MessageReportAction, ReportStatus> = {
 	[MessageReportAction.Resolve]: ReportStatus.Resolved,
 	[MessageReportAction.Disregard]: ReportStatus.Disregarded
 };
