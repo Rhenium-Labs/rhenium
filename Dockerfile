@@ -29,4 +29,4 @@ COPY --from=build /rhenium/src ./src
 COPY --from=build /rhenium/prisma ./prisma
 COPY --from=build /rhenium/tests ./tests
 
-CMD ["bun", "start"]
+CMD ["bun", "run", "dist/index.js"]
