@@ -234,7 +234,6 @@ export default class MessageManager {
 	 * @param data An object containing the search criteria:
 	 *   - channelId: The ID of the channel to search within.
 	 *   - authorId: The ID of the author of the messages.
-	 *   - initialMessageId: The ID of the message to start searching from (inclusive).
 	 *   - limit: The maximum number of message IDs to return.
 	 *
 	 * @returns An array of message IDs that match the criteria, sorted by newest first.
@@ -243,17 +242,12 @@ export default class MessageManager {
 	static findMatchingMessages(data: {
 		channelId: string;
 		authorId: string;
-		initialMessageId: string;
 		limit: number;
 	}): string[] {
-		const { channelId, authorId, initialMessageId, limit } = data;
+		const { channelId, authorId, limit } = data;
 
 		const matching = this._cache.filter(
-			msg =>
-				msg.channel_id === channelId &&
-				msg.author_id === authorId &&
-				!msg.deleted &&
-				msg.id <= initialMessageId
+			msg => msg.channel_id === channelId && msg.author_id === authorId && !msg.deleted
 		);
 
 		return matching

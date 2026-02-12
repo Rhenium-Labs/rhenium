@@ -475,7 +475,7 @@ export default class MessageReportUtils {
 
 			fields.push({
 				name: `#${report.id}, against @${target.username} (${target.id})`,
-				value: `Created On ${time(report.reported_at, "f")}${reportURL ? ` \`|\` [Jump to Report](${reportURL})` : ""}\n\`${escapeCodeBlock(truncatedReason)}\``,
+				value: `Created On ${time(report.reported_at, "f")}${reportURL ? ` \`|\` [Jump to report](${reportURL})` : ""}\n\`${escapeCodeBlock(truncatedReason)}\``,
 				inline: false
 			});
 		}

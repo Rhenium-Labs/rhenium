@@ -249,22 +249,20 @@ export default class MessageReactionAdd extends EventListener {
 					components.push(row);
 				}
 
-				void config.log(LoggingEvent.QuickMuteExecuted, { embeds: [embed] });
-
-				void config.log(LoggingEvent.QuickMuteResult, {
-					content,
-					components,
-					files: [attachment]
-				});
+				return Promise.all([
+					config.log(LoggingEvent.QuickMuteExecuted, { embeds: [embed] }),
+					config.log(LoggingEvent.QuickMuteResult, {
+						content,
+						components,
+						files: [attachment]
+					})
+				]);
 			}
 
-			void config.log(LoggingEvent.QuickMuteResult, {
-				content
-			});
-
-			void config.log(LoggingEvent.QuickMuteExecuted, {
-				embeds: [embed]
-			});
+			return Promise.all([
+				config.log(LoggingEvent.QuickMuteExecuted, { embeds: [embed] }),
+				config.log(LoggingEvent.QuickMuteResult, { content })
+			]);
 		} catch {
 			quickMuteActionLocks.delete(message.author.id);
 		} finally {
@@ -396,15 +394,14 @@ export default class MessageReactionAdd extends EventListener {
 				components.push(row);
 			}
 
-			void config.log(LoggingEvent.QuickPurgeResult, {
-				content,
-				components,
-				files: [attachment]
-			});
-
-			void config.log(LoggingEvent.QuickPurgeExecuted, {
-				embeds: [embed]
-			});
+			return Promise.all([
+				config.log(LoggingEvent.QuickPurgeExecuted, { embeds: [embed] }),
+				config.log(LoggingEvent.QuickPurgeResult, {
+					content,
+					components,
+					files: [attachment]
+				})
+			]);
 		} catch {
 			quickPurgeActionLocks.delete(message.author.id);
 		} finally {
@@ -430,7 +427,6 @@ export default class MessageReactionAdd extends EventListener {
 		const messageIds = await MessageReactionAdd._fetchPurgeableMessages({
 			channelId: channel.id,
 			authorId,
-			triggerMessageId: triggerMessage.id,
 			limit: amount
 		});
 
@@ -532,20 +528,18 @@ export default class MessageReactionAdd extends EventListener {
 	/**
 	 * Fetches message IDs that can be purged from cache and database.
 	 * Checks the in-memory cache first, then falls back to database if needed.
-	 * Returns messages in reverse chronological order, starting from the trigger message.
+	 * Returns messages in reverse chronological order.
 	 */
 	private static async _fetchPurgeableMessages(data: {
 		channelId: Snowflake;
 		authorId: Snowflake;
-		triggerMessageId: Snowflake;
 		limit: number;
 	}): Promise<Snowflake[]> {
-		const { channelId, authorId, triggerMessageId, limit } = data;
+		const { channelId, authorId, limit } = data;
 
 		const cachedMessages = MessageManager.findMatchingMessages({
 			channelId,
 			authorId,
-			initialMessageId: triggerMessageId,
 			limit
 		});
 
@@ -556,23 +550,18 @@ export default class MessageReactionAdd extends EventListener {
 		const remaining = limit - cachedMessages.length;
 		const cachedIds = new Set(cachedMessages);
 
-		const oldestCachedId =
-			cachedMessages.length > 0
-				? cachedMessages[cachedMessages.length - 1]
-				: triggerMessageId;
-
 		const messages = await kysely
 			.selectFrom("Message")
 			.select(["Message.id"])
 			.where("Message.channel_id", "=", channelId)
 			.where("Message.author_id", "=", authorId)
 			.where("Message.deleted", "=", false)
-			.where("Message.id", "<", oldestCachedId)
+			.$if(cachedIds.size > 0, qb => qb.where("Message.id", "not in", [...cachedIds]))
 			.orderBy("Message.created_at", "desc")
 			.limit(remaining)
 			.execute();
 
-		const dbMessageIds = messages.map(m => m.id).filter(id => !cachedIds.has(id));
+		const dbMessageIds = messages.map(m => m.id);
 		return [...cachedMessages, ...dbMessageIds];
 	}
 
