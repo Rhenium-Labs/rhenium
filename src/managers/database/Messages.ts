@@ -269,9 +269,12 @@ export default class MessageManager {
 		let count = 0;
 
 		try {
+			// Snapshot the cache values once so the array is stable during iteration.
+			const allMessages = Array.from(this._cache.values());
+
 			// Chunk messages into batches of 2500 to not exceed PostgreSQL's parameter limit (65535).
-			for (let i = 0; i < this._cache.size; i += 2500) {
-				const batch = Array.from(this._cache.values()).slice(i, i + 2500);
+			for (let i = 0; i < allMessages.length; i += 2500) {
+				const batch = allMessages.slice(i, i + 2500);
 
 				const inserted = await kysely
 					.insertInto("Message")
@@ -279,10 +282,15 @@ export default class MessageManager {
 					.returning("id")
 					.execute();
 
+				// Remove successfully inserted messages from the cache immediately
+				// so they are not retried if a later batch fails.
+				for (const row of inserted) {
+					this._cache.delete(row.id);
+				}
+
 				count += inserted.length;
 			}
 
-			this._cache.clear();
 			Logger.info(`Stored ${count} ${inflect(count, "message")}.`);
 		} catch (error) {
 			Logger.error("Failed to store cached messages:", error);
