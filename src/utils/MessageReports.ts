@@ -420,7 +420,7 @@ export default class MessageReportUtils {
 			embed.setFooter({ text: `User ID: ${target.id}` });
 		}
 
-		const fields = await MessageReportUtils._getSearchFields(reports, config);
+		const fields = await MessageReportUtils._getSearchFields(reports, config, !!target);
 
 		if (fields.length === 0) {
 			embed.setDescription("No pending reports found.");
@@ -455,10 +455,15 @@ export default class MessageReportUtils {
 	 *
 	 * @param reports The list of message reports to generate fields for.
 	 * @param config The guild configuration, used to determine if links to the original report messages can be generated.
+	 * @param hasUserFilter Whether the search results are filtered by a specific user, which affects the formatting of the embed fields.
 	 * @returns An array of embed fields representing the message reports.
 	 */
 
-	private static async _getSearchFields(reports: MessageReport[], config: GuildConfig) {
+	private static async _getSearchFields(
+		reports: MessageReport[],
+		config: GuildConfig,
+		hasUserFilter: boolean
+	) {
 		let fields: EmbedField[] = [];
 
 		for (const report of reports) {
@@ -473,8 +478,12 @@ export default class MessageReportUtils {
 				? messageLink(channelId, report.id, report.guild_id)
 				: null;
 
+			const fieldName = hasUserFilter
+				? `#${report.id}`
+				: `#${report.id}, against @${target.username} (${target.id})`;
+
 			fields.push({
-				name: `#${report.id}, against @${target.username} (${target.id})`,
+				name: fieldName,
 				value: `Created On ${time(report.reported_at, "f")}${reportURL ? ` \`|\` [Jump to report](${reportURL})` : ""}\n\`${escapeCodeBlock(truncatedReason)}\``,
 				inline: false
 			});
