@@ -49,11 +49,17 @@ export default class MessageManager {
 
 	/**
 	 * Queues a message for database insertion.
+	 * If the cache exceeds 5000 messages, an immediate insertion is triggered to prevent memory bloat.
 	 *
 	 * @param message The Discord message to be queued.
 	 * @returns void
 	 */
-	static queue(message: DiscordMessage<true>): void {
+	static async queue(message: DiscordMessage<true>): Promise<void> {
+		if (this._cache.size + 1 >= 5000) {
+			Logger.warn(`Message cache has reached 5000 entries. Early insertion triggered.`);
+			await MessageManager.insert();
+		}
+
 		const serialized = MessageManager.serialize(message);
 		MessageManager._cache.set(serialized.id, serialized);
 	}
@@ -256,6 +262,12 @@ export default class MessageManager {
 			.slice(0, limit);
 	}
 
+	/**
+	 * Inserts all cached messages into the database and clears the cache.
+	 *
+	 * @param event Optional signal event that triggered the insertion (e.g., process exit). Used for logging purposes.
+	 * @returns void
+	 */
 	static async insert(event?: NodeJS.Signals): Promise<void> {
 		if (this._cache.size === 0) {
 			Logger.info("No messages to insert.");
@@ -266,34 +278,16 @@ export default class MessageManager {
 			`Inserting cached messages ${event ? `before exiting due to ${event}` : ""}...`
 		);
 
-		let count = 0;
+		const messages = Array.from(this._cache.values());
+		const inserted = await kysely
+			.insertInto("Message")
+			.onConflict(oc => oc.column("id").doNothing())
+			.values(messages)
+			.returning("id")
+			.execute();
 
-		try {
-			// Snapshot the cache values once so the array is stable during iteration.
-			const allMessages = Array.from(this._cache.values());
-
-			// Chunk messages into batches of 2500 to not exceed PostgreSQL's parameter limit (65535).
-			for (let i = 0; i < allMessages.length; i += 2500) {
-				const batch = allMessages.slice(i, i + 2500);
-
-				const inserted = await kysely
-					.insertInto("Message")
-					.values(batch)
-					.returning("id")
-					.execute();
-
-				// Remove successfully inserted messages from the cache immediately
-				// so they are not retried if a later batch fails.
-				for (const row of inserted) {
-					this._cache.delete(row.id);
-				}
-
-				count += inserted.length;
-			}
-
-			Logger.info(`Stored ${count} ${inflect(count, "message")}.`);
-		} catch (error) {
-			Logger.error("Failed to store cached messages:", error);
-		}
+		// Clear the cache manually.
+		MessageManager._cache.clear();
+		Logger.info(`Stored ${inserted.length} ${inflect(inserted.length, "message")}.`);
 	}
 }
