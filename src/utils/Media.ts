@@ -161,6 +161,11 @@ export default class MediaUtils {
 						metadata.buffer,
 						metadata.extension
 					);
+
+					// Release the original buffer to allow GC to reclaim the memory.
+					// After conversion, only the base64 result is needed.
+					metadata.buffer = undefined;
+
 					if (converted.length) processedMedia.push(...converted);
 				} catch (error) {
 					Logger.error("Failed to process media item:", error);
