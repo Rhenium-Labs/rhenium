@@ -14,7 +14,8 @@ import {
 	messageLink,
 	roleMention,
 	time,
-	WebhookClient
+	WebhookClient,
+	APIMessage
 } from "discord.js";
 
 import { client, kysely } from "#root/index.js";
@@ -312,7 +313,7 @@ export default class MessageReportUtils {
 		interaction: ButtonInteraction<"cached">,
 		action: MessageReportAction,
 		config: GuildConfig
-	): Promise<SimpleResult> {
+	): Promise<SimpleResult<{ logs: APIMessage[] | null }>> {
 		if (!config.hasPermission(interaction.member, "ReviewMessageReports"))
 			return { ok: false, message: "You don't have permission to review message reports" };
 
@@ -340,9 +341,9 @@ export default class MessageReportUtils {
 			};
 		}
 
-		void MessageReportUtils._log(interaction, action, config);
 		void MessageReportUtils._updateSubmissionMessage(interaction, action, config);
 
+		const logs = await MessageReportUtils._log(interaction, action, config);
 		const data: MessageReportUpdate = {
 			resolved_by: interaction.user.id,
 			resolved_at: new Date(),
@@ -355,7 +356,7 @@ export default class MessageReportUtils {
 			.where("id", "=", interaction.message.id)
 			.execute();
 
-		return { ok: true };
+		return { ok: true, data: { logs } };
 	}
 
 	/**
@@ -558,21 +559,22 @@ export default class MessageReportUtils {
 	 * @param interaction The interaction.
 	 * @param action The action taken.
 	 * @param config The guild configuration.
+	 * @returns An array of APIMessage objects representing the logged messages, or null if logging is not enabled for this event.
 	 */
 
 	private static async _log(
 		interaction: ButtonInteraction<"cached">,
 		action: MessageReportAction,
 		config: GuildConfig
-	): Promise<void> {
-		if (!config.canLogEvent(LoggingEvent.MessageReportReviewed)) return;
+	): Promise<APIMessage[] | null> {
+		if (!config.canLogEvent(LoggingEvent.MessageReportReviewed)) return null;
 
 		const formattedAction = REPORT_ACTION_TO_PAST_TENSE[action];
 
 		const embedIdx = interaction.message.embeds.length > 1 ? 1 : 0;
 		const currentEmbed = interaction.message.embeds.at(embedIdx);
 
-		if (!currentEmbed) return;
+		if (!currentEmbed) return null;
 
 		const primaryEmbed = EmbedBuilder.from(currentEmbed)
 			.setColor(REPORT_ACTION_TO_COLOR[action])
@@ -585,7 +587,7 @@ export default class MessageReportUtils {
 
 		const secondaryEmbed = embedIdx === 1 ? interaction.message.embeds.at(0) : undefined;
 
-		return void config.log(LoggingEvent.MessageReportReviewed, {
+		return config.log(LoggingEvent.MessageReportReviewed, {
 			embeds: secondaryEmbed ? [secondaryEmbed, primaryEmbed] : [primaryEmbed]
 		});
 	}

@@ -1,4 +1,4 @@
-import { Colors, MessageFlags } from "discord.js";
+import { Colors, MessageFlags, messageLink } from "discord.js";
 import type { ResponseData } from "#commands/Command.js";
 
 import MessageReportUtils, {
@@ -44,10 +44,16 @@ export default class MessageReportButton extends Component {
 		}
 
 		const formattedReportAction = REPORT_ACTION_TO_PAST_TENSE[reportAction].toLowerCase();
+		const formattedLogs =
+			result.data.logs && result.data.logs.length > 0
+				? result.data.logs
+						.map(log => messageLink(log.channel_id, log.id, interaction.guildId))
+						.join(", ")
+				: null;
 
 		await interaction
 			.followUp({
-				content: `Successfully ${formattedReportAction} report - ID \`${interaction.message.id}\``,
+				content: `Successfully ${formattedReportAction} report - ID \`${interaction.message.id}\`${formattedLogs ? `\n └ ${formattedLogs}` : ""}`,
 				flags: MessageFlags.Ephemeral
 			})
 			.catch(() => null);
