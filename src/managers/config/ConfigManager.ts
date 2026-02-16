@@ -60,6 +60,13 @@ export default class ConfigManager {
 		};
 
 		ConfigManager._cache.set(guildId, new GuildConfig(updatedData));
+
+		// Update experimental `config` column in Guild table to keep it synced.
+		void kysely
+			.updateTable("Guild")
+			.set({ config: updatedData })
+			.where("id", "=", guildId)
+			.execute();
 	}
 
 	/**
@@ -235,6 +242,14 @@ export default class ConfigManager {
 			permission_scopes: permissionScopes,
 			logging_webhooks: loggingWebhooks
 		};
+
+		// 🔧 EXPERIMENTAL
+		// The `config` column is meant to be a single source of truth for all guild configuration. It is crucial that this column is kept in sync with the individual config tables until the migration is complete and those tables are removed.
+		await kysely
+			.updateTable("Guild")
+			.set({ config: data })
+			.where("id", "=", guildId)
+			.execute();
 
 		return new GuildConfig(data);
 	}
