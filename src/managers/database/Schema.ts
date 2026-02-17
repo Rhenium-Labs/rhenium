@@ -16,7 +16,7 @@ export type BanRequestTable = {
     resolved_by: string | null;
     requested_at: Generated<Timestamp>;
     requested_by: string;
-    duration: number | null;
+    expires_at: Timestamp | null;
     reason: string;
 };
 export type BanRequest = Selectable<BanRequestTable>;

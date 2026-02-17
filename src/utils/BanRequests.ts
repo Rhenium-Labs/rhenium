@@ -81,9 +81,14 @@ export default class BanRequestUtils {
 			};
 
 		const duration = parseDurationString(durationStr);
+		const expiresAt = duration ? new Date(Date.now() + duration) : null;
 
 		if (duration) {
-			const result = validateDuration({ duration, minimum: "1s", maximum: "5y" });
+			const result = validateDuration({
+				duration,
+				minimum: "1s",
+				maximum: ms(Number.MAX_SAFE_INTEGER)
+			});
 
 			if (!result.ok)
 				return {
@@ -194,7 +199,7 @@ export default class BanRequestUtils {
 				target_id: target.id,
 				target_muted_automatically: muted,
 				requested_by: executor.id,
-				duration: duration ?? null,
+				expires_at: expiresAt,
 				reason: reason ?? "No reason provided"
 			})
 			.execute()
@@ -271,6 +276,7 @@ export default class BanRequestUtils {
 					.updateTable("BanRequest")
 					.set({
 						status: RequestStatus.Disregarded,
+						expires_at: null,
 						resolved_by: interaction.user.id,
 						resolved_at: new Date()
 					})
@@ -293,11 +299,6 @@ export default class BanRequestUtils {
 						message: `The target user is already banned. Unban them before accepting this request.`
 					};
 
-				const currentDate = Date.now();
-				const expiresAt = request.duration
-					? new Date(currentDate + request.duration)
-					: null;
-
 				const banned = await interaction.guild.bans
 					.create(targetUser, {
 						reason: `[${request.id}] Ban request accepted by ${interaction.user.tag} (${interaction.user.id}) - ${request.reason}`
@@ -310,17 +311,17 @@ export default class BanRequestUtils {
 						message: `Failed to ban the target user. Do I have the necessary permissions?`
 					};
 
-				if (expiresAt) {
+				if (request.expires_at) {
 					void kysely
 						.insertInto("TemporaryBan")
 						.values({
 							guild_id: interaction.guild.id,
 							target_id: targetUser.id,
-							expires_at: expiresAt
+							expires_at: request.expires_at
 						})
 						.onConflict(oc =>
 							oc.columns(["guild_id", "target_id"]).doUpdateSet({
-								expires_at: expiresAt
+								expires_at: request.expires_at!
 							})
 						)
 						.execute();

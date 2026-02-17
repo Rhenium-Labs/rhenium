@@ -210,10 +210,12 @@ export default class GuildBanAdd extends EventListener {
 				.setFooter({ text: `Reviewed by @${client.user.username} (${client.user.id})` })
 				.setTimestamp();
 
-			if (request.duration) {
+			if (request.expires_at) {
+				const duration = request.expires_at.getTime() - request.requested_at.getTime();
+
 				embed.spliceFields(2, 0, {
 					name: "Duration",
-					value: ms(request.duration, { long: true })
+					value: ms(duration, { long: true })
 				});
 			}
 

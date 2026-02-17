@@ -221,11 +221,11 @@ model BanRequest {
   resolved_at DateTime?
   resolved_by String?
 
-  requested_at DateTime @default(now())
+  requested_at DateTime  @default(now())
   requested_by String
+  expires_at   DateTime?
 
-  duration Int?
-  reason   String
+  reason String
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }
