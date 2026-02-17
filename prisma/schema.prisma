@@ -111,8 +111,7 @@ model MessageReportConfig {
   webhook_url     String?
   webhook_channel String?
 
-  /// @kyselyType(bigint)
-  auto_disregard_after        BigInt  @default(0)
+  auto_disregard_after        Int     @default(0)
   delete_submission_on_handle Boolean @default(true)
 
   immune_roles       String[] @default([])
@@ -225,8 +224,7 @@ model BanRequest {
   requested_at DateTime @default(now())
   requested_by String
 
-  /// @kyselyType(bigint)
-  duration BigInt?
+  duration Int?
   reason   String
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
@@ -317,11 +315,11 @@ model QuickMuteChannelScoping {
 }
 
 model QuickMute {
-  user_id      String
-  guild_id     String
-  reaction     String
-  /// @kyselyType(bigint)
-  duration     BigInt
+  user_id  String
+  guild_id String
+  reaction String
+
+  duration     Int
   reason       String
   purge_amount Int    @default(0)
 

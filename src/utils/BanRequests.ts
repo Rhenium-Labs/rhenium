@@ -125,7 +125,7 @@ export default class BanRequestUtils {
 		if (duration) {
 			embed.spliceFields(2, 0, {
 				name: "Duration",
-				value: ms(Number(duration), { long: true })
+				value: ms(duration, { long: true })
 			});
 		}
 
@@ -194,7 +194,7 @@ export default class BanRequestUtils {
 				target_id: target.id,
 				target_muted_automatically: muted,
 				requested_by: executor.id,
-				duration: duration ? BigInt(duration) : null,
+				duration: duration ?? null,
 				reason: reason ?? "No reason provided"
 			})
 			.execute()
@@ -295,7 +295,7 @@ export default class BanRequestUtils {
 
 				const currentDate = Date.now();
 				const expiresAt = request.duration
-					? new Date(currentDate + Number(request.duration))
+					? new Date(currentDate + request.duration)
 					: null;
 
 				const banned = await interaction.guild.bans

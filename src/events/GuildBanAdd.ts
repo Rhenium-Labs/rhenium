@@ -213,7 +213,7 @@ export default class GuildBanAdd extends EventListener {
 			if (request.duration) {
 				embed.spliceFields(2, 0, {
 					name: "Duration",
-					value: ms(Number(request.duration), { long: true })
+					value: ms(request.duration, { long: true })
 				});
 			}
 

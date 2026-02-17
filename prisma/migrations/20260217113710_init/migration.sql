@@ -25,6 +25,7 @@ CREATE TYPE "LoggingEvent" AS ENUM ('MessageReportReviewed', 'BanRequestReviewed
 -- CreateTable
 CREATE TABLE "Guild" (
     "id" TEXT NOT NULL,
+    "config" JSONB NOT NULL DEFAULT '{}',
 
     CONSTRAINT "Guild_pkey" PRIMARY KEY ("id")
 );
