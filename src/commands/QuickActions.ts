@@ -231,6 +231,7 @@ export default class QuickActions extends Command {
 			.selectFrom("QuickMute")
 			.select(eb => eb.fn.countAll().as("count"))
 			.where("guild_id", "=", interaction.guildId)
+			.where("user_id", "=", interaction.user.id)
 			.executeTakeFirst();
 
 		// Hardcoded limit of 10 quick mutes per user.
@@ -428,6 +429,7 @@ export default class QuickActions extends Command {
 		const quickPurges = await kysely
 			.selectFrom("QuickPurge")
 			.select(eb => eb.fn.countAll().as("count"))
+			.where("user_id", "=", interaction.user.id)
 			.where("guild_id", "=", interaction.guildId)
 			.executeTakeFirst();
 
