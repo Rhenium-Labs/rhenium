@@ -173,7 +173,7 @@ export default class MessageReactionAdd extends EventListener {
 			const formattedDuration = ms(quickMuteConfig.duration, { long: true });
 
 			const result = await target
-				.timeout(quickMuteConfig.duration, truncatedReason)
+				.timeout(Number(quickMuteConfig.duration), truncatedReason)
 				.then(() => ({ ok: true }))
 				.catch(() => ({ ok: false }));
 
