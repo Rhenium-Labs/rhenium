@@ -9,6 +9,9 @@ import type { Message } from "./Schema.js";
 
 import Logger from "#utils/Logger.js";
 
+/** Simple mutex for message insertion operations. */
+let isInserting = false;
+
 export default class MessageManager {
 	/** Collection of cached messages. */
 	private static _cache: Collection<string, Message> = new Collection();
@@ -274,6 +277,13 @@ export default class MessageManager {
 			return;
 		}
 
+		if (isInserting) {
+			Logger.warn("Message insertion is already in progress. Skipping this insertion.");
+			return;
+		}
+
+		isInserting = true;
+
 		Logger.info(
 			`Inserting cached messages ${event ? `before exiting due to ${event}` : ""}...`
 		);
@@ -289,5 +299,7 @@ export default class MessageManager {
 		// Clear the cache manually.
 		MessageManager._cache.clear();
 		Logger.info(`Stored ${inserted.length} ${inflect(inserted.length, "message")}.`);
+
+		isInserting = false;
 	}
 }
