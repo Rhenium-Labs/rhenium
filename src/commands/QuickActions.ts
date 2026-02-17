@@ -273,7 +273,7 @@ export default class QuickActions extends Command {
 		const durationValidation = validateDuration({
 			duration,
 			minimum: "5s",
-			maximum: "28d"
+			maximum: "23d"
 		});
 
 		if (!durationValidation.ok) {
