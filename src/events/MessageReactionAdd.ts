@@ -170,7 +170,7 @@ export default class MessageReactionAdd extends EventListener {
 				`Quick mute issued by @${executor.user.username} (${executor.id}) - ${quickMuteConfig.reason}`,
 				512
 			);
-			const formattedDuration = ms(quickMuteConfig.duration, { long: true });
+			const formattedDuration = ms(Number(quickMuteConfig.duration), { long: true });
 
 			const result = await target
 				.timeout(Number(quickMuteConfig.duration), truncatedReason)

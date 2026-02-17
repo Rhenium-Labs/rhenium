@@ -177,7 +177,7 @@ export type MessageReportConfigTable = {
     enabled: Generated<boolean>;
     webhook_url: string | null;
     webhook_channel: string | null;
-    auto_disregard_after: Generated<number>;
+    auto_disregard_after: Generated<string>;
     delete_submission_on_handle: Generated<boolean>;
     immune_roles: Generated<string[]>;
     notify_roles: Generated<string[]>;
@@ -201,7 +201,7 @@ export type QuickMuteTable = {
     user_id: string;
     guild_id: string;
     reaction: string;
-    duration: number;
+    duration: string;
     reason: string;
     purge_amount: Generated<number>;
 };

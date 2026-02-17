@@ -127,9 +127,10 @@ export default class GlobalConfig {
 
 				for (const { guild_id } of guilds) {
 					const config = (await ConfigManager.get(guild_id)).parseReportsConfig();
-					if (!config || config.auto_disregard_after <= 0) continue;
+					if (!config) continue;
 
-					const threshold = new Date(now.getTime() - config.auto_disregard_after);
+					const autoDisregardAfter = BigInt(config.auto_disregard_after);
+					const threshold = new Date(now.getTime() - Number(autoDisregardAfter));
 
 					const { numUpdatedRows } = await kysely
 						.updateTable("MessageReport")

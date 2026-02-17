@@ -292,7 +292,7 @@ export default class QuickActions extends Command {
 				user_id: interaction.user.id,
 				guild_id: interaction.guildId,
 				reaction: reactionIdentifier,
-				duration: duration,
+				duration: duration.toString(),
 				reason,
 				purge_amount: purgeAmount
 			})
@@ -378,7 +378,7 @@ export default class QuickActions extends Command {
 			const emojiDisplay =
 				(await getEmojiDisplay(qm.reaction, interaction.guildId)) ?? "unknown";
 
-			const formattedDuration = ms(qm.duration, { long: true });
+			const formattedDuration = ms(Number(qm.duration), { long: true });
 			const purgeInfo = qm.purge_amount > 0 ? ` + purge ${qm.purge_amount}` : "";
 
 			embed.addFields({

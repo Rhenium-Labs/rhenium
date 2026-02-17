@@ -111,7 +111,7 @@ model MessageReportConfig {
   webhook_url     String?
   webhook_channel String?
 
-  auto_disregard_after        Int     @default(0)
+  auto_disregard_after        BigInt  @default(0)
   delete_submission_on_handle Boolean @default(true)
 
   immune_roles       String[] @default([])
@@ -319,7 +319,7 @@ model QuickMute {
   guild_id String
   reaction String
 
-  duration     Int
+  duration     BigInt
   reason       String
   purge_amount Int    @default(0)
 
