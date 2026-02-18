@@ -67,32 +67,30 @@ const loggingWebhookSchema = z.object({
 
 export type LoggingWebhook = z.infer<typeof loggingWebhookSchema>;
 
-const channelScopingSchema = z
-	.object({
-		include_channels: z.array(z.string()).default([]),
-		exclude_channels: z.array(z.string()).default([])
-	})
-	.superRefine((data, ctx) => {
-		const invalidChannelIds = data.include_channels.filter(channelId => {
-			return data.exclude_channels.includes(channelId);
-		});
+export enum ChannelScopingType {
+	/** Actions can only be used in these channels. */
+	Include = 0,
+	/** Actions can only be used outside of these channels. */
+	Exclude = 1
+}
 
-		for (const channelId of invalidChannelIds) {
-			ctx.addIssue({
-				code: "custom",
-				message: `Channel ID ${channelId} is both included and excluded.`
-			});
-		}
-	});
+const channelScopingSchema = z.object({
+	channel_id: z.string().nonempty(),
+	type: z.enum(ChannelScopingType)
+});
 
-export type ChannelScoping = z.infer<typeof channelScopingSchema>;
+export type RawChannelScoping = z.infer<typeof channelScopingSchema>;
+export type ParsedChannelScoping = {
+	included_channels: string[];
+	excluded_channels: string[];
+};
 
 const messageReportConfigSchema = z.object({
 	enabled: z.boolean().default(true),
 	webhook_url: z.string().nullable().optional(),
 	webhook_channel: z.string().nullable().optional(),
 
-	auto_disregard_after: z.number().min(0).default(0),
+	auto_disregard_after: z.bigint().min(0n).default(0n),
 	delete_sub_on_handle: z.boolean().default(true),
 
 	immune_roles: z.array(z.string()).default([]),
