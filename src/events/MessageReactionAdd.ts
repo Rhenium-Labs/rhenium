@@ -39,6 +39,7 @@ import ConfigManager from "#config/ConfigManager.js";
 import EventListener from "#events/EventListener.js";
 import MessageManager from "#database/Messages.js";
 import ModerationUtils from "#utils/Moderation.js";
+import { captureException } from "@sentry/node";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */
 const BULK_DELETE_MAX_AGE = 14 * 24 * 60 * 60 * 1000;
@@ -82,7 +83,7 @@ export default class MessageReactionAdd extends EventListener {
 
 		const config = await ConfigManager.get(message.guild.id);
 
-		void Promise.all([
+		Promise.all([
 			MessageReactionAdd._handleQuickMute({ user, message, reaction, config }),
 			MessageReactionAdd._handleQuickPurge({ user, message, reaction, config })
 		]);
@@ -172,14 +173,24 @@ export default class MessageReactionAdd extends EventListener {
 			);
 			const formattedDuration = ms(Number(quickMuteConfig.duration), { long: true });
 
-			const result = await target
-				.timeout(Number(quickMuteConfig.duration), truncatedReason)
-				.then(() => ({ ok: true }))
-				.catch(() => ({ ok: false }));
+			try {
+				await target.timeout(Number(quickMuteConfig.duration), truncatedReason);
+			} catch (error) {
+				const sentryId = captureException(error, {
+					user: {
+						id: message.author.id,
+						username: message.author.username
+					},
+					extra: {
+						action: "Quick Mute",
+						duration: formattedDuration,
+						executorId: executor.id,
+						executorUsername: executor.user.username
+					}
+				});
 
-			if (!result.ok) {
 				return config.log(LoggingEvent.QuickMuteResult, {
-					content: `${executor}, failed to quick mute ${target}.`
+					content: `${executor}, an error occurred while executing quick mute on ${target}. Please use this ID when reporting the bug: \`${sentryId}\`.`
 				});
 			}
 
