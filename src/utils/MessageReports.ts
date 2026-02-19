@@ -26,7 +26,7 @@ import { cleanContent, formatMessageContent } from "./Messages.js";
 
 import type { SimpleResult } from "./Types.js";
 import type { ResponseData } from "#commands/Command.js";
-import type { MessageReport, MessageReportUpdate } from "#database/Schema.js";
+import type { MessageReport } from "#database/Schema.js";
 
 import GuildConfig from "#config/GuildConfig.js";
 
