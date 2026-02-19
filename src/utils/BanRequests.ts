@@ -231,7 +231,7 @@ export default class BanRequestUtils {
 			.executeTakeFirst();
 
 		if (!request) {
-			void interaction.message?.delete().catch(() => null);
+			interaction.message?.delete().catch(() => null);
 
 			return {
 				ok: false,
@@ -240,7 +240,7 @@ export default class BanRequestUtils {
 		}
 
 		if (request.resolved_by) {
-			void interaction.message?.delete().catch(() => null);
+			interaction.message?.delete().catch(() => null);
 
 			return {
 				ok: false,
@@ -259,7 +259,7 @@ export default class BanRequestUtils {
 		switch (action) {
 			case BanRequestAction.Disregard: {
 				if (request.target_muted_automatically) {
-					void targetMember
+					targetMember
 						?.timeout(
 							null,
 							`Automatic unmute after ban request disregard - ID ${request.id}`
@@ -268,7 +268,7 @@ export default class BanRequestUtils {
 				}
 
 				// prettier-ignore
-				void BanRequestUtils
+				BanRequestUtils
                     ._log(interaction, action, config)
                     .then(() => interaction.message?.delete().catch(() => null));
 
@@ -312,7 +312,7 @@ export default class BanRequestUtils {
 					};
 
 				if (request.expires_at) {
-					void kysely
+					kysely
 						.insertInto("TemporaryBan")
 						.values({
 							guild_id: interaction.guild.id,
@@ -328,10 +328,10 @@ export default class BanRequestUtils {
 				}
 
 				// prettier-ignore
-				void BanRequestUtils
+				BanRequestUtils
                     ._log(interaction, action, config)
                     .then(() => interaction.message?.delete().catch(() => null));
-				void BanRequestUtils._notify(config, action, request);
+				BanRequestUtils._notify(config, action, request);
 
 				const data: BanRequestUpdate = {
 					status: RequestStatus.Accepted,
@@ -350,7 +350,7 @@ export default class BanRequestUtils {
 
 			case BanRequestAction.Deny: {
 				if (targetMember && request.target_muted_automatically)
-					void targetMember
+					targetMember
 						.timeout(
 							null,
 							`Automatic unmute after ban request denial - ID ${request.id}`
@@ -358,10 +358,10 @@ export default class BanRequestUtils {
 						.catch(() => null);
 
 				// prettier-ignore
-				void BanRequestUtils
+				BanRequestUtils
                     ._log(interaction, action, config, reviewReason)
                     .then(() => interaction.message?.delete().catch(() => null));
-				void BanRequestUtils._notify(config, action, request, reviewReason);
+				BanRequestUtils._notify(config, action, request, reviewReason);
 
 				const data: BanRequestUpdate = {
 					status: RequestStatus.Denied,
@@ -404,7 +404,7 @@ export default class BanRequestUtils {
 			request.target_id
 		)} has been ${formattedAction}${formattedReason ? ` - ${formattedReason}` : "."}`;
 
-		return void config.log(LoggingEvent.BanRequestResult, {
+		config.log(LoggingEvent.BanRequestResult, {
 			content,
 			allowedMentions: { users: [request.requested_by] }
 		});
@@ -446,7 +446,7 @@ export default class BanRequestUtils {
 			updatedEmbed.addFields({ name: "Reviewer Reason", value: reason });
 		}
 
-		return void config.log(LoggingEvent.BanRequestReviewed, {
+		config.log(LoggingEvent.BanRequestReviewed, {
 			embeds: [updatedEmbed]
 		});
 	}

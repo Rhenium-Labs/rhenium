@@ -17,6 +17,6 @@ export default class MessageBulkDelete extends EventListener {
 		// Skip if any of these messages are being handled by a purge action.
 		if (messageIds.some(id => MessageManager.exclusions.has(id))) return;
 
-		void MessageManager.bulkDelete(messageIds);
+		MessageManager.bulkDelete(messageIds);
 	}
 }

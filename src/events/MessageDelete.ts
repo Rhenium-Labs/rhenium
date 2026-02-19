@@ -14,6 +14,6 @@ export default class MessageDelete extends EventListener {
 		// Skip if this message is being handled by a purge action.
 		if (MessageManager.exclusions.has(message.id)) return;
 
-		void MessageManager.delete(message.id);
+		MessageManager.delete(message.id);
 	}
 }

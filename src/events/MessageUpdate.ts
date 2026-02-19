@@ -16,6 +16,6 @@ export default class MessageUpdate extends EventListener {
 		if (!newMessage.content) return;
 
 		const updatedContent = cleanContent(newMessage.content, newMessage.channel);
-		void MessageManager.updateContent(newMessage.id, updatedContent);
+		MessageManager.updateContent(newMessage.id, updatedContent);
 	}
 }

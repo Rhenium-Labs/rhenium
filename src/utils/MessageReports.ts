@@ -324,7 +324,7 @@ export default class MessageReportUtils {
 			.executeTakeFirst();
 
 		if (!report) {
-			void interaction.message.delete().catch(() => null);
+			interaction.message.delete().catch(() => null);
 
 			return {
 				ok: false,
@@ -333,7 +333,7 @@ export default class MessageReportUtils {
 		}
 
 		if (report.resolved_by) {
-			void interaction.message.delete().catch(() => null);
+			interaction.message.delete().catch(() => null);
 
 			return {
 				ok: false,
@@ -341,18 +341,16 @@ export default class MessageReportUtils {
 			};
 		}
 
-		void MessageReportUtils._updateSubmissionMessage(interaction, action, config);
-
 		const logs = await MessageReportUtils._log(interaction, action, config);
-		const data: MessageReportUpdate = {
-			resolved_by: interaction.user.id,
-			resolved_at: new Date(),
-			status: REPORT_ACTION_TO_STATUS[action]
-		};
+		MessageReportUtils._updateSubmissionMessage(interaction, action, config);
 
 		await kysely
 			.updateTable("MessageReport")
-			.set(data)
+			.set({
+				resolved_by: interaction.user.id,
+				resolved_at: new Date(),
+				status: REPORT_ACTION_TO_STATUS[action]
+			})
 			.where("id", "=", interaction.message.id)
 			.execute();
 
@@ -606,7 +604,7 @@ export default class MessageReportUtils {
 		config: GuildConfig
 	): Promise<void> {
 		if (config.data.message_reports.delete_submission_on_handle) {
-			void interaction.message.delete().catch(() => null);
+			interaction.message.delete().catch(() => null);
 			return;
 		}
 
@@ -628,7 +626,7 @@ export default class MessageReportUtils {
 
 		const secondaryEmbed = embedIdx === 1 ? interaction.message.embeds.at(0) : undefined;
 
-		void interaction
+		interaction
 			.editReply({
 				embeds: secondaryEmbed ? [secondaryEmbed, primaryEmbed] : [primaryEmbed],
 				components: []

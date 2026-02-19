@@ -154,7 +154,7 @@ export default class GuildBanAdd extends EventListener {
 				embeds.push(referenceEmbed);
 			}
 
-			void config.log(LoggingEvent.MessageReportReviewed, { embeds });
+			config.log(LoggingEvent.MessageReportReviewed, { embeds });
 		}
 
 		if (!config.data.message_reports.webhook_channel) return;
@@ -166,7 +166,7 @@ export default class GuildBanAdd extends EventListener {
 		if (!reportsChannel) return;
 
 		// prettier-ignore
-		void reportsChannel
+		reportsChannel
 			.bulkDelete(reports.map(r => r.id), true)
 			.catch(() => null);
 	}
@@ -219,7 +219,7 @@ export default class GuildBanAdd extends EventListener {
 				});
 			}
 
-			void config.log(LoggingEvent.BanRequestReviewed, { embeds: [embed] });
+			config.log(LoggingEvent.BanRequestReviewed, { embeds: [embed] });
 		}
 
 		if (!config.data.ban_requests.webhook_channel) return;
@@ -231,7 +231,7 @@ export default class GuildBanAdd extends EventListener {
 		if (!requestsChannel) return;
 
 		// prettier-ignore
-		void requestsChannel
+		requestsChannel
 			.bulkDelete(requests.map(r => r.id), true)
 			.catch(() => null);
 	}

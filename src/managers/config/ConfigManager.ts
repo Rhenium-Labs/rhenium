@@ -62,7 +62,7 @@ export default class ConfigManager {
 		ConfigManager._cache.set(guildId, new GuildConfig(updatedData));
 
 		// Update experimental `config` column in Guild table to keep it synced.
-		void kysely
+		kysely
 			.updateTable("Guild")
 			.set({ config: updatedData })
 			.where("id", "=", guildId)

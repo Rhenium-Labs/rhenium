@@ -82,10 +82,9 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 
 		const configKey = this._getConfigKey(metadata.tableName);
 
-		if (configKey) {
+		if (configKey)
 			// Reload the configuration for the affected guild and config key.
-			void ConfigManager.reload(metadata.guildId, configKey);
-		}
+			ConfigManager.reload(metadata.guildId, configKey);
 
 		return result;
 	}

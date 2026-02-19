@@ -14,7 +14,7 @@ export default class Ready extends EventListener {
 	execute(): void {
 		Logger.success(`Logged in as ${this.client.user?.tag}!`);
 
-		void Promise.all([
+		Promise.all([
 			AutomatedScanner.startTickLoop(),
 			HeuristicScanner.startCleanupInterval(),
 			GlobalConfig.startMessageReportDisregardCronJob(),
