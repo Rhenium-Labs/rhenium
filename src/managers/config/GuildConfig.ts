@@ -183,7 +183,7 @@ export default class GuildConfig {
 
 		try {
 			const clients = webhooks.map(webhook => new WebhookClient({ url: webhook.url }));
-			return Promise.all(
+			return await Promise.all(
 				clients.map(client => client.send(payload).finally(() => client.destroy()))
 			);
 		} catch (error) {
