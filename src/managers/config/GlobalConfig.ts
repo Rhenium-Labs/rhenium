@@ -130,6 +130,8 @@ export default class GlobalConfig {
 					if (!config) continue;
 
 					const autoDisregardAfter = BigInt(config.auto_disregard_after);
+					if (autoDisregardAfter === 0n) continue; // Skip if auto-disregard is disabled for this guild.
+
 					const threshold = new Date(now.getTime() - Number(autoDisregardAfter));
 
 					const { numUpdatedRows } = await kysely
