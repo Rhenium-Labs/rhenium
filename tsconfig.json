@@ -6,11 +6,11 @@
 
 		// Module And Library Options
 		"lib": ["ESNext"],
-		"target": "ESNext",
-		"rootDir": "src",
-		"noEmit": true,
 		"types": ["bun-types"],
+		"target": "ESNext",
 		"module": "esnext",
+		"noEmit": true,
+		"rootDirs": ["src", "tests"],
 		"moduleResolution": "bundler",
 
 		// Source Map Options
@@ -45,6 +45,5 @@
 			"@managers/*": ["./src/managers/*"],
 			"@root/*": ["./src/*"]
 		}
-	},
-	"include": ["./src/**/*"]
+	}
 }
