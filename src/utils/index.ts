@@ -449,3 +449,27 @@ type CronJobOptions = {
 	cronTime: CronJobParams["cronTime"];
 	onTick: () => Promise<void> | void;
 };
+
+/** Default export. */
+export default {
+	getWhitelistStatus,
+	readYamlFile,
+	startCronJob,
+	inflect,
+	truncate,
+	cropLines,
+	capitalize,
+	userMentionWithId,
+	sleep,
+	parseDurationString,
+	validateDuration,
+	hierarchyCheck,
+	hastebin,
+	parseChannelScoping,
+	channelInScope,
+	getEmojiIdentifier,
+	validateEmoji,
+	getEmojiName,
+	getEmojiDisplay,
+	fetchGuildEmojis
+};
