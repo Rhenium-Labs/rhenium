@@ -4,9 +4,9 @@ import { PassThrough } from "stream";
 import sharp from "sharp";
 import ffmpeg from "fluent-ffmpeg";
 
-import { DISCORD_EMOJI_REGEX_GLOBAL } from "./Constants.js";
+import { DISCORD_EMOJI_REGEX_GLOBAL } from "./Constants";
 
-import Logger from "./Logger.js";
+import Logger from "./Logger";
 
 export default class MediaUtils {
 	/**

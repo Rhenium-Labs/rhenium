@@ -14,7 +14,7 @@ import type {
 	ContentFilterStatus,
 	UserPermission,
 	LoggingEvent
-} from "./Enums.js";
+} from "./Enums";
 
 export type BanRequestTable = {
 	id: string;

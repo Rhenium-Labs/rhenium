@@ -13,15 +13,15 @@ import {
 	roleMention
 } from "discord.js";
 
-import { kysely, client } from "#root/index.js";
-import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "#database/Enums.js";
+import { kysely, client } from "@root/index";
+import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "@database/Enums";
 
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#commands/Command.js";
-import GuildConfig from "#config/GuildConfig.js";
+} from "@commands/Command";
+import GuildConfig from "@config/GuildConfig";
 
 export default class Config extends Command {
 	constructor() {

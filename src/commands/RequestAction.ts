@@ -12,9 +12,9 @@ import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#commands/Command.js";
+} from "@commands/Command";
 
-import BanRequestUtils from "#utils/BanRequests.js";
+import BanRequestUtils from "@utils/BanRequests";
 
 export default class RequestAction extends Command {
 	constructor() {

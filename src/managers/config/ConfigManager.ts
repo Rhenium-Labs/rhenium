@@ -1,5 +1,5 @@
 import { Collection } from "discord.js";
-import { kysely } from "#root/index.js";
+import { kysely } from "@root/index";
 
 import type {
 	BanRequestConfig,
@@ -13,9 +13,9 @@ import type {
 	QuickMuteConfig,
 	QuickPurgeChannelScoping,
 	QuickPurgeConfig
-} from "#database/Schema.js";
+} from "@database/Schema";
 
-import GuildConfig, { type GuildConfigData } from "./GuildConfig.js";
+import GuildConfig, { type GuildConfigData } from "./GuildConfig";
 
 export default class ConfigManager {
 	/**

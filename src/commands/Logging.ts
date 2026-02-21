@@ -13,17 +13,17 @@ import {
 	channelMention
 } from "discord.js";
 
-import { LoggingEvent } from "#database/Enums.js";
-import { client, kysely } from "#root/index.js";
+import { LoggingEvent } from "@database/Enums";
+import { client, kysely } from "@root/index";
 
-import type { LoggingWebhook } from "#database/Schema.js";
+import type { LoggingWebhook } from "@database/Schema";
 
-import GuildConfig from "#config/GuildConfig.js";
+import GuildConfig from "@config/GuildConfig";
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#commands/Command.js";
+} from "@commands/Command";
 
 export default class Logging extends Command {
 	constructor() {

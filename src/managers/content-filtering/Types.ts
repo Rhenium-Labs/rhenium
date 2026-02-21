@@ -1,5 +1,5 @@
-import { Message } from "#database/Schema.js";
-import { Detector } from "#database/Enums.js";
+import { Message } from "@database/Schema";
+import { Detector } from "@database/Enums";
 
 import { Snowflake } from "discord.js";
 

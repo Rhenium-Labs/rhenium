@@ -8,14 +8,14 @@ import {
 	PermissionFlagsBits
 } from "discord.js";
 
-import { kysely } from "#root/index.js";
+import { kysely } from "@root/index";
 
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#commands/Command.js";
-import MessageReportUtils from "#utils/MessageReports.js";
+} from "@commands/Command";
+import MessageReportUtils from "@utils/MessageReports";
 
 export default class Reports extends Command {
 	constructor() {

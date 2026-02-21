@@ -16,8 +16,8 @@ import {
 	MessagePayload
 } from "discord.js";
 
-import { client } from "#root/index.js";
-import { hastebin, truncate } from "./index.js";
+import { client } from "@root/index";
+import { hastebin, truncate } from "./index";
 
 type MessageOptions = MessageCreateOptions | MessageReplyOptions | MessageEditOptions;
 

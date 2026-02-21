@@ -17,15 +17,15 @@ import {
 
 import ms from "ms";
 
-import { kysely } from "#root/index.js";
-import { LoggingEvent, RequestStatus } from "#database/Enums.js";
-import { parseDurationString, userMentionWithId, validateDuration } from "./index.js";
+import { kysely } from "@root/index";
+import { LoggingEvent, RequestStatus } from "@database/Enums";
+import { parseDurationString, userMentionWithId, validateDuration } from "./index";
 
-import type { BanRequest, BanRequestUpdate } from "#database/Schema.js";
-import type { SimpleResult } from "./Types.js";
+import type { BanRequest, BanRequestUpdate } from "@database/Schema";
+import type { SimpleResult } from "./Types";
 
-import GuildConfig from "#config/GuildConfig.js";
-import ModerationUtils from "./Moderation.js";
+import GuildConfig from "@config/GuildConfig";
+import ModerationUtils from "./Moderation";
 
 export default class BanRequestUtils {
 	/**

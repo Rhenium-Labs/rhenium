@@ -5,10 +5,10 @@ import type {
 	ModalSubmitInteraction
 } from "discord.js";
 
-import { client, kysely } from "#root/index.js";
-import type { ResponseData } from "../commands/Command.js";
+import { client, kysely } from "@root/index";
+import type { ResponseData } from "../commands/Command";
 
-import type GuildConfig from "#config/GuildConfig.js";
+import type GuildConfig from "@config/GuildConfig";
 
 export default abstract class Component {
 	/**

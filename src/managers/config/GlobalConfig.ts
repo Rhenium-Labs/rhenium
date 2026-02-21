@@ -4,13 +4,13 @@ import { fromError } from "zod-validation-error";
 import ms from "ms";
 import fs from "node:fs";
 
-import { client, kysely } from "#root/index.js";
-import { LOG_DATE_FORMAT, ZOD_CRON_REGEX } from "#utils/Constants.js";
-import { inflect, readYamlFile, startCronJob } from "#utils/index.js";
+import { client, kysely } from "@root/index";
+import { LOG_DATE_FORMAT, ZOD_CRON_REGEX } from "@utils/Constants";
+import { inflect, readYamlFile, startCronJob } from "@utils/index";
 
-import Logger from "#utils/Logger.js";
-import ConfigManager from "./ConfigManager.js";
-import MessageManager from "#database/Messages.js";
+import Logger from "@utils/Logger";
+import ConfigManager from "./ConfigManager";
+import MessageManager from "@database/Messages";
 
 export default class GlobalConfig {
 	/** Data representing the global configuration. */

@@ -6,16 +6,16 @@ import {
 	type ButtonInteraction
 } from "discord.js";
 
-import { ContentFilterStatus } from "#database/Enums.js";
-import { ContentFilterFieldNames } from "#cf/Enums.js";
-import { hastebin, userMentionWithId } from "#utils/index.js";
+import { ContentFilterStatus } from "@database/Enums";
+import { ContentFilterFieldNames } from "@cf/Enums";
+import { hastebin, userMentionWithId } from "@utils/index";
 
-import type { ResponseData } from "#commands/Command.js";
+import type { ResponseData } from "@commands/Command";
 
-import ContentFilterUtils from "#utils/ContentFilter.js";
-import AutomatedScanner from "#cf/AutomatedScanner.js";
-import Component, { type ComponentExecutionContext } from "#components/Component.js";
-import MessageManager from "#database/Messages.js";
+import ContentFilterUtils from "@utils/ContentFilter";
+import AutomatedScanner from "@cf/AutomatedScanner";
+import Component, { type ComponentExecutionContext } from "@components/Component";
+import MessageManager from "@database/Messages";
 
 export default class ContentFilterButton extends Component {
 	constructor() {

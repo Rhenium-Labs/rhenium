@@ -1,4 +1,4 @@
-import { client, kysely } from "#root/index.js";
+import { client, kysely } from "@root/index";
 import type { Events } from "discord.js";
 
 export default abstract class EventListener {

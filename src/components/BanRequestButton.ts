@@ -6,13 +6,13 @@ import {
 	TextInputStyle
 } from "discord.js";
 
-import type { ResponseData } from "#commands/Command.js";
+import type { ResponseData } from "@commands/Command";
 
 import BanRequestUtils, {
 	BanRequestAction,
 	REQUEST_ACTION_TO_PAST_TENSE
-} from "#utils/BanRequests.js";
-import Component, { type ComponentExecutionContext } from "#components/Component.js";
+} from "@utils/BanRequests";
+import Component, { type ComponentExecutionContext } from "@components/Component";
 
 export default class BanRequestButton extends Component {
 	constructor() {

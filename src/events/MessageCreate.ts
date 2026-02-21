@@ -2,19 +2,19 @@ import { Result } from "@sapphire/result";
 import { Events, Message } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import { reply } from "#utils/Messages.js";
-import { getWhitelistStatus } from "#utils/index.js";
+import { reply } from "@utils/Messages";
+import { getWhitelistStatus } from "@utils/index";
 
-import Logger from "#utils/Logger.js";
-import Highlights from "#root/commands/Highlights.js";
-import GuildConfig from "#config/GuildConfig.js";
-import GlobalConfig from "#config/GlobalConfig.js";
-import ConfigManager from "#config/ConfigManager.js";
-import EventListener from "#events/EventListener.js";
-import MessageManager from "#database/Messages.js";
-import CommandManager from "#commands/CommandManager.js";
-import AutomatedScanner from "#cf/AutomatedScanner.js";
-import HeuristicScanner from "#cf/HeuristicScanner.js";
+import Logger from "@utils/Logger";
+import Highlights from "@root/commands/Highlights";
+import GuildConfig from "@config/GuildConfig";
+import GlobalConfig from "@config/GlobalConfig";
+import ConfigManager from "@config/ConfigManager";
+import EventListener from "@events/EventListener";
+import MessageManager from "@database/Messages";
+import CommandManager from "@commands/CommandManager";
+import AutomatedScanner from "@cf/AutomatedScanner";
+import HeuristicScanner from "@cf/HeuristicScanner";
 
 export default class MessageCreate extends EventListener {
 	constructor() {

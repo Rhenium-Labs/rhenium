@@ -3,16 +3,16 @@ import { pathToFileURL } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-import { client } from "#root/index.js";
-import { inflect } from "#utils/index.js";
+import { client } from "@root/index";
+import { inflect } from "@utils/index";
 
-import Logger from "#utils/Logger.js";
-import EventListener from "./EventListener.js";
+import Logger from "@utils/Logger";
+import EventListener from "./EventListener";
 
 export default class EventListenerManager {
 	/** Mount all event listeners from the `events` directory. */
 	static async mount(): Promise<void> {
-		const directory = path.resolve("dist/events");
+		const directory = path.resolve("src/events");
 
 		if (!fs.existsSync(directory)) {
 			Logger.fatal("Events directory not found.");
@@ -24,7 +24,7 @@ export default class EventListenerManager {
 		// prettier-ignore
 		const filenames = fs
             .readdirSync(directory)
-            .filter(file => file.endsWith(".js"));
+            .filter(file => file.endsWith(""));
 
 		if (filenames.length === 0) {
 			Logger.warn("No event listeners found to mount.");

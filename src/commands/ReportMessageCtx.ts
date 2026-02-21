@@ -12,9 +12,9 @@ import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#commands/Command.js";
+} from "@commands/Command";
 
-import MessageReportUtils from "#utils/MessageReports.js";
+import MessageReportUtils from "@utils/MessageReports";
 
 export default class ReportMessageCtx extends Command {
 	constructor() {

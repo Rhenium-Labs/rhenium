@@ -1,8 +1,8 @@
 import { MessageFlags } from "discord.js";
-import type { ResponseData } from "#commands/Command.js";
+import type { ResponseData } from "@commands/Command";
 
-import MessageReportUtils from "#utils/MessageReports.js";
-import Component, { type ComponentExecutionContext } from "#components/Component.js";
+import MessageReportUtils from "@utils/MessageReports";
+import Component, { type ComponentExecutionContext } from "@components/Component";
 
 export default class ReportMessage extends Component {
 	constructor() {

@@ -4,10 +4,10 @@ import { pathToFileURL } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-import { inflect } from "#utils/index.js";
+import { inflect } from "@utils/index";
 
-import Logger from "#utils/Logger.js";
-import Component, { type ComponentCustomID } from "./Component.js";
+import Logger from "@utils/Logger";
+import Component, { type ComponentCustomID } from "./Component";
 
 export default class ComponentManager {
 	/** Collection of cached components. */
@@ -44,7 +44,7 @@ export default class ComponentManager {
 
 	/** Cache all components from the `components` directory. */
 	static async cache(): Promise<void> {
-		const directory = path.resolve("dist/components");
+		const directory = path.resolve("src/components");
 
 		if (!fs.existsSync(directory)) {
 			Logger.fatal("Components directory not found.");
@@ -56,7 +56,7 @@ export default class ComponentManager {
 		// prettier-ignore
 		const filenames = fs
             .readdirSync(directory)
-            .filter(file => file.endsWith(".js"));
+            .filter(file => file.endsWith(""));
 
 		if (filenames.length === 0) {
 			Logger.warn("No components found to cache.");

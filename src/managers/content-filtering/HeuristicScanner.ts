@@ -1,20 +1,20 @@
 import { distance } from "closest-match";
 import type { Snowflake, TextChannel, Message as DiscordMessage } from "discord.js";
 
-import { ScanTypes } from "./Enums.js";
-import { CF_CONSTANTS } from "#utils/Constants.js";
-import { channelInScope, parseChannelScoping } from "#utils/index.js";
+import { ScanTypes } from "./Enums";
+import { CF_CONSTANTS } from "@utils/Constants";
+import { channelInScope, parseChannelScoping } from "@utils/index";
 
-import type { Message } from "#database/Schema.js";
-import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
-import type { ContentPredictions, HeuristicData, HeuristicMessageData } from "./Types.js";
+import type { Message } from "@database/Schema";
+import type { ParsedContentFilterConfig } from "@config/GuildConfig";
+import type { ContentPredictions, HeuristicData, HeuristicMessageData } from "./Types";
 
-import Logger from "#utils/Logger.js";
-import ContentFilter from "./ContentFilter.js";
-import AutomatedScanner from "./AutomatedScanner.js";
-import ContentFilterUtils from "#utils/ContentFilter.js";
-import MessageManager from "#database/Messages.js";
-import GuildConfig from "#config/GuildConfig.js";
+import Logger from "@utils/Logger";
+import ContentFilter from "./ContentFilter";
+import AutomatedScanner from "./AutomatedScanner";
+import ContentFilterUtils from "@utils/ContentFilter";
+import MessageManager from "@database/Messages";
+import GuildConfig from "@config/GuildConfig";
 
 /** Maximum number of channels to track timers for. */
 const MAX_TIMER_CHANNELS = 100;

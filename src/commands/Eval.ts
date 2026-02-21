@@ -3,17 +3,17 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, codeBlock } from "discord
 import ms from "ms";
 import util from "node:util";
 
-import utils from "#utils/index.js";
+import utils from "@utils/index";
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#commands/Command.js";
-import GlobalConfig from "#config/GlobalConfig.js";
-import ConfigManager from "#config/ConfigManager.js";
-import CommandManager from "#commands/CommandManager.js";
-import MessageManager from "#database/Messages.js";
-import ComponentManager from "#components/ComponentManager.js";
+} from "@commands/Command";
+import GlobalConfig from "@config/GlobalConfig";
+import ConfigManager from "@config/ConfigManager";
+import CommandManager from "@commands/CommandManager";
+import MessageManager from "@database/Messages";
+import ComponentManager from "@components/ComponentManager";
 
 export default class Eval extends Command {
 	constructor() {

@@ -1,4 +1,4 @@
-import type { ModerationMultiModalInput, Moderation } from "openai/resources/moderations.mjs";
+import type { ModerationMultiModalInput, Moderation } from "openai/resources/moderations";
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
@@ -15,19 +15,19 @@ import {
 import ms from "ms";
 import Tesseract from "node-tesseract-ocr";
 
-import { CF_CONSTANTS } from "#utils/Constants.js";
-import { openAi, kysely } from "#root/index.js";
-import { userMentionWithId } from "#utils/index.js";
-import { ContentFilterButtonNames, ContentFilterFieldNames, ScanType } from "./Enums.js";
+import { CF_CONSTANTS } from "@utils/Constants";
+import { openAi, kysely } from "@root/index";
+import { userMentionWithId } from "@utils/index";
+import { ContentFilterButtonNames, ContentFilterFieldNames, ScanType } from "./Enums";
 
-import type { Detector } from "#database/Enums.js";
-import type { ContentPredictionData, ContentPredictions } from "./Types.js";
-import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
+import type { Detector } from "@database/Enums";
+import type { ContentPredictionData, ContentPredictions } from "./Types";
+import type { ParsedContentFilterConfig } from "@config/GuildConfig";
 
-import Logger from "#utils/Logger.js";
-import MediaUtils, { MessageMediaMetadata } from "#utils/Media.js";
-import AutomatedScanner from "./AutomatedScanner.js";
-import ContentFilterUtils from "#utils/ContentFilter.js";
+import Logger from "@utils/Logger";
+import MediaUtils, { MessageMediaMetadata } from "@utils/Media";
+import AutomatedScanner from "./AutomatedScanner";
+import ContentFilterUtils from "@utils/ContentFilter";
 
 export default class ContentFilter {
 	/** OpenAI rate limit in milliseconds. */

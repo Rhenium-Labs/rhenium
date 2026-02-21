@@ -7,7 +7,7 @@ import type {
 	QueryResult
 } from "kysely";
 
-import ConfigManager, { ConfigKeys } from "#config/ConfigManager.js";
+import ConfigManager, { ConfigKeys } from "@config/ConfigManager";
 
 type QueryMetadata = {
 	tableName: string;

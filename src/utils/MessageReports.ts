@@ -18,17 +18,17 @@ import {
 	APIMessage
 } from "discord.js";
 
-import { client, kysely } from "#root/index.js";
-import { EMPTY_MESSAGE_CONTENT } from "./Constants.js";
-import { LoggingEvent, ReportStatus } from "#database/Enums.js";
-import { cropLines, truncate, userMentionWithId } from "./index.js";
-import { cleanContent, formatMessageContent } from "./Messages.js";
+import { client, kysely } from "@root/index";
+import { EMPTY_MESSAGE_CONTENT } from "./Constants";
+import { LoggingEvent, ReportStatus } from "@database/Enums";
+import { cropLines, truncate, userMentionWithId } from "./index";
+import { cleanContent, formatMessageContent } from "./Messages";
 
-import type { SimpleResult } from "./Types.js";
-import type { ResponseData } from "#commands/Command.js";
-import type { MessageReport } from "#database/Schema.js";
+import type { SimpleResult } from "./Types";
+import type { ResponseData } from "@commands/Command";
+import type { MessageReport } from "@database/Schema";
 
-import GuildConfig from "#config/GuildConfig.js";
+import GuildConfig from "@config/GuildConfig";
 
 export default class MessageReportUtils {
 	/**

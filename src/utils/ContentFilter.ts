@@ -1,12 +1,12 @@
 import type { Snowflake } from "discord.js";
-import type { ChannelScanState } from "#cf/Types.js";
+import type { ChannelScanState } from "@cf/Types";
 
-import { kysely } from "#root/index.js";
-import { CF_CONSTANTS } from "./Constants.js";
-import { ContentFilterAlert, Message } from "#database/Schema.js";
-import { ContentFilterStatus, DetectorMode } from "#database/Enums.js";
+import { kysely } from "@root/index";
+import { CF_CONSTANTS } from "./Constants";
+import { ContentFilterAlert, Message } from "@database/Schema";
+import { ContentFilterStatus, DetectorMode } from "@database/Enums";
 
-import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ParsedContentFilterConfig } from "@config/GuildConfig";
 
 export default class ContentFilterUtils {
 	/**

@@ -1,5 +1,5 @@
 import { ArgumentStream, IUnorderedStrategy, Lexer, Parser } from "@sapphire/lexure";
-import FlagStrategy from "./FlagOptionStrategy.js";
+import FlagStrategy from "./FlagOptionStrategy";
 import {
 	ApplicationCommandData,
 	Awaitable,
@@ -10,9 +10,9 @@ import {
 	MessageCreateOptions,
 	UserContextMenuCommandInteraction
 } from "discord.js";
-import ArgumentParser from "./ArgumentParser.js";
-import GuildConfig from "#config/GuildConfig.js";
-import { client, kysely } from "#root/index.js";
+import ArgumentParser from "./ArgumentParser";
+import GuildConfig from "@config/GuildConfig";
+import { client, kysely } from "@root/index";
 
 export default abstract class Command {
 	/**

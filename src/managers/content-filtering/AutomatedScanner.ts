@@ -1,20 +1,20 @@
 import { Colors, EmbedBuilder, Message, Snowflake, TextChannel, WebhookClient } from "discord.js";
 
-import { client } from "#root/index.js";
-import { ScanTypes } from "./Enums.js";
-import { CF_CONSTANTS } from "#utils/Constants.js";
-import { channelInScope, parseChannelScoping, userMentionWithId } from "#utils/index.js";
+import { client } from "@root/index";
+import { ScanTypes } from "./Enums";
+import { CF_CONSTANTS } from "@utils/Constants";
+import { channelInScope, parseChannelScoping, userMentionWithId } from "@utils/index";
 
-import type { ChannelScanState, ContentPredictions } from "./Types.js";
-import type { Message as SerializedMessage } from "#database/Schema.js";
-import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
+import type { ChannelScanState, ContentPredictions } from "./Types";
+import type { Message as SerializedMessage } from "@database/Schema";
+import type { ParsedContentFilterConfig } from "@config/GuildConfig";
 
-import Logger from "#utils/Logger.js";
-import MinimumHeap from "#utils/MinimumHeap.js";
-import ContentFilter from "./ContentFilter.js";
-import ConfigManager from "#config/ConfigManager.js";
-import ContentFilterUtils from "#utils/ContentFilter.js";
-import GuildConfig from "#config/GuildConfig.js";
+import Logger from "@utils/Logger";
+import MinimumHeap from "@utils/MinimumHeap";
+import ContentFilter from "./ContentFilter";
+import ConfigManager from "@config/ConfigManager";
+import ContentFilterUtils from "@utils/ContentFilter";
+import GuildConfig from "@config/GuildConfig";
 
 /** Maximum number of channel states to keep in memory. */
 const MAX_CHANNEL_STATES = 100;

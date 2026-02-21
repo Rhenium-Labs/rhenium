@@ -4,11 +4,11 @@ import { pathToFileURL } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-import { inflect } from "#utils/index.js";
+import { inflect } from "@utils/index";
 
-import Command from "./Command.js";
-import Logger from "#utils/Logger.js";
-import { client } from "#root/index.js";
+import Command from "./Command";
+import Logger from "@utils/Logger";
+import { client } from "@root/index";
 
 export default class CommandManager {
 	/** Collection of cached commands. */
@@ -26,7 +26,7 @@ export default class CommandManager {
 
 	/** Cache all commands from the `commands` directory. */
 	static async cache(): Promise<void> {
-		const directory = path.resolve("dist/commands");
+		const directory = path.resolve("src/commands");
 
 		if (!fs.existsSync(directory)) {
 			Logger.fatal("Commands directory not found.");
@@ -38,7 +38,7 @@ export default class CommandManager {
 		// prettier-ignore
 		const filenames = fs
             .readdirSync(directory)
-            .filter(file => file.endsWith(".js"));
+            .filter(file => file.endsWith(".ts"));
 
 		if (filenames.length === 0) {
 			Logger.warn("No commands found to cache.");

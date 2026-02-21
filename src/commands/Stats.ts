@@ -3,16 +3,16 @@ import { sql } from "kysely";
 
 import ms from "ms";
 
-import { kysely } from "#root/index.js";
+import { kysely } from "@root/index";
 
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#commands/Command.js";
+} from "@commands/Command";
 
-import GlobalConfig from "#config/GlobalConfig.js";
-import MessageManager from "#database/Messages.js";
+import GlobalConfig from "@config/GlobalConfig";
+import MessageManager from "@database/Messages";
 
 export default class Stats extends Command {
 	constructor() {

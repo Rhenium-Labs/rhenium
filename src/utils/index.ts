@@ -6,12 +6,12 @@ import ms from "ms";
 import fs from "node:fs";
 import YAML from "yaml";
 
-import { client, kv, kysely } from "#root/index.js";
-import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants.js";
+import { client, kv, kysely } from "@root/index";
+import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants";
 
-import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types.js";
+import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types";
 
-import Logger from "./Logger.js";
+import Logger from "./Logger";
 
 /**
  * Checks a guild's whitelist status.

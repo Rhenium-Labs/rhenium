@@ -5,17 +5,13 @@
 		"alwaysStrict": true,
 
 		// Module And Library Options
-		"lib": ["ES2024"],
-		"types": ["node"],
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-
-		// Output Options
-		"target": "ES2024",
-		"outDir": "dist",
+		"lib": ["ESNext"],
+		"target": "ESNext",
 		"rootDir": "src",
-		"incremental": true,
-		"tsBuildInfoFile": "dist/.tsbuildinfo",
+		"noEmit": true,
+		"types": ["bun-types"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
 
 		// Source Map Options
 		"sourceMap": true,
@@ -36,7 +32,19 @@
 		"pretty": true,
 		"removeComments": false,
 		"noUnusedLocals": true,
-		"noUnusedParameters": true
+		"noUnusedParameters": true,
+
+		"paths": {
+			"@config/*": ["./src/managers/config/*"],
+			"@database/*": ["./src/managers/database/*"],
+			"@utils/*": ["./src/utils/*"],
+			"@cf/*": ["./src/managers/content-filtering/*"],
+			"@commands/*": ["./src/managers/runtime/commands/*"],
+			"@components/*": ["./src/managers/runtime/components/*"],
+			"@events/*": ["./src/managers/runtime/events/*"],
+			"@managers/*": ["./src/managers/*"],
+			"@root/*": ["./src/*"]
+		}
 	},
 	"include": ["./src/**/*"]
 }

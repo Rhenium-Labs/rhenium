@@ -6,16 +6,16 @@ import {
 	Colors
 } from "discord.js";
 
-import { hastebin } from "#utils/index.js";
-import { kv, kysely } from "#root/index.js";
+import { hastebin } from "@utils/index";
+import { kv, kysely } from "@root/index";
 
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "#commands/Command.js";
+} from "@commands/Command";
 
-import GlobalConfig from "#config/GlobalConfig.js";
+import GlobalConfig from "@config/GlobalConfig";
 
 export default class Whitelist extends Command {
 	constructor() {

@@ -18,10 +18,10 @@ import type {
 	QuickMuteConfig,
 	QuickPurgeChannelScoping,
 	QuickPurgeConfig
-} from "#database/Schema.js";
-import { LoggingEvent, UserPermission } from "#database/Enums.js";
+} from "@database/Schema";
+import { LoggingEvent, UserPermission } from "@database/Enums";
 
-import Logger from "#utils/Logger.js";
+import Logger from "@utils/Logger";
 
 export default class GuildConfig {
 	/**

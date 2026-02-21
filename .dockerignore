@@ -1,0 +1,15 @@
+# Directories
+/node_modules
+/documentation
+
+# Files
+.env.example
+.gitignore
+.prettierrc
+cfg.example.yml
+CONTRIBUTING.md
+README.md
+LICENSE
+README.md
+renovate.json
+SECURITY.md
