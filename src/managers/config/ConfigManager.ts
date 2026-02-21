@@ -61,25 +61,6 @@ export default class ConfigManager {
 
 		ConfigManager._cache.set(guildId, new GuildConfig(updatedData));
 
-		if (feature === "message_reports") {
-			const data = {
-				...updatedData,
-				message_reports: {
-					...updatedData.message_reports,
-					auto_disregard_after: BigInt(
-						updatedData.message_reports.auto_disregard_after
-					)
-				}
-			};
-
-			// Message reports in zod use `bigint` for `auto_disregard_after` but the database column is a string, so we need to convert it back before storing.
-			return void kysely
-				.updateTable("Guild")
-				.set({ config: data })
-				.where("id", "=", guildId)
-				.execute();
-		}
-
 		// Update experimental `config` column in Guild table to keep it synced.
 		return void kysely
 			.updateTable("Guild")
@@ -265,17 +246,9 @@ export default class ConfigManager {
 		// 🔧 EXPERIMENTAL
 		// The `config` column is meant to be a single source of truth for all guild configuration. It is crucial that this column is kept in sync with the individual config tables until the migration is complete and those tables are removed.
 
-		const columnData = {
-			...data,
-			message_reports: {
-				...data.message_reports,
-				auto_disregard_after: BigInt(data.message_reports.auto_disregard_after)
-			}
-		};
-
 		await kysely
 			.updateTable("Guild")
-			.set({ config: columnData })
+			.set({ config: data })
 			.where("id", "=", guildId)
 			.execute();
 
