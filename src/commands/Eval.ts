@@ -43,6 +43,7 @@ export default class Eval extends Command {
 			ms,
 			utils,
 			kysely: this.kysely,
+			client: this.client,
 			message,
 			GlobalConfig,
 			ConfigManager,
