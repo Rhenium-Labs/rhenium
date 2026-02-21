@@ -42,7 +42,7 @@ export enum UserPermission {
 
 const permissionScopeSchema = z.object({
 	role_id: z.string().nonempty(),
-	allow: z.array(z.enum(UserPermission)).default([])
+	allowed_permissions: z.array(z.enum(UserPermission)).default([])
 });
 
 export type PermissionScope = z.infer<typeof permissionScopeSchema>;
@@ -90,11 +90,11 @@ const messageReportConfigSchema = z.object({
 	webhook_url: z.string().nullable().optional(),
 	webhook_channel: z.string().nullable().optional(),
 
-	auto_disregard_after: z.bigint().min(0n).default(0n),
-	delete_sub_on_handle: z.boolean().default(true),
+	auto_disregard_after: z.string().default("0"),
+	delete_submission_on_handle: z.boolean().default(true),
 
 	immune_roles: z.array(z.string()).default([]),
-	notification_roles: z.array(z.string()).default([]),
+	notify_roles: z.array(z.string()).default([]),
 	blacklisted_users: z.array(z.string()).default([]),
 	placeholder_reason: z.string().nullable(),
 
@@ -114,7 +114,7 @@ const banRequestConfigSchema = z.object({
 	enforce_deny_reason: z.boolean().default(true),
 
 	immune_roles: z.array(z.string()).default([]),
-	notification_roles: z.array(z.string()).default([])
+	notify_roles: z.array(z.string()).default([])
 });
 
 export type BanRequestConfig = z.infer<typeof banRequestConfigSchema>;
@@ -147,7 +147,7 @@ const contentFilterConfigSchema = z.object({
 	verbosity: z.enum(ContentFilterVerbosity).default(ContentFilterVerbosity.Medium),
 
 	immune_roles: z.array(z.string()).default([]),
-	notification_roles: z.array(z.string()).default([]),
+	notify_roles: z.array(z.string()).default([]),
 
 	channel_scoping: z.array(channelScopingSchema).default([]),
 
@@ -174,7 +174,7 @@ export type QuickMuteConfig = z.infer<typeof quickMuteConfigSchema>;
 
 const quickPurgeConfigSchema = z.object({
 	enabled: z.boolean().default(true),
-	purge_limit: z.number().min(2).max(500).default(100),
+	max_limit: z.number().min(2).max(500).default(100),
 	channel_scoping: z.array(channelScopingSchema).default([])
 });
 
