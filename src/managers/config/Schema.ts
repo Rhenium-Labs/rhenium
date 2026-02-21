@@ -1,3 +1,4 @@
+import { Detector } from "@database/Enums";
 import { z } from "zod";
 
 /** Zod regex schema for validating cron expressions. */
@@ -26,7 +27,7 @@ export const GLOBAL_CONFIG_SCHEMA = z.object({
 	})
 });
 
-export type GlobalConfig = z.infer<typeof GLOBAL_CONFIG_SCHEMA>;
+export type RawGlobalConfig = z.infer<typeof GLOBAL_CONFIG_SCHEMA>;
 
 // ————————————————————————————————————————————————————————————————————————————————
 // Guild Config
@@ -119,12 +120,6 @@ const banRequestConfigSchema = z.object({
 
 export type BanRequestConfig = z.infer<typeof banRequestConfigSchema>;
 
-export enum Detector {
-	NSFW = "NSFW",
-	OCR = "OCR",
-	TEXT = "TEXT"
-}
-
 export enum DetectorMode {
 	Lenient = "Lenient",
 	Medium = "Medium",
@@ -192,3 +187,62 @@ export const GUILD_CONFIG_SCHEMA = z.object({
 });
 
 export type RawGuildConfig = z.infer<typeof GUILD_CONFIG_SCHEMA>;
+
+/** Default configuration for a guild. */
+export const DEFAULT_GUILD_CONFIG: RawGuildConfig = {
+	message_reports: {
+		enabled: true,
+		webhook_url: null,
+		webhook_channel: null,
+
+		auto_disregard_after: "0",
+		delete_submission_on_handle: true,
+
+		immune_roles: [],
+		notify_roles: [],
+		blacklisted_users: [],
+		placeholder_reason: null,
+		enforce_member_in_guild: true,
+		enforce_report_reason: true
+	},
+	ban_requests: {
+		enabled: true,
+		webhook_url: null,
+		webhook_channel: null,
+		automatically_timeout: false,
+		enforce_submission_reason: true,
+		enforce_deny_reason: true,
+		immune_roles: [],
+		notify_roles: []
+	},
+	content_filter: {
+		enabled: true,
+		webhook_url: null,
+		use_native_automod: false,
+
+		detectors: [],
+		detector_mode: DetectorMode.Medium,
+		verbosity: ContentFilterVerbosity.Medium,
+		immune_roles: [],
+		notify_roles: [],
+		channel_scoping: [],
+		ocr_filter_keywords: [],
+		ocr_filter_regex: []
+	},
+	highlights: {
+		enabled: true,
+		max_patterns: 15
+	},
+	quick_mutes: {
+		enabled: true,
+		purge_limit: 100,
+		channel_scoping: []
+	},
+	quick_purges: {
+		enabled: true,
+		max_limit: 100,
+		channel_scoping: []
+	},
+	logging_webhooks: [],
+	permission_scopes: []
+};

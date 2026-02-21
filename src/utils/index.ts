@@ -9,7 +9,8 @@ import YAML from "yaml";
 import { client, kv, kysely } from "@root/index";
 import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants";
 
-import type { ChannelScoping, RawChannelScoping, SimpleResult } from "./Types";
+import type { SimpleResult } from "./Types";
+import type { RawChannelScoping, ParsedChannelScoping } from "@config/Schema";
 
 import Logger from "./Logger";
 
@@ -217,17 +218,17 @@ export async function hastebin(data: unknown, ext = "js"): Promise<string | null
  * @returns The structured channel scoping configuration.
  */
 
-export function parseChannelScoping(scoping: RawChannelScoping[]): ChannelScoping {
-	return scoping.reduce<ChannelScoping>(
+export function parseChannelScoping(scoping: RawChannelScoping[]): ParsedChannelScoping {
+	return scoping.reduce<ParsedChannelScoping>(
 		(acc, item) => {
 			if (item.type === 0) {
-				acc.include_channels.push(item.channel_id);
+				acc.included_channels.push(item.channel_id);
 			} else if (item.type === 1) {
-				acc.exclude_channels.push(item.channel_id);
+				acc.excluded_channels.push(item.channel_id);
 			}
 			return acc;
 		},
-		{ include_channels: [], exclude_channels: [] }
+		{ included_channels: [], excluded_channels: [] }
 	);
 }
 
@@ -239,7 +240,7 @@ export function parseChannelScoping(scoping: RawChannelScoping[]): ChannelScopin
  * @returns True if the channel is within scope, false otherwise.
  */
 
-export function channelInScope(channel: GuildBasedChannel, scoping: ChannelScoping): boolean {
+export function channelInScope(channel: GuildBasedChannel, scoping: ParsedChannelScoping): boolean {
 	const channelData: ChannelScopingParams = {
 		categoryId: channel.parentId,
 		channelId: channel.id,
@@ -252,11 +253,11 @@ export function channelInScope(channel: GuildBasedChannel, scoping: ChannelScopi
 		channelData.categoryId = channel.parent.parentId;
 	}
 
-	if (!scoping.include_channels.length && !scoping.exclude_channels.length) {
+	if (!scoping.included_channels.length && !scoping.excluded_channels.length) {
 		return true;
 	}
 
-	if (scoping.include_channels.length) {
+	if (scoping.included_channels.length) {
 		return channelIsIncludedInScope(channelData, scoping);
 	}
 
@@ -266,29 +267,29 @@ export function channelInScope(channel: GuildBasedChannel, scoping: ChannelScopi
 /** Helper function to determine if a channel is included in scope. */
 function channelIsIncludedInScope(
 	channelData: ChannelScopingParams,
-	scoping: ChannelScoping
+	scoping: ParsedChannelScoping
 ): boolean {
 	const { channelId, threadId, categoryId } = channelData;
 
 	return (
-		!scoping.include_channels.length ||
-		scoping.include_channels.includes(channelId) ||
-		(threadId !== null && scoping.include_channels.includes(threadId)) ||
-		(categoryId !== null && scoping.include_channels.includes(categoryId))
+		!scoping.included_channels.length ||
+		scoping.included_channels.includes(channelId) ||
+		(threadId !== null && scoping.included_channels.includes(threadId)) ||
+		(categoryId !== null && scoping.included_channels.includes(categoryId))
 	);
 }
 
 /** Helper function to determine if a channel is excluded from scope. */
 function channelIsExcludedFromScope(
 	channelData: ChannelScopingParams,
-	scoping: ChannelScoping
+	scoping: ParsedChannelScoping
 ): boolean {
 	const { channelId, threadId, categoryId } = channelData;
 
 	return (
-		scoping.exclude_channels.includes(channelId) ||
-		(threadId !== null && scoping.exclude_channels.includes(threadId)) ||
-		(categoryId !== null && scoping.exclude_channels.includes(categoryId))
+		scoping.excluded_channels.includes(channelId) ||
+		(threadId !== null && scoping.excluded_channels.includes(threadId)) ||
+		(categoryId !== null && scoping.excluded_channels.includes(categoryId))
 	);
 }
 

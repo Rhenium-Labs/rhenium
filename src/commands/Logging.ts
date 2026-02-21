@@ -13,10 +13,8 @@ import {
 	channelMention
 } from "discord.js";
 
-import { LoggingEvent } from "@database/Enums";
 import { client, kysely } from "@root/index";
-
-import type { LoggingWebhook } from "@database/Schema";
+import { LoggingEvent, LoggingWebhook } from "@config/Schema";
 
 import GuildConfig from "@config/GuildConfig";
 import Command, {
@@ -24,6 +22,7 @@ import Command, {
 	type ResponseData,
 	type CommandExecutionContext
 } from "@commands/Command";
+import ConfigManager from "@config/ConfigManager";
 
 export default class Logging extends Command {
 	constructor() {
@@ -212,11 +211,10 @@ export default class Logging extends Command {
 		const existingWebhooks = config.data.logging_webhooks;
 		const existingWebhook = existingWebhooks.find(wh => wh.channel_id === channel.id);
 
-		if (existingWebhook) {
+		if (existingWebhook)
 			return {
 				error: `A logging webhook already exists in ${channel}. Use the \`add-event\` subcommand to add more events.`
 			};
-		}
 
 		const webhook = await channel
 			.createWebhook({
@@ -225,21 +223,22 @@ export default class Logging extends Command {
 			})
 			.catch(() => null);
 
-		if (!webhook) {
-			return { error: `Failed to create a webhook in ${channel}.` };
-		}
+		if (!webhook) return { error: `Failed to create a webhook in ${channel}.` };
+
+		const webhookData: LoggingWebhook = {
+			id: webhook.id,
+			url: webhook.url,
+			token: webhook.token,
+			channel_id: channel.id,
+			events: [event]
+		};
+		const updatedWebhooks: LoggingWebhook[] = [...existingWebhooks, webhookData];
+		const updatedConfig = { ...config.data, logging_webhooks: updatedWebhooks };
 
 		await kysely
-			.insertInto("LoggingWebhook")
-			.values({
-				id: webhook.id,
-				url: webhook.url,
-				token: webhook.token,
-				channel_id: channel.id,
-				guild_id: interaction.guildId,
-				events: [event]
-			})
-			.returningAll()
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guildId)
 			.execute();
 
 		return {
@@ -270,10 +269,13 @@ export default class Logging extends Command {
 			}
 		}
 
+		const updatedWebhooks = webhooks.filter(wh => wh.id !== webhook.id);
+		const updatedConfig = { ...config.data, logging_webhooks: updatedWebhooks };
+
 		await kysely
-			.deleteFrom("LoggingWebhook")
-			.where("id", "=", webhook.id)
-			.where("guild_id", "=", interaction.guildId)
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guildId)
 			.execute();
 
 		return {
@@ -427,26 +429,25 @@ async function addEvents(
 	guildId: string,
 	events: LoggingEvent[]
 ): Promise<LoggingWebhook | null> {
-	const webhook = await kysely
-		.selectFrom("LoggingWebhook")
-		.selectAll()
-		.where("id", "=", webhookId)
-		.where("guild_id", "=", guildId)
-		.executeTakeFirst();
+	const config = await ConfigManager.get(guildId);
+	const webhooks = config.data.logging_webhooks;
+	const webhook = webhooks.find(wh => wh.id === webhookId);
 
-	if (!webhook) {
-		return null;
-	}
+	if (!webhook) return null;
 
 	const uniqueEvents = [...new Set([...webhook.events, ...events])];
+	const updatedWebhook = { ...webhook, events: uniqueEvents };
+	const updatedWebhooks = webhooks.map(wh => (wh.id === webhookId ? updatedWebhook : wh));
+	const updatedConfig = { ...config.data, logging_webhooks: updatedWebhooks };
 
-	return kysely
-		.updateTable("LoggingWebhook")
-		.set({ events: uniqueEvents })
-		.where("id", "=", webhookId)
-		.where("guild_id", "=", guildId)
+	await kysely
+		.updateTable("Guild")
+		.set({ config: updatedConfig })
+		.where("id", "=", guildId)
 		.returningAll()
-		.executeTakeFirstOrThrow();
+		.execute();
+
+	return updatedWebhook;
 }
 
 /**
@@ -462,24 +463,25 @@ async function removeEvents(
 	guildId: string,
 	events: LoggingEvent[]
 ): Promise<LoggingWebhook | null> {
-	const webhook = await kysely
-		.selectFrom("LoggingWebhook")
-		.selectAll()
-		.where("id", "=", webhookId)
-		.where("guild_id", "=", guildId)
-		.executeTakeFirst();
+	const config = await ConfigManager.get(guildId);
+	const webhooks = config.data.logging_webhooks;
+	const webhook = webhooks.find(wh => wh.id === webhookId);
 
 	if (!webhook) return null;
 
-	const remainingEvents = webhook.events.filter(e => !events.includes(e));
+	const updatedEvents = webhook.events.filter(e => !events.includes(e));
+	const updatedWebhook = { ...webhook, events: updatedEvents };
+	const updatedWebhooks = webhooks.map(wh => (wh.id === webhookId ? updatedWebhook : wh));
+	const updatedConfig = { ...config.data, logging_webhooks: updatedWebhooks };
 
-	return kysely
-		.updateTable("LoggingWebhook")
-		.set({ events: remainingEvents })
-		.where("id", "=", webhookId)
-		.where("guild_id", "=", guildId)
+	await kysely
+		.updateTable("Guild")
+		.set({ config: updatedConfig })
+		.where("id", "=", guildId)
 		.returningAll()
-		.executeTakeFirstOrThrow();
+		.execute();
+
+	return updatedWebhook;
 }
 
 /**

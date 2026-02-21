@@ -9,6 +9,7 @@ import {
 } from "discord.js";
 
 import { kysely } from "@root/index";
+import { RawGuildConfig } from "@config/Schema";
 
 import Command, {
 	CommandCategory,
@@ -87,9 +88,8 @@ export default class Reports extends Command {
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		if (!reportsConfig) {
+		if (!reportsConfig)
 			return { error: "Message reports have not been configured on this server." };
-		}
 
 		switch (subcommand) {
 			case ReportSubcommand.Blacklist: {
@@ -107,9 +107,17 @@ export default class Reports extends Command {
 					};
 				}
 
+				const updatedConfig: RawGuildConfig = {
+					...config.data,
+					message_reports: {
+						...config.data.message_reports,
+						blacklisted_users: [...reportsConfig.blacklisted_users, user.id]
+					}
+				};
+
 				await kysely
-					.updateTable("MessageReportConfig")
-					.set({ blacklisted_users: [...reportsConfig.blacklisted_users, user.id] })
+					.updateTable("Guild")
+					.set({ config: updatedConfig })
 					.where("id", "=", interaction.guild.id)
 					.execute();
 
@@ -127,13 +135,19 @@ export default class Reports extends Command {
 					};
 				}
 
-				await kysely
-					.updateTable("MessageReportConfig")
-					.set({
+				const updatedConfig: RawGuildConfig = {
+					...config.data,
+					message_reports: {
+						...config.data.message_reports,
 						blacklisted_users: reportsConfig.blacklisted_users.filter(
 							id => id !== user.id
 						)
-					})
+					}
+				};
+
+				await kysely
+					.updateTable("Guild")
+					.set({ config: updatedConfig })
 					.where("id", "=", interaction.guild.id)
 					.execute();
 
@@ -152,10 +166,7 @@ export default class Reports extends Command {
 					page: 1
 				});
 
-				if (!result.ok) {
-					return { error: result.message };
-				}
-
+				if (!result.ok) return { error: result.message };
 				return result.data;
 			}
 		}

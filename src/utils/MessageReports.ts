@@ -18,11 +18,12 @@ import {
 	APIMessage
 } from "discord.js";
 
+import { ReportStatus } from "@database/Enums";
 import { client, kysely } from "@root/index";
 import { EMPTY_MESSAGE_CONTENT } from "./Constants";
-import { LoggingEvent, ReportStatus } from "@database/Enums";
-import { cropLines, truncate, userMentionWithId } from "./index";
+import { LoggingEvent, UserPermission } from "@config/Schema";
 import { cleanContent, formatMessageContent } from "./Messages";
+import { cropLines, truncate, userMentionWithId } from "./index";
 
 import type { SimpleResult } from "./Types";
 import type { ResponseData } from "@commands/Command";
@@ -314,7 +315,7 @@ export default class MessageReportUtils {
 		action: MessageReportAction,
 		config: GuildConfig
 	): Promise<SimpleResult<{ logs: APIMessage[] | null }>> {
-		if (!config.hasPermission(interaction.member, "ReviewMessageReports"))
+		if (!config.hasPermission(interaction.member, UserPermission.ReviewMessageReports))
 			return { ok: false, message: "You don't have permission to review message reports" };
 
 		const report = await kysely
@@ -380,7 +381,7 @@ export default class MessageReportUtils {
 
 		let baseQuery = kysely
 			.selectFrom("MessageReport")
-			.where("guild_id", "=", config.data.id)
+			.where("guild_id", "=", config.id)
 			.where("status", "=", ReportStatus.Pending);
 
 		if (target) {

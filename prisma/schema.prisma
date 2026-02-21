@@ -3,7 +3,6 @@ generator kysely {
   output             = "../src/managers/database"
   fileName           = "Schema.ts"
   enumFileName       = "Enums.ts"
-  importExtension    = ".js"
   exportWrappedTypes = true
 }
 
@@ -32,18 +31,6 @@ enum Detector {
   TEXT
 }
 
-enum DetectorMode {
-  Lenient
-  Medium
-  Strict
-}
-
-enum ContentFilterVerbosity {
-  Minimal
-  Medium
-  Verbose
-}
-
 enum ContentFilterStatus {
   Pending
   Resolved
@@ -51,39 +38,11 @@ enum ContentFilterStatus {
   Deleted
 }
 
-enum UserPermission {
-  ReviewMessageReports
-  ReviewBanRequests
-  UseHighlights
-  UseQuickMute
-  UseQuickPurge
-}
-
-enum LoggingEvent {
-  MessageReportReviewed
-  BanRequestReviewed
-  BanRequestResult
-  QuickPurgeResult
-  QuickPurgeExecuted
-  QuickMuteResult
-  QuickMuteExecuted
-}
-
 model Guild {
   id String @id
 
-  // 🔧 EXPERIMENTAL:
-  // This column stores all guild configuration in a single JSON field.
-  // Planned migration will replace individual config tables with this column.
-  // Schema validation is handled at the application layer via Zod.
-  config Json @default("{}")
-
-  message_report_config MessageReportConfig?
-  ban_request_config    BanRequestConfig?
-  content_filter_config ContentFilterConfig?
-  highlight_config      HighlightConfig?
-  quick_mute_config     QuickMuteConfig?
-  quick_purge_config    QuickPurgeConfig?
+  // JSON column to store the guild's configuration.
+  config Json
 
   ban_requests          BanRequest[]
   highlights            Highlight[]
@@ -91,90 +50,14 @@ model Guild {
   quick_mutes           QuickMute[]
   messages              Message[]
   quick_purges          QuickPurge[]
-  permission_scopes     PermissionScope[]
   content_filter_alerts ContentFilterAlert[]
   content_filter_logs   ContentFilterLog[]
-  webhooks              LoggingWebhook[]
 }
 
 model Whitelist {
   // ID of the whitelisted guild.
   id         String   @id
   created_at DateTime @default(now())
-}
-
-model MessageReportConfig {
-  // ID of the guild.
-  id              String  @id
-  // Whether message reporting is enabled.
-  enabled         Boolean @default(false)
-  webhook_url     String?
-  webhook_channel String?
-
-  auto_disregard_after        BigInt  @default(0)
-  delete_submission_on_handle Boolean @default(true)
-
-  immune_roles       String[] @default([])
-  notify_roles       String[] @default([])
-  blacklisted_users  String[] @default([])
-  placeholder_reason String?
-
-  enforce_member_in_guild Boolean @default(true)
-  enforce_report_reason   Boolean @default(false)
-
-  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
-}
-
-model BanRequestConfig {
-  // ID of the guild.
-  id      String  @id
-  // Whether ban request handling is enabled.
-  enabled Boolean @default(false)
-
-  webhook_url           String?
-  webhook_channel       String?
-  automatically_timeout Boolean @default(false)
-
-  immune_roles String[] @default([])
-  notify_roles String[] @default([])
-
-  enforce_submission_reason Boolean @default(true)
-  enforce_deny_reason       Boolean @default(true)
-
-  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
-}
-
-model ContentFilterConfig {
-  // ID of the guild.
-  id                 String  @id
-  enabled            Boolean @default(false)
-  use_native_automod Boolean @default(false)
-  webhook_url        String?
-
-  detectors     Detector[]             @default([])
-  detector_mode DetectorMode           @default(Medium)
-  verbosity     ContentFilterVerbosity @default(Medium)
-
-  immune_roles String[] @default([])
-  notify_roles String[] @default([])
-
-  channel_scoping ContentFilterChannelScoping[]
-
-  ocr_filter_keywords String[] @default([])
-  ocr_filter_regex    String[] @default([])
-
-  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
-}
-
-model ContentFilterChannelScoping {
-  guild_id   String
-  channel_id String
-  /// Include [`0`] or Exclude [`1`]
-  type       Int
-
-  content_filter_config ContentFilterConfig @relation(fields: [guild_id], references: [id], onDelete: Cascade)
-
-  @@id([guild_id, channel_id])
 }
 
 model ContentFilterAlert {
@@ -261,15 +144,6 @@ model MessageReport {
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }
 
-model HighlightConfig {
-  id String @id
-
-  enabled      Boolean @default(false)
-  // Hardcoded limit of 30 highlights per user.
-  max_patterns Int     @default(15)
-  guild        Guild   @relation(fields: [id], references: [id], onDelete: Cascade)
-}
-
 model Highlight {
   user_id         String
   guild_id        String
@@ -293,27 +167,6 @@ model HighlightChannelScoping {
   @@id([user_id, guild_id, channel_id])
 }
 
-model QuickMuteConfig {
-  // ID of the guild.
-  id String @id
-
-  enabled         Boolean                   @default(false)
-  purge_limit     Int                       @default(100)
-  channel_scoping QuickMuteChannelScoping[]
-
-  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
-}
-
-model QuickMuteChannelScoping {
-  guild_id          String
-  channel_id        String
-  /// Include [`0`] or Exclude [`1`]
-  type              Int
-  quick_mute_config QuickMuteConfig @relation(fields: [guild_id], references: [id], onDelete: Cascade)
-
-  @@id([guild_id, channel_id])
-}
-
 model QuickMute {
   user_id  String
   guild_id String
@@ -326,26 +179,6 @@ model QuickMute {
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, guild_id, reaction])
-}
-
-model QuickPurgeConfig {
-  id String @id
-
-  enabled         Boolean                    @default(false)
-  max_limit       Int                        @default(100)
-  channel_scoping QuickPurgeChannelScoping[]
-
-  guild Guild @relation(fields: [id], references: [id], onDelete: Cascade)
-}
-
-model QuickPurgeChannelScoping {
-  guild_id           String
-  channel_id         String
-  /// Include [`0`] or Exclude [`1`]
-  type               Int
-  quick_purge_config QuickPurgeConfig @relation(fields: [guild_id], references: [id], onDelete: Cascade)
-
-  @@id([guild_id, channel_id])
 }
 
 model QuickPurge {
@@ -370,27 +203,6 @@ model Message {
   content      String?
   attachments  String[]
   deleted      Boolean  @default(false)
-
-  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
-}
-
-model PermissionScope {
-  guild_id            String
-  role_id             String
-  allowed_permissions UserPermission[] @default([])
-
-  guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
-
-  @@id([guild_id, role_id])
-}
-
-model LoggingWebhook {
-  id         String         @unique
-  url        String
-  token      String
-  channel_id String
-  guild_id   String
-  events     LoggingEvent[] @default([])
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }

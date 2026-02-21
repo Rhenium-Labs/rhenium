@@ -28,7 +28,7 @@ import {
 	truncate,
 	userMentionWithId
 } from "@utils/index";
-import { LoggingEvent } from "@database/Enums";
+import { LoggingEvent, UserPermission } from "@config/Schema";
 import { client, kysely } from "@root/index";
 import { LOG_DATE_FORMAT } from "@utils/Constants";
 
@@ -115,7 +115,7 @@ export default class MessageReactionAdd extends EventListener {
 			if (!executor) return;
 
 			// Prevent people who had access to quick mutes but lost it from executing quick mutes.
-			if (!config.hasPermission(executor, "UseQuickMute")) return;
+			if (!config.hasPermission(executor, UserPermission.UseQuickMute)) return;
 
 			const channelScoping = parseChannelScoping(quickMuteGuildConfig.channel_scoping);
 			if (!channelInScope(message.channel, channelScoping)) return;
@@ -307,7 +307,7 @@ export default class MessageReactionAdd extends EventListener {
 			if (!executor) return;
 
 			// Prevent people who had access to quick purges but lost it from executing quick purges.
-			if (!config.hasPermission(executor, "UseQuickPurge")) return;
+			if (!config.hasPermission(executor, UserPermission.UseQuickPurge)) return;
 
 			const channelScoping = parseChannelScoping(quickPurgeGuildConfig.channel_scoping);
 			if (!channelInScope(message.channel, channelScoping)) return;

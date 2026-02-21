@@ -1,12 +1,12 @@
-import { z } from "zod";
 import { fromError } from "zod-validation-error";
 
 import ms from "ms";
 import fs from "node:fs";
 
 import { client, kysely } from "@root/index";
-import { LOG_DATE_FORMAT, ZOD_CRON_REGEX } from "@utils/Constants";
+import { LOG_DATE_FORMAT } from "@utils/Constants";
 import { inflect, readYamlFile, startCronJob } from "@utils/index";
+import { GLOBAL_CONFIG_SCHEMA, RawGlobalConfig } from "./Schema";
 
 import Logger from "@utils/Logger";
 import ConfigManager from "./ConfigManager";
@@ -14,22 +14,7 @@ import MessageManager from "@database/Messages";
 
 export default class GlobalConfig {
 	/** Data representing the global configuration. */
-	private static _data: z.infer<typeof GlobalConfig._schema>;
-
-	/** Schema for validating the global configuration. */
-	private static _schema = z.object({
-		developers: z.array(z.string()).default([]),
-		database: z.object({
-			messages: z.object({
-				insert_cron: ZOD_CRON_REGEX,
-				delete_cron: ZOD_CRON_REGEX,
-				ttl: z.number().min(1000).default(604800000) // 7 days in milliseconds
-			}),
-			reports: z.object({
-				disregard_cron: ZOD_CRON_REGEX
-			})
-		})
-	});
+	private static _data: RawGlobalConfig;
 
 	/** Caches the global configuration data from the .yml file. */
 	static async cache(): Promise<void> {
@@ -40,8 +25,8 @@ export default class GlobalConfig {
 			process.exit(1);
 		}
 
-		const rawConfig = readYamlFile<z.infer<typeof GlobalConfig._schema>>("cfg.global.yml");
-		const parseResult = this._schema.safeParse(rawConfig);
+		const rawConfig = readYamlFile<RawGlobalConfig>("cfg.global.yml");
+		const parseResult = GLOBAL_CONFIG_SCHEMA.safeParse(rawConfig);
 
 		if (!parseResult.success) {
 			const error = fromError(parseResult.error);
@@ -146,11 +131,10 @@ export default class GlobalConfig {
 						.where("reported_at", "<=", threshold)
 						.executeTakeFirst();
 
-					if (numUpdatedRows > 0n) {
+					if (numUpdatedRows > 0n)
 						Logger.info(
 							`Automatically disregarded ${numUpdatedRows} message ${inflect(Number(numUpdatedRows), "report")} in guild with ID "${guild_id}".`
 						);
-					}
 				}
 			}
 		});

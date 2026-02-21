@@ -7,18 +7,15 @@ import type {
 	QueryResult
 } from "kysely";
 
-import ConfigManager, { ConfigKeys } from "@config/ConfigManager";
+import ConfigManager from "@config/ConfigManager";
 
-type QueryMetadata = {
-	tableName: string;
-	guildId: string | null;
-};
+type QueryMetadata = { guildId: string };
 
 export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 	/**
 	 * A mapping of query IDs to their associated metadata.
 	 * Used to track which guild's configuration needs to be invalidated
-	 * after a mutating operation.
+	 * after a mutating operation on the Guild table's config column.
 	 *
 	 * We use a WeakMap to avoid memory leaks, as query IDs are objects
 	 * that may be garbage collected after the query is complete.
@@ -26,7 +23,7 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 	private _queryMetadata = new WeakMap<object, QueryMetadata>();
 
 	/**
-	 * Extracts and stores metadata about mutating queries.
+	 * Extracts and stores metadata about mutating queries to the Guild table.
 	 *
 	 * @param args The plugin transform query arguments.
 	 * @returns The root operation node.
@@ -36,35 +33,19 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 		const { node, queryId } = args;
 
 		const tableName = this._extractTableName(node);
+		if (tableName !== "Guild") return node;
 
-		if (!tableName || !this._isTrackedTable(tableName)) {
-			return node;
-		}
-
-		// Only track mutating operations
 		const operation = node.kind;
+		if (!["UpdateQueryNode", "InsertQueryNode"].includes(operation)) return node;
 
-		if (!["UpdateQueryNode", "InsertQueryNode", "DeleteQueryNode"].includes(operation)) {
-			return node;
-		}
-
-		// Skip INSERT...ON CONFLICT (upsert) patterns to avoid infinite loops.
-		// These are used in ConfigManager.reload() to ensure rows exist.
-		if (operation === "InsertQueryNode" && "onConflict" in node && node.onConflict) {
-			return node;
-		}
-
-		const guildId = this._extractGuildId(node, tableName);
-
-		if (guildId) {
-			this._queryMetadata.set(queryId, { tableName, guildId });
-		}
+		const guildId = this._extractGuildId(node);
+		if (guildId) this._queryMetadata.set(queryId, { guildId });
 
 		return node;
 	}
 
 	/**
-	 * Invalidates the configuration cache after mutating operations.
+	 * Invalidates the configuration cache after mutating operations to the Guild table.
 	 *
 	 * @param args The plugin transform result arguments.
 	 * @returns The query result.
@@ -74,18 +55,12 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 		const { queryId, result } = args;
 
 		const metadata = this._queryMetadata.get(queryId);
+		if (!metadata) return result;
+
 		this._queryMetadata.delete(queryId);
 
-		if (!metadata || !metadata.guildId) {
-			return result;
-		}
-
-		const configKey = this._getConfigKey(metadata.tableName);
-
-		if (configKey)
-			// Reload the configuration for the affected guild and config key.
-			ConfigManager.reload(metadata.guildId, configKey);
-
+		// Trigger a reload of the guild's configuration to invalidate the cache.
+		void ConfigManager.reload(metadata.guildId);
 		return result;
 	}
 
@@ -106,32 +81,20 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 			}
 		}
 
-		if ("from" in node && node.from) {
-			const fromNode = node.from as any;
-
-			if (fromNode.froms?.[0]?.table?.identifier?.name) {
-				return fromNode.froms[0].table.identifier.name;
-			}
-		}
-
 		return null;
 	}
 
-	private _extractGuildId(node: RootOperationNode, tableName: string): string | null {
-		// Config tables use the `id` column as the guild id.
-		// Scoping related tables use the `guild_id` column.
-		const idColumn = TablesWithIdPrimaryKey.includes(tableName as any) ? "id" : "guild_id";
-
-		// Try to extract from WHERE clause (for UPDATE/DELETE)
+	private _extractGuildId(node: RootOperationNode): string | null {
+		// Try to extract from WHERE clause (for UPDATE)
 		if ("where" in node && node.where) {
-			const guildId = this._extractValueFromWhere(node.where, idColumn);
+			const guildId = this._extractValueFromWhere(node.where, "id");
 			if (guildId) return guildId;
 		}
 
 		// Try to extract from VALUES (for INSERT)
 		if ("values" in node && node.values) {
 			const columns = "columns" in node ? (node.columns as any[]) : null;
-			const guildId = this._extractValueFromInsert(node.values, columns, idColumn);
+			const guildId = this._extractValueFromInsert(node.values, columns, "id");
 			if (guildId) return guildId;
 		}
 
@@ -221,54 +184,4 @@ export default class ConfigCacheInvalidatorPlugin implements KyselyPlugin {
 
 		return null;
 	}
-
-	private _isTrackedTable(tableName: string): boolean {
-		return (
-			TablesWithIdPrimaryKey.includes(
-				tableName as (typeof TablesWithIdPrimaryKey)[number]
-			) || TablesWithGuildId.includes(tableName as (typeof TablesWithGuildId)[number])
-		);
-	}
-
-	private _getConfigKey(tableName: string): ConfigKeys | null {
-		return GuildIdToConfigKey[tableName] ?? IdPrimaryKeyToConfigKey[tableName] ?? null;
-	}
 }
-
-/** Tables that have a "guild_id" column. */
-const TablesWithGuildId = [
-	"QuickMuteChannelScoping",
-	"QuickPurgeChannelScoping",
-	"ContentFilterChannelScoping",
-	"PermissionScope",
-	"LoggingWebhook"
-] as const;
-
-/** Tables that use their "id" column as the primary key. */
-const TablesWithIdPrimaryKey = [
-	"MessageReportConfig",
-	"BanRequestConfig",
-	"QuickMuteConfig",
-	"QuickPurgeConfig",
-	"ContentFilterConfig",
-	"HighlightConfig"
-] as const;
-
-/** Mapping of table names to ConfigKeys for tables with "guild_id" column. */
-const GuildIdToConfigKey: Record<string, ConfigKeys> = {
-	QuickMuteChannelScoping: ConfigKeys.QuickMutes,
-	QuickPurgeChannelScoping: ConfigKeys.QuickPurges,
-	ContentFilterChannelScoping: ConfigKeys.ContentFilter,
-	PermissionScope: ConfigKeys.PermissionScopes,
-	LoggingWebhook: ConfigKeys.LoggingWebhooks
-};
-
-/** Mapping of table names to ConfigKeys for tables with "id" primary key. */
-const IdPrimaryKeyToConfigKey: Record<string, ConfigKeys> = {
-	MessageReportConfig: ConfigKeys.MessageReports,
-	BanRequestConfig: ConfigKeys.BanRequests,
-	QuickMuteConfig: ConfigKeys.QuickMutes,
-	QuickPurgeConfig: ConfigKeys.QuickPurges,
-	ContentFilterConfig: ConfigKeys.ContentFilter,
-	HighlightConfig: ConfigKeys.Highlights
-};

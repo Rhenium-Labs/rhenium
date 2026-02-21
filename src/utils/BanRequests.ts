@@ -18,7 +18,8 @@ import {
 import ms from "ms";
 
 import { kysely } from "@root/index";
-import { LoggingEvent, RequestStatus } from "@database/Enums";
+import { RequestStatus } from "@database/Enums";
+import { LoggingEvent, UserPermission } from "@config/Schema";
 import { parseDurationString, userMentionWithId, validateDuration } from "./index";
 
 import type { BanRequest, BanRequestUpdate } from "@database/Schema";
@@ -221,7 +222,7 @@ export default class BanRequestUtils {
 		action: BanRequestAction,
 		reviewReason: string | null = null
 	): Promise<SimpleResult> {
-		if (!config.hasPermission(interaction.member, "ReviewBanRequests"))
+		if (!config.hasPermission(interaction.member, UserPermission.ReviewBanRequests))
 			return { ok: false, message: "You don't have permission to review ban requests." };
 
 		const request = await kysely

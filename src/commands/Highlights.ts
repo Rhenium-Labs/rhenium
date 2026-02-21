@@ -30,6 +30,7 @@ import Command, {
 import RateLimiter from "@utils/RateLimiter";
 import GuildConfig from "@config/GuildConfig";
 import ConfigManager from "@config/ConfigManager";
+import { UserPermission } from "@config/Schema";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);
@@ -320,7 +321,7 @@ export default class Highlights extends Command {
 			if (!highlightMember) continue;
 
 			// Prevent people who had access to highlights but lost it from receiving highlights.
-			if (!config.hasPermission(highlightMember, "UseHighlights")) continue;
+			if (!config.hasPermission(highlightMember, UserPermission.UseHighlights)) continue;
 
 			const canViewChannel = message.channel
 				.permissionsFor(highlightMember)

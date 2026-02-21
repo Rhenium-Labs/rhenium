@@ -13,8 +13,9 @@ import {
 	roleMention
 } from "discord.js";
 
+import { Detector } from "@database/Enums";
 import { kysely, client } from "@root/index";
-import { ContentFilterVerbosity, Detector, DetectorMode, UserPermission } from "@database/Enums";
+import { ContentFilterVerbosity, DetectorMode, UserPermission } from "@config/Schema";
 
 import Command, {
 	CommandCategory,
@@ -770,15 +771,15 @@ export default class Config extends Command {
 			case ConfigSubcommandGroup.Permissions:
 				switch (subcommand) {
 					case ConfigSubcommand.Create:
-						return Config._createPermissionScope(interaction);
+						return Config._createPermissionScope(interaction, config);
 					case ConfigSubcommand.Delete:
-						return Config._deletePermissionScope(interaction);
+						return Config._deletePermissionScope(interaction, config);
 					case ConfigSubcommand.List:
 						return Config._listPermissionScopes(interaction, config);
 					case ConfigSubcommand.Grant:
-						return Config._addPermissionToScope(interaction);
+						return Config._addPermissionToScope(interaction, config);
 					case ConfigSubcommand.Revoke:
-						return Config._removePermissionFromScope(interaction);
+						return Config._removePermissionFromScope(interaction, config);
 				}
 				break;
 
@@ -904,18 +905,25 @@ export default class Config extends Command {
 
 	private static async _setContentFilterDetectorMode(
 		interaction: ChatInputCommandInteraction<"cached">,
-		configClass: GuildConfig
+		config: GuildConfig
 	): Promise<ResponseData<"interaction">> {
 		const mode = interaction.options.getString("mode", true) as DetectorMode;
-		const currentMode = configClass.data.content_filter.detector_mode;
+		const currentMode = config.data.content_filter.detector_mode;
 
-		if (mode === currentMode) {
+		if (mode === currentMode)
 			return { error: `Content filter detector mode is already set to ${mode}.` };
-		}
+
+		const updatedConfig = {
+			...config.data,
+			content_filter: {
+				...config.data.content_filter,
+				detector_mode: mode
+			}
+		};
 
 		await kysely
-			.updateTable("ContentFilterConfig")
-			.set({ detector_mode: mode })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -924,18 +932,25 @@ export default class Config extends Command {
 
 	private static async _setContentFilterVerbosity(
 		interaction: ChatInputCommandInteraction<"cached">,
-		configClass: GuildConfig
+		config: GuildConfig
 	): Promise<ResponseData<"interaction">> {
 		const level = interaction.options.getString("level", true) as ContentFilterVerbosity;
-		const currentLevel = configClass.data.content_filter.verbosity;
+		const currentLevel = config.data.content_filter.verbosity;
 
-		if (level === currentLevel) {
+		if (level === currentLevel)
 			return { error: `Content filter verbosity is already set to ${level}.` };
-		}
+
+		const updatedConfig = {
+			...config.data,
+			content_filter: {
+				...config.data.content_filter,
+				verbosity: level
+			}
+		};
 
 		await kysely
-			.updateTable("ContentFilterConfig")
-			.set({ verbosity: level })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -944,27 +959,33 @@ export default class Config extends Command {
 
 	private static async _toggleContentFilterDetector(
 		interaction: ChatInputCommandInteraction<"cached">,
-		configClass: GuildConfig
+		config: GuildConfig
 	): Promise<ResponseData<"interaction">> {
 		const detector = interaction.options.getString("detector", true) as Detector;
 		const enable = interaction.options.getBoolean("value", true);
-		const currentDetectors = configClass.data.content_filter.detectors;
+		const currentDetectors = config.data.content_filter.detectors;
 
-		if (enable && currentDetectors.includes(detector)) {
+		if (enable && currentDetectors.includes(detector))
 			return { error: `The ${detector} detector is already enabled.` };
-		}
 
-		if (!enable && !currentDetectors.includes(detector)) {
+		if (!enable && !currentDetectors.includes(detector))
 			return { error: `The ${detector} detector is already disabled.` };
-		}
 
 		const updatedDetectors = enable
 			? [...currentDetectors, detector]
 			: currentDetectors.filter(d => d !== detector);
 
+		const updatedConfig = {
+			...config.data,
+			content_filter: {
+				...config.data.content_filter,
+				detectors: updatedDetectors
+			}
+		};
+
 		await kysely
-			.updateTable("ContentFilterConfig")
-			.set({ detectors: updatedDetectors })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -986,9 +1007,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			content_filter: {
+				...configClass.data.content_filter,
+				enabled: enable
+			}
+		};
+
 		await kysely
-			.updateTable("ContentFilterConfig")
-			.set({ enabled: enable })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1043,9 +1072,17 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
+			const updatedConfig = {
+				...configClass.data,
+				content_filter: {
+					...configClass.data.content_filter,
+					webhook_url: newWebhook.url
+				}
+			};
+
 			await kysely
-				.updateTable("ContentFilterConfig")
-				.set({ webhook_url: newWebhook.url })
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
 				.where("id", "=", interaction.guild.id)
 				.execute();
 
@@ -1068,9 +1105,17 @@ export default class Config extends Command {
 
 		const updatedRoles = [...config.immune_roles, role.id];
 
+		const updatedConfig = {
+			...configClass.data,
+			content_filter: {
+				...configClass.data.content_filter,
+				immune_roles: updatedRoles
+			}
+		};
+
 		await kysely
-			.updateTable("ContentFilterConfig")
-			.set({ immune_roles: updatedRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1090,9 +1135,17 @@ export default class Config extends Command {
 
 		const updatedRoles = config.immune_roles.filter(r => r !== role.id);
 
+		const updatedConfig = {
+			...configClass.data,
+			content_filter: {
+				...configClass.data.content_filter,
+				immune_roles: updatedRoles
+			}
+		};
+
 		await kysely
-			.updateTable("ContentFilterConfig")
-			.set({ immune_roles: updatedRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1137,13 +1190,21 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			content_filter: {
+				...configClass.data.content_filter,
+				channel_scoping: [
+					...config.channel_scoping,
+					{ channel_id: channel.id, type: scopeType }
+				]
+			}
+		};
+
 		await kysely
-			.insertInto("ContentFilterChannelScoping")
-			.values({
-				guild_id: interaction.guildId,
-				channel_id: channel.id,
-				type: scopeType
-			})
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guildId)
 			.execute();
 
 		return {
@@ -1162,10 +1223,18 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			content_filter: {
+				...configClass.data.content_filter,
+				channel_scoping: config.channel_scoping.filter(s => s.channel_id !== channel.id)
+			}
+		};
+
 		await kysely
-			.deleteFrom("ContentFilterChannelScoping")
-			.where("guild_id", "=", interaction.guildId)
-			.where("channel_id", "=", channel.id)
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guildId)
 			.execute();
 
 		return {
@@ -1221,9 +1290,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			quick_mutes: {
+				...configClass.data.quick_mutes,
+				enabled: enable
+			}
+		};
+
 		await kysely
-			.updateTable("QuickMuteConfig")
-			.set({ enabled: enable })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1245,9 +1322,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			quick_purges: {
+				...configClass.data.quick_purges,
+				enabled: enable
+			}
+		};
+
 		await kysely
-			.updateTable("QuickPurgeConfig")
-			.set({ enabled: enable })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1269,9 +1354,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			highlights: {
+				...configClass.data.highlights,
+				enabled: enable
+			}
+		};
+
 		await kysely
-			.updateTable("HighlightConfig")
-			.set({ enabled: enable })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1293,9 +1386,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			quick_mutes: {
+				...configClass.data.quick_mutes,
+				purge_limit: amount
+			}
+		};
+
 		await kysely
-			.updateTable("QuickMuteConfig")
-			.set({ purge_limit: amount })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1317,13 +1418,21 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			quick_mutes: {
+				...configClass.data.quick_mutes,
+				channel_scoping: [
+					...config.channel_scoping,
+					{ channel_id: channel.id, type: scopeType }
+				]
+			}
+		};
+
 		await kysely
-			.insertInto("QuickMuteChannelScoping")
-			.values({
-				guild_id: interaction.guildId,
-				channel_id: channel.id,
-				type: scopeType
-			})
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guildId)
 			.execute();
 
 		return {
@@ -1344,10 +1453,18 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			quick_mutes: {
+				...configClass.data.quick_mutes,
+				channel_scoping: config.channel_scoping.filter(s => s.channel_id !== channel.id)
+			}
+		};
+
 		await kysely
-			.deleteFrom("QuickMuteChannelScoping")
-			.where("guild_id", "=", interaction.guildId)
-			.where("channel_id", "=", channel.id)
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guildId)
 			.execute();
 
 		return {
@@ -1405,9 +1522,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			quick_purges: {
+				...configClass.data.quick_purges,
+				max_limit: amount
+			}
+		};
+
 		await kysely
-			.updateTable("QuickPurgeConfig")
-			.set({ max_limit: amount })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1429,13 +1554,21 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is already scoped` };
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			quick_purges: {
+				...configClass.data.quick_purges,
+				channel_scoping: [
+					...config.channel_scoping,
+					{ channel_id: channel.id, type: scopeType }
+				]
+			}
+		};
+
 		await kysely
-			.insertInto("QuickPurgeChannelScoping")
-			.values({
-				guild_id: interaction.guildId,
-				channel_id: channel.id,
-				type: scopeType
-			})
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guildId)
 			.execute();
 
 		return {
@@ -1456,10 +1589,18 @@ export default class Config extends Command {
 			return { error: `The channel ${channel} is not scoped.` };
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			quick_purges: {
+				...configClass.data.quick_purges,
+				channel_scoping: config.channel_scoping.filter(s => s.channel_id !== channel.id)
+			}
+		};
+
 		await kysely
-			.deleteFrom("QuickPurgeChannelScoping")
-			.where("guild_id", "=", interaction.guildId)
-			.where("channel_id", "=", channel.id)
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guildId)
 			.execute();
 
 		return {
@@ -1517,9 +1658,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			highlights: {
+				...configClass.data.highlights,
+				max_patterns: amount
+			}
+		};
+
 		await kysely
-			.updateTable("HighlightConfig")
-			.set({ max_patterns: amount })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1529,54 +1678,58 @@ export default class Config extends Command {
 	}
 
 	private static async _createPermissionScope(
-		interaction: ChatInputCommandInteraction<"cached">
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
 	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
-		const exists = await kysely
-			.selectFrom("PermissionScope")
-			.selectAll()
-			.where("guild_id", "=", interaction.guildId)
-			.where("role_id", "=", role.id)
-			.executeTakeFirst();
+		const scopes = configClass.data.permission_scopes;
+		const exists = scopes.find(s => s.role_id === role.id);
 
 		if (exists) {
 			return { error: `A permission scope for the role ${role} already exists.` };
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			permission_scopes: [
+				...scopes,
+				{ role_id: role.id, allowed_permissions: [permission] }
+			]
+		};
+
 		await kysely
-			.insertInto("PermissionScope")
-			.values({
-				guild_id: interaction.guildId,
-				role_id: role.id,
-				allowed_permissions: [permission]
-			})
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guild.id)
 			.execute();
 
 		return { content: `Successfully created a permission scope for the ${role} role.` };
 	}
 
 	private static async _deletePermissionScope(
-		interaction: ChatInputCommandInteraction<"cached">
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
 	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 
-		const scope = await kysely
-			.selectFrom("PermissionScope")
-			.selectAll()
-			.where("guild_id", "=", interaction.guildId)
-			.where("role_id", "=", role.id)
-			.executeTakeFirst();
+		const scopes = configClass.data.permission_scopes;
+		const scope = scopes.find(s => s.role_id === role.id);
 
 		if (!scope) {
 			return { error: `No permission scope found for the role ${role}.` };
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			permission_scopes: scopes.filter(s => s.role_id !== role.id)
+		};
+
 		await kysely
-			.deleteFrom("PermissionScope")
-			.where("guild_id", "=", interaction.guildId)
-			.where("role_id", "=", role.id)
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guild.id)
 			.execute();
 
 		return { content: `Successfully deleted the permission scope for the ${role} role.` };
@@ -1619,17 +1772,14 @@ export default class Config extends Command {
 	}
 
 	private static async _addPermissionToScope(
-		interaction: ChatInputCommandInteraction<"cached">
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
 	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
-		const scope = await kysely
-			.selectFrom("PermissionScope")
-			.selectAll()
-			.where("guild_id", "=", interaction.guildId)
-			.where("role_id", "=", role.id)
-			.executeTakeFirst();
+		const scopes = configClass.data.permission_scopes;
+		const scope = scopes.find(s => s.role_id === role.id);
 
 		if (!scope) {
 			return { error: `No permission scope found for the role ${role}.` };
@@ -1641,13 +1791,19 @@ export default class Config extends Command {
 			};
 		}
 
-		const updatedPermissions = [...scope.allowed_permissions, permission];
+		const updatedConfig = {
+			...configClass.data,
+			permission_scopes: scopes.map(s =>
+				s.role_id === role.id
+					? { ...s, allowed_permissions: [...s.allowed_permissions, permission] }
+					: s
+			)
+		};
 
 		await kysely
-			.updateTable("PermissionScope")
-			.set({ allowed_permissions: updatedPermissions })
-			.where("guild_id", "=", interaction.guildId)
-			.where("role_id", "=", role.id)
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guild.id)
 			.execute();
 
 		return {
@@ -1656,17 +1812,14 @@ export default class Config extends Command {
 	}
 
 	private static async _removePermissionFromScope(
-		interaction: ChatInputCommandInteraction<"cached">
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
 	): Promise<ResponseData<"interaction">> {
 		const role = interaction.options.getRole("role", true);
 		const permission = interaction.options.getString("permission", true) as UserPermission;
 
-		const scope = await kysely
-			.selectFrom("PermissionScope")
-			.selectAll()
-			.where("guild_id", "=", interaction.guildId)
-			.where("role_id", "=", role.id)
-			.executeTakeFirst();
+		const scopes = configClass.data.permission_scopes;
+		const scope = scopes.find(s => s.role_id === role.id);
 
 		if (!scope) {
 			return { error: `No permission scope found for the role ${role}.` };
@@ -1684,13 +1837,24 @@ export default class Config extends Command {
 			};
 		}
 
-		const updatedPermissions = scope.allowed_permissions.filter(p => p !== permission);
+		const updatedConfig = {
+			...configClass.data,
+			permission_scopes: scopes.map(s =>
+				s.role_id === role.id
+					? {
+							...s,
+							allowed_permissions: s.allowed_permissions.filter(
+								p => p !== permission
+							)
+						}
+					: s
+			)
+		};
 
 		await kysely
-			.updateTable("PermissionScope")
-			.set({ allowed_permissions: updatedPermissions })
-			.where("guild_id", "=", interaction.guildId)
-			.where("role_id", "=", role.id)
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guild.id)
 			.execute();
 
 		return {
@@ -1711,9 +1875,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			message_reports: {
+				...configClass.data.message_reports,
+				enabled: value
+			}
+		};
+
 		await kysely
-			.updateTable("MessageReportConfig")
-			.set({ enabled: value })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1735,9 +1907,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			message_reports: {
+				...configClass.data.message_reports,
+				delete_submission_on_handle: value
+			}
+		};
+
 		await kysely
-			.updateTable("MessageReportConfig")
-			.set({ delete_submission_on_handle: value })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1761,9 +1941,17 @@ export default class Config extends Command {
 
 		const reason = rawReason.toLowerCase() === "none" ? null : rawReason;
 
+		const updatedConfig = {
+			...configClass.data,
+			message_reports: {
+				...configClass.data.message_reports,
+				placeholder_reason: reason
+			}
+		};
+
 		await kysely
-			.updateTable("MessageReportConfig")
-			.set({ placeholder_reason: reason })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1785,9 +1973,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			message_reports: {
+				...configClass.data.message_reports,
+				enforce_report_reason: value
+			}
+		};
+
 		await kysely
-			.updateTable("MessageReportConfig")
-			.set({ enforce_report_reason: value })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1815,9 +2011,17 @@ export default class Config extends Command {
 
 		const updatedRoles = [...config.immune_roles, role.id];
 
+		const updatedConfig = {
+			...configClass.data,
+			message_reports: {
+				...configClass.data.message_reports,
+				immune_roles: updatedRoles
+			}
+		};
+
 		await kysely
-			.updateTable("MessageReportConfig")
-			.set({ immune_roles: updatedRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1845,9 +2049,17 @@ export default class Config extends Command {
 
 		const updatedImmuneRoles = config.immune_roles.filter(id => id !== role.id);
 
+		const updatedConfig = {
+			...configClass.data,
+			message_reports: {
+				...configClass.data.message_reports,
+				immune_roles: updatedImmuneRoles
+			}
+		};
+
 		await kysely
-			.updateTable("MessageReportConfig")
-			.set({ immune_roles: updatedImmuneRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1900,9 +2112,17 @@ export default class Config extends Command {
 
 		const updatedRoles = [...config.notify_roles, role.id];
 
+		const updatedConfig = {
+			...configClass.data,
+			message_reports: {
+				...configClass.data.message_reports,
+				notify_roles: updatedRoles
+			}
+		};
+
 		await kysely
-			.updateTable("MessageReportConfig")
-			.set({ notify_roles: updatedRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -1930,9 +2150,17 @@ export default class Config extends Command {
 
 		const updatedNotifyRoles = config.notify_roles.filter(id => id !== role.id);
 
+		const updatedConfig = {
+			...configClass.data,
+			message_reports: {
+				...configClass.data.message_reports,
+				notify_roles: updatedNotifyRoles
+			}
+		};
+
 		await kysely
-			.updateTable("MessageReportConfig")
-			.set({ notify_roles: updatedNotifyRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -2000,8 +2228,16 @@ export default class Config extends Command {
 			}
 
 			await kysely
-				.updateTable("MessageReportConfig")
-				.set({ webhook_channel: channel.id })
+				.updateTable("Guild")
+				.set({
+					config: {
+						...configClass.data,
+						message_reports: {
+							...configClass.data.message_reports,
+							webhook_channel: channel.id
+						}
+					}
+				})
 				.where("id", "=", interaction.guild.id)
 				.execute();
 
@@ -2021,8 +2257,17 @@ export default class Config extends Command {
 			}
 
 			await kysely
-				.updateTable("MessageReportConfig")
-				.set({ webhook_channel: channel.id, webhook_url: newWebhook.url })
+				.updateTable("Guild")
+				.set({
+					config: {
+						...configClass.data,
+						message_reports: {
+							...configClass.data.message_reports,
+							webhook_channel: channel.id,
+							webhook_url: newWebhook.url
+						}
+					}
+				})
 				.where("id", "=", interaction.guild.id)
 				.execute();
 
@@ -2045,9 +2290,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				enabled: value
+			}
+		};
+
 		await kysely
-			.updateTable("BanRequestConfig")
-			.set({ enabled: value })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -2069,9 +2322,17 @@ export default class Config extends Command {
 			};
 		}
 
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				automatically_timeout: value
+			}
+		};
+
 		await kysely
-			.updateTable("BanRequestConfig")
-			.set({ automatically_timeout: value })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -2111,9 +2372,17 @@ export default class Config extends Command {
 				};
 			}
 
+			const updatedConfig = {
+				...configClass.data,
+				ban_requests: {
+					...configClass.data.ban_requests,
+					webhook_channel: channel.id
+				}
+			};
+
 			await kysely
-				.updateTable("BanRequestConfig")
-				.set({ webhook_channel: channel.id })
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
 				.where("id", "=", interaction.guild.id)
 				.execute();
 
@@ -2132,9 +2401,18 @@ export default class Config extends Command {
 				return { error: "Failed to create a webhook in the specified channel." };
 			}
 
+			const updatedConfig = {
+				...configClass.data,
+				ban_requests: {
+					...configClass.data.ban_requests,
+					webhook_url: newWebhook.url,
+					webhook_channel: channel.id
+				}
+			};
+
 			await kysely
-				.updateTable("BanRequestConfig")
-				.set({ webhook_url: newWebhook.url, webhook_channel: channel.id })
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
 				.where("id", "=", interaction.guild.id)
 				.execute();
 
@@ -2188,9 +2466,17 @@ export default class Config extends Command {
 
 		const updatedRoles = [...config.notify_roles, role.id];
 
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				notify_roles: updatedRoles
+			}
+		};
+
 		await kysely
-			.updateTable("BanRequestConfig")
-			.set({ notify_roles: updatedRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -2218,9 +2504,17 @@ export default class Config extends Command {
 
 		const updatedNotifyRoles = config.notify_roles.filter(id => id !== role.id);
 
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				notify_roles: updatedNotifyRoles
+			}
+		};
+
 		await kysely
-			.updateTable("BanRequestConfig")
-			.set({ notify_roles: updatedNotifyRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -2273,9 +2567,17 @@ export default class Config extends Command {
 
 		const updatedRoles = [...config.immune_roles, role.id];
 
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				immune_roles: updatedRoles
+			}
+		};
+
 		await kysely
-			.updateTable("BanRequestConfig")
-			.set({ immune_roles: updatedRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 
@@ -2303,9 +2605,17 @@ export default class Config extends Command {
 
 		const updatedImmuneRoles = config.immune_roles.filter(id => id !== role.id);
 
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				immune_roles: updatedImmuneRoles
+			}
+		};
+
 		await kysely
-			.updateTable("BanRequestConfig")
-			.set({ immune_roles: updatedImmuneRoles })
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
 			.where("id", "=", interaction.guild.id)
 			.execute();
 

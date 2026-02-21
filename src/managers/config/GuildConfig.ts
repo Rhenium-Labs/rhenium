@@ -6,37 +6,37 @@ import {
 } from "discord.js";
 import { captureException } from "@sentry/node";
 
-import type {
-	BanRequestConfig,
-	ContentFilterChannelScoping,
-	ContentFilterConfig,
-	HighlightConfig,
-	LoggingWebhook,
-	MessageReportConfig,
-	PermissionScope,
-	QuickMuteChannelScoping,
-	QuickMuteConfig,
-	QuickPurgeChannelScoping,
-	QuickPurgeConfig
-} from "@database/Schema";
-import { LoggingEvent, UserPermission } from "@database/Enums";
-
 import Logger from "@utils/Logger";
+
+import {
+	ContentFilterConfig,
+	LoggingEvent,
+	RawGuildConfig,
+	UserPermission,
+	RawChannelScoping
+} from "./Schema";
 
 export default class GuildConfig {
 	/**
 	 * Data representing the guild configuration.
 	 */
 
-	readonly data: GuildConfigData;
+	readonly data: RawGuildConfig;
+
+	/**
+	 * ID of the guild this configuration belongs to.
+	 */
+	readonly id: string;
 
 	/**
 	 * Constructs a new GuildConfig instance.
 	 *
+	 * @param id The ID of the guild.
 	 * @param data The guild configuration data.
 	 * @return The constructed GuildConfig instance.
 	 */
-	constructor(data: GuildConfigData) {
+	constructor(id: string, data: RawGuildConfig) {
+		this.id = id;
 		this.data = data;
 	}
 
@@ -188,30 +188,14 @@ export default class GuildConfig {
 			);
 		} catch (error) {
 			const sentryId = captureException(error, {
-				extra: { guildId: this.data.id, event, payload }
+				extra: { guildId: this.id, event, payload }
 			});
 
-			Logger.traceable(
-				sentryId,
-				`Failed to log event "${event}" for guild "${this.data.id}".`
-			);
+			Logger.traceable(sentryId, `Failed to log event "${event}" for guild "${this.id}".`);
 			return null;
 		}
 	}
 }
-
-/** The guild configuration data structure. */
-export type GuildConfigData = {
-	id: string;
-	message_reports: MessageReportConfig;
-	ban_requests: BanRequestConfig;
-	content_filter: ContentFilterConfig & { channel_scoping: ContentFilterChannelScoping[] };
-	highlights: HighlightConfig;
-	quick_mutes: QuickMuteConfig & { channel_scoping: QuickMuteChannelScoping[] };
-	quick_purges: QuickPurgeConfig & { channel_scoping: QuickPurgeChannelScoping[] };
-	permission_scopes: PermissionScope[];
-	logging_webhooks: LoggingWebhook[];
-};
 
 /**
  * Parsed content filter configuration with channel scoping and webhook URL.
@@ -219,6 +203,6 @@ export type GuildConfigData = {
  * module needs to use it.
  */
 export type ParsedContentFilterConfig = ContentFilterConfig & {
-	channel_scoping: ContentFilterChannelScoping[];
+	channel_scoping: RawChannelScoping[];
 	webhook_url: string;
 };

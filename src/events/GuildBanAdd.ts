@@ -10,7 +10,7 @@ import {
 
 import ms from "ms";
 
-import { LoggingEvent } from "@database/Enums";
+import { LoggingEvent } from "@config/Schema";
 import { client, kysely } from "@root/index";
 import { formatMessageContent } from "@utils/Messages";
 import { EMPTY_MESSAGE_CONTENT } from "@utils/Constants";
