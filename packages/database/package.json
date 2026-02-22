@@ -1,0 +1,12 @@
+{
+	"name": "@repo/db",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc",
+		"format": "prettier --write src/**/*.ts"
+	}
+}

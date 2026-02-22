@@ -1,0 +1,31 @@
+{
+	"compilerOptions": {
+		// Strict Type-Checking
+		"strict": true,
+		"alwaysStrict": true,
+
+		// Module And Library Options
+		"lib": ["ES2024"],
+		"types": ["bun-types"],
+		"target": "es2024",
+		"module": "esnext",
+		"noEmit": true,
+		"moduleResolution": "bundler",
+
+		// Advanced Options
+		"skipLibCheck": true,
+		"downlevelIteration": true,
+		"noImplicitOverride": true,
+		"allowSyntheticDefaultImports": true,
+
+		// Decorator Options
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+
+		// Additional Options
+		"pretty": true,
+		"removeComments": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true
+	}
+}

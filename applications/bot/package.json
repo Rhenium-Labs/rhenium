@@ -1,0 +1,13 @@
+{
+	"name": "@rhenium/bot",
+	"type": "module",
+	"module": "src/index.ts",
+	"private": true,
+	"scripts": {
+		"typecheck": "tsc",
+		"format": "prettier --write src/**/*.ts"
+	},
+	"dependencies": {
+		"@repo/db": "workspace:*"
+	}
+}
