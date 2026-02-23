@@ -9,7 +9,7 @@ import {
 } from "discord.js";
 
 import { kysely } from "@root/index";
-import { RawGuildConfig } from "@config/Schema";
+import { RawGuildConfig } from "@repo/config";
 
 import Command, {
 	CommandCategory,

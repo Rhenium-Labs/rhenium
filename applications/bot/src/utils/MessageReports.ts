@@ -21,7 +21,7 @@ import {
 import { ReportStatus } from "@repo/db";
 import { client, kysely } from "@root/index";
 import { EMPTY_MESSAGE_CONTENT } from "./Constants";
-import { LoggingEvent, UserPermission } from "@config/Schema";
+import { LoggingEvent, UserPermission } from "@repo/config";
 import { cleanContent, formatMessageContent } from "./Messages";
 import { cropLines, truncate, userMentionWithId } from "./index";
 

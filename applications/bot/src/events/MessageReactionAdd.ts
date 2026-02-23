@@ -28,7 +28,7 @@ import {
 	truncate,
 	userMentionWithId
 } from "@utils/index";
-import { LoggingEvent, UserPermission } from "@config/Schema";
+import { LoggingEvent, UserPermission } from "@repo/config";
 import { client, kysely } from "@root/index";
 import { LOG_DATE_FORMAT } from "@utils/Constants";
 

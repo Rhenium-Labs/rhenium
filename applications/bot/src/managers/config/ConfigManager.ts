@@ -1,7 +1,7 @@
 import { fromZodError } from "zod-validation-error";
 import { kysely } from "@root/index";
 
-import { DEFAULT_GUILD_CONFIG, GUILD_CONFIG_SCHEMA } from "./Schema";
+import { DEFAULT_GUILD_CONFIG, GUILD_CONFIG_SCHEMA } from "@repo/config";
 
 import GuildConfig from "./GuildConfig";
 import Logger from "@utils/Logger";

@@ -19,7 +19,7 @@ import ms from "ms";
 
 import { kysely } from "@root/index";
 import { RequestStatus } from "@repo/db";
-import { LoggingEvent, UserPermission } from "@config/Schema";
+import { LoggingEvent, UserPermission } from "@repo/config";
 import { parseDurationString, userMentionWithId, validateDuration } from "./index";
 
 import type { BanRequest, BanRequestUpdate } from "@repo/db";

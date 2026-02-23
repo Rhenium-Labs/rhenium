@@ -36,6 +36,8 @@
 		"kysely-postgres-js": "^3.0.0",
 		"postgres": "^3.4.8",
 		"prisma": "^7.4.1",
-		"prisma-kysely": "^3.1.0"
+		"prisma-kysely": "^3.1.0",
+		"zod": "^4.3.6",
+		"zod-validation-error": "^5.0.0"
 	}
 }

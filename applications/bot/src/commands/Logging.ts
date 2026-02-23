@@ -14,7 +14,7 @@ import {
 } from "discord.js";
 
 import { client, kysely } from "@root/index";
-import { LoggingEvent, LoggingWebhook } from "@config/Schema";
+import { LoggingEvent, LoggingWebhook } from "@repo/config";
 
 import GuildConfig from "@config/GuildConfig";
 import Command, {

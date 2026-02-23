@@ -16,6 +16,7 @@ import { jsonArrayFrom } from "kysely/helpers/postgres";
 import safe from "safe-regex";
 
 import { client, kysely } from "@root/index";
+import { UserPermission } from "@repo/config";
 import { formatMessageContent } from "@utils/Messages";
 import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "@utils/index";
 
@@ -30,7 +31,6 @@ import Command, {
 import RateLimiter from "@utils/RateLimiter";
 import GuildConfig from "@config/GuildConfig";
 import ConfigManager from "@config/ConfigManager";
-import { UserPermission } from "@config/Schema";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);

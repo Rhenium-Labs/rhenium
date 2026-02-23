@@ -14,7 +14,7 @@ import {
 	RawGuildConfig,
 	UserPermission,
 	RawChannelScoping
-} from "./Schema";
+} from "@repo/config";
 
 export default class GuildConfig {
 	/**

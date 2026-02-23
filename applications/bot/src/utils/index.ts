@@ -10,7 +10,7 @@ import { client, kv, kysely } from "@root/index";
 import { DISCORD_EMOJI_REGEX, UNICODE_EMOJI_REGEX } from "./Constants";
 
 import type { SimpleResult } from "./Types";
-import type { RawChannelScoping, ParsedChannelScoping } from "@config/Schema";
+import type { RawChannelScoping, ParsedChannelScoping } from "@repo/config";
 
 import Logger from "./Logger";
 

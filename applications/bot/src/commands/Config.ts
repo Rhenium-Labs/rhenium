@@ -15,7 +15,7 @@ import {
 
 import { Detector } from "@repo/db";
 import { kysely, client } from "@root/index";
-import { ContentFilterVerbosity, DetectorMode, UserPermission } from "@config/Schema";
+import { ContentFilterVerbosity, DetectorMode, UserPermission } from "@repo/config";
 
 import Command, {
 	CommandCategory,

@@ -11,6 +11,8 @@
         "postgres": "^3.4.8",
         "prisma": "^7.4.1",
         "prisma-kysely": "^3.1.0",
+        "zod": "^4.3.6",
+        "zod-validation-error": "^5.0.0",
       },
       "devDependencies": {
         "bun-types": "1.3.9",
@@ -22,6 +24,7 @@
     "applications/bot": {
       "name": "@rhenium/bot",
       "dependencies": {
+        "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@sapphire/discord-utilities": "^4.0.0",
         "@sapphire/lexure": "^1.1.12",
@@ -45,8 +48,6 @@
         "sharp": "^0.34.5",
         "stream": "^0.0.3",
         "yaml": "^2.8.2",
-        "zod": "^4.3.6",
-        "zod-validation-error": "^5.0.0",
       },
       "devDependencies": {
         "@types/cron": "2.4.3",
@@ -55,6 +56,12 @@
         "@types/ms": "2.1.0",
         "@types/safe-regex": "1.1.6",
         "@types/yaml": "1.9.7",
+      },
+    },
+    "packages/config": {
+      "name": "@repo/config",
+      "dependencies": {
+        "@repo/db": "workspace:*",
       },
     },
     "packages/database": {
@@ -275,6 +282,8 @@
     "@prisma/schema-files-loader": ["@prisma/schema-files-loader@7.4.1", "", { "dependencies": { "@prisma/prisma-schema-wasm": "7.5.0-4.55ae170b1ced7fc6ed07a15f110549408c501bb3", "fs-extra": "11.3.0" } }, "sha512-w67qWHGPKvmemfk7BjMaOqzMZGc0d4BByxoQsP0B93svH/O3NwnC4gfFN4RG7T/IYgnpn6i7xAQQtPx2cyI6hQ=="],
 
     "@prisma/studio-core": ["@prisma/studio-core@0.13.1", "", { "peerDependencies": { "@types/react": "^18.0.0 || ^19.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-agdqaPEePRHcQ7CexEfkX1RvSH9uWDb6pXrZnhCRykhDFAV0/0P3d07WtfiY8hZWb7oRU4v+NkT4cGFHkQJIPg=="],
+
+    "@repo/config": ["@repo/config@workspace:packages/config"],
 
     "@repo/db": ["@repo/db@workspace:packages/database"],
 

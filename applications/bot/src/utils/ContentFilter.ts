@@ -3,7 +3,7 @@ import type { ChannelScanState } from "@cf/Types";
 
 import { kysely } from "@root/index";
 import { CF_CONSTANTS } from "./Constants";
-import { DetectorMode } from "@config/Schema";
+import { DetectorMode } from "@repo/config";
 import { ContentFilterStatus } from "@repo/db";
 import { ContentFilterAlert, Message } from "@repo/db";
 
