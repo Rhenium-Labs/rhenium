@@ -35,11 +35,11 @@
 		"zod-validation-error": "^5.0.0"
 	},
 	"devDependencies": {
-		"@types/cron": "^2.4.3",
-		"@types/fluent-ffmpeg": "^2.1.28",
-		"@types/lodash": "^4.17.24",
-		"@types/ms": "^2.1.0",
-		"@types/safe-regex": "^1.1.6",
-		"@types/yaml": "^1.9.7"
+		"@types/cron": "2.4.3",
+		"@types/fluent-ffmpeg": "2.1.28",
+		"@types/lodash": "4.17.24",
+		"@types/ms": "2.1.0",
+		"@types/safe-regex": "1.1.6",
+		"@types/yaml": "1.9.7"
 	}
 }
