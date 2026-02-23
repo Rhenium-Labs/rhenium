@@ -15,7 +15,8 @@ export const CLIENT_INTENTS: readonly GatewayIntentBits[] = [
 	GatewayIntentBits.MessageContent,
 	GatewayIntentBits.GuildMessageReactions,
 	GatewayIntentBits.GuildExpressions,
-	GatewayIntentBits.GuildModeration
+	GatewayIntentBits.GuildModeration,
+	GatewayIntentBits.GuildPresences
 ];
 
 /**
@@ -24,6 +25,7 @@ export const CLIENT_INTENTS: readonly GatewayIntentBits[] = [
  */
 
 export const CLIENT_PARTIALS: readonly Partials[] = [
+    Partials.User,
 	Partials.Message,
 	Partials.Channel,
 	Partials.Reaction,
