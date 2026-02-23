@@ -1,0 +1,14 @@
+# Directories
+node_modules
+.turbo
+
+# Files
+.dockerignore
+.env
+.gitignore
+.prettierrc
+CONTRIBUTING.md
+LICENSE
+README.md
+renovate.json
+SECURITY.md

@@ -1,0 +1,10 @@
+services:
+     bot:
+          container_name: rhenium_bot
+          build:
+               context: .
+               dockerfile: ./applications/bot/Dockerfile
+          env_file:
+               - ./applications/bot/.env
+          volumes:
+               - ./applications/bot/cfg.global.yml:/rhenium/applications/bot/cfg.global.yml
