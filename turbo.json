@@ -1,9 +1,8 @@
 {
 	"$schema": "https://turborepo.com/schema.json",
-	"ui": "tui",
 	"tasks": {
 		"typecheck": {
-			"dependsOn": ["^build"],
+			"dependsOn": ["^typecheck"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": []
 		},

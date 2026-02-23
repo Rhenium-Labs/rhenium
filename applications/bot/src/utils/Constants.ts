@@ -25,7 +25,7 @@ export const CLIENT_INTENTS: readonly GatewayIntentBits[] = [
  */
 
 export const CLIENT_PARTIALS: readonly Partials[] = [
-    Partials.User,
+	Partials.User,
 	Partials.Message,
 	Partials.Channel,
 	Partials.Reaction,
