@@ -1,6 +1,6 @@
 # Security
 
-Rhenium takes security seriously. If you believe you’ve found a security vulnerability in Rhenium or any repository under this project, we’d appreciate you reporting it responsibly so we can investigate and fix it as quickly as possible.
+We take security extremely seriously. If you believe you’ve found a security vulnerability in Rhenium or any other "repository" under this monorepo, we’d appreciate you reporting it responsibly so we can investigate and fix it as quickly as possible.
 
 ## Reporting a Vulnerability
 

@@ -1,25 +1,37 @@
-# Dependencies
+# dependencies (bun install)
 node_modules
 
-# Builds
+# output
 out
 dist
 *.tgz
 
-# Environment variables
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
 .env
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
 
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea
+
 # Finder (MacOS) folder config
 .DS_Store
 
-# Sentry Config File
-.sentryclirc
-
-# Config files
+# Configs
 cfg.global.yml
-
-/old_codebase

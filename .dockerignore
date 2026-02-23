@@ -1,14 +1,13 @@
 # Directories
-/node_modules
-/documentation
+node_modules
+.turbo
 
 # Files
-.env.example
+.dockerignore
+.env
 .gitignore
 .prettierrc
-cfg.example.yml
 CONTRIBUTING.md
-README.md
 LICENSE
 README.md
 renovate.json
