@@ -23,21 +23,21 @@ We welcome a wide range of contributions, but here are the most common types:
 
 ## How to Contribute
 
-**1. Keep changes small and focused**
-    - Try to keep your pull requests focused on a single issue or feature. This makes it easier for maintainers to review and merge your changes.
-    - If you have multiple changes to make, consider submitting separate pull requests for each change.
-**2. Follow the code style**
-    - Please follow the existing code style and conventions used in the project. This helps maintain consistency and readability across the codebase.
-    - We use Prettier for code formatting, so please ensure your code is formatted accordingly.
-**3. Write clear commit messages**
-    - Use clear and descriptive commit messages that explain the purpose of your changes. This helps maintainers understand the context of your contributions and makes it easier to review your code.
-    - A good commit message should include a brief summary of the changes, the motivation behind them, and any relevant issue numbers.
-**4. Test your changes**
-    - If your changes include code modifications, please ensure that you have tested them thoroughly. This helps maintain the stability and reliability of the project.
-    - If applicable, consider adding new tests to cover your changes and ensure that they are properly tested.
-**5. Open a pull request**
-    - Once you have made your changes and tested them, you can open a pull request to submit your contributions for review. Please provide a clear description of your changes and any relevant context to help maintainers understand your contributions.
-    - Be responsive to feedback and be prepared to make changes based on the review process. This collaborative approach helps ensure that your contributions are of high quality and align with the project's goals.
+1. **Keep changes small and focused**
+        - Try to keep your pull requests focused on a single issue or feature. This makes it easier for maintainers to review and merge your changes.
+        - If you have multiple changes to make, consider submitting separate pull requests for each change.
+2. **Follow the code style**
+        - Please follow the existing code style and conventions used in the project. This helps maintain consistency and readability across the codebase.
+        - We use Prettier for code formatting, so please ensure your code is formatted accordingly.
+3. **Write clear commit messages**
+        - Use clear and descriptive commit messages that explain the purpose of your changes. This helps maintainers understand the context of your contributions and makes it easier to review your code.
+        - A good commit message should include a brief summary of the changes, the motivation behind them, and any relevant issue numbers.
+4. **Test your changes**
+        - If your changes include code modifications, please ensure that you have tested them thoroughly. This helps maintain the stability and reliability of the project.
+        - If applicable, consider adding new tests to cover your changes and ensure that they are properly tested.
+5. **Open a pull request**
+        - Once you have made your changes and tested them, you can open a pull request to submit your contributions for review. Please provide a clear description of your changes and any relevant context to help maintainers understand your contributions.
+        - Be responsive to feedback and be prepared to make changes based on the review process. This collaborative approach helps ensure that your contributions are of high quality and align with the project's goals.
 
 ## License
 
