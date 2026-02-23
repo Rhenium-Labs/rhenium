@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "bot",
+      "name": "rhenium",
       "dependencies": {
         "dotenv": "^17.3.1",
         "kysely": "^0.28.11",
