@@ -15,6 +15,7 @@ FROM base AS release
 COPY package.json bun.lock tsconfig.base.json turbo.json ./
 COPY applications/bot ./applications/bot
 COPY packages/database ./packages/database
+COPY packages/config ./packages/config
 
 # Install dependencies.
 RUN bun install
