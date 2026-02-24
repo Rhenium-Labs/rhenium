@@ -1,10 +1,7 @@
 import { z } from "zod";
 
-/**
- * Zod schema for validating environment variables.
- */
-
-export const envZodSchema = z.object({
+/** Zod schema for validating environment variables. */
+export const zEnvSchema = z.object({
 	BOT_TOKEN: z.string(),
 	PG_URL: z
 		.string()
@@ -18,12 +15,12 @@ export const envZodSchema = z.object({
 	OPENAI_API_KEY: z.string()
 });
 
-/**
- * Module augmentation to extend process.env with validated environment variables.
- */
+/** Trigger validation when the module is loaded. */
+zEnvSchema.parse(process.env);
 
+/** Augment NodeJS.ProcessEnv with validated environment variables. */
 declare global {
 	namespace NodeJS {
-		interface ProcessEnv extends z.infer<typeof envZodSchema> {}
+		interface ProcessEnv extends z.infer<typeof zEnvSchema> {}
 	}
 }
