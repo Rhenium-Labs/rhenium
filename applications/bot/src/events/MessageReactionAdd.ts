@@ -328,6 +328,7 @@ export default class MessageReactionAdd extends EventListener {
 			const target = await message.guild.members
 				.fetch(message.author.id)
 				.catch(() => null);
+
 			if (!target) return;
 
 			if (!message.channel.permissionsFor(executor).has("ManageMessages")) {
@@ -704,6 +705,7 @@ export default class MessageReactionAdd extends EventListener {
 	private static async _getMessageLogEntries(messages: SerializedMessage[]): Promise<string[]> {
 		// Pre-fetch all unique authors in parallel.
 		const uniqueAuthorIds = new Set<Snowflake>();
+
 		for (const message of messages) {
 			uniqueAuthorIds.add(message.author_id);
 		}
@@ -728,7 +730,7 @@ export default class MessageReactionAdd extends EventListener {
 		const referenceCache = new Map<string, SerializedMessage>();
 
 		if (referenceIds.length > 0) {
-			const references = await Promise.all(referenceIds.map(id => MessageManager.get(id)));
+			const references = await MessageManager.getMany(referenceIds);
 
 			for (let i = 0; i < referenceIds.length; i++) {
 				const ref = references[i];

@@ -115,6 +115,33 @@ export default class MessageManager {
 	}
 
 	/**
+	 * Retrieves multiple messages by their IDs, merging results from the cache and database.
+	 *
+	 * @param ids An array of message IDs to retrieve.
+	 * @return An array of message objects corresponding to the provided IDs.
+	 */
+
+	static async getMany(ids: string[]): Promise<Message[]> {
+		const cached = ids
+			.map(id => this._cache.get(id))
+			.filter((msg): msg is Message => msg !== undefined);
+
+		if (cached.length === ids.length) {
+			return cached;
+		}
+
+		const missingIds = ids.filter(id => !this._cache.has(id));
+
+		const fromDb = await kysely
+			.selectFrom("Message")
+			.selectAll()
+			.where("id", "in", missingIds)
+			.execute();
+
+		return cached.concat(fromDb);
+	}
+
+	/**
 	 * Retrieves messages for a specific channel, merging results from the cache and database.
 	 *
 	 * @param channelId The ID of the channel to retrieve messages from.

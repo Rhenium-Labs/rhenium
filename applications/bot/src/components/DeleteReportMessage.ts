@@ -75,14 +75,8 @@ export default class DeleteReportMessage extends Component {
 			return null;
 		}
 
-		const message = await channel.messages.fetch(messageId).catch(() => null);
-
-		if (!message) {
-			return gracefully(`Failed to fetch message \`${messageId}\` in ${channel}.`);
-		}
-
-		const result = await message
-			.delete()
+		const result = await channel.messages
+			.delete(messageId)
 			.then(() => ({ ok: true }))
 			.catch(() => ({ ok: false }));
 
