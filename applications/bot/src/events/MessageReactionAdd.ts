@@ -2,7 +2,6 @@ import {
 	type User,
 	type MessageReaction,
 	type PartialMessage,
-	type PartialMessageReaction,
 	type Snowflake,
 	type Message,
 	type TextChannel,
@@ -15,6 +14,7 @@ import {
 	AttachmentBuilder,
 	StickerFormatType
 } from "discord.js";
+import { captureException } from "@sentry/node";
 
 import ms from "ms";
 
@@ -39,7 +39,6 @@ import ConfigManager from "@config/ConfigManager";
 import EventListener from "@events/EventListener";
 import MessageManager from "@database/Messages";
 import ModerationUtils from "@utils/Moderation";
-import { captureException } from "@sentry/node";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */
 const BULK_DELETE_MAX_AGE = 14 * 24 * 60 * 60 * 1000;
@@ -846,14 +845,12 @@ export default class MessageReactionAdd extends EventListener {
 	}
 
 	private static async _parseEventProps(
-		reaction: PartialMessageReaction | MessageReaction,
+		reaction: MessageReaction,
 		message: PartialMessage | Message
 	): Promise<readonly [MessageReaction | null, Message | null]> {
-		const parsedReaction = reaction.partial
-			? await reaction.fetch().catch(() => null)
-			: reaction;
-		const parsedMessage = message.partial ? await message.fetch().catch(() => null) : message;
+		const parsedMessage =
+			message.partial || !message ? await message.fetch().catch(() => null) : message;
 
-		return [parsedReaction, parsedMessage] as const;
+		return [reaction, parsedMessage] as const;
 	}
 }

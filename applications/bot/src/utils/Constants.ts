@@ -44,7 +44,6 @@ export const CLIENT_CACHE_OPTIONS = Options.cacheWithLimits({
 	GuildForumThreadManager: 0,
 	GuildInviteManager: 0,
 	GuildScheduledEventManager: 0,
-	GuildMessageManager: 0,
 
 	ThreadMemberManager: 0,
 	VoiceStateManager: 0,
@@ -55,6 +54,7 @@ export const CLIENT_CACHE_OPTIONS = Options.cacheWithLimits({
 	MessageManager: 0,
 
 	UserManager: Infinity,
+	GuildMessageManager: Infinity,
 	ApplicationCommandManager: Infinity,
 	BaseGuildEmojiManager: Infinity
 });

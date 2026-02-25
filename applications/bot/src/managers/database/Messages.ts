@@ -14,7 +14,7 @@ let isInserting = false;
 
 export default class MessageManager {
 	/** Collection of cached messages. */
-	private static _cache: Collection<string, Message> = new Collection();
+	public static _cache: Collection<string, Message> = new Collection();
 
 	/** Messages that are currently being processed or handled outside this class. */
 	static exclusions: Set<string> = new Set();

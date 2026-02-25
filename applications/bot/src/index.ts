@@ -38,14 +38,18 @@ export const client = new Client<true>({
 	makeCache: CLIENT_CACHE_OPTIONS,
 	sweepers: {
 		users: {
-			interval: 3600,
+			interval: 3600, // 1 hour
 			filter: () => (): boolean => true // Sweeps everything.
 		},
 		guildMembers: {
-			interval: 3600,
+			interval: 3600, // 1 hour
 			filter: Sweepers.filterByLifetime({
 				lifetime: 1800 // 30 minutes
 			})
+		},
+		messages: {
+			interval: 1800, // 30 minutes
+			filter: () => (): boolean => true // Sweeps everything.
 		}
 	},
 	allowedMentions: { parse: [] }
