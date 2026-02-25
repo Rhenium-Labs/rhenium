@@ -1,4 +1,6 @@
 import { MessageFlags } from "discord.js";
+
+import { TARGET_MESSAGE_KV } from "@root/commands/ReportMessageCtx";
 import type { ResponseData } from "@commands/Command";
 
 import MessageReportUtils from "@utils/MessageReports";
@@ -18,21 +20,12 @@ export default class ReportMessage extends Component {
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		const channelId = interaction.customId.split("-")[2];
 		const messageId = interaction.customId.split("-")[3];
-
-		const message = await interaction.guild.channels
-			.fetch(channelId)
-			.then(async channel => {
-				return channel?.isTextBased()
-					? await channel.messages.fetch(messageId).catch(() => null)
-					: null;
-			})
-			.catch(() => null);
+		const message = TARGET_MESSAGE_KV.get(messageId);
 
 		if (!message)
 			return {
-				error: `Failed to fetch the message with ID ${messageId}.`
+				error: `Failed to get the message with ID ${messageId}.`
 			};
 
 		const reportReason = interaction.fields.getTextInputValue("reason");
@@ -47,6 +40,9 @@ export default class ReportMessage extends Component {
 			reportReason
 		);
 
+		// Clean up the KV entry to prevent memory leaks.
+		// This is safe to do here because the modal can only be submitted once, and the message data is not needed after submission.
+		TARGET_MESSAGE_KV.delete(messageId);
 		return !result.ok
 			? { error: result.message }
 			: {

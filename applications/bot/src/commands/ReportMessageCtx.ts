@@ -2,6 +2,7 @@ import {
 	type ApplicationCommandData,
 	ApplicationCommandType,
 	LabelBuilder,
+	Message,
 	MessageFlags,
 	ModalBuilder,
 	TextInputBuilder,
@@ -15,6 +16,12 @@ import Command, {
 } from "@commands/Command";
 
 import MessageReportUtils from "@utils/MessageReports";
+
+/**
+ * KV for storing target messages for reports.
+ * This is used for passing message data from the context menu command to the modal submission handler without needing to re-fetch the message.
+ */
+export const TARGET_MESSAGE_KV: Map<string, Message<true>> = new Map();
 
 export default class ReportMessageCtx extends Command {
 	constructor() {
@@ -71,6 +78,8 @@ export default class ReportMessageCtx extends Command {
 				)
 				.setTitle(`Report @${interaction.targetMessage.author.username}'s Message`)
 				.addLabelComponents(reasonLabel);
+
+			TARGET_MESSAGE_KV.set(interaction.targetMessage.id, interaction.targetMessage);
 
 			await interaction.showModal(modal);
 			return null;
