@@ -21,7 +21,7 @@ import MessageReportUtils from "@utils/MessageReports";
  * KV for storing target messages for reports.
  * This is used for passing message data from the context menu command to the modal submission handler without needing to re-fetch the message.
  */
-export const TARGET_MESSAGE_KV: Map<string, Message<true>> = new Map();
+export const TARGET_MESSAGE_KV: WeakMap<{ id: string }, Message<true>> = new WeakMap();
 
 export default class ReportMessageCtx extends Command {
 	constructor() {
@@ -55,6 +55,8 @@ export default class ReportMessageCtx extends Command {
 			};
 		}
 
+		const message = interaction.targetMessage;
+
 		if (config.data.message_reports.enforce_report_reason) {
 			const reasonTextInputBuilder = new TextInputBuilder()
 				.setCustomId("reason")
@@ -73,13 +75,11 @@ export default class ReportMessageCtx extends Command {
 				.setTextInputComponent(reasonTextInputBuilder);
 
 			const modal = new ModalBuilder()
-				.setCustomId(
-					`report-message-${interaction.targetMessage.channelId}-${interaction.targetMessage.id}`
-				)
-				.setTitle(`Report @${interaction.targetMessage.author.username}'s Message`)
+				.setCustomId(`report-message-${message.channelId}-${message.id}`)
+				.setTitle(`Report @${message.author.username}'s Message`)
 				.addLabelComponents(reasonLabel);
 
-			TARGET_MESSAGE_KV.set(interaction.targetMessage.id, interaction.targetMessage);
+			TARGET_MESSAGE_KV.set({ id: message.id }, message);
 
 			await interaction.showModal(modal);
 			return null;
@@ -88,9 +88,11 @@ export default class ReportMessageCtx extends Command {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const reason = config.data.message_reports.placeholder_reason;
+
+		// prettier-ignore
 		const result = await MessageReportUtils.upsert(
 			interaction.user,
-			interaction.targetMessage,
+			message,
 			config,
 			reason
 		);
@@ -100,7 +102,7 @@ export default class ReportMessageCtx extends Command {
 		}
 
 		return {
-			content: `Successfully reported ${interaction.targetMessage.author}'s message, thank you for your report!`
+			content: `Successfully reported ${message.author}'s message, thank you for your report!`
 		};
 	}
 }
