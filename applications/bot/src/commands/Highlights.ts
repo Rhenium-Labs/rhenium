@@ -300,20 +300,47 @@ export default class Highlights extends Command {
 		const messageContent = message.content;
 		const messageAuthorId = message.author.id;
 
-		for (const highlight of highlights) {
-			const [rawChannelScoping, userBlacklist, patterns] = [
-				highlight.channel_scoping ?? [],
-				highlight.user_blacklist ?? [],
-				highlight.patterns ?? []
-			];
+		// Pre-filter highlights that can't possibly match before doing any async work.
+		const candidates = highlights.filter(highlight => {
+			const patterns = highlight.patterns ?? [];
+			if (patterns.length === 0) return false;
 
 			// Ignore messages from the highlight owner.
-			if (highlight.user_id === messageAuthorId) continue;
+			if (highlight.user_id === messageAuthorId) return false;
 
 			// Check if the message author is blacklisted.
-			if (userBlacklist.includes(messageAuthorId)) continue;
+			const userBlacklist = highlight.user_blacklist ?? [];
+			if (userBlacklist.includes(messageAuthorId)) return false;
 
-			// Check if the highlight user can view the channel.
+			// Check channel scoping (pure data, no async).
+			const rawChannelScoping = highlight.channel_scoping ?? [];
+			const channelScoping = parseChannelScoping(rawChannelScoping);
+
+			if (!channelInScope(message.channel, channelScoping)) return false;
+
+			// Check pattern match (pure computation, no async).
+			const matchedPattern = patterns.find(pattern => {
+				const regex = Highlights._getRegex(pattern);
+				return regex.test(messageContent);
+			});
+
+			return !!matchedPattern;
+		});
+
+		if (candidates.length === 0) return;
+
+		// Format the message content once, shared across all highlight DMs.
+		const formattedContent = await formatMessageContent({
+			url: message.url,
+			content: message.content,
+			stickerId: null,
+			createdAt: message.createdAt
+		});
+
+		// Process matching highlights — members are cached so .fetch hits the cache.
+		const dmPromises: Promise<unknown>[] = [];
+
+		for (const highlight of candidates) {
 			const highlightMember = await message.guild.members
 				.fetch(highlight.user_id)
 				.catch(() => null);
@@ -329,27 +356,17 @@ export default class Highlights extends Command {
 
 			if (!canViewChannel) continue;
 
-			const channelScoping = parseChannelScoping(rawChannelScoping);
-			if (!channelInScope(message.channel, channelScoping)) continue;
-
-			// Use cached compiled regex for pattern matching.
-			const matchedPattern = patterns.find(pattern => {
-				const regex = Highlights._getRegex(pattern);
-				return regex.test(messageContent);
-			});
-
-			if (!matchedPattern) continue;
-
 			// Prevent the same user from triggering the same highlight more than once in 15 seconds.
 			if (!ratelimiter.limit(`${highlight.user_id}:${messageAuthorId}`).success) continue;
 
+			const patterns = highlight.patterns ?? [];
+			const matchedPattern = patterns.find(pattern => {
+				const regex = Highlights._getRegex(pattern);
+				return regex.test(messageContent);
+			})!;
+
 			const user = await client.users.fetch(highlight.user_id).catch(() => null);
-			const formattedContent = await formatMessageContent({
-				url: message.url,
-				content: message.content,
-				stickerId: null,
-				createdAt: message.createdAt
-			});
+			if (!user) continue;
 
 			const embed = new EmbedBuilder()
 				.setColor(Colors.Blue)
@@ -369,7 +386,12 @@ export default class Highlights extends Command {
 				])
 				.setTimestamp();
 
-			return user?.send({ embeds: [embed] }).catch(() => null);
+			dmPromises.push(user.send({ embeds: [embed] }).catch(() => null));
+		}
+
+		// Send all highlight DMs in parallel.
+		if (dmPromises.length > 0) {
+			await Promise.all(dmPromises);
 		}
 	}
 

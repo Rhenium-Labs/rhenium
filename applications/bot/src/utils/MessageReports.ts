@@ -52,9 +52,7 @@ export default class MessageReportUtils {
 		reason: string | null = null
 	): Promise<SimpleResult> {
 		const messageReports = config.data.message_reports;
-		const targetMember = await message.guild.members
-			.fetch(message.author.id)
-			.catch(() => null);
+		const targetMember = message.guild.members.cache.get(message.author.id) ?? null;
 
 		const immuneRoles = config.data.message_reports.immune_roles;
 		const isImmune = targetMember?.roles.cache.some(role => immuneRoles.includes(role.id));
@@ -464,14 +462,20 @@ export default class MessageReportUtils {
 		config: GuildConfig,
 		hasUserFilter: boolean
 	) {
-		let fields: EmbedField[] = [];
+		const channelId = config.data.message_reports.webhook_channel;
 
-		for (const report of reports) {
-			const target = await client.users
-				.fetch(report.author_id)
-				.catch(() => ({ username: "unknown", id: report.author_id }));
+		// Fetch all unique authors in parallel.
+		const uniqueAuthorIds = [...new Set(reports.map(r => r.author_id))];
+		const authorResults = await Promise.all(
+			uniqueAuthorIds.map(id =>
+				client.users.fetch(id).catch(() => ({ username: "unknown", id }))
+			)
+		);
 
-			const channelId = config.data.message_reports.webhook_channel;
+		const authorMap = new Map(uniqueAuthorIds.map((id, i) => [id, authorResults[i]]));
+
+		const fields: EmbedField[] = reports.map(report => {
+			const target = authorMap.get(report.author_id)!;
 			const truncatedReason = truncate(report.report_reason, 256);
 
 			const reportURL = channelId
@@ -482,12 +486,12 @@ export default class MessageReportUtils {
 				? `#${report.id}`
 				: `#${report.id}, against @${target.username} (${target.id})`;
 
-			fields.push({
+			return {
 				name: fieldName,
 				value: `Created On ${time(report.reported_at, "f")}${reportURL ? ` \`|\` [Jump to report](${reportURL})` : ""}\n\`${escapeCodeBlock(truncatedReason)}\``,
 				inline: false
-			});
-		}
+			};
+		});
 
 		return fields;
 	}

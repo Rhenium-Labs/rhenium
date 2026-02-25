@@ -16,16 +16,14 @@ export default class UserInfo extends Component {
 	}: ComponentExecutionContext<"button">): Promise<ResponseData<"interaction">> {
 		const targetUserId = interaction.customId.split("-")[2];
 
-		// prettier-ignore
-		const targetUser = await interaction.client.users
-			.fetch(targetUserId)
-			.catch(() => null);
+		// Fetch user, member, and ban status in parallel.
+		const [targetUser, targetMember, isBanned] = await Promise.all([
+			interaction.client.users.fetch(targetUserId).catch(() => null),
+			interaction.guild.members.fetch(targetUserId).catch(() => null),
+			interaction.guild.bans.fetch(targetUserId).catch(() => null)
+		]);
 
 		if (!targetUser) return { error: "Failed to fetch user information." };
-
-		const targetMember = await interaction.guild.members
-			.fetch(targetUserId)
-			.catch(() => null);
 
 		const embed = new EmbedBuilder()
 			.setColor(Colors.NotQuiteBlack)
@@ -60,11 +58,6 @@ export default class UserInfo extends Component {
 					inline: true
 				}
 			]);
-
-		// prettier-ignore
-		const isBanned = await interaction.guild.bans
-			.fetch(targetUserId)
-			.catch(() => null);
 
 		if (isBanned) {
 			embed.setColor(Colors.DarkRed);

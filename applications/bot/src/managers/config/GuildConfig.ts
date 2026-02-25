@@ -29,6 +29,11 @@ export default class GuildConfig {
 	readonly id: string;
 
 	/**
+	 * Cached webhook clients keyed by webhook URL.
+	 */
+	private readonly _webhookClients: Map<string, WebhookClient> = new Map();
+
+	/**
 	 * Constructs a new GuildConfig instance.
 	 *
 	 * @param id The ID of the guild.
@@ -182,11 +187,18 @@ export default class GuildConfig {
 		if (webhooks.length === 0) return null;
 
 		try {
-			const clients = webhooks.map(webhook => new WebhookClient({ url: webhook.url }));
-			const messages = await Promise.all(
-				clients.map(client => client.send(payload).finally(() => client.destroy()))
-			);
+			const clients = webhooks.map(webhook => {
+				let wc = this._webhookClients.get(webhook.url);
 
+				if (!wc) {
+					wc = new WebhookClient({ url: webhook.url });
+					this._webhookClients.set(webhook.url, wc);
+				}
+
+				return wc;
+			});
+
+			const messages = await Promise.all(clients.map(wc => wc.send(payload)));
 			return messages;
 		} catch (error) {
 			const sentryId = captureException(error, {

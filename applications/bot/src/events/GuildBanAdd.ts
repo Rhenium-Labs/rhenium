@@ -85,7 +85,8 @@ export default class GuildBanAdd extends EventListener {
 
 		if (reports.length === 0) return;
 
-		for (const report of reports) {
+		// Build all report embeds in parallel.
+		const embedPromises = reports.map(async report => {
 			const additionalReporters =
 				report.additional_reporters.length > 0
 					? report.additional_reporters.map(id => userMentionWithId(id)).join("\n")
@@ -94,13 +95,18 @@ export default class GuildBanAdd extends EventListener {
 			const embeds: EmbedBuilder[] = [];
 
 			const croppedContent = cropLines(report.content ?? EMPTY_MESSAGE_CONTENT, 5);
-			const formattedContent = await formatMessageContent({
-				url: report.message_url,
-				content: croppedContent,
-				stickerId: null,
-				includeUrl: true,
-				createdAt: report.reported_at
-			});
+
+			// Fetch formatted content and reference in parallel.
+			const [formattedContent, reference] = await Promise.all([
+				formatMessageContent({
+					url: report.message_url,
+					content: croppedContent,
+					stickerId: null,
+					includeUrl: true,
+					createdAt: report.reported_at
+				}),
+				report.reference_id ? MessageManager.get(report.reference_id) : null
+			]);
 
 			const primaryEmbed = new EmbedBuilder()
 				.setAuthor({ name: "Message Report AutoResolved" })
@@ -128,9 +134,6 @@ export default class GuildBanAdd extends EventListener {
 				.setTimestamp();
 
 			embeds.push(primaryEmbed);
-
-			const reference =
-				report.reference_id && (await MessageManager.get(report.reference_id));
 
 			if (reference) {
 				const croppedContent = cropLines(reference.content ?? EMPTY_MESSAGE_CONTENT, 5);
@@ -161,8 +164,15 @@ export default class GuildBanAdd extends EventListener {
 				embeds.push(referenceEmbed);
 			}
 
-			await config.log(LoggingEvent.MessageReportReviewed, { embeds });
-		}
+			return embeds;
+		});
+
+		const allEmbeds = await Promise.all(embedPromises);
+
+		// Log all reports in parallel.
+		await Promise.all(
+			allEmbeds.map(embeds => config.log(LoggingEvent.MessageReportReviewed, { embeds }))
+		);
 
 		if (!config.data.message_reports.webhook_channel) return;
 
@@ -210,31 +220,43 @@ export default class GuildBanAdd extends EventListener {
 
 		if (requests.length === 0) return;
 
-		for (const request of requests) {
-			const embed = new EmbedBuilder()
-				.setColor(Colors.Green)
-				.setAuthor({ name: "Ban Request AutoResolved" })
-				.setThumbnail(ban.user.displayAvatarURL())
-				.setFields([
-					{ name: "Target", value: userMentionWithId(ban.user.id) },
-					{ name: "Requested By", value: userMentionWithId(request.requested_by) },
-					{ name: "Reason", value: request.reason },
-					{ name: "Reviewer Reason", value: "Resolved automatically from user ban." }
-				])
-				.setFooter({ text: `Reviewed by @${client.user.username} (${client.user.id})` })
-				.setTimestamp();
+		// Build embeds and log all resolved requests in parallel.
+		await Promise.all(
+			requests.map(request => {
+				const embed = new EmbedBuilder()
+					.setColor(Colors.Green)
+					.setAuthor({ name: "Ban Request AutoResolved" })
+					.setThumbnail(ban.user.displayAvatarURL())
+					.setFields([
+						{ name: "Target", value: userMentionWithId(ban.user.id) },
+						{
+							name: "Requested By",
+							value: userMentionWithId(request.requested_by)
+						},
+						{ name: "Reason", value: request.reason },
+						{
+							name: "Reviewer Reason",
+							value: "Resolved automatically from user ban."
+						}
+					])
+					.setFooter({
+						text: `Reviewed by @${client.user.username} (${client.user.id})`
+					})
+					.setTimestamp();
 
-			if (request.expires_at) {
-				const duration = request.expires_at.getTime() - request.requested_at.getTime();
+				if (request.expires_at) {
+					const duration =
+						request.expires_at.getTime() - request.requested_at.getTime();
 
-				embed.spliceFields(2, 0, {
-					name: "Duration",
-					value: ms(duration, { long: true })
-				});
-			}
+					embed.spliceFields(2, 0, {
+						name: "Duration",
+						value: ms(duration, { long: true })
+					});
+				}
 
-			await config.log(LoggingEvent.BanRequestReviewed, { embeds: [embed] });
-		}
+				return config.log(LoggingEvent.BanRequestReviewed, { embeds: [embed] });
+			})
+		);
 
 		if (!config.data.ban_requests.webhook_channel) return;
 

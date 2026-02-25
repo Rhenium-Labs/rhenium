@@ -121,7 +121,7 @@ export default class GlobalConfig {
 
 					const threshold = new Date(now.getTime() - Number(autoDisregardAfter));
 
-					const { numUpdatedRows } = await kysely
+					kysely
 						.updateTable("MessageReport")
 						.set({
 							status: "Disregarded",
@@ -131,12 +131,13 @@ export default class GlobalConfig {
 						.where("guild_id", "=", guild_id)
 						.where("status", "=", "Pending")
 						.where("reported_at", "<=", threshold)
-						.executeTakeFirst();
-
-					if (numUpdatedRows > 0n)
-						Logger.info(
-							`Automatically disregarded ${numUpdatedRows} message ${inflect(Number(numUpdatedRows), "report")} in guild with ID "${guild_id}".`
-						);
+						.executeTakeFirst()
+						.then(({ numUpdatedRows }) => {
+							if (numUpdatedRows > 0n)
+								Logger.info(
+									`Automatically disregarded ${numUpdatedRows} message ${inflect(Number(numUpdatedRows), "report")} in guild with ID "${guild_id}".`
+								);
+						});
 				}
 			}
 		});

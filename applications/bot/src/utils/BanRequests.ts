@@ -50,10 +50,7 @@ export default class BanRequestUtils {
 	}): Promise<SimpleResult<{ id: string }>> {
 		const { config, target, executor, durationStr, reason } = data;
 
-		// prettier-ignore
-		const targetMember = await executor.guild.members
-            .fetch(target.id)
-            .catch(() => null);
+		const targetMember = await executor.guild.members.fetch(target.id).catch(() => null);
 
 		const immuneRoles = config.data.ban_requests.immune_roles;
 		const isImmune = targetMember

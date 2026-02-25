@@ -1,4 +1,4 @@
-import { Events, GatewayDispatchEvents, RESTEvents } from "discord.js";
+import { Events, RESTEvents } from "discord.js";
 
 import Logger from "@utils/Logger";
 import GlobalConfig from "@config/GlobalConfig";

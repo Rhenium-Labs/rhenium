@@ -66,10 +66,11 @@ export default class ContentFilterButton extends Component {
 		const messageId = parts[2];
 		const channelId = parts[3];
 
-		// Fetch the alert from the database
-		const alert = await ContentFilterUtils.getAlertByMessageId(messageId);
-
-		const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+		// Fetch alert and channel in parallel.
+		const [alert, channel] = await Promise.all([
+			ContentFilterUtils.getAlertByMessageId(messageId),
+			interaction.guild.channels.fetch(channelId).catch(() => null)
+		]);
 
 		if (!channel || !channel.isTextBased()) {
 			return { error: "Could not find the channel containing the flagged message." };
@@ -95,13 +96,12 @@ export default class ContentFilterButton extends Component {
 			return { error: "Failed to delete the message. I may lack permissions." };
 		}
 
-		// Update alert status in database.
+		// Update alert statuses in parallel.
 		if (alert) {
-			await ContentFilterUtils.updateAlertDelStatus(alert.id, ContentFilterStatus.Deleted);
-			await ContentFilterUtils.updateAlertModStatus(
-				alert.id,
-				ContentFilterStatus.Resolved
-			);
+			await Promise.all([
+				ContentFilterUtils.updateAlertDelStatus(alert.id, ContentFilterStatus.Deleted),
+				ContentFilterUtils.updateAlertModStatus(alert.id, ContentFilterStatus.Resolved)
+			]);
 		}
 
 		// Update the original embed to show it was handled.

@@ -211,9 +211,9 @@ export default class MessageManager {
 	 */
 
 	static async bulkDelete(ids: string[]): Promise<Message[]> {
-		const messages = this._cache.filter(
-			message => ids.includes(message.id) && !message.deleted
-		);
+		const idSet = new Set(ids);
+
+		const messages = this._cache.filter(message => idSet.has(message.id) && !message.deleted);
 
 		const deletedMessages = messages.map(message => {
 			message.deleted = true;
