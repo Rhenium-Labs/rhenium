@@ -58,6 +58,33 @@ export default class AutomatedScanner {
 	private static _messageCache: Map<Snowflake, { message: Message<true>; cachedAt: number }> =
 		new Map();
 
+	/**
+	 * Retrieve a cached message by ID without removing it.
+	 *
+	 * @param messageId The ID of the message to retrieve.
+	 * @returns The cached message, or null if not found or expired.
+	 */
+	static getCachedMessage(messageId: Snowflake): Message<true> | null {
+		const entry = this._messageCache.get(messageId);
+		if (!entry) return null;
+
+		if (Date.now() - entry.cachedAt > MESSAGE_CACHE_MAX_AGE_MS) {
+			this._messageCache.delete(messageId);
+			return null;
+		}
+
+		return entry.message;
+	}
+
+	/**
+	 * Add a message to the scan cache.
+	 *
+	 * @param message The message to cache.
+	 */
+	static cacheMessage(message: Message<true>): void {
+		this._messageCache.set(message.id, { message, cachedAt: Date.now() });
+	}
+
 	/** Smoothed false positive ratios per channel. */
 	private static _smoothedFalsePositive: Map<Snowflake, number> = new Map();
 
@@ -231,7 +258,7 @@ export default class AutomatedScanner {
 		const next = this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
 
 		// Cache the message for later retrieval during tick to avoid API fetches.
-		this._messageCache.set(message.id, { message, cachedAt: now });
+		this.cacheMessage(message);
 
 		this._userPriorityQueue.push({
 			userId: message.author.id,

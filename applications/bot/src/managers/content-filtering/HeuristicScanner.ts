@@ -434,9 +434,12 @@ export default class HeuristicScanner {
 			const existing = await ContentFilterUtils.alertExistsForMessage(messageId);
 			if (existing) continue;
 
-			// Try to fetch the actual message.
+			// Try to retrieve the message from the scan cache first, fall back to API.
 			try {
-				const actualMessage = await channel.messages.fetch(messageId).catch(() => null);
+				const actualMessage =
+					AutomatedScanner.getCachedMessage(messageId) ??
+					(await channel.messages.fetch(messageId).catch(() => null));
+
 				if (!actualMessage || !actualMessage.inGuild()) continue;
 
 				// Run detectors.
