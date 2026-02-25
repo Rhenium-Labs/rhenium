@@ -12,7 +12,7 @@ import {
 	captureException
 } from "@sentry/node";
 import { open } from "lmdb";
-import { Client, Sweepers } from "discord.js";
+import { Client, Sweepers, MessageManager as DJSMessageManager } from "discord.js";
 import { createKyselyClient } from "@repo/db";
 
 import {
@@ -106,6 +106,13 @@ async function main(): Promise<void> {
 			postgresJsIntegration()
 		]
 	});
+
+	// Print stack traces for fetching messages.
+	const fetchMessage = DJSMessageManager.prototype.fetch;
+	DJSMessageManager.prototype.fetch = function (this: DJSMessageManager, ...args) {
+		console.trace(`Fetching message with args:`, args);
+		return fetchMessage.apply(this, args as Parameters<typeof fetchMessage>);
+	} as typeof DJSMessageManager.prototype.fetch;
 
 	// Log in to Discord.
 	await client.login(process.env.BOT_TOKEN);
