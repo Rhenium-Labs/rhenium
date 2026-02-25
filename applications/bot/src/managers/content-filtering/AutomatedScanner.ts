@@ -29,8 +29,8 @@ const MAX_CHANNEL_STATES = 100;
 /** Time after which inactive channel states are pruned (1 hour). */
 const CHANNEL_STATE_TTL_MS = 60 * 60 * 1000;
 
-/** Maximum age for cached messages, aligned with the heap's stale entry TTL (5 minutes). */
-const MESSAGE_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+/** Maximum age for cached messages (10 minutes, covers heuristic debounce windows). */
+const MESSAGE_CACHE_MAX_AGE_MS = 10 * 60 * 1000;
 
 /** Maximum number of messages to keep in the scan cache. */
 const MESSAGE_CACHE_MAX_SIZE = 10_000;
@@ -256,9 +256,6 @@ export default class AutomatedScanner {
 
 		const risk = ContentFilterUtils.computeMessageRisk(config, serializedMessage);
 		const next = this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
-
-		// Cache the message for later retrieval during tick to avoid API fetches.
-		this.cacheMessage(message);
 
 		this._userPriorityQueue.push({
 			userId: message.author.id,

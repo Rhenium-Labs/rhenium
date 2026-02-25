@@ -35,6 +35,9 @@ export default class MessageCreate extends EventListener {
 			return MessageCreate._handleCommand(message, config);
 		}
 
+		// Cache the message for content filter scanners to avoid API fetches later.
+		AutomatedScanner.cacheMessage(message);
+
 		return Promise.all([
 			Highlights.highlightMessage(message),
 			AutomatedScanner.enqueueForScan(message, config, serializedMessage),
