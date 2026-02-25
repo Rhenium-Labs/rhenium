@@ -1,11 +1,11 @@
 import {
 	type User,
-	type MessageReaction,
-	type PartialMessage,
 	type Snowflake,
-	type Message,
 	type TextChannel,
+	type Guild,
 	Events,
+	GatewayDispatchEvents,
+	GatewayDispatchPayload,
 	EmbedBuilder,
 	Colors,
 	ActionRowBuilder,
@@ -61,6 +61,23 @@ const quickPurgeActionLocks: Set<Snowflake> = new Set();
 /** Queue locks to prevent concurrent quick mute actions on the same message. */
 const quickMuteActionLocks: Set<Snowflake> = new Set();
 
+/** Raw reaction data from the gateway, resolved before handling. */
+interface RawReactionData {
+	reactorId: Snowflake;
+	messageId: Snowflake;
+	messageAuthorId: Snowflake;
+	channelId: Snowflake;
+	guildId: Snowflake;
+	emoji: { id: string | null; name: string | null };
+}
+
+/** Resolved reaction context including fetched Discord objects. */
+interface ResolvedReactionContext extends RawReactionData {
+	guild: Guild;
+	channel: TextChannel;
+	config: GuildConfig;
+}
+
 /** The result of a quick purge execution. */
 interface QuickPurgeResult {
 	ok: boolean;
@@ -71,21 +88,50 @@ interface QuickPurgeResult {
 	logUrl?: string;
 }
 
-export default class MessageReactionAdd extends EventListener {
+export default class Raw extends EventListener {
 	constructor() {
-		super(Events.MessageReactionAdd);
+		super(Events.Raw);
 	}
 
-	async execute(rec: MessageReaction, user: User) {
-		const [reaction, message] = await MessageReactionAdd._parseEventProps(rec, rec.message);
-		if (!reaction || !message || !message.inGuild()) return;
+	async execute(packet: GatewayDispatchPayload): Promise<void> {
+		const { t: type, d: data } = packet;
 
-		const config = await ConfigManager.getGuildConfig(message.guild.id);
+		if (type !== GatewayDispatchEvents.MessageReactionAdd) return;
+		if (!data.guild_id) return;
 
-		Promise.all([
-			MessageReactionAdd._handleQuickMute({ user, message, reaction, config }),
-			MessageReactionAdd._handleQuickPurge({ user, message, reaction, config })
-		]);
+		const authorId =
+			data.message_author_id ?? (await MessageManager.get(data.message_id))?.author_id;
+
+		if (!authorId) return;
+
+		return Raw._handleReactionAdd({
+			reactorId: data.user_id,
+			messageId: data.message_id,
+			messageAuthorId: authorId,
+			channelId: data.channel_id,
+			guildId: data.guild_id,
+			emoji: data.emoji
+		});
+	}
+
+	/**
+	 * Handles a raw message reaction add event.
+	 *
+	 * @param data The raw reaction data.
+	 * @returns A promise that resolves when the reaction handling is complete.
+	 */
+
+	private static async _handleReactionAdd(data: RawReactionData): Promise<void> {
+		const config = await ConfigManager.getGuildConfig(data.guildId);
+
+		const guild = client.guilds.cache.get(data.guildId);
+		if (!guild) return;
+
+		const channel = client.channels.cache.get(data.channelId) as TextChannel | undefined;
+		if (!channel) return;
+
+		const context: ResolvedReactionContext = { ...data, guild, channel, config };
+		Promise.all([Raw._handleQuickMute(context), Raw._handleQuickPurge(context)]);
 	}
 
 	/**
@@ -95,46 +141,40 @@ export default class MessageReactionAdd extends EventListener {
 	 * @returns A promise that resolves when the quick mute handling is complete.
 	 */
 
-	private static async _handleQuickMute(data: {
-		user: User;
-		message: Message<true>;
-		reaction: MessageReaction;
-		config: GuildConfig;
-	}): Promise<unknown> {
-		const { user, message, reaction, config } = data;
+	private static async _handleQuickMute(data: ResolvedReactionContext): Promise<unknown> {
+		const { reactorId, messageId, messageAuthorId, guildId, emoji, guild, channel, config } =
+			data;
 
-		if (quickMuteActionLocks.has(message.author.id)) return;
-		quickMuteActionLocks.add(message.author.id);
+		if (quickMuteActionLocks.has(messageAuthorId)) return;
+		quickMuteActionLocks.add(messageAuthorId);
 
 		try {
 			const quickMuteGuildConfig = config.parseQuickActionConfig("quick_mutes");
 			if (!quickMuteGuildConfig) return;
 
-			const executor = await message.guild.members.fetch(user.id).catch(() => null);
-			if (!executor) return;
-
-			// Prevent people who had access to quick mutes but lost it from executing quick mutes.
-			if (!config.hasPermission(executor, UserPermission.UseQuickMute)) return;
-
-			const channelScoping = parseChannelScoping(quickMuteGuildConfig.channel_scoping);
-			if (!channelInScope(message.channel, channelScoping)) return;
-
-			const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
+			const reactionIdentifier = getEmojiIdentifier(emoji);
 			if (!reactionIdentifier) return;
 
 			const quickMuteConfig = await kysely
 				.selectFrom("QuickMute")
-				.where("user_id", "=", user.id)
-				.where("guild_id", "=", message.guildId)
+				.where("user_id", "=", reactorId)
+				.where("guild_id", "=", guildId)
 				.where("reaction", "=", reactionIdentifier)
 				.selectAll()
 				.executeTakeFirst();
 
 			if (!quickMuteConfig) return;
 
-			const target = await message.guild.members
-				.fetch(message.author.id)
-				.catch(() => null);
+			const executor = await guild.members.fetch(reactorId).catch(() => null);
+			if (!executor) return;
+
+			// Prevent people who had access to quick mutes but lost it from executing quick mutes.
+			if (!config.hasPermission(executor, UserPermission.UseQuickMute)) return;
+
+			const channelScoping = parseChannelScoping(quickMuteGuildConfig.channel_scoping);
+			if (!channelInScope(channel, channelScoping)) return;
+
+			const target = await guild.members.fetch(messageAuthorId).catch(() => null);
 
 			if (!target) return;
 
@@ -144,11 +184,7 @@ export default class MessageReactionAdd extends EventListener {
 				});
 			}
 
-			if (
-				!message.channel
-					.permissionsFor(executor.guild.members.me!)
-					.has("ModerateMembers")
-			) {
+			if (!channel.permissionsFor(guild.members.me!).has("ModerateMembers")) {
 				return config.log(LoggingEvent.QuickMuteResult, {
 					content: `${executor}, I do not have the "Timeout Members" permission which is required to mute ${target}.`
 				});
@@ -177,8 +213,8 @@ export default class MessageReactionAdd extends EventListener {
 			} catch (error) {
 				const sentryId = captureException(error, {
 					user: {
-						id: message.author.id,
-						username: message.author.username
+						id: target.user.id,
+						username: target.user.username
 					},
 					extra: {
 						action: "Quick Mute",
@@ -202,14 +238,14 @@ export default class MessageReactionAdd extends EventListener {
 			);
 
 			if (purgeAmount > 1) {
-				purgeResult = await MessageReactionAdd._executePurge({
-					channel: message.channel as TextChannel,
-					authorId: message.author.id,
-					triggerMessage: message,
+				purgeResult = await Raw._executePurge({
+					channel,
+					authorId: messageAuthorId,
+					triggerMessageId: messageId,
 					amount: purgeAmount
 				});
 			} else {
-				await message.delete().catch(() => null);
+				await channel.messages.delete(messageId).catch(() => null);
 			}
 
 			const embed = new EmbedBuilder()
@@ -241,12 +277,12 @@ export default class MessageReactionAdd extends EventListener {
 
 			const content =
 				purgeResult?.ok && purgeResult.deleted > 0
-					? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} in ${message.channel}.`
+					? `${executor}, successfully quick muted ${target} for \`${formattedDuration}\` and purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} in ${channel}.`
 					: `${executor}, successfully quick muted ${target} for \`${formattedDuration}\`.`;
 
 			if (purgeResult?.ok && purgeResult.deleted > 0) {
 				const entries = purgeResult.entries ?? [];
-				const attachment = MessageReactionAdd._mapLogEntriesToFile(entries);
+				const attachment = Raw._mapLogEntriesToFile(entries);
 				const components: ActionRowBuilder<ButtonBuilder>[] = [];
 
 				if (purgeResult.logUrl) {
@@ -274,9 +310,9 @@ export default class MessageReactionAdd extends EventListener {
 				config.log(LoggingEvent.QuickMuteResult, { content })
 			]);
 		} catch {
-			quickMuteActionLocks.delete(message.author.id);
+			quickMuteActionLocks.delete(messageAuthorId);
 		} finally {
-			quickMuteActionLocks.delete(message.author.id);
+			quickMuteActionLocks.delete(messageAuthorId);
 		}
 	}
 
@@ -287,62 +323,51 @@ export default class MessageReactionAdd extends EventListener {
 	 * @returns A promise that resolves when the quick purge handling is complete.
 	 */
 
-	private static async _handleQuickPurge(data: {
-		user: User;
-		message: Message<true>;
-		reaction: MessageReaction;
-		config: GuildConfig;
-	}): Promise<unknown> {
-		const { user, message, reaction, config } = data;
+	private static async _handleQuickPurge(data: ResolvedReactionContext): Promise<unknown> {
+		const { reactorId, messageId, messageAuthorId, guildId, emoji, guild, channel, config } =
+			data;
 
-		if (quickPurgeActionLocks.has(message.author.id)) return;
-		quickPurgeActionLocks.add(message.author.id);
+		if (quickPurgeActionLocks.has(messageAuthorId)) return;
+		quickPurgeActionLocks.add(messageAuthorId);
 
 		try {
 			const quickPurgeGuildConfig = config.parseQuickActionConfig("quick_purges");
 			if (!quickPurgeGuildConfig) return;
 
-			const executor = await message.guild.members.fetch(user.id).catch(() => null);
-			if (!executor) return;
-
-			// Prevent people who had access to quick purges but lost it from executing quick purges.
-			if (!config.hasPermission(executor, UserPermission.UseQuickPurge)) return;
-
-			const channelScoping = parseChannelScoping(quickPurgeGuildConfig.channel_scoping);
-			if (!channelInScope(message.channel, channelScoping)) return;
-
-			const reactionIdentifier = getEmojiIdentifier(reaction.emoji);
+			const reactionIdentifier = getEmojiIdentifier(emoji);
 			if (!reactionIdentifier) return;
 
 			const quickPurgeConfig = await kysely
 				.selectFrom("QuickPurge")
-				.where("user_id", "=", user.id)
-				.where("guild_id", "=", message.guildId)
+				.where("user_id", "=", reactorId)
+				.where("guild_id", "=", guildId)
 				.where("reaction", "=", reactionIdentifier)
 				.selectAll()
 				.executeTakeFirst();
 
 			if (!quickPurgeConfig) return;
 
-			const target = await message.guild.members
-				.fetch(message.author.id)
-				.catch(() => null);
+			const executor = await guild.members.fetch(reactorId).catch(() => null);
+			if (!executor) return;
 
+			// Prevent people who had access to quick purges but lost it from executing quick purges.
+			if (!config.hasPermission(executor, UserPermission.UseQuickPurge)) return;
+
+			const channelScoping = parseChannelScoping(quickPurgeGuildConfig.channel_scoping);
+			if (!channelInScope(channel, channelScoping)) return;
+
+			const target = await guild.members.fetch(messageAuthorId).catch(() => null);
 			if (!target) return;
 
-			if (!message.channel.permissionsFor(executor).has("ManageMessages")) {
+			if (!channel.permissionsFor(executor).has("ManageMessages")) {
 				return config.log(LoggingEvent.QuickPurgeResult, {
-					content: `${executor}, you do not have permission to manage messages in ${message.channel}.`
+					content: `${executor}, you do not have permission to manage messages in ${channel}.`
 				});
 			}
 
-			if (
-				!message.channel
-					.permissionsFor(executor.guild.members.me!)
-					.has("ManageMessages")
-			) {
+			if (!channel.permissionsFor(guild.members.me!).has("ManageMessages")) {
 				return config.log(LoggingEvent.QuickPurgeResult, {
-					content: `${executor}, I do not have permission to manage messages in ${message.channel}, which is required to purge messages.`
+					content: `${executor}, I do not have permission to manage messages in ${channel}, which is required to purge messages.`
 				});
 			}
 
@@ -351,10 +376,10 @@ export default class MessageReactionAdd extends EventListener {
 				quickPurgeGuildConfig.max_limit
 			);
 
-			const purgeResult = await MessageReactionAdd._executePurge({
-				channel: message.channel as TextChannel,
-				authorId: message.author.id,
-				triggerMessage: message,
+			const purgeResult = await Raw._executePurge({
+				channel,
+				authorId: messageAuthorId,
+				triggerMessageId: messageId,
 				amount: purgeAmount
 			});
 
@@ -365,11 +390,11 @@ export default class MessageReactionAdd extends EventListener {
 			}
 
 			const entries = purgeResult.entries ?? [];
-			const attachment = MessageReactionAdd._mapLogEntriesToFile(entries);
+			const attachment = Raw._mapLogEntriesToFile(entries);
 			const components: ActionRowBuilder<ButtonBuilder>[] = [];
 			const hasteURL = purgeResult.logUrl ?? null;
 
-			const content = `${executor}, successfully purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} from ${target} in ${message.channel}.`;
+			const content = `${executor}, successfully purged \`${purgeResult.deleted}\`/\`${purgeAmount}\` ${inflect(purgeResult.deleted, "message")} from ${target} in ${channel}.`;
 
 			const embed = new EmbedBuilder()
 				.setAuthor({ name: "Quick Purge Executed" })
@@ -386,7 +411,7 @@ export default class MessageReactionAdd extends EventListener {
 					},
 					{
 						name: "Channel",
-						value: `<#${message.channel.id}>`
+						value: `<#${channel.id}>`
 					},
 					{
 						name: "Purge Result",
@@ -414,9 +439,9 @@ export default class MessageReactionAdd extends EventListener {
 				})
 			]);
 		} catch {
-			quickPurgeActionLocks.delete(message.author.id);
+			quickPurgeActionLocks.delete(messageAuthorId);
 		} finally {
-			quickPurgeActionLocks.delete(message.author.id);
+			quickPurgeActionLocks.delete(messageAuthorId);
 		}
 	}
 
@@ -430,12 +455,12 @@ export default class MessageReactionAdd extends EventListener {
 	private static async _executePurge(data: {
 		channel: TextChannel;
 		authorId: Snowflake;
-		triggerMessage: Message<true>;
+		triggerMessageId: Snowflake;
 		amount: number;
 	}): Promise<QuickPurgeResult> {
-		const { channel, authorId, triggerMessage, amount } = data;
+		const { channel, authorId, triggerMessageId, amount } = data;
 
-		const messageIds = await MessageReactionAdd._fetchPurgeableMessages({
+		const messageIds = await Raw._fetchPurgeableMessages({
 			channelId: channel.id,
 			authorId,
 			limit: amount
@@ -461,7 +486,7 @@ export default class MessageReactionAdd extends EventListener {
 			const individualDeletableIds: Snowflake[] = [];
 
 			for (const id of messageIds) {
-				const messageTimestamp = MessageReactionAdd._snowflakeToTimestamp(id);
+				const messageTimestamp = Raw._snowflakeToTimestamp(id);
 				const age = now - messageTimestamp;
 
 				if (age < BULK_DELETE_MAX_AGE) {
@@ -475,10 +500,10 @@ export default class MessageReactionAdd extends EventListener {
 			let failed = 0;
 
 			// Remove the trigger message from deletion lists since we delete it separately.
-			const triggerIdx1 = bulkDeletableIds.indexOf(triggerMessage.id);
+			const triggerIdx1 = bulkDeletableIds.indexOf(triggerMessageId);
 			if (triggerIdx1 !== -1) bulkDeletableIds.splice(triggerIdx1, 1);
 
-			const triggerIdx2 = individualDeletableIds.indexOf(triggerMessage.id);
+			const triggerIdx2 = individualDeletableIds.indexOf(triggerMessageId);
 			if (triggerIdx2 !== -1) individualDeletableIds.splice(triggerIdx2, 1);
 
 			// Start serializing messages early (doesn't depend on deletions).
@@ -488,24 +513,19 @@ export default class MessageReactionAdd extends EventListener {
 			const deleteOperations: Promise<{ deleted: number; failed: number }>[] = [];
 
 			deleteOperations.push(
-				triggerMessage.delete().then(
+				channel.messages.delete(triggerMessageId).then(
 					() => ({ deleted: 1, failed: 0 }),
 					() => ({ deleted: 0, failed: 1 })
 				)
 			);
 
 			if (bulkDeletableIds.length > 0) {
-				deleteOperations.push(
-					MessageReactionAdd._bulkDeleteMessages(channel, bulkDeletableIds)
-				);
+				deleteOperations.push(Raw._bulkDeleteMessages(channel, bulkDeletableIds));
 			}
 
 			if (individualDeletableIds.length > 0) {
 				deleteOperations.push(
-					MessageReactionAdd._individualDeleteMessages(
-						channel,
-						individualDeletableIds
-					)
+					Raw._individualDeleteMessages(channel, individualDeletableIds)
 				);
 			}
 
@@ -520,7 +540,7 @@ export default class MessageReactionAdd extends EventListener {
 			const serializedMessages = await serializedMessagesPromise;
 
 			// Generate log entries and upload to hastebin concurrently.
-			const entries = await MessageReactionAdd._getMessageLogEntries(serializedMessages);
+			const entries = await Raw._getMessageLogEntries(serializedMessages);
 			const logUrl = (await hastebin(entries.join("\n\n"))) ?? undefined;
 
 			// Remove exclusions after purge execution is complete.
@@ -611,10 +631,7 @@ export default class MessageReactionAdd extends EventListener {
 
 				failed += chunk.length - deletedMessages.size;
 			} catch {
-				const individualResult = await MessageReactionAdd._individualDeleteMessages(
-					channel,
-					chunk
-				);
+				const individualResult = await Raw._individualDeleteMessages(channel, chunk);
 				deleted += individualResult.deleted;
 				failed += individualResult.failed;
 			}
@@ -638,7 +655,7 @@ export default class MessageReactionAdd extends EventListener {
 			const batch = messageIds.slice(i, i + MAX_CONCURRENT_DELETIONS);
 
 			const results = await Promise.allSettled(
-				batch.map(id => MessageReactionAdd._deleteMessage(channel, id))
+				batch.map(id => Raw._deleteMessage(channel, id))
 			);
 
 			for (const result of results) {
@@ -751,7 +768,7 @@ export default class MessageReactionAdd extends EventListener {
 		// Build all entries in parallel (everything is now cached).
 		const entryPromises = messages.map(async message => {
 			const author = authorCache.get(message.author_id)!;
-			const mainEntry = await MessageReactionAdd._formatMessageLogEntry({
+			const mainEntry = await Raw._formatMessageLogEntry({
 				author,
 				messageId: message.id,
 				createdAt: message.created_at,
@@ -767,7 +784,7 @@ export default class MessageReactionAdd extends EventListener {
 
 				if (reference) {
 					const refAuthor = authorCache.get(reference.author_id)!;
-					const refEntry = await MessageReactionAdd._formatMessageLogEntry({
+					const refEntry = await Raw._formatMessageLogEntry({
 						author: refAuthor,
 						messageId: reference.id,
 						createdAt: reference.created_at,
@@ -842,15 +859,5 @@ export default class MessageReactionAdd extends EventListener {
 		}
 
 		return mainLine;
-	}
-
-	private static async _parseEventProps(
-		reaction: MessageReaction,
-		message: PartialMessage | Message
-	): Promise<readonly [MessageReaction | null, Message | null]> {
-		const parsedMessage =
-			message.partial || !message ? await message.fetch().catch(() => null) : message;
-
-		return [reaction, parsedMessage] as const;
 	}
 }

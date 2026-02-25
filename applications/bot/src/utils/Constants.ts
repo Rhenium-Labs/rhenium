@@ -52,9 +52,9 @@ export const CLIENT_CACHE_OPTIONS = Options.cacheWithLimits({
 	ReactionManager: 0,
 	ReactionUserManager: 0,
 	MessageManager: 0,
+	GuildMessageManager: 0,
 
 	UserManager: Infinity,
-	GuildMessageManager: Infinity,
 	ApplicationCommandManager: Infinity,
 	BaseGuildEmojiManager: Infinity
 });

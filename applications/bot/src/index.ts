@@ -46,10 +46,6 @@ export const client = new Client<true>({
 			filter: Sweepers.filterByLifetime({
 				lifetime: 1800 // 30 minutes
 			})
-		},
-		messages: {
-			interval: 1800, // 30 minutes
-			filter: () => (): boolean => true // Sweeps everything.
 		}
 	},
 	allowedMentions: { parse: [] }
