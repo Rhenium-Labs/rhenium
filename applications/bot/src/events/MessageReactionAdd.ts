@@ -48,10 +48,10 @@ const BULK_DELETE_MAX_AGE = 14 * 24 * 60 * 60 * 1000;
 const BULK_DELETE_LIMIT = 100;
 
 /** Delay between individual message deletions to avoid rate limits (in ms). */
-const INDIVIDUAL_DELETE_DELAY = 150;
+const INDIVIDUAL_DELETE_DELAY = 50;
 
 /** Maximum concurrent individual deletions. */
-const MAX_CONCURRENT_DELETIONS = 5;
+const MAX_CONCURRENT_DELETIONS = 10;
 
 /** Discord epoch: 2015-01-01T00:00:00.000Z */
 const DISCORD_EPOCH = 1420070400000n;
@@ -474,37 +474,52 @@ export default class MessageReactionAdd extends EventListener {
 			let deleted = 0;
 			let failed = 0;
 
-			await triggerMessage.delete().catch(() => null);
-
-			// Remove the trigger message from deletion lists since it was already deleted above.
+			// Remove the trigger message from deletion lists since we delete it separately.
 			const triggerIdx1 = bulkDeletableIds.indexOf(triggerMessage.id);
 			if (triggerIdx1 !== -1) bulkDeletableIds.splice(triggerIdx1, 1);
 
 			const triggerIdx2 = individualDeletableIds.indexOf(triggerMessage.id);
 			if (triggerIdx2 !== -1) individualDeletableIds.splice(triggerIdx2, 1);
 
-			// Count the trigger message as a successful deletion.
-			deleted++;
+			// Start serializing messages early (doesn't depend on deletions).
+			const serializedMessagesPromise = MessageManager.bulkDelete(messageIds);
+
+			// Delete trigger message and bulk/individual messages concurrently.
+			const deleteOperations: Promise<{ deleted: number; failed: number }>[] = [];
+
+			deleteOperations.push(
+				triggerMessage.delete().then(
+					() => ({ deleted: 1, failed: 0 }),
+					() => ({ deleted: 0, failed: 1 })
+				)
+			);
 
 			if (bulkDeletableIds.length > 0) {
-				const bulkResult = await MessageReactionAdd._bulkDeleteMessages(
-					channel,
-					bulkDeletableIds
+				deleteOperations.push(
+					MessageReactionAdd._bulkDeleteMessages(channel, bulkDeletableIds)
 				);
-				deleted += bulkResult.deleted;
-				failed += bulkResult.failed;
 			}
 
 			if (individualDeletableIds.length > 0) {
-				const individualResult = await MessageReactionAdd._individualDeleteMessages(
-					channel,
-					individualDeletableIds
+				deleteOperations.push(
+					MessageReactionAdd._individualDeleteMessages(
+						channel,
+						individualDeletableIds
+					)
 				);
-				deleted += individualResult.deleted;
-				failed += individualResult.failed;
 			}
 
-			const serializedMessages = await MessageManager.bulkDelete(messageIds);
+			const deleteResults = await Promise.all(deleteOperations);
+
+			for (const result of deleteResults) {
+				deleted += result.deleted;
+				failed += result.failed;
+			}
+
+			// Await serialized messages (likely already resolved by now).
+			const serializedMessages = await serializedMessagesPromise;
+
+			// Generate log entries and upload to hastebin concurrently.
 			const entries = await MessageReactionAdd._getMessageLogEntries(serializedMessages);
 			const logUrl = (await hastebin(entries.join("\n\n"))) ?? undefined;
 
@@ -644,6 +659,7 @@ export default class MessageReactionAdd extends EventListener {
 
 	/**
 	 * Attempts to delete a single message by ID.
+	 * Deletes directly via the API without fetching the message first.
 	 * Returns true if successful, false otherwise.
 	 */
 	private static async _deleteMessage(
@@ -651,16 +667,10 @@ export default class MessageReactionAdd extends EventListener {
 		messageId: Snowflake
 	): Promise<boolean> {
 		try {
-			const message = await channel.messages.fetch(messageId).catch(() => null);
-
-			if (message) {
-				await message.delete();
-				return true;
-			}
-
-			// Message might already be deleted.
-			return false;
+			await channel.messages.delete(messageId);
+			return true;
 		} catch {
+			// Message might already be deleted or we lack permissions.
 			return false;
 		}
 	}
@@ -692,25 +702,54 @@ export default class MessageReactionAdd extends EventListener {
 	 */
 
 	private static async _getMessageLogEntries(messages: SerializedMessage[]): Promise<string[]> {
-		const authorCache = new Map<Snowflake, User | { username: string; id: Snowflake }>();
-		const entries: { entry: string; createdAt: Date }[] = [];
-
-		// Helper function to get or fetch author.
-		const getAuthor = async (authorId: Snowflake) => {
-			const cached = authorCache.get(authorId);
-			if (cached) return cached;
-
-			const author = await client.users.fetch(authorId).catch(() => ({
-				username: "unknown user",
-				id: authorId
-			}));
-
-			authorCache.set(authorId, author);
-			return author;
-		};
-
+		// Pre-fetch all unique authors in parallel.
+		const uniqueAuthorIds = new Set<Snowflake>();
 		for (const message of messages) {
-			const author = await getAuthor(message.author_id);
+			uniqueAuthorIds.add(message.author_id);
+		}
+
+		const authorCache = new Map<Snowflake, User | { username: string; id: Snowflake }>();
+
+		await Promise.all(
+			[...uniqueAuthorIds].map(async authorId => {
+				const author = await client.users.fetch(authorId).catch(() => ({
+					username: "unknown user",
+					id: authorId
+				}));
+				authorCache.set(authorId, author);
+			})
+		);
+
+		// Fetch all references in parallel.
+		const referenceIds = messages
+			.map(m => m.reference_id)
+			.filter((id): id is string => id !== null);
+
+		const referenceCache = new Map<string, SerializedMessage>();
+
+		if (referenceIds.length > 0) {
+			const references = await Promise.all(referenceIds.map(id => MessageManager.get(id)));
+
+			for (let i = 0; i < referenceIds.length; i++) {
+				const ref = references[i];
+				if (ref) {
+					referenceCache.set(referenceIds[i], ref);
+
+					// Ensure reference authors are also cached.
+					if (!authorCache.has(ref.author_id)) {
+						const author = await client.users.fetch(ref.author_id).catch(() => ({
+							username: "unknown user",
+							id: ref.author_id
+						}));
+						authorCache.set(ref.author_id, author);
+					}
+				}
+			}
+		}
+
+		// Build all entries in parallel (everything is now cached).
+		const entryPromises = messages.map(async message => {
+			const author = authorCache.get(message.author_id)!;
 			const mainEntry = await MessageReactionAdd._formatMessageLogEntry({
 				author,
 				messageId: message.id,
@@ -722,12 +761,11 @@ export default class MessageReactionAdd extends EventListener {
 
 			const subEntries = [mainEntry];
 
-			// Handle message reference if it exists.
 			if (message.reference_id) {
-				const reference = await MessageManager.get(message.reference_id);
+				const reference = referenceCache.get(message.reference_id);
 
 				if (reference) {
-					const refAuthor = await getAuthor(reference.author_id);
+					const refAuthor = authorCache.get(reference.author_id)!;
 					const refEntry = await MessageReactionAdd._formatMessageLogEntry({
 						author: refAuthor,
 						messageId: reference.id,
@@ -741,20 +779,19 @@ export default class MessageReactionAdd extends EventListener {
 				}
 			}
 
-			entries.push({
+			return {
 				entry: subEntries.join("\n └── "),
 				createdAt: message.created_at
-			});
-		}
+			};
+		});
 
-		// Clear cache manually.
+		const entries = await Promise.all(entryPromises);
+
 		authorCache.clear();
 
-		const sorted = entries
+		return entries
 			.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 			.map(({ entry }) => entry);
-
-		return sorted;
 	}
 
 	/**
