@@ -299,8 +299,9 @@ export default class AutomatedScanner {
 
 			try {
 				// Retrieve message from scan cache instead of fetching from API.
+				// Do NOT delete from cache here — the heuristic scanner may still need it.
+				// TTL-based pruning in _pruneMessageCache() handles cleanup.
 				const cached = this._messageCache.get(entry.messageId);
-				this._messageCache.delete(entry.messageId);
 
 				if (!cached) {
 					processed++;
