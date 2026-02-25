@@ -1,4 +1,11 @@
-import { Colors, EmbedBuilder, Message, Snowflake, TextChannel, WebhookClient } from "discord.js";
+import {
+	Colors,
+	EmbedBuilder,
+	type Message,
+	Snowflake,
+	TextChannel,
+	WebhookClient
+} from "discord.js";
 
 import { client } from "@root/index";
 import { ScanTypes } from "./Enums";
@@ -22,6 +29,12 @@ const MAX_CHANNEL_STATES = 100;
 /** Time after which inactive channel states are pruned (1 hour). */
 const CHANNEL_STATE_TTL_MS = 60 * 60 * 1000;
 
+/** Maximum age for cached messages, aligned with the heap's stale entry TTL (5 minutes). */
+const MESSAGE_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+
+/** Maximum number of messages to keep in the scan cache. */
+const MESSAGE_CACHE_MAX_SIZE = 10_000;
+
 export default class AutomatedScanner {
 	/** Channel scan states with last activity timestamps. */
 	private static _channelScanStates: Map<Snowflake, ChannelScanState> = new Map();
@@ -37,6 +50,13 @@ export default class AutomatedScanner {
 
 	/** Channel state cleanup interval handle. */
 	private static _cleanupInterval: NodeJS.Timeout | null = null;
+
+	/**
+	 * Cache of messages awaiting scan, keyed by message ID.
+	 * Populated at enqueue time to avoid API fetches during tick.
+	 */
+	private static _messageCache: Map<Snowflake, { message: Message<true>; cachedAt: number }> =
+		new Map();
 
 	/** Smoothed false positive ratios per channel. */
 	private static _smoothedFalsePositive: Map<Snowflake, number> = new Map();
@@ -76,6 +96,30 @@ export default class AutomatedScanner {
 		if (this._cleanupInterval) {
 			clearInterval(this._cleanupInterval);
 			this._cleanupInterval = null;
+		}
+	}
+
+	/** Prune stale entries from the message cache. */
+	private static _pruneMessageCache(): void {
+		const cutoff = Date.now() - MESSAGE_CACHE_MAX_AGE_MS;
+
+		for (const [id, entry] of this._messageCache) {
+			if (entry.cachedAt < cutoff) {
+				this._messageCache.delete(id);
+			}
+		}
+
+		// Enforce size limit via LRU eviction if still over capacity.
+		if (this._messageCache.size > MESSAGE_CACHE_MAX_SIZE) {
+			const entries = Array.from(this._messageCache.entries()).sort(
+				(a, b) => a[1].cachedAt - b[1].cachedAt
+			);
+
+			const toRemove = entries.slice(0, this._messageCache.size - MESSAGE_CACHE_MAX_SIZE);
+
+			for (const [id] of toRemove) {
+				this._messageCache.delete(id);
+			}
 		}
 	}
 
@@ -186,7 +230,9 @@ export default class AutomatedScanner {
 		const risk = ContentFilterUtils.computeMessageRisk(config, serializedMessage);
 		const next = this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
 
-		// Store only IDs, not the full message object like geniusly done before.
+		// Cache the message for later retrieval during tick to avoid API fetches.
+		this._messageCache.set(message.id, { message, cachedAt: now });
+
 		this._userPriorityQueue.push({
 			userId: message.author.id,
 			channelId: message.channel.id,
@@ -201,6 +247,10 @@ export default class AutomatedScanner {
 	/** Process queued scans during tick. */
 	private static async tick(): Promise<void> {
 		const now = Date.now();
+
+		// Periodically prune the message cache.
+		this._pruneMessageCache();
+
 		const globalRate = Math.min(
 			CF_CONSTANTS.HEURISTIC_MAX_SCAN_RATE,
 			Math.max(
@@ -224,19 +274,21 @@ export default class AutomatedScanner {
 			}
 
 			try {
-				// Get channel from cache.
-				const channel = client.channels.cache.get(entry.channelId) ?? null;
+				// Retrieve message from scan cache instead of fetching from API.
+				const cached = this._messageCache.get(entry.messageId);
+				this._messageCache.delete(entry.messageId);
 
-				if (!channel || !channel.isTextBased() || channel.isDMBased()) {
+				if (!cached) {
 					processed++;
 					continue;
 				}
 
-				const message = await (channel as TextChannel).messages
-					.fetch(entry.messageId)
-					.catch(() => null);
+				const message = cached.message;
 
-				if (!message || !message.inGuild()) {
+				// Verify the channel is still valid.
+				const channel = client.channels.cache.get(entry.channelId) ?? null;
+
+				if (!channel || !channel.isTextBased() || channel.isDMBased()) {
 					processed++;
 					continue;
 				}
