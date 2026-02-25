@@ -111,7 +111,9 @@ export default class GlobalConfig {
 					.execute();
 
 				for (const { guild_id } of guilds) {
-					const config = (await ConfigManager.get(guild_id)).parseReportsConfig();
+					const config = (
+						await ConfigManager.getGuildConfig(guild_id)
+					).parseReportsConfig();
 					if (!config) continue;
 
 					const autoDisregardAfter = BigInt(config.auto_disregard_after);

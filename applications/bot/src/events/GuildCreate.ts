@@ -22,6 +22,6 @@ export default class GuildCreate extends EventListener {
 		}
 
 		// Trigger the creation/loading of the guild config.
-		ConfigManager.get(guild.id);
+		ConfigManager.getGuildConfig(guild.id);
 	}
 }

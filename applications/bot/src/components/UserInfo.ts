@@ -21,9 +21,7 @@ export default class UserInfo extends Component {
 			.fetch(targetUserId)
 			.catch(() => null);
 
-		if (!targetUser) {
-			return { error: "Failed to fetch user information." };
-		}
+		if (!targetUser) return { error: "Failed to fetch user information." };
 
 		const targetMember = await interaction.guild.members
 			.fetch(targetUserId)
@@ -45,7 +43,7 @@ export default class UserInfo extends Component {
 			])
 			.setFooter({ text: `User ID: ${targetUser.id}` });
 
-		if (targetMember?.joinedAt) {
+		if (targetMember?.joinedAt)
 			embed.addFields([
 				{
 					name: "Joined Server",
@@ -53,9 +51,8 @@ export default class UserInfo extends Component {
 					inline: true
 				}
 			]);
-		}
 
-		if (targetMember?.isCommunicationDisabled()) {
+		if (targetMember?.isCommunicationDisabled())
 			embed.addFields([
 				{
 					name: "Timeout Expires",
@@ -63,7 +60,6 @@ export default class UserInfo extends Component {
 					inline: true
 				}
 			]);
-		}
 
 		// prettier-ignore
 		const isBanned = await interaction.guild.bans

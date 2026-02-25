@@ -13,9 +13,8 @@ export default class ReportMessage extends Component {
 		interaction,
 		config
 	}: ComponentExecutionContext<"modal">): Promise<ResponseData<"interaction">> {
-		if (!config.parseReportsConfig()) {
+		if (!config.parseReportsConfig())
 			return { error: "Message reports have not been configured on this server." };
-		}
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -31,17 +30,15 @@ export default class ReportMessage extends Component {
 			})
 			.catch(() => null);
 
-		if (!message) {
+		if (!message)
 			return {
 				error: `Failed to fetch the message with ID ${messageId}.`
 			};
-		}
 
 		const reportReason = interaction.fields.getTextInputValue("reason");
 
-		if (!reportReason.match(/\w/g)) {
+		if (!reportReason.match(/\w/g))
 			return { error: "You must provide a valid reason for reporting this message." };
-		}
 
 		const result = await MessageReportUtils.upsert(
 			interaction.user,
@@ -50,12 +47,10 @@ export default class ReportMessage extends Component {
 			reportReason
 		);
 
-		if (!result.ok) {
-			return { error: result.message };
-		}
-
-		return {
-			content: `Successfully reported ${message.author}'s message, thank you for your report!`
-		};
+		return !result.ok
+			? { error: result.message }
+			: {
+					content: `Successfully reported ${message.author}'s message, thank you for your report!`
+				};
 	}
 }

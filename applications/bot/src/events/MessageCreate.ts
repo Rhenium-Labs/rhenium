@@ -27,7 +27,7 @@ export default class MessageCreate extends EventListener {
 
 		const serializedMessage = MessageManager.serialize(message);
 		const whitelisted = await getWhitelistStatus(message.guild.id);
-		const config = await ConfigManager.get(message.guild.id);
+		const config = await ConfigManager.getGuildConfig(message.guild.id);
 
 		if (!whitelisted) {
 			if (!GlobalConfig.isDeveloper(message.author.id)) return;
@@ -43,6 +43,14 @@ export default class MessageCreate extends EventListener {
 			MessageCreate._handleCommand(message, config)
 		]);
 	}
+
+	/**
+	 * Handles a message to check for command execution and other message-based features.
+	 *
+	 * @param message The message to handle.
+	 * @param config The guild configuration for the message's guild.
+	 * @returns A promise that resolves when the message handling is complete.
+	 */
 
 	private static async _handleCommand(
 		message: Message<true>,

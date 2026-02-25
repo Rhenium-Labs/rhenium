@@ -9,7 +9,9 @@ export default class ModerationUtils {
 	/**
 	 * Validate a moderation action.
 	 *
-	 * @param data The moderation action data to validate.
+	 * @param target The target of the moderation action (the user being moderated).
+	 * @param executor The executor of the moderation action (the member performing the moderation).
+	 * @param action The type of moderation action being performed (e.g., "Ban", "Mute", "Quick Mute").
 	 * @returns The result of the validation.
 	 */
 

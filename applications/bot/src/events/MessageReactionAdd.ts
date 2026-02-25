@@ -81,7 +81,7 @@ export default class MessageReactionAdd extends EventListener {
 		const [reaction, message] = await MessageReactionAdd._parseEventProps(rec, rec.message);
 		if (!reaction || !message || !message.inGuild()) return;
 
-		const config = await ConfigManager.get(message.guild.id);
+		const config = await ConfigManager.getGuildConfig(message.guild.id);
 
 		Promise.all([
 			MessageReactionAdd._handleQuickMute({ user, message, reaction, config }),

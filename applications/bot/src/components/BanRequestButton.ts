@@ -43,17 +43,15 @@ export default class BanRequestButton extends Component {
 					requestAction
 				);
 
-				if (!result.ok) {
-					return { error: result.message };
-				}
-
 				const formattedAction =
 					REQUEST_ACTION_TO_PAST_TENSE[requestAction].toLowerCase();
 
-				return {
-					content: `Successfully ${formattedAction} ban request - ID \`${interaction.message.id}\``,
-					temporary: true
-				};
+				return !result.ok
+					? { error: result.message }
+					: {
+							content: `Successfully ${formattedAction} ban request - ID \`${interaction.message.id}\``,
+							temporary: true
+						};
 			}
 
 			case BanRequestAction.Deny:
@@ -84,14 +82,12 @@ export default class BanRequestButton extends Component {
 					requestAction
 				);
 
-				if (!result.ok) {
-					return { error: result.message };
-				}
-
-				return {
-					content: `Successfully denied ban request - ID \`${interaction.message.id}\``,
-					temporary: true
-				};
+				return !result.ok
+					? { error: result.message }
+					: {
+							content: `Successfully denied ban request - ID \`${interaction.message.id}\``,
+							temporary: true
+						};
 		}
 	}
 }

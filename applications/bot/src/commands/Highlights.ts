@@ -270,7 +270,7 @@ export default class Highlights extends Command {
 	/** Highlights a message if it matches any user's highlight patterns. */
 	static async highlightMessage(message: Message<true>) {
 		const guildId = message.guild.id;
-		const config = await ConfigManager.get(guildId);
+		const config = await ConfigManager.getGuildConfig(guildId);
 
 		if (!config.data.highlights.enabled) return;
 

@@ -362,10 +362,10 @@ export default class MessageReportUtils {
 	 * Searches for pending message reports in the guild, optionally filtered by a target user.
 	 *
 	 * @param data The search parameters.
-	 * 		- config: The guild configuration.
-	 * 		- controllerId: The ID of the interaction controller, used for pagination button custom IDs.
-	 * 		- target: An optional user to filter reports by their author.
-	 * 		- page: The page number for pagination (1-based).
+	 *   - config: The guild configuration.
+	 * 	 - controllerId: The ID of the interaction controller, used for pagination button custom IDs.
+	 * 	 - target: An optional user to filter reports by their author.
+	 * 	 - page: The page number for pagination (1-based).
 	 * @returns The result of the search operation.
 	 */
 

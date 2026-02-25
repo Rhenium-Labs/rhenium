@@ -17,7 +17,7 @@ export default class ConfigManager {
 	 * @returns The GuildConfig for the specified guild.
 	 */
 
-	static async get(guildId: string): Promise<GuildConfig> {
+	static async getGuildConfig(guildId: string): Promise<GuildConfig> {
 		let config = ConfigManager._cache.get(guildId);
 
 		if (!config) {

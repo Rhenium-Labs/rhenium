@@ -10,7 +10,7 @@ import type { Message as SerializedMessage } from "@repo/db";
 import type { ParsedContentFilterConfig } from "@config/GuildConfig";
 
 import Logger from "@utils/Logger";
-import MinimumHeap from "@utils/MinimumHeap";
+import MinimumHeap from "@cf/MinimumHeap";
 import ContentFilter from "./ContentFilter";
 import ConfigManager from "@config/ConfigManager";
 import ContentFilterUtils from "@utils/ContentFilter";
@@ -241,7 +241,7 @@ export default class AutomatedScanner {
 					continue;
 				}
 
-				const guildConfig = await ConfigManager.get(entry.guildId);
+				const guildConfig = await ConfigManager.getGuildConfig(entry.guildId);
 				const contentFilterConfig = guildConfig.parseContentFilterConfig();
 
 				if (contentFilterConfig) {

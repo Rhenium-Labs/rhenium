@@ -183,9 +183,11 @@ export default class GuildConfig {
 
 		try {
 			const clients = webhooks.map(webhook => new WebhookClient({ url: webhook.url }));
-			return await Promise.all(
+			const messages = await Promise.all(
 				clients.map(client => client.send(payload).finally(() => client.destroy()))
 			);
+
+			return messages;
 		} catch (error) {
 			const sentryId = captureException(error, {
 				extra: { guildId: this.id, event, payload }

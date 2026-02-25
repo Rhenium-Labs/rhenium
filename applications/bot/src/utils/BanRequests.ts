@@ -33,6 +33,11 @@ export default class BanRequestUtils {
 	 * Creates a ban request and sends it to the configured webhook for review.
 	 *
 	 * @param data The ban request data.
+	 *   - config: The guild configuration.
+	 *   - target: The user to be banned.
+	 *   - executor: The member requesting the ban.
+	 *   - durationStr: The duration of the ban (e.g., "1d", "12h"), or null for a permanent ban.
+	 *   - reason: The reason for the ban request.
 	 * @returns The result of the operation.
 	 */
 

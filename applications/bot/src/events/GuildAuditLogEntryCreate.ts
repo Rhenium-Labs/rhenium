@@ -16,7 +16,7 @@ export default class GuildAuditLogEntryCreate extends EventListener {
 		if (!(target instanceof Webhook) || action !== AuditLogEvent.WebhookDelete) return;
 
 		// If a webhook was deleted, check if it existed in our config.
-		const config = await ConfigManager.get(guild.id);
+		const config = await ConfigManager.getGuildConfig(guild.id);
 		const hasWebhook = config.data.logging_webhooks.some(wh => wh.id === target.id);
 
 		if (hasWebhook) {

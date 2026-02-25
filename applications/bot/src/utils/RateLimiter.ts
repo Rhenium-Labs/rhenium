@@ -15,10 +15,12 @@ export default class RateLimiter {
 	 * The maximum number of requests allowed per window.
 	 */
 	private readonly _limit: number;
+
 	/**
 	 * The time window in milliseconds.
 	 */
 	private readonly _window: number;
+
 	/**
 	 * The internal cache to track rate limit entries.
 	 */

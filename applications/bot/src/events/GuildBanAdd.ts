@@ -28,7 +28,7 @@ export default class GuildBanAdd extends EventListener {
 	}
 
 	async execute(ban: GuildBan) {
-		const config = await ConfigManager.get(ban.guild.id);
+		const config = await ConfigManager.getGuildConfig(ban.guild.id);
 
 		try {
 			await Promise.all([
@@ -53,6 +53,13 @@ export default class GuildBanAdd extends EventListener {
 		}
 	}
 
+	/**
+	 * Resolves pending message reports for a banned user by marking them as resolved and logging the action.
+	 *
+	 * @param ban The GuildBan object representing the ban event.
+	 * @param config The GuildConfig object for the guild where the ban occurred.
+	 * @returns A promise that resolves when the operation is complete.
+	 */
 	private static async _resolvePendingReports(
 		ban: GuildBan,
 		config: GuildConfig
@@ -171,6 +178,13 @@ export default class GuildBanAdd extends EventListener {
 			.catch(() => null);
 	}
 
+	/**
+	 * Resolves pending ban requests for a banned user by marking them as resolved and logging the action.
+	 *
+	 * @param ban The GuildBan object representing the ban event.
+	 * @param config The GuildConfig object for the guild where the ban occurred.
+	 * @returns A promise that resolves when the operation is complete.
+	 */
 	private static async _resolvePendingBanRequests(
 		ban: GuildBan,
 		config: GuildConfig

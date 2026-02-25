@@ -54,6 +54,9 @@ export function readYamlFile<T>(path: string): T {
  * Starts a Sentry-instrumented cron job.
  *
  * @param options Options for the cron job.
+ *   - monitorSlug: A unique identifier for the cron job, used in Sentry monitoring.
+ *   - cronTime: The cron time string defining the schedule for the job.
+ *   - onTick: The function to execute on each tick of the cron job, which can be asynchronous.
  * @returns void
  */
 export function startCronJob(options: CronJobOptions): void {
@@ -122,8 +125,8 @@ export function cropLines(str: string, maxLines: number): string {
 /**
  * Capitalize the first letter of a string.
  *
- * @param str The string to capitalize
- * @returns The capitalized string
+ * @param str The string to capitalize.
+ * @returns The capitalized string.
  */
 
 export function capitalize(str: string): string {
@@ -131,17 +134,32 @@ export function capitalize(str: string): string {
 	return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-/** Formats a user ID as a mention with the ID in parentheses. */
+/**
+ * Formats a user mention with their ID.
+ *
+ * @param id The ID of the user to mention.
+ * @returns A formatted string that mentions the user and includes their ID in parentheses.
+ */
 export function userMentionWithId(id: Snowflake): `<@${Snowflake}> (\`${Snowflake}\`)` {
 	return `<@${id}> (\`${id}\`)`;
 }
 
-/** Delays execution for the specified number of milliseconds. */
+/**
+ * Causes a delay for a specified duration.
+ *
+ * @param duration The duration of the delay in milliseconds.
+ * @returns A promise that resolves after the specified duration has elapsed.
+ */
 export function sleep(duration: number): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, duration));
 }
 
-/** Parses a duration string into milliseconds. */
+/**
+ * Parses a duration string into milliseconds.
+ *
+ * @param str The duration string to parse, which can be a plain number (interpreted as seconds) or a string in a format recognized by the `ms` library (e.g., "1d", "12h").
+ * @returns The parsed duration in milliseconds, or `null` if the input is invalid.
+ */
 export function parseDurationString(str: string | null): number | null {
 	if (!str) return null;
 
@@ -155,6 +173,9 @@ export function parseDurationString(str: string | null): number | null {
  * Validates that a duration falls within optional minimum and maximum bounds.
  *
  * @param data The duration data to validate.
+ *   - duration: The duration in milliseconds to validate.
+ *   - minimum: An optional minimum duration string (e.g., "1s", "500ms") that the duration must meet or exceed.
+ *   - maximum: An optional maximum duration string (e.g., "1d", "12h") that the duration must not exceed.
  * @returns The result of the validation.
  */
 export function validateDuration(data: {

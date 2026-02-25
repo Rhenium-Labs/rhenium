@@ -19,6 +19,7 @@ export default class BanRequestDenyModal extends Component {
 		const requestAction = interaction.customId
 			.split("-")[2]
 			.toLowerCase() as BanRequestAction;
+
 		const requestId = interaction.customId.split("-")[3];
 		const reviewReason = interaction.fields.getTextInputValue("reason");
 
@@ -31,10 +32,11 @@ export default class BanRequestDenyModal extends Component {
 			reviewReason
 		);
 
-		if (!result.ok) {
-			return { error: result.message };
-		}
-
-		return { content: `Successfully denied the ban request - ID \`${requestId}\`` };
+		return !result.ok
+			? { error: result.message }
+			: {
+					content: `Successfully denied ban request - ID \`${requestId}\``,
+					temporary: true
+				};
 	}
 }

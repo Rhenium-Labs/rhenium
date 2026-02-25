@@ -38,7 +38,7 @@ export default class InteractionCreate extends EventListener {
 		const whitelisted = await getWhitelistStatus(interaction.guild.id);
 		if (!whitelisted && !GlobalConfig.isDeveloper(interaction.user.id)) return;
 
-		const config = await ConfigManager.get(interaction.guild.id);
+		const config = await ConfigManager.getGuildConfig(interaction.guild.id);
 		const result = await Result.fromAsync(() =>
 			InteractionCreate._handle(interaction, config)
 		);
@@ -79,6 +79,14 @@ export default class InteractionCreate extends EventListener {
 			return;
 		}
 	}
+
+	/**
+	 * Handles an interaction by determining its type and executing the appropriate command or component logic.
+	 *
+	 * @param interaction The interaction to handle, which can be either a CommandInteraction or a ComponentInteraction.
+	 * @param config The guild configuration.
+	 * @returns A promise that resolves when the interaction is handled.
+	 */
 
 	private static async _handle(
 		interaction: CommandInteraction<"cached"> | ComponentInteraction,
@@ -126,6 +134,14 @@ export default class InteractionCreate extends EventListener {
 		}
 	}
 
+	/**
+	 * Handles a command interaction by executing the corresponding command logic.
+	 *
+	 * @param interaction The CommandInteraction to handle.
+	 * @param config The guild configuration.
+	 * @returns A promise that resolves to the response data for the interaction, or null if the command execution was handled manually.
+	 */
+
 	private static async _handleCommand(
 		interaction: CommandInteraction<"cached">,
 		config: GuildConfig
@@ -143,6 +159,14 @@ export default class InteractionCreate extends EventListener {
 		// I hate that I have to add a ts-ignore here though.
 		return command.executeInteraction({ interaction, config });
 	}
+
+	/**
+	 * Handles a component interaction by executing the corresponding component logic.
+	 *
+	 * @param interaction The ComponentInteraction to handle.
+	 * @param config The guild configuration.
+	 * @returns A promise that resolves to the response data for the interaction, or null if the component execution was handled manually.
+	 */
 
 	private static async _handleComponent(
 		interaction: ComponentInteraction,

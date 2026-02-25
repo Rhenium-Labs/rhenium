@@ -129,11 +129,11 @@ async function trySend(message: Message, payload: MessagePayload) {
  * Formats message content, including stickers and URLs, for display.
  *
  * @param data The data for formatting the message content.
- * 	- `url`: The URL of the message, if available.
- * 	- `content`: The text content of the message, if available.
- * 	- `stickerId`: The ID of the sticker in the message, if available.
- * 	- `createdAt`: The creation date of the message, if available.
- * 	- `includeUrl`: Whether to include the message URL in the formatted content (default: true).
+ *   - url: The URL of the message, if available.
+ * 	 - content: The text content of the message, if available.
+ * 	 - stickerId: The ID of the sticker in the message, if available.
+ * 	 - createdAt: The creation date of the message, if available.
+ * 	 - includeUrl: Whether to include the message URL in the formatted content (default: true).
  *
  * @returns The formatted message content as a string.
  */

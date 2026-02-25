@@ -429,7 +429,7 @@ async function addEvents(
 	guildId: string,
 	events: LoggingEvent[]
 ): Promise<LoggingWebhook | null> {
-	const config = await ConfigManager.get(guildId);
+	const config = await ConfigManager.getGuildConfig(guildId);
 	const webhooks = config.data.logging_webhooks;
 	const webhook = webhooks.find(wh => wh.id === webhookId);
 
@@ -463,7 +463,7 @@ async function removeEvents(
 	guildId: string,
 	events: LoggingEvent[]
 ): Promise<LoggingWebhook | null> {
-	const config = await ConfigManager.get(guildId);
+	const config = await ConfigManager.getGuildConfig(guildId);
 	const webhooks = config.data.logging_webhooks;
 	const webhook = webhooks.find(wh => wh.id === webhookId);
 
