@@ -5,6 +5,7 @@ import GlobalConfig from "@config/GlobalConfig";
 import EventListener from "@events/EventListener";
 import AutomatedScanner from "@cf/AutomatedScanner";
 import HeuristicScanner from "@cf/HeuristicScanner";
+import ReportMessageCtx from "@root/commands/ReportMessageCtx";
 
 export default class Ready extends EventListener {
 	constructor() {
@@ -23,7 +24,8 @@ export default class Ready extends EventListener {
 			AutomatedScanner.startTickLoop(),
 			HeuristicScanner.startCleanupInterval(),
 			GlobalConfig.startMessageReportDisregardCronJob(),
-			GlobalConfig.startMessageRetentionCronJobs()
+			GlobalConfig.startMessageRetentionCronJobs(),
+			ReportMessageCtx.startKVCleanupJob()
 		]);
 	}
 }

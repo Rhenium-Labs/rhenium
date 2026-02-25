@@ -21,7 +21,7 @@ export default class ReportMessage extends Component {
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const messageId = interaction.customId.split("-")[3];
-		const message = TARGET_MESSAGE_KV.get({ id: messageId });
+		const message = TARGET_MESSAGE_KV.get(messageId);
 
 		if (!message)
 			return {
@@ -42,7 +42,7 @@ export default class ReportMessage extends Component {
 
 		// Clean up the KV entry to prevent memory leaks.
 		// This is safe to do here because the modal can only be submitted once, and the message data is not needed after submission.
-		TARGET_MESSAGE_KV.delete({ id: messageId });
+		TARGET_MESSAGE_KV.delete(messageId);
 
 		return !result.ok
 			? { error: result.message }

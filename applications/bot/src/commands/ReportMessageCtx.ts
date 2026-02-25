@@ -8,6 +8,7 @@ import {
 	TextInputBuilder,
 	TextInputStyle
 } from "discord.js";
+import { startCronJob } from "@utils/index";
 
 import Command, {
 	CommandCategory,
@@ -21,7 +22,7 @@ import MessageReportUtils from "@utils/MessageReports";
  * KV for storing target messages for reports.
  * This is used for passing message data from the context menu command to the modal submission handler without needing to re-fetch the message.
  */
-export const TARGET_MESSAGE_KV: WeakMap<{ id: string }, Message<true>> = new WeakMap();
+export const TARGET_MESSAGE_KV: Map<string, Message<true>> = new Map();
 
 export default class ReportMessageCtx extends Command {
 	constructor() {
@@ -79,7 +80,7 @@ export default class ReportMessageCtx extends Command {
 				.setTitle(`Report @${message.author.username}'s Message`)
 				.addLabelComponents(reasonLabel);
 
-			TARGET_MESSAGE_KV.set({ id: message.id }, message);
+			TARGET_MESSAGE_KV.set(message.id, message);
 
 			await interaction.showModal(modal);
 			return null;
@@ -104,5 +105,16 @@ export default class ReportMessageCtx extends Command {
 		return {
 			content: `Successfully reported ${message.author}'s message, thank you for your report!`
 		};
+	}
+
+	/** Starts a cron job that periodically cleans up the TARGET_MESSAGE_KV to prevent memory leaks. */
+	public static startKVCleanupJob(): void {
+		return startCronJob({
+			monitorSlug: "REPORT_MESSAGE_KV_CLEANUP",
+			cronTime: "0 * * * *", // Every hour.
+			onTick: () => {
+				TARGET_MESSAGE_KV.clear();
+			}
+		});
 	}
 }
