@@ -1,4 +1,4 @@
-import { Events } from "discord.js";
+import { Events, RESTEvents } from "discord.js";
 
 import Logger from "@utils/Logger";
 import GlobalConfig from "@config/GlobalConfig";
@@ -11,10 +11,15 @@ export default class Ready extends EventListener {
 		super(Events.ClientReady);
 	}
 
-	execute(): void {
+	execute(): Promise<unknown> {
 		Logger.success(`Logged in as ${this.client.user?.tag}!`);
 
-		Promise.all([
+		// Listen for rate limit events.
+		this.client.rest.on(RESTEvents.RateLimited, info => {
+			Logger.warn(`DJS rate limit occurred. Data:`, info);
+		});
+
+		return Promise.all([
 			AutomatedScanner.startTickLoop(),
 			HeuristicScanner.startCleanupInterval(),
 			GlobalConfig.startMessageReportDisregardCronJob(),
