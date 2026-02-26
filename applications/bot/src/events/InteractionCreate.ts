@@ -61,7 +61,11 @@ export default class InteractionCreate extends EventListener {
 				}
 			});
 
-			metrics.count(SENTRY_METRICS_COUNTERS.CommandFailed, 1, {
+			const counter = interaction.isCommand()
+				? SENTRY_METRICS_COUNTERS.CommandFailed
+				: SENTRY_METRICS_COUNTERS.ComponentFailed;
+
+			metrics.count(counter, 1, {
 				attributes: {
 					guild_id: interaction.guild.id,
 					interaction_type: interaction.type,
@@ -86,7 +90,11 @@ export default class InteractionCreate extends EventListener {
 			return;
 		}
 
-		metrics.count(SENTRY_METRICS_COUNTERS.CommandExecuted, 1, {
+		const counter = interaction.isCommand()
+			? SENTRY_METRICS_COUNTERS.CommandExecuted
+			: SENTRY_METRICS_COUNTERS.ComponentExecuted;
+
+		return metrics.count(counter, 1, {
 			attributes: {
 				guild_id: interaction.guild.id,
 				interaction_type: interaction.type,

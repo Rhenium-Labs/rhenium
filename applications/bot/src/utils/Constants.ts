@@ -124,6 +124,8 @@ export const SENTRY_METRICS_COUNTERS = {
 	QuickPurgeExecuted: "quick_purge_executed",
 	CommandExecuted: "command_executed",
 	CommandFailed: "command_failed",
+	ComponentExecuted: "component_executed",
+	ComponentFailed: "component_failed",
 	ActionLogged: "action_logged"
 };
 
