@@ -1,9 +1,10 @@
 import { Result } from "@sapphire/result";
 import { Events, Message } from "discord.js";
-import { captureException } from "@sentry/node";
+import { captureException, metrics } from "@sentry/node";
 
 import { reply } from "@utils/Messages";
 import { getWhitelistStatus } from "@utils/index";
+import { SENTRY_METRICS_COUNTERS } from "@utils/Constants";
 
 import Logger from "@utils/Logger";
 import Highlights from "@root/commands/Highlights";
@@ -124,6 +125,13 @@ export default class MessageCreate extends EventListener {
 				}
 			});
 
+			metrics.count(SENTRY_METRICS_COUNTERS.CommandFailed, 1, {
+				attributes: {
+					guild_id: message.guild.id,
+					command_name: command.name
+				}
+			});
+
 			const content = `An error occurred while executing this command. Please use this ID when reporting the bug: \`${sentryId}\`.`;
 
 			Result.fromAsync(() => reply(message, { content }));
@@ -131,5 +139,12 @@ export default class MessageCreate extends EventListener {
 
 			return;
 		}
+
+		metrics.count(SENTRY_METRICS_COUNTERS.CommandExecuted, 1, {
+			attributes: {
+				guild_id: message.guild.id,
+				command_name: command.name
+			}
+		});
 	}
 }

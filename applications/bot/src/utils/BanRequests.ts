@@ -14,11 +14,13 @@ import {
 	userMention,
 	WebhookClient
 } from "discord.js";
+import { metrics } from "@sentry/node";
 
 import ms from "ms";
 
 import { kysely } from "@root/index";
 import { RequestStatus } from "@repo/db";
+import { SENTRY_METRICS_COUNTERS } from "./Constants";
 import { LoggingEvent, UserPermission } from "@repo/config";
 import { parseDurationString, userMentionWithId, validateDuration } from "./index";
 
@@ -194,6 +196,13 @@ export default class BanRequestUtils {
 				.catch(() => false);
 		}
 
+		metrics.count(SENTRY_METRICS_COUNTERS.BanRequestSubmitted, 1, {
+			attributes: {
+				guild_id: executor.guild.id,
+				automatically_muted: muted.toString()
+			}
+		});
+
 		await kysely
 			.insertInto("BanRequest")
 			.values({
@@ -286,6 +295,13 @@ export default class BanRequestUtils {
 					.where("id", "=", request.id)
 					.execute();
 
+				metrics.count(SENTRY_METRICS_COUNTERS.BanRequestHandled, 1, {
+					attributes: {
+						guild_id: interaction.guild.id,
+						action: action.toString()
+					}
+				});
+
 				return { ok: true };
 			}
 
@@ -336,6 +352,13 @@ export default class BanRequestUtils {
                     .then(() => interaction.message?.delete().catch(() => null));
 				BanRequestUtils._notify(config, action, request);
 
+				metrics.count(SENTRY_METRICS_COUNTERS.BanRequestHandled, 1, {
+					attributes: {
+						guild_id: interaction.guild.id,
+						action: action.toString()
+					}
+				});
+
 				const data: BanRequestUpdate = {
 					status: RequestStatus.Accepted,
 					resolved_by: interaction.user.id,
@@ -365,6 +388,13 @@ export default class BanRequestUtils {
                     ._log(interaction, action, config, reviewReason)
                     .then(() => interaction.message?.delete().catch(() => null));
 				BanRequestUtils._notify(config, action, request, reviewReason);
+
+				metrics.count(SENTRY_METRICS_COUNTERS.BanRequestHandled, 1, {
+					attributes: {
+						guild_id: interaction.guild.id,
+						action: action.toString()
+					}
+				});
 
 				const data: BanRequestUpdate = {
 					status: RequestStatus.Denied,

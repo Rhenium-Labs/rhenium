@@ -17,13 +17,14 @@ import {
 	WebhookClient,
 	APIMessage
 } from "discord.js";
+import { metrics } from "@sentry/node";
 
 import { ReportStatus } from "@repo/db";
 import { client, kysely } from "@root/index";
-import { EMPTY_MESSAGE_CONTENT } from "./Constants";
 import { LoggingEvent, UserPermission } from "@repo/config";
 import { cleanContent, formatMessageContent } from "./Messages";
 import { cropLines, truncate, userMentionWithId } from "./index";
+import { EMPTY_MESSAGE_CONTENT, SENTRY_METRICS_COUNTERS } from "./Constants";
 
 import type { SimpleResult } from "./Types";
 import type { ResponseData } from "@commands/Command";
@@ -130,6 +131,13 @@ export default class MessageReportUtils {
 				})
 				.where("id", "=", originalReport.id)
 				.execute();
+
+			metrics.count(SENTRY_METRICS_COUNTERS.MessageReportSubmitted, 1, {
+				attributes: {
+					guild_id: config.id,
+					original_report_id: originalReport.id
+				}
+			});
 
 			webhook.destroy();
 			return { ok: true };
@@ -276,6 +284,10 @@ export default class MessageReportUtils {
 			};
 		}
 
+		metrics.count(SENTRY_METRICS_COUNTERS.MessageReportSubmitted, 1, {
+			attributes: { guild_id: config.id }
+		});
+
 		await kysely
 			.insertInto("MessageReport")
 			.values({
@@ -342,6 +354,13 @@ export default class MessageReportUtils {
 
 		const logs = await MessageReportUtils._log(interaction, action, config);
 		MessageReportUtils._updateSubmissionMessage(interaction, action, config);
+
+		metrics.count(SENTRY_METRICS_COUNTERS.MessageReportHandled, 1, {
+			attributes: {
+				guild_id: interaction.guild.id,
+				action: action.toString()
+			}
+		});
 
 		await kysely
 			.updateTable("MessageReport")

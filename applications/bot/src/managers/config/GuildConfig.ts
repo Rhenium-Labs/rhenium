@@ -4,7 +4,7 @@ import {
 	type GuildMember,
 	type WebhookMessageCreateOptions
 } from "discord.js";
-import { captureException } from "@sentry/node";
+import { captureException, metrics } from "@sentry/node";
 
 import Logger from "@utils/Logger";
 
@@ -15,6 +15,8 @@ import {
 	UserPermission,
 	RawChannelScoping
 } from "@repo/config";
+import { Result } from "@sapphire/result";
+import { SENTRY_METRICS_COUNTERS } from "@utils/Constants";
 
 export default class GuildConfig {
 	/**
@@ -186,7 +188,7 @@ export default class GuildConfig {
 
 		if (webhooks.length === 0) return null;
 
-		try {
+		const result = await Result.fromAsync(() => {
 			const clients = webhooks.map(webhook => {
 				let wc = this._webhookClients.get(webhook.url);
 
@@ -198,16 +200,33 @@ export default class GuildConfig {
 				return wc;
 			});
 
-			const messages = await Promise.all(clients.map(wc => wc.send(payload)));
-			return messages;
-		} catch (error) {
+			return Promise.all(clients.map(wc => wc.send(payload)));
+		});
+
+		if (result.isErr()) {
+			const error = result.unwrapErr();
 			const sentryId = captureException(error, {
 				extra: { guildId: this.id, event, payload }
 			});
 
-			Logger.traceable(sentryId, `Failed to log event "${event}" for guild "${this.id}".`);
+			Logger.traceable(
+				sentryId,
+				`Unable to send log for event "${event}" in guild "${this.id}":`,
+				error
+			);
 			return null;
 		}
+
+		const messages = result.unwrap();
+
+		metrics.count(SENTRY_METRICS_COUNTERS.ActionLogged, messages.length, {
+			attributes: {
+				guild_id: this.id,
+				event
+			}
+		});
+
+		return messages;
 	}
 }
 

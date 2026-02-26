@@ -114,6 +114,19 @@ export const PROCESS_EXIT_EVENTS: readonly NodeJS.Signals[] = [
 /** Default message content used when a message has no content. */
 export const EMPTY_MESSAGE_CONTENT: string = "Unknown message content.";
 
+/** Supported sentry metrics counters. */
+export const SENTRY_METRICS_COUNTERS = {
+	BanRequestSubmitted: "ban_request_submitted",
+	BanRequestHandled: "ban_request_handled",
+	MessageReportSubmitted: "message_report_submitted",
+	MessageReportHandled: "message_report_handled",
+	QuickMuteExecuted: "quick_mute_executed",
+	QuickPurgeExecuted: "quick_purge_executed",
+	CommandExecuted: "command_executed",
+	CommandFailed: "command_failed",
+	ActionLogged: "action_logged"
+};
+
 const HEURISTIC_LOGGING_SMOOTH_ALPHA: Readonly<number> = 0.25;
 
 const HEURISTIC_WINDOW_SIZE = 30;

@@ -7,9 +7,10 @@ import {
 	Events,
 	MessageFlags
 } from "discord.js";
-import { captureException } from "@sentry/node";
+import { captureException, metrics } from "@sentry/node";
 
 import { getWhitelistStatus } from "@utils/index";
+import { SENTRY_METRICS_COUNTERS } from "@utils/Constants";
 
 import type { ResponseData } from "@commands/Command";
 import type { ComponentInteraction } from "@components/Component";
@@ -60,6 +61,16 @@ export default class InteractionCreate extends EventListener {
 				}
 			});
 
+			metrics.count(SENTRY_METRICS_COUNTERS.CommandFailed, 1, {
+				attributes: {
+					guild_id: interaction.guild.id,
+					interaction_type: interaction.type,
+					interaction_identifier: interaction.isCommand()
+						? interaction.commandName
+						: interaction.customId
+				}
+			});
+
 			const content = `An error occurred while executing this interaction. Please use this ID when reporting the bug: \`${sentryId}\`.`;
 
 			// We wrap the calls in `Result.fromAsync` to avoid Unknown Interaction errors.
@@ -71,13 +82,19 @@ export default class InteractionCreate extends EventListener {
 				);
 			}
 
-			Logger.traceable(
-				sentryId,
-				`An error occurred while handling an interaction:`,
-				error
-			);
+			Logger.traceable(sentryId, `Error occurred while handling an interaction:`, error);
 			return;
 		}
+
+		metrics.count(SENTRY_METRICS_COUNTERS.CommandExecuted, 1, {
+			attributes: {
+				guild_id: interaction.guild.id,
+				interaction_type: interaction.type,
+				interaction_identifier: interaction.isCommand()
+					? interaction.commandName
+					: interaction.customId
+			}
+		});
 	}
 
 	/**

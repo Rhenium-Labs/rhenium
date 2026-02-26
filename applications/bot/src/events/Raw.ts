@@ -14,7 +14,7 @@ import {
 	AttachmentBuilder,
 	StickerFormatType
 } from "discord.js";
-import { captureException } from "@sentry/node";
+import { captureException, metrics } from "@sentry/node";
 
 import ms from "ms";
 
@@ -30,7 +30,7 @@ import {
 } from "@utils/index";
 import { LoggingEvent, UserPermission } from "@repo/config";
 import { client, kysely } from "@root/index";
-import { LOG_DATE_FORMAT } from "@utils/Constants";
+import { LOG_DATE_FORMAT, SENTRY_METRICS_COUNTERS } from "@utils/Constants";
 
 import type { Message as SerializedMessage } from "@repo/db";
 
@@ -206,6 +206,7 @@ export default class Raw extends EventListener {
 				`Quick mute issued by @${executor.user.username} (${executor.id}) - ${quickMuteConfig.reason}`,
 				512
 			);
+
 			const formattedDuration = ms(Number(quickMuteConfig.duration), { long: true });
 
 			try {
@@ -295,6 +296,17 @@ export default class Raw extends EventListener {
 					components.push(row);
 				}
 
+				metrics.count(SENTRY_METRICS_COUNTERS.QuickMuteExecuted, 1, {
+					attributes: {
+						guild_id: guildId,
+						target_id: target.id,
+						executor_id: executor.id,
+						mute_duration: formattedDuration,
+						purged_messages: purgeResult.deleted.toString(),
+						requested_purge_amount: purgeAmount.toString()
+					}
+				});
+
 				return Promise.all([
 					config.log(LoggingEvent.QuickMuteExecuted, { embeds: [embed] }),
 					config.log(LoggingEvent.QuickMuteResult, {
@@ -304,6 +316,15 @@ export default class Raw extends EventListener {
 					})
 				]);
 			}
+
+			metrics.count(SENTRY_METRICS_COUNTERS.QuickMuteExecuted, 1, {
+				attributes: {
+					guild_id: guildId,
+					target_id: target.id,
+					executor_id: executor.id,
+					mute_duration: formattedDuration
+				}
+			});
 
 			return Promise.all([
 				config.log(LoggingEvent.QuickMuteExecuted, { embeds: [embed] }),
@@ -429,6 +450,16 @@ export default class Raw extends EventListener {
 				const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 				components.push(row);
 			}
+
+			metrics.count(SENTRY_METRICS_COUNTERS.QuickPurgeExecuted, 1, {
+				attributes: {
+					guild_id: guildId,
+					target_id: target.id,
+					executor_id: executor.id,
+					purged_messages: purgeResult.deleted.toString(),
+					requested_purge_amount: purgeAmount.toString()
+				}
+			});
 
 			return Promise.all([
 				config.log(LoggingEvent.QuickPurgeExecuted, { embeds: [embed] }),
