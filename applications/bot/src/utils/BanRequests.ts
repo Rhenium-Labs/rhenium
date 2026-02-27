@@ -169,7 +169,9 @@ export default class BanRequestUtils {
 		const webhook = new WebhookClient({ url: config.data.ban_requests.webhook_url! });
 		const content =
 			config.data.ban_requests.notify_roles.length > 0
-				? config.data.ban_requests.notify_roles.map(roleMention).join(", ")
+				? config.data.ban_requests.notify_roles
+						.map(role => (role === "here" ? "@here" : roleMention(role)))
+						.join(", ")
 				: undefined;
 
 		const log = await webhook

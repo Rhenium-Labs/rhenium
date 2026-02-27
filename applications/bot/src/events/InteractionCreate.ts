@@ -5,7 +5,8 @@ import {
 	type InteractionReplyOptions,
 	Colors,
 	Events,
-	MessageFlags
+	MessageFlags,
+	AutocompleteInteraction
 } from "discord.js";
 import { captureException, metrics } from "@sentry/node";
 
@@ -33,7 +34,7 @@ export default class InteractionCreate extends EventListener {
 
 		// Autocomplete isn't supported yet.
 		if (interaction.isAutocomplete()) {
-			throw new Error("Autocomplete handling not implemented yet.");
+			return InteractionCreate._handleAutocomplete(interaction);
 		}
 
 		const whitelisted = await getWhitelistStatus(interaction.guild.id);
@@ -103,6 +104,38 @@ export default class InteractionCreate extends EventListener {
 					: interaction.customId
 			}
 		});
+	}
+
+	private static async _handleAutocomplete(interaction: AutocompleteInteraction<"cached">) {
+		const option = interaction.options.getFocused(true);
+		const value = option.value;
+		const lowercaseValue = option.value.toString();
+
+		switch (option.name) {
+			case "role": {
+				const roles = interaction.guild.roles.cache
+					.map(role => ({
+						name: `@${role.name}`,
+						value: role.id
+					}))
+					.filter(role => role.value !== interaction.guild.id);
+
+				if (!value) {
+					const sortedRoles = roles.sort((a, b) => a.name.localeCompare(b.name));
+					return interaction.respond([
+						...sortedRoles,
+						{ name: "@here", value: "here" }
+					]);
+				}
+
+				const filteredRoles = roles.filter(role =>
+					role.name.toLowerCase().includes(lowercaseValue)
+				);
+
+				const sortedRoles = filteredRoles.sort((a, b) => a.name.localeCompare(b.name));
+				return interaction.respond([...sortedRoles, { name: "@here", value: "here" }]);
+			}
+		}
 	}
 
 	/**

@@ -265,7 +265,9 @@ export default class MessageReportUtils {
 
 		const content =
 			messageReports.notify_roles.length > 0
-				? messageReports.notify_roles.map(roleMention).join(", ")
+				? messageReports.notify_roles
+						.map(role => (role === "here" ? "@here" : roleMention(role)))
+						.join(", ")
 				: undefined;
 
 		const log = await webhook
@@ -273,7 +275,7 @@ export default class MessageReportUtils {
 				content,
 				embeds,
 				components: [actionRow],
-				allowedMentions: { parse: ["roles"] }
+				allowedMentions: { parse: ["roles", "everyone"] }
 			})
 			.catch(() => null);
 

@@ -228,8 +228,9 @@ export default class Config extends Command {
 								{
 									name: "role",
 									description: "The role.",
-									type: ApplicationCommandOptionType.Role,
-									required: true
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									autocomplete: true
 								}
 							]
 						},
@@ -241,8 +242,9 @@ export default class Config extends Command {
 								{
 									name: "role",
 									description: "The role.",
-									type: ApplicationCommandOptionType.Role,
-									required: true
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									autocomplete: true
 								}
 							]
 						},
@@ -328,8 +330,9 @@ export default class Config extends Command {
 								{
 									name: "role",
 									description: "The role.",
-									type: ApplicationCommandOptionType.Role,
-									required: true
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									autocomplete: true
 								}
 							]
 						},
@@ -342,8 +345,9 @@ export default class Config extends Command {
 								{
 									name: "role",
 									description: "The role.",
-									type: ApplicationCommandOptionType.Role,
-									required: true
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									autocomplete: true
 								}
 							]
 						},
@@ -2097,8 +2101,41 @@ export default class Config extends Command {
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
 	): Promise<ResponseData<"interaction">> {
-		const role = interaction.options.getRole("role", true);
+		const roleIdentifier = interaction.options.getString("role", true);
 		const config = configClass.data.message_reports;
+
+		const role = interaction.guild.roles.cache.find(
+			r => r.id === roleIdentifier || r.name === roleIdentifier
+		);
+
+		if (!role) {
+			if (roleIdentifier !== "here")
+				return { error: `No role found with the ID or name "${roleIdentifier}".` };
+
+			if (config.notify_roles.includes("here")) {
+				return { error: `The \`@here\` pseudo-role is already a notify role.` };
+			}
+
+			const updatedRoles = [...config.notify_roles, "here"];
+
+			const updatedConfig = {
+				...configClass.data,
+				message_reports: {
+					...configClass.data.message_reports,
+					notify_roles: updatedRoles
+				}
+			};
+
+			await kysely
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
+				.where("id", "=", interaction.guild.id)
+				.execute();
+
+			return {
+				content: `Successfully added the \`@here\` pseudo-role to notify roles.`
+			};
+		}
 
 		if (role.id === interaction.guild.id) {
 			return {
@@ -2135,8 +2172,41 @@ export default class Config extends Command {
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
 	): Promise<ResponseData<"interaction">> {
-		const role = interaction.options.getRole("role", true);
+		const roleIdentifier = interaction.options.getString("role", true);
 		const config = configClass.data.message_reports;
+
+		const role = interaction.guild.roles.cache.find(
+			r => r.id === roleIdentifier || r.name === roleIdentifier
+		);
+
+		if (!role) {
+			if (roleIdentifier !== "here")
+				return { error: `No role found with the ID or name "${roleIdentifier}".` };
+
+			if (!config.notify_roles.includes("here")) {
+				return { error: `The \`@here\` pseudo-role is not a notify role.` };
+			}
+
+			const updatedNotifyRoles = config.notify_roles.filter(id => id !== "here");
+
+			const updatedConfig = {
+				...configClass.data,
+				message_reports: {
+					...configClass.data.message_reports,
+					notify_roles: updatedNotifyRoles
+				}
+			};
+
+			await kysely
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
+				.where("id", "=", interaction.guild.id)
+				.execute();
+
+			return {
+				content: `Successfully removed the \`@here\` pseudo-role from notify roles.`
+			};
+		}
 
 		if (role.id === interaction.guild.id) {
 			return {
@@ -2451,8 +2521,41 @@ export default class Config extends Command {
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
 	): Promise<ResponseData<"interaction">> {
-		const role = interaction.options.getRole("role", true);
+		const roleIdentifier = interaction.options.getString("role", true);
 		const config = configClass.data.ban_requests;
+
+		const role = interaction.guild.roles.cache.find(
+			r => r.id === roleIdentifier || r.name === roleIdentifier
+		);
+
+		if (!role) {
+			if (roleIdentifier !== "here")
+				return { error: `No role found with the ID or name "${roleIdentifier}".` };
+
+			if (config.notify_roles.includes("here")) {
+				return { error: `The \`@here\` pseudo-role is already a notify role.` };
+			}
+
+			const updatedRoles = [...config.notify_roles, "here"];
+
+			const updatedConfig = {
+				...configClass.data,
+				ban_requests: {
+					...configClass.data.ban_requests,
+					notify_roles: updatedRoles
+				}
+			};
+
+			await kysely
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
+				.where("id", "=", interaction.guild.id)
+				.execute();
+
+			return {
+				content: `Successfully added the \`@here\` pseudo-role to notify roles.`
+			};
+		}
 
 		if (role.id === interaction.guild.id) {
 			return {
@@ -2489,8 +2592,41 @@ export default class Config extends Command {
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
 	): Promise<ResponseData<"interaction">> {
-		const role = interaction.options.getRole("role", true);
+		const roleIdentifier = interaction.options.getString("role", true);
 		const config = configClass.data.ban_requests;
+
+		const role = interaction.guild.roles.cache.find(
+			r => r.id === roleIdentifier || r.name === roleIdentifier
+		);
+
+		if (!role) {
+			if (roleIdentifier !== "here")
+				return { error: `No role found with the ID or name "${roleIdentifier}".` };
+
+			if (!config.notify_roles.includes("here")) {
+				return { error: `The \`@here\` pseudo-role is not a notify role.` };
+			}
+
+			const updatedNotifyRoles = config.notify_roles.filter(id => id !== "here");
+
+			const updatedConfig = {
+				...configClass.data,
+				ban_requests: {
+					...configClass.data.ban_requests,
+					notify_roles: updatedNotifyRoles
+				}
+			};
+
+			await kysely
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
+				.where("id", "=", interaction.guild.id)
+				.execute();
+
+			return {
+				content: `Successfully removed the \`@here\` pseudo-role from notify roles.`
+			};
+		}
 
 		if (role.id === interaction.guild.id) {
 			return {
