@@ -32,110 +32,76 @@ export default class InteractionCreate extends EventListener {
 	async execute(interaction: Interaction): Promise<void> {
 		if (!interaction.inCachedGuild()) return;
 
-		// Autocomplete isn't supported yet.
-		if (interaction.isAutocomplete()) {
-			return InteractionCreate._handleAutocomplete(interaction);
-		}
-
 		const whitelisted = await getWhitelistStatus(interaction.guild.id);
 		if (!whitelisted && !GlobalConfig.isDeveloper(interaction.user.id)) return;
 
 		const config = await ConfigManager.getGuildConfig(interaction.guild.id);
-		const result = await Result.fromAsync(() =>
-			InteractionCreate._handle(interaction, config)
+		const identifier =
+			interaction.isCommand() || interaction.isAutocomplete()
+				? interaction.commandName
+				: interaction.customId;
+
+		return Result.fromAsync(() => InteractionCreate._handle(interaction, config)).then(
+			result => {
+				if (result.isErr()) {
+					const error = result.unwrapErr();
+					const sentryId = captureException(error, {
+						user: {
+							id: interaction.user.id,
+							username: interaction.user.username
+						},
+						extra: {
+							interactionId: interaction.id,
+							interactionIdentifier: identifier,
+							interactionType: interaction.type,
+							guildId: interaction.guild.id
+						}
+					});
+
+					const counter = interaction.isCommand()
+						? SENTRY_METRICS_COUNTERS.CommandFailed
+						: SENTRY_METRICS_COUNTERS.ComponentFailed;
+
+					metrics.count(counter, 1, {
+						attributes: {
+							guild_id: interaction.guild.id,
+							interaction_type: interaction.type,
+							interaction_identifier: identifier
+						}
+					});
+
+					Logger.traceable(sentryId, `Interaction execution failed:`, error);
+
+					if (!interaction.isRepliable()) {
+						// Can't reply to autocomplete interactions lol.
+						return;
+					}
+
+					const content = `An error occurred while executing this interaction. Please use this ID when reporting the bug: \`${sentryId}\`.`;
+
+					// We wrap the calls in `Result.fromAsync` to avoid Unknown Interaction errors.
+					if (interaction.deferred || interaction.replied) {
+						return void interaction.followUp({ content }).catch(() => {});
+					} else {
+						return void interaction
+							.reply({ content, flags: [MessageFlags.Ephemeral] })
+							.catch(() => {});
+					}
+				}
+
+				const counter = interaction.isCommand()
+					? SENTRY_METRICS_COUNTERS.CommandExecuted
+					: SENTRY_METRICS_COUNTERS.ComponentExecuted;
+
+				return metrics.count(counter, 1, {
+					attributes: {
+						guild_id: interaction.guild.id,
+						interaction_type: interaction.type,
+						interaction_identifier: identifier
+					}
+				});
+			}
 		);
-
-		if (result.isErr()) {
-			const error = result.unwrapErr();
-			const sentryId = captureException(error, {
-				user: {
-					id: interaction.user.id,
-					username: interaction.user.username
-				},
-				extra: {
-					interactionId: interaction.id,
-					interactionIdentifier: interaction.isCommand()
-						? interaction.commandName
-						: interaction.customId,
-					interactionType: interaction.type,
-					guildId: interaction.guild.id
-				}
-			});
-
-			const counter = interaction.isCommand()
-				? SENTRY_METRICS_COUNTERS.CommandFailed
-				: SENTRY_METRICS_COUNTERS.ComponentFailed;
-
-			metrics.count(counter, 1, {
-				attributes: {
-					guild_id: interaction.guild.id,
-					interaction_type: interaction.type,
-					interaction_identifier: interaction.isCommand()
-						? interaction.commandName
-						: interaction.customId
-				}
-			});
-
-			const content = `An error occurred while executing this interaction. Please use this ID when reporting the bug: \`${sentryId}\`.`;
-
-			// We wrap the calls in `Result.fromAsync` to avoid Unknown Interaction errors.
-			if (interaction.deferred || interaction.replied) {
-				Result.fromAsync(() => interaction.editReply({ content }));
-			} else {
-				Result.fromAsync(() =>
-					interaction.reply({ content, flags: [MessageFlags.Ephemeral] })
-				);
-			}
-
-			Logger.traceable(sentryId, `Error occurred while handling an interaction:`, error);
-			return;
-		}
-
-		const counter = interaction.isCommand()
-			? SENTRY_METRICS_COUNTERS.CommandExecuted
-			: SENTRY_METRICS_COUNTERS.ComponentExecuted;
-
-		return metrics.count(counter, 1, {
-			attributes: {
-				guild_id: interaction.guild.id,
-				interaction_type: interaction.type,
-				interaction_identifier: interaction.isCommand()
-					? interaction.commandName
-					: interaction.customId
-			}
-		});
-	}
-
-	private static async _handleAutocomplete(interaction: AutocompleteInteraction<"cached">) {
-		const option = interaction.options.getFocused(true);
-		const value = option.value;
-		const lowercaseValue = option.value.toString();
-
-		switch (option.name) {
-			case "role": {
-				const roles = interaction.guild.roles.cache
-					.map(role => ({
-						name: `@${role.name}`,
-						value: role.id
-					}))
-					.filter(role => role.value !== interaction.guild.id);
-
-				if (!value) {
-					const sortedRoles = roles.sort((a, b) => a.name.localeCompare(b.name));
-					return interaction.respond([
-						...sortedRoles,
-						{ name: "@here", value: "here" }
-					]);
-				}
-
-				const filteredRoles = roles.filter(role =>
-					role.name.toLowerCase().includes(lowercaseValue)
-				);
-
-				const sortedRoles = filteredRoles.sort((a, b) => a.name.localeCompare(b.name));
-				return interaction.respond([...sortedRoles, { name: "@here", value: "here" }]);
-			}
-		}
 	}
 
 	/**
@@ -147,9 +113,16 @@ export default class InteractionCreate extends EventListener {
 	 */
 
 	private static async _handle(
-		interaction: CommandInteraction<"cached"> | ComponentInteraction,
+		interaction:
+			| CommandInteraction<"cached">
+			| ComponentInteraction
+			| AutocompleteInteraction<"cached">,
 		config: GuildConfig
 	): Promise<void> {
+		if (interaction.isAutocomplete()) {
+			return InteractionCreate._handleAutocomplete(interaction);
+		}
+
 		let response: ResponseData<"interaction"> | null = null;
 
 		if (interaction.isCommand()) {
@@ -189,6 +162,48 @@ export default class InteractionCreate extends EventListener {
 			setTimeout(() => {
 				Result.fromAsync(() => interaction.deleteReply());
 			}, 7500);
+		}
+	}
+
+	/**
+	 * Handles an autocomplete interaction by providing relevant suggestions based on the focused option.
+	 *
+	 * @param interaction The AutocompleteInteraction to handle.
+	 * @returns A promise that resolves when the autocomplete response is sent.
+	 */
+
+	private static async _handleAutocomplete(interaction: AutocompleteInteraction<"cached">) {
+		const option = interaction.options.getFocused(true);
+		const value = option.value;
+		const lowercaseValue = option.value.toString();
+
+		const truncateRoleName = (name: string) =>
+			name.length > 25 ? `${name.slice(0, 22)}...` : name;
+
+		switch (option.name) {
+			case "role": {
+				const roles = interaction.guild.roles.cache
+					.map(role => ({
+						name: `@${truncateRoleName(role.name)}`,
+						value: role.id
+					}))
+					.filter(role => role.value !== interaction.guild.id);
+
+				if (!value) {
+					const sortedRoles = roles.sort((a, b) => a.name.localeCompare(b.name));
+					return interaction.respond([
+						...sortedRoles,
+						{ name: "@here", value: "here" }
+					]);
+				}
+
+				const filteredRoles = roles.filter(role =>
+					role.name.toLowerCase().includes(lowercaseValue)
+				);
+
+				const sortedRoles = filteredRoles.sort((a, b) => a.name.localeCompare(b.name));
+				return interaction.respond([...sortedRoles, { name: "@here", value: "here" }]);
+			}
 		}
 	}
 
