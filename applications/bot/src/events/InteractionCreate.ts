@@ -79,14 +79,9 @@ export default class InteractionCreate extends EventListener {
 
 					const content = `An error occurred while executing this interaction. Please use this ID when reporting the bug: \`${sentryId}\`.`;
 
-					// We wrap the calls in `Result.fromAsync` to avoid Unknown Interaction errors.
-					if (interaction.deferred || interaction.replied) {
-						return void interaction.followUp({ content }).catch(() => {});
-					} else {
-						return void interaction
-							.reply({ content, flags: [MessageFlags.Ephemeral] })
-							.catch(() => {});
-					}
+					return void interaction[
+						interaction.deferred || interaction.replied ? "followUp" : "reply"
+					]({ content, flags: [MessageFlags.Ephemeral] }).catch(() => {});
 				}
 
 				const counter = interaction.isCommand()
