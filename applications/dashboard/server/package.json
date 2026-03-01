@@ -1,0 +1,25 @@
+{
+  "name": "server",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@hono/trpc-server": "^0.4.2",
+    "@repo/config": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@trpc/server": "^11.10.0",
+    "hono": "^4.12.3",
+    "jose": "^6.1.3",
+    "trpc": "^0.11.3"
+  },
+  "scripts": {
+    "dev": "bun run serve.ts",
+    "start": "bun run serve.ts"
+  }
+}

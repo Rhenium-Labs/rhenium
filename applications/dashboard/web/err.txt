@@ -1,0 +1,14 @@
+✗ Build failed in 1.39s
+error during build:
+.env (1:17): Expected ';', '}' or <eof> (Note that you need plugins to import files that are not JavaScript)
+file: /home/darkie/projects/rhenium/app/applications/dashboard/web/.env:1:17
+
+1: VITE_API_URL=http://localhost:4000
+                    ^
+
+    at getRollupError (file:///home/darkie/projects/rhenium/app/applications/dashboard/web/node_modules/rollup/dist/es/shared/parseAst.js:402:41)
+    at ParseError.initialise (file:///home/darkie/projects/rhenium/app/applications/dashboard/web/node_modules/rollup/dist/es/shared/node-entry.js:14465:28)
+    at convertNode (file:///home/darkie/projects/rhenium/app/applications/dashboard/web/node_modules/rollup/dist/es/shared/node-entry.js:16437:10)
+    at convertProgram (file:///home/darkie/projects/rhenium/app/applications/dashboard/web/node_modules/rollup/dist/es/shared/node-entry.js:15677:12)
+    at Module.setSource (file:///home/darkie/projects/rhenium/app/applications/dashboard/web/node_modules/rollup/dist/es/shared/node-entry.js:17392:24)
+    at async ModuleLoader.addModuleSource (file:///home/darkie/projects/rhenium/app/applications/dashboard/web/node_modules/rollup/dist/es/shared/node-entry.js:21497:13)

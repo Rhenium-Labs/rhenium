@@ -207,3 +207,11 @@ model Message {
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }
+
+model Session {
+  user_id       String   @id
+  access_token  String
+  refresh_token String
+  expires_at    DateTime
+  updated_at    DateTime @default(now())
+}

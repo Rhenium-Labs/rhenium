@@ -10,5 +10,10 @@
 			"inputs": ["$TURBO_DEFAULT$"],
 			"outputs": []
 		}
+	},
+	"pipeline": {
+		"lint": {
+			"outputs": []
+		}
 	}
 }
