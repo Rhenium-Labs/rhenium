@@ -84,8 +84,8 @@ export default class Reports extends Command {
 					type: ApplicationCommandOptionType.Subcommand,
 					options: [
 						{
-							name: "sort",
-							description: "Sorting method for the stats.",
+							name: "query",
+							description: "The query method.",
 							type: ApplicationCommandOptionType.String,
 							required: true,
 							choices: [
@@ -201,13 +201,10 @@ export default class Reports extends Command {
 			}
 
 			case ReportSubcommand.Leaderboard: {
-				const sortMethod = interaction.options.getString(
-					"sort",
-					true
-				) as ReportSortMethod;
+				const queryM = interaction.options.getString("query", true) as ReportSortMethod;
 
 				const groupByColumn =
-					sortMethod === ReportSortMethod.Reported ? "author_id" : "reported_by";
+					queryM === ReportSortMethod.Reported ? "author_id" : "reported_by";
 
 				let query = kysely
 					.selectFrom("MessageReport")
@@ -217,7 +214,7 @@ export default class Reports extends Command {
 					.orderBy("count", "desc")
 					.limit(5);
 
-				if (sortMethod === ReportSortMethod.Accuracy) {
+				if (queryM === ReportSortMethod.Accuracy) {
 					query = query.where("status", "=", ReportStatus.Resolved);
 				}
 
@@ -230,7 +227,7 @@ export default class Reports extends Command {
 
 				if (results.length === 0)
 					return {
-						error: `There is no sufficient data to display the ${titleMap[sortMethod].toLowerCase()}.`
+						error: `There is no sufficient data to display the ${titleMap[queryM].toLowerCase()}.`
 					};
 
 				const description = results
@@ -243,7 +240,7 @@ export default class Reports extends Command {
 				const embed = new EmbedBuilder()
 					.setColor("NotQuiteBlack")
 					.setAuthor({
-						name: `${interaction.guild.name} - ${titleMap[sortMethod]}`,
+						name: `${interaction.guild.name} - ${titleMap[queryM]}`,
 						iconURL: interaction.guild.iconURL() ?? undefined
 					})
 					.setDescription(description)
