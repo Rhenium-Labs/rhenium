@@ -3,12 +3,15 @@ import {
 	ApplicationCommandOptionType,
 	ApplicationCommandType,
 	ApplicationIntegrationType,
+	EmbedBuilder,
 	InteractionContextType,
 	MessageFlags,
-	PermissionFlagsBits
+	PermissionFlagsBits,
+	userMention
 } from "discord.js";
 
 import { kysely } from "@root/index";
+import { ReportStatus } from "@repo/db";
 import { RawGuildConfig } from "@repo/config";
 
 import Command, {
@@ -72,6 +75,33 @@ export default class Reports extends Command {
 							description: "Filter reports by a specific user.",
 							type: ApplicationCommandOptionType.User,
 							required: false
+						}
+					]
+				},
+				{
+					name: ReportSubcommand.Leaderboard,
+					description: "View report system leaderboard.",
+					type: ApplicationCommandOptionType.Subcommand,
+					options: [
+						{
+							name: "sort",
+							description: "Sorting method for the stats.",
+							type: ApplicationCommandOptionType.String,
+							required: true,
+							choices: [
+								{
+									name: "Most Accurate Reporter",
+									value: ReportSortMethod.Accuracy
+								},
+								{
+									name: "Most Active Reporter",
+									value: ReportSortMethod.Activity
+								},
+								{
+									name: "Most Reported Users",
+									value: ReportSortMethod.Reported
+								}
+							]
 						}
 					]
 				}
@@ -169,6 +199,58 @@ export default class Reports extends Command {
 				if (!result.ok) return { error: result.message };
 				return result.data;
 			}
+
+			case ReportSubcommand.Leaderboard: {
+				const sortMethod = interaction.options.getString(
+					"sort",
+					true
+				) as ReportSortMethod;
+
+				const groupByColumn =
+					sortMethod === ReportSortMethod.Reported ? "author_id" : "reported_by";
+
+				let query = kysely
+					.selectFrom("MessageReport")
+					.select(eb => [groupByColumn, eb.fn.countAll<number>().as("count")])
+					.where("guild_id", "=", interaction.guild.id)
+					.groupBy(groupByColumn)
+					.orderBy("count", "desc")
+					.limit(5);
+
+				if (sortMethod === ReportSortMethod.Accuracy) {
+					query = query.where("status", "=", ReportStatus.Resolved);
+				}
+
+				const titleMap: Record<ReportSortMethod, string> = {
+					[ReportSortMethod.Accuracy]: "Most Accurate Reporters",
+					[ReportSortMethod.Activity]: "Most Active Reporters",
+					[ReportSortMethod.Reported]: "Most Reported Users"
+				};
+				const results = await query.execute();
+
+				if (results.length === 0)
+					return {
+						error: `There is no sufficient data to display the ${titleMap[sortMethod].toLowerCase()}.`
+					};
+
+				const description = results
+					.map((row, i) => {
+						const userId = row[groupByColumn] as string;
+						return `${i + 1}. ${userMention(userId)} (\`${userId}\`) — **${Number(row.count)}** ${Number(row.count) === 1 ? "report" : "reports"}`;
+					})
+					.join("\n");
+
+				const embed = new EmbedBuilder()
+					.setColor("NotQuiteBlack")
+					.setAuthor({
+						name: `${interaction.guild.name} - ${titleMap[sortMethod]}`,
+						iconURL: interaction.guild.iconURL() ?? undefined
+					})
+					.setDescription(description)
+					.setTimestamp();
+
+				return { embeds: [embed] };
+			}
 		}
 	}
 }
@@ -176,5 +258,12 @@ export default class Reports extends Command {
 enum ReportSubcommand {
 	Blacklist = "blacklist",
 	Unblacklist = "unblacklist",
-	Search = "search"
+	Search = "search",
+	Leaderboard = "leaderboard"
+}
+
+enum ReportSortMethod {
+	Accuracy = "accuracy",
+	Activity = "activity",
+	Reported = "reported"
 }
