@@ -87,7 +87,8 @@ const banRequestConfigSchema = z.object({
 
 	notify_target: z.boolean().default(true),
 	disable_reason_field: z.boolean().default(false),
-	additional_info: z.string().nullable().default(null)
+	additional_info: z.string().nullable().default(null),
+	delete_message_seconds: z.number().nullable().default(null)
 });
 
 export type BanRequestConfig = z.infer<typeof banRequestConfigSchema>;
@@ -188,7 +189,8 @@ export const DEFAULT_GUILD_CONFIG: RawGuildConfig = {
 		notify_roles: [],
 		notify_target: true,
 		disable_reason_field: false,
-		additional_info: null
+		additional_info: null,
+		delete_message_seconds: null
 	},
 	content_filter: {
 		enabled: true,

@@ -13,6 +13,8 @@ import {
 	roleMention
 } from "discord.js";
 
+import ms from "ms";
+
 import { Detector } from "@repo/db";
 import { kysely, client } from "@root/index";
 import { ContentFilterVerbosity, DetectorMode, UserPermission } from "@repo/config";
@@ -23,6 +25,7 @@ import Command, {
 	type CommandExecutionContext
 } from "@commands/Command";
 import GuildConfig from "@config/GuildConfig";
+
 
 export default class Config extends Command {
 	constructor() {
@@ -301,7 +304,30 @@ export default class Config extends Command {
 								}
 							]
 						},
-
+						{
+							name: ConfigSubcommand.SetMessageDeleteLimit,
+							description:
+								"Delete messages sent by the target user in the past <duration> <unit> when a ban request is approved. Set to 0 to disable.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "duration",
+									description:
+										"The amount of time to delete messages for.",
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									choices: [
+										{ name: "Disable", value: "0" },
+										{ name: "Previous hour", value: "1h" },
+										{ name: "Previous 6 hours", value: "6h" },
+										{ name: "Previous 12 hours", value: "12h" },
+										{ name: "Previous 24 hours", value: "24h" },
+										{ name: "Previous 3 days", value: "3d" },
+										{ name: "Previous 7 days", value: "7d" }
+									]
+								}
+							]
+						},
 						{
 							name: ConfigSubcommand.ToggleNotifDM,
 							description:
@@ -870,6 +896,8 @@ export default class Config extends Command {
 						return Config._disableRequestReasonField(interaction, config);
 					case ConfigSubcommand.SetAdditionalInfo:
 						return Config._setRequestAdditionalInfo(interaction, config);
+					case ConfigSubcommand.SetMessageDeleteLimit:
+						return Config._setRequestMessageDeleteLimit(interaction, config);
 					case ConfigSubcommand.SetReviewChannel:
 						return Config._setRequestReviewChannel(interaction, config);
 					case ConfigSubcommand.AutomaticallyTimeout:
@@ -2463,6 +2491,65 @@ export default class Config extends Command {
 		};
 	}
 
+	private static async _setRequestMessageDeleteLimit(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<ResponseData<"interaction">> {
+		const rawDuration = interaction.options.getString("duration", true);
+		const config = configClass.data.ban_requests;
+
+		if (rawDuration === "0") {
+			if (!config.delete_message_seconds)
+				return {
+					error: "Message deletion is already disabled for ban requests."
+				};
+
+			const updatedConfig = {
+				...configClass.data,
+				ban_requests: {
+					...configClass.data.ban_requests,
+					delete_message_seconds: null
+				}
+			};
+
+			await kysely
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
+				.where("id", "=", interaction.guild.id)
+				.execute();
+
+			return {
+				content: "Successfully disabled message deletion for ban requests."
+			};
+		}
+
+		// Discord only accepts seconds.
+		const duration = Math.floor(ms(rawDuration as ms.StringValue) / 1000);
+
+		if (config.delete_message_seconds === duration)
+			return {
+				error: `The message deletion limit for ban requests is already set to ${rawDuration}.`
+			};
+
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				delete_message_seconds: duration
+			}
+		};
+
+		await kysely
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guild.id)
+			.execute();
+
+		return {
+			content: `Successfully set the message deletion limit for ban requests to ${rawDuration}.`
+		};
+	}
+
 	private static async _disableRequestReasonField(
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
@@ -2926,6 +3013,7 @@ const ConfigSubcommand = {
 	ToggleDetector: "toggle-detector",
 	ToggleNotifDM: "toggle-notif-dm",
 	DisableReasonField: "disable-reason-field",
+	SetMessageDeleteLimit: "set-message-delete-limit",
 	SetAdditionalInfo: "set-additional-info",
 	SetDetectorMode: "set-detector-mode",
 	SetVerbosity: "set-verbosity",

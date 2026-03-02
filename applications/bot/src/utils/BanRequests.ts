@@ -345,7 +345,9 @@ export default class BanRequestUtils {
 
 				const banned = await interaction.guild.bans
 					.create(targetUser, {
-						reason: `[${request.id}] Ban request accepted by ${interaction.user.tag} (${interaction.user.id}) - ${request.reason}`
+						reason: `[${request.id}] Ban request accepted by ${interaction.user.tag} (${interaction.user.id}) - ${request.reason}`,
+						deleteMessageSeconds:
+							config.data.ban_requests.delete_message_seconds ?? undefined
 					})
 					.catch(() => null);
 
@@ -369,7 +371,7 @@ export default class BanRequestUtils {
 					};
 				}
 
-				if (request.expires_at) {
+				if (request.expires_at)
 					kysely
 						.insertInto("TemporaryBan")
 						.values({
@@ -383,7 +385,6 @@ export default class BanRequestUtils {
 							})
 						)
 						.execute();
-				}
 
 				// prettier-ignore
 				BanRequestUtils
