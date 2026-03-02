@@ -376,7 +376,7 @@ export default class Highlights extends Command {
 				})
 				.setFields([
 					{
-						name: `Highlight in ${message.channel}`,
+						name: `Highlight in ${message.channel} from ${message.author.toString()}`,
 						value: formattedContent
 					},
 					{
