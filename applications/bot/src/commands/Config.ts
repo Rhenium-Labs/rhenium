@@ -301,6 +301,52 @@ export default class Config extends Command {
 								}
 							]
 						},
+
+						{
+							name: ConfigSubcommand.ToggleNotifDM,
+							description:
+								"Toggle whether to DM the target if the request is approved.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "value",
+									description: "True to enable, false to disable.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.SetAdditionalInfo,
+							description:
+								"Set additional info to include in ban request notifications.",
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "info",
+									description:
+										"The additional info. Use 'none' to clear.",
+									type: ApplicationCommandOptionType.String,
+									required: true,
+									max_length: 1024,
+									min_length: 1
+								}
+							]
+						},
+						{
+							name: ConfigSubcommand.DisableReasonField,
+							description: `Disable the reason field in the ban request notification DM embed.`,
+							type: ApplicationCommandOptionType.Subcommand,
+							options: [
+								{
+									name: "value",
+									description:
+										"True to hide the reason field, false to show it.",
+									type: ApplicationCommandOptionType.Boolean,
+									required: true
+								}
+							]
+						},
 						{
 							name: ConfigSubcommand.SetReviewChannel,
 							description: "Set the review channel for ban requests.",
@@ -818,6 +864,12 @@ export default class Config extends Command {
 				switch (subcommand) {
 					case ConfigSubcommand.Toggle:
 						return Config._toggleRequests(interaction, config);
+					case ConfigSubcommand.ToggleNotifDM:
+						return Config._toggleRequestNotifDM(interaction, config);
+					case ConfigSubcommand.DisableReasonField:
+						return Config._disableRequestReasonField(interaction, config);
+					case ConfigSubcommand.SetAdditionalInfo:
+						return Config._setRequestAdditionalInfo(interaction, config);
 					case ConfigSubcommand.SetReviewChannel:
 						return Config._setRequestReviewChannel(interaction, config);
 					case ConfigSubcommand.AutomaticallyTimeout:
@@ -2379,6 +2431,103 @@ export default class Config extends Command {
 		};
 	}
 
+	private static async _toggleRequestNotifDM(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<ResponseData<"interaction">> {
+		const value = interaction.options.getBoolean("value", true);
+		const config = configClass.data.ban_requests;
+
+		if (config.notify_target === value) {
+			return {
+				error: `Notifications on DM are already ${value ? "enabled" : "disabled"}.`
+			};
+		}
+
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				notify_target: value
+			}
+		};
+
+		await kysely
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guild.id)
+			.execute();
+
+		return {
+			content: `Successfully ${value ? "enabled" : "disabled"} notifications on DM for ban requests.`
+		};
+	}
+
+	private static async _disableRequestReasonField(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<ResponseData<"interaction">> {
+		const value = interaction.options.getBoolean("value", true);
+		const config = configClass.data.ban_requests;
+
+		if (config.disable_reason_field === value)
+			return {
+				error: `The reason field for ban requests is already ${value ? "disabled" : "enabled"}.`
+			};
+
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				disable_reason_field: value
+			}
+		};
+
+		await kysely
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guild.id)
+			.execute();
+
+		return {
+			content: `Successfully ${value ? "disabled" : "enabled"} the reason field for ban requests.`
+		};
+	}
+
+	private static async _setRequestAdditionalInfo(
+		interaction: ChatInputCommandInteraction<"cached">,
+		configClass: GuildConfig
+	): Promise<ResponseData<"interaction">> {
+		const rawInfo = interaction.options.getString("info", true);
+		const config = configClass.data.ban_requests;
+
+		if (config.additional_info === rawInfo) {
+			return {
+				error: `The additional info for ban requests is already set to: ${rawInfo}`
+			};
+		}
+
+		const info = rawInfo.toLowerCase() === "none" ? null : rawInfo;
+
+		const updatedConfig = {
+			...configClass.data,
+			ban_requests: {
+				...configClass.data.ban_requests,
+				additional_info: info
+			}
+		};
+
+		await kysely
+			.updateTable("Guild")
+			.set({ config: updatedConfig })
+			.where("id", "=", interaction.guild.id)
+			.execute();
+
+		return {
+			content: `Successfully ${info ? "set" : "cleared"} the additional info for ban requests.`
+		};
+	}
+
 	private static async _toggleAutomaticallyTimeout(
 		interaction: ChatInputCommandInteraction<"cached">,
 		configClass: GuildConfig
@@ -2775,6 +2924,9 @@ type ConfigSubcommandGroup = (typeof ConfigSubcommandGroup)[keyof typeof ConfigS
 const ConfigSubcommand = {
 	Toggle: "toggle",
 	ToggleDetector: "toggle-detector",
+	ToggleNotifDM: "toggle-notif-dm",
+	DisableReasonField: "disable-reason-field",
+	SetAdditionalInfo: "set-additional-info",
 	SetDetectorMode: "set-detector-mode",
 	SetVerbosity: "set-verbosity",
 	AddImmuneRole: "add-immune-role",

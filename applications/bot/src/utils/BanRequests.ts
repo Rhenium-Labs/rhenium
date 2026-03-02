@@ -9,6 +9,7 @@ import {
 	ButtonStyle,
 	Colors,
 	EmbedBuilder,
+	Message,
 	roleMention,
 	time,
 	userMention,
@@ -320,17 +321,27 @@ export default class BanRequestUtils {
 						message: `The target user is already banned. Unban them before accepting this request.`
 					};
 
+				const notification = await BanRequestUtils._notifyUser(
+					interaction,
+					targetUser,
+					config,
+					request
+				);
+
 				const banned = await interaction.guild.bans
 					.create(targetUser, {
 						reason: `[${request.id}] Ban request accepted by ${interaction.user.tag} (${interaction.user.id}) - ${request.reason}`
 					})
 					.catch(() => null);
 
-				if (!banned)
+				if (!banned) {
+					notification?.delete().catch(() => null);
+
 					return {
 						ok: false,
 						message: `Failed to ban the target user. Do I have the necessary permissions?`
 					};
+				}
 
 				if (request.expires_at) {
 					kysely
@@ -443,6 +454,51 @@ export default class BanRequestUtils {
 			content,
 			allowedMentions: { users: [request.requested_by] }
 		});
+	}
+
+	/**
+	 * Notifies the target user about the ban if the configuration allows it.
+	 *
+	 * @param interaction The interaction that triggered the action.
+	 * @param target The target user of the ban request.
+	 * @param config The guild configuration.
+	 * @param request The ban request.
+	 * @returns void
+	 */
+
+	private static async _notifyUser(
+		interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
+		target: User,
+		config: GuildConfig,
+		request: BanRequest
+	): Promise<Message<false> | null> {
+		if (!config.data.ban_requests.notify_target) return null;
+
+		const embed = new EmbedBuilder()
+			.setColor(Colors.Red)
+			.setAuthor({
+				name: interaction.guild.name,
+				iconURL: interaction.guild.iconURL() ?? undefined
+			})
+			.setTitle(`You've been banned from ${interaction.guild.name}`)
+			.setFooter({ text: `Case ID: #${request.id}` })
+			.setTimestamp();
+
+		if (request.reason && !config.data.ban_requests.disable_reason_field) {
+			embed.addFields({
+				name: "Reason",
+				value: request.reason
+			});
+		}
+
+		if (config.data.ban_requests.additional_info) {
+			embed.addFields({
+				name: "Additional Information",
+				value: config.data.ban_requests.additional_info
+			});
+		}
+
+		return target.send({ embeds: [embed] }).catch(() => null);
 	}
 
 	/**

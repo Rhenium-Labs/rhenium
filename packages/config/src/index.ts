@@ -83,7 +83,11 @@ const banRequestConfigSchema = z.object({
 	enforce_deny_reason: z.boolean().default(true),
 
 	immune_roles: z.array(z.string()).default([]),
-	notify_roles: z.array(z.string()).default([])
+	notify_roles: z.array(z.string()).default([]),
+
+	notify_target: z.boolean().default(true),
+	disable_reason_field: z.boolean().default(false),
+	additional_info: z.string().nullable().default(null)
 });
 
 export type BanRequestConfig = z.infer<typeof banRequestConfigSchema>;
@@ -181,7 +185,10 @@ export const DEFAULT_GUILD_CONFIG: RawGuildConfig = {
 		enforce_submission_reason: true,
 		enforce_deny_reason: true,
 		immune_roles: [],
-		notify_roles: []
+		notify_roles: [],
+		notify_target: true,
+		disable_reason_field: false,
+		additional_info: null
 	},
 	content_filter: {
 		enabled: true,
