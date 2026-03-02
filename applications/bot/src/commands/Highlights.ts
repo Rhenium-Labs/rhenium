@@ -334,6 +334,7 @@ export default class Highlights extends Command {
 			url: message.url,
 			content: message.content,
 			stickerId: null,
+			authorId: message.author.id,
 			createdAt: message.createdAt
 		});
 
@@ -376,7 +377,7 @@ export default class Highlights extends Command {
 				})
 				.setFields([
 					{
-						name: `Highlight in ${message.channel} from ${message.author.toString()}`,
+						name: `Highlight in ${message.channel}`,
 						value: formattedContent
 					},
 					{
