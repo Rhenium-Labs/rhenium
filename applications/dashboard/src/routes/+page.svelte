@@ -28,43 +28,40 @@
 
 <style>
 	.hero-logo {
-		animation: logo-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-		will-change: transform, filter, opacity;
+		animation: logo-in 0.35s ease-out both;
 	}
 
 	.hero-subtitle {
-		animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
-		will-change: transform, filter, opacity;
+		animation: fade-up 0.35s ease-out 0.25s both;
 	}
 
 	.hero-button {
-		animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
-		will-change: transform, filter, opacity;
+		animation: fade-up 0.35s ease-out 0.35s both;
 	}
 
 	@keyframes logo-in {
 		0% {
 			opacity: 0;
-			transform: scale(1.4) translateY(80px);
-			filter: blur(12px);
+			transform: scale(1.35) translateY(60px);
+			filter: blur(10px);
 		}
 		100% {
 			opacity: 1;
-			transform: none;
-			filter: blur(0);
+			transform: scale(1) translateY(0);
+			filter: blur(0px);
 		}
 	}
 
 	@keyframes fade-up {
 		0% {
 			opacity: 0;
-			transform: translateY(24px);
+			transform: translateY(20px);
 			filter: blur(6px);
 		}
 		100% {
 			opacity: 1;
-			transform: none;
-			filter: blur(0);
+			transform: translateY(0);
+			filter: blur(0px);
 		}
 	}
 </style>
