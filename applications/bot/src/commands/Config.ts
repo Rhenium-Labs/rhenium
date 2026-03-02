@@ -26,7 +26,6 @@ import Command, {
 } from "@commands/Command";
 import GuildConfig from "@config/GuildConfig";
 
-
 export default class Config extends Command {
 	constructor() {
 		super({
@@ -307,7 +306,7 @@ export default class Config extends Command {
 						{
 							name: ConfigSubcommand.SetMessageDeleteLimit,
 							description:
-								"Delete messages sent by the target user in the past <duration> <unit> when a ban request is approved. Set to 0 to disable.",
+								"Delete messages sent by the target upon request approval.",
 							type: ApplicationCommandOptionType.Subcommand,
 							options: [
 								{
