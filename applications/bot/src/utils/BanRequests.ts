@@ -328,6 +328,21 @@ export default class BanRequestUtils {
 					request
 				);
 
+				// Mark the request as accepted BEFORE banning so that the
+				// GuildBanAdd event won't pick it up as a pending request
+				// and log a duplicate "AutoResolved" entry.
+				const data: BanRequestUpdate = {
+					status: RequestStatus.Accepted,
+					resolved_by: interaction.user.id,
+					resolved_at: new Date()
+				};
+
+				await kysely
+					.updateTable("BanRequest")
+					.set(data)
+					.where("id", "=", request.id)
+					.execute();
+
 				const banned = await interaction.guild.bans
 					.create(targetUser, {
 						reason: `[${request.id}] Ban request accepted by ${interaction.user.tag} (${interaction.user.id}) - ${request.reason}`
@@ -336,6 +351,17 @@ export default class BanRequestUtils {
 
 				if (!banned) {
 					notification?.delete().catch(() => null);
+
+					// Revert the status since the ban failed.
+					kysely
+						.updateTable("BanRequest")
+						.set({
+							status: RequestStatus.Pending,
+							resolved_by: null,
+							resolved_at: null
+						})
+						.where("id", "=", request.id)
+						.execute();
 
 					return {
 						ok: false,
@@ -371,18 +397,6 @@ export default class BanRequestUtils {
 						action: action.toString()
 					}
 				});
-
-				const data: BanRequestUpdate = {
-					status: RequestStatus.Accepted,
-					resolved_by: interaction.user.id,
-					resolved_at: new Date()
-				};
-
-				await kysely
-					.updateTable("BanRequest")
-					.set(data)
-					.where("id", "=", request.id)
-					.execute();
 
 				return { ok: true };
 			}
