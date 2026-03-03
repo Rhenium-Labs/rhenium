@@ -2,6 +2,8 @@ type LogLevel = "info" | "warn" | "error";
 
 type LogMetadata = Record<string, unknown>;
 
+// What is going on with git.
+
 function safeError(error: unknown): LogMetadata {
 	if (error instanceof Error) {
 		return {

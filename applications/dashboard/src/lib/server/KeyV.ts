@@ -3,6 +3,8 @@ interface CacheEntry<T> {
 	expiresAt: number;
 }
 
+// What is going on with git.
+
 export default class KeyV {
 	/** Map of cache entries. */
 	private static _cache = new Map<string, CacheEntry<unknown>>();
