@@ -44,6 +44,3 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Configs
 cfg.global.yml
-
-# Unfinished stuff
-applications/dashboard/src/routes/mock/
