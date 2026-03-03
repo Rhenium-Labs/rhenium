@@ -8,3 +8,13 @@ services:
                - ./applications/bot/.env
           volumes:
                - ./applications/bot/cfg.global.yml:/rhenium/applications/bot/cfg.global.yml
+
+     dashboard:
+          container_name: rhenium_dashboard
+          build:
+               context: .
+               dockerfile: ./applications/dashboard/Dockerfile
+          env_file:
+               - ./applications/dashboard/.env
+          ports:
+               - "${HOST_PORT:-3000}:3000"
