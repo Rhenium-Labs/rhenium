@@ -1,5 +1,7 @@
-import { Detector } from "@repo/db";
+import { Detector } from "@repo/db/enums";
 import { z } from "zod";
+
+export { Detector };
 
 export enum UserPermission {
 	ReviewMessageReports = "ReviewMessageReports",
@@ -9,12 +11,12 @@ export enum UserPermission {
 	UseQuickPurge = "UseQuickPurge"
 }
 
-const permissionScopeSchema = z.object({
+export const PERMISSION_SCOPE_SCHEMA = z.object({
 	role_id: z.string().nonempty(),
 	allowed_permissions: z.array(z.enum(UserPermission)).default([])
 });
 
-export type PermissionScope = z.infer<typeof permissionScopeSchema>;
+export type PermissionScope = z.infer<typeof PERMISSION_SCOPE_SCHEMA>;
 
 export enum LoggingEvent {
 	MessageReportReviewed = "MessageReportReviewed",
@@ -26,7 +28,7 @@ export enum LoggingEvent {
 	QuickMuteExecuted = "QuickMuteExecuted"
 }
 
-const loggingWebhookSchema = z.object({
+export const LOGGING_WEBHOOK_SCHEMA = z.object({
 	id: z.string().nonempty(),
 	url: z.string().nonempty(),
 	token: z.string().nonempty(),
@@ -34,7 +36,7 @@ const loggingWebhookSchema = z.object({
 	events: z.array(z.enum(LoggingEvent)).default([])
 });
 
-export type LoggingWebhook = z.infer<typeof loggingWebhookSchema>;
+export type LoggingWebhook = z.infer<typeof LOGGING_WEBHOOK_SCHEMA>;
 
 export enum ChannelScopingType {
 	/** Actions can only be used in these channels. */
@@ -43,18 +45,18 @@ export enum ChannelScopingType {
 	Exclude = 1
 }
 
-const channelScopingSchema = z.object({
+export const CHANNEL_SCOPING_SCHEMA = z.object({
 	channel_id: z.string().nonempty(),
 	type: z.enum(ChannelScopingType)
 });
 
-export type RawChannelScoping = z.infer<typeof channelScopingSchema>;
+export type RawChannelScoping = z.infer<typeof CHANNEL_SCOPING_SCHEMA>;
 export type ParsedChannelScoping = {
 	included_channels: string[];
 	excluded_channels: string[];
 };
 
-const messageReportConfigSchema = z.object({
+export const MESSAGE_REPORT_CONFIG_SCHEMA = z.object({
 	enabled: z.boolean().default(true),
 	webhook_url: z.string().nullable().optional(),
 	webhook_channel: z.string().nullable().optional(),
@@ -65,15 +67,15 @@ const messageReportConfigSchema = z.object({
 	immune_roles: z.array(z.string()).default([]),
 	notify_roles: z.array(z.string()).default([]),
 	blacklisted_users: z.array(z.string()).default([]),
-	placeholder_reason: z.string().nullable(),
+	placeholder_reason: z.string().max(1024).nullable(),
 
 	enforce_member_in_guild: z.boolean().default(true),
 	enforce_report_reason: z.boolean().default(true)
 });
 
-export type MessageReportConfig = z.infer<typeof messageReportConfigSchema>;
+export type MessageReportConfig = z.infer<typeof MESSAGE_REPORT_CONFIG_SCHEMA>;
 
-const banRequestConfigSchema = z.object({
+export const BAN_REQUEST_CONFIG_SCHEMA = z.object({
 	enabled: z.boolean().default(true),
 	webhook_url: z.string().nullable().optional(),
 	webhook_channel: z.string().nullable().optional(),
@@ -91,7 +93,7 @@ const banRequestConfigSchema = z.object({
 	delete_message_seconds: z.number().nullable().default(null)
 });
 
-export type BanRequestConfig = z.infer<typeof banRequestConfigSchema>;
+export type BanRequestConfig = z.infer<typeof BAN_REQUEST_CONFIG_SCHEMA>;
 
 export enum DetectorMode {
 	Lenient = "Lenient",
@@ -105,7 +107,7 @@ export enum ContentFilterVerbosity {
 	Verbose = "Verbose"
 }
 
-const contentFilterConfigSchema = z.object({
+export const CONTENT_FILTER_CONFIG_SCHEMA = z.object({
 	enabled: z.boolean().default(true),
 	webhook_url: z.string().nullable().optional(),
 	use_native_automod: z.boolean().default(false),
@@ -117,46 +119,46 @@ const contentFilterConfigSchema = z.object({
 	immune_roles: z.array(z.string()).default([]),
 	notify_roles: z.array(z.string()).default([]),
 
-	channel_scoping: z.array(channelScopingSchema).default([]),
+	channel_scoping: z.array(CHANNEL_SCOPING_SCHEMA).default([]),
 
 	ocr_filter_keywords: z.array(z.string()).default([]),
 	ocr_filter_regex: z.array(z.string()).default([])
 });
 
-export type ContentFilterConfig = z.infer<typeof contentFilterConfigSchema>;
+export type ContentFilterConfig = z.infer<typeof CONTENT_FILTER_CONFIG_SCHEMA>;
 
-const highlightConfigSchema = z.object({
+export const HIGHLIGHT_CONFIG_SCHEMA = z.object({
 	enabled: z.boolean().default(true),
 	max_patterns: z.number().min(1).max(30).default(15)
 });
 
-export type HighlightConfig = z.infer<typeof highlightConfigSchema>;
+export type HighlightConfig = z.infer<typeof HIGHLIGHT_CONFIG_SCHEMA>;
 
-const quickMuteConfigSchema = z.object({
+export const QUICK_MUTE_CONFIG_SCHEMA = z.object({
 	enabled: z.boolean().default(true),
 	purge_limit: z.number().min(2).max(500).default(100),
-	channel_scoping: z.array(channelScopingSchema).default([])
+	channel_scoping: z.array(CHANNEL_SCOPING_SCHEMA).default([])
 });
 
-export type QuickMuteConfig = z.infer<typeof quickMuteConfigSchema>;
+export type QuickMuteConfig = z.infer<typeof QUICK_MUTE_CONFIG_SCHEMA>;
 
-const quickPurgeConfigSchema = z.object({
+export const QUICK_PURGE_CONFIG_SCHEMA = z.object({
 	enabled: z.boolean().default(true),
 	max_limit: z.number().min(2).max(500).default(100),
-	channel_scoping: z.array(channelScopingSchema).default([])
+	channel_scoping: z.array(CHANNEL_SCOPING_SCHEMA).default([])
 });
 
-export type QuickPurgeConfig = z.infer<typeof quickPurgeConfigSchema>;
+export type QuickPurgeConfig = z.infer<typeof QUICK_PURGE_CONFIG_SCHEMA>;
 
 export const GUILD_CONFIG_SCHEMA = z.object({
-	message_reports: messageReportConfigSchema,
-	ban_requests: banRequestConfigSchema,
-	content_filter: contentFilterConfigSchema,
-	highlights: highlightConfigSchema,
-	quick_mutes: quickMuteConfigSchema,
-	quick_purges: quickPurgeConfigSchema,
-	logging_webhooks: z.array(loggingWebhookSchema).default([]),
-	permission_scopes: z.array(permissionScopeSchema).default([])
+	message_reports: MESSAGE_REPORT_CONFIG_SCHEMA,
+	ban_requests: BAN_REQUEST_CONFIG_SCHEMA,
+	content_filter: CONTENT_FILTER_CONFIG_SCHEMA,
+	highlights: HIGHLIGHT_CONFIG_SCHEMA,
+	quick_mutes: QUICK_MUTE_CONFIG_SCHEMA,
+	quick_purges: QUICK_PURGE_CONFIG_SCHEMA,
+	logging_webhooks: z.array(LOGGING_WEBHOOK_SCHEMA).default([]),
+	permission_scopes: z.array(PERMISSION_SCOPE_SCHEMA).default([])
 });
 
 export type RawGuildConfig = z.infer<typeof GUILD_CONFIG_SCHEMA>;

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { goto, invalidateAll } from "$app/navigation";
+	import { ChevronDown, ChevronRight, Plus, Loader2, LogOut } from "@lucide/svelte";
 
 	import type { PageData } from "./$types";
 
@@ -95,21 +96,11 @@
 						class="h-6 w-6 rounded-full"
 					/>
 					<span class="font-medium text-white">{getDisplayName(data.session)}</span>
-					<svg
+					<ChevronDown
 						class="h-4 w-4 text-zinc-500 transition-transform {showLogoutMenu
 							? 'rotate-180'
 							: ''}"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M19 9l-7 7-7-7"
-						/>
-					</svg>
+					/>
 				</button>
 
 				{#if showLogoutMenu}
@@ -123,19 +114,7 @@
 							href="/api/auth/logout"
 							class="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white"
 						>
-							<svg
-								class="h-4 w-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-								/>
-							</svg>
+							<LogOut class="h-4 w-4" />
 							Log out
 						</a>
 					</div>
@@ -151,21 +130,7 @@
 					? 'translate-x-0 opacity-100'
 					: 'translate-x-full opacity-0'}"
 			>
-				<svg class="h-8 w-8 animate-spin text-zinc-500" fill="none" viewBox="0 0 24 24">
-					<circle
-						class="opacity-25"
-						cx="12"
-						cy="12"
-						r="10"
-						stroke="currentColor"
-						stroke-width="2"
-					></circle>
-					<path
-						class="opacity-75"
-						fill="currentColor"
-						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-					></path>
-				</svg>
+				<Loader2 class="h-8 w-8 animate-spin text-zinc-500" />
 			</div>
 
 			<!-- Content (slides out to left when navigating) -->
@@ -177,25 +142,7 @@
 				{#await data.servers}
 					<!-- Loading State -->
 					<div class="flex h-full items-center justify-center">
-						<svg
-							class="h-8 w-8 animate-spin text-zinc-500"
-							fill="none"
-							viewBox="0 0 24 24"
-						>
-							<circle
-								class="opacity-25"
-								cx="12"
-								cy="12"
-								r="10"
-								stroke="currentColor"
-								stroke-width="2"
-							></circle>
-							<path
-								class="opacity-75"
-								fill="currentColor"
-								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-							></path>
-						</svg>
+						<Loader2 class="h-8 w-8 animate-spin text-zinc-500" />
 					</div>
 				{:then servers}
 					{@const _ = onServersLoaded()}
@@ -230,19 +177,9 @@
 										{server.name}
 									</span>
 
-									<svg
+									<ChevronRight
 										class="h-5 w-5 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M9 5l7 7-7 7"
-										/>
-									</svg>
+									/>
 								</a>
 							{:else}
 								<a
@@ -274,19 +211,9 @@
 										{server.name}
 									</span>
 
-									<svg
+									<Plus
 										class="h-5 w-5 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M12 4v16m8-8H4"
-										/>
-									</svg>
+									/>
 								</a>
 							{/if}
 						{:else}

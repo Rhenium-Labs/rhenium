@@ -31,6 +31,8 @@
 		"typescript": "5.9.3"
 	},
 	"dependencies": {
+		"@trpc/client": "^11.0.0",
+		"@trpc/server": "^11.0.0",
 		"dotenv": "^17.3.1",
 		"kysely": "^0.28.11",
 		"kysely-postgres-js": "^3.0.0",
@@ -39,6 +41,7 @@
 		"prettier-plugin-tailwindcss": "^0.7.2",
 		"prisma": "^7.4.1",
 		"prisma-kysely": "^3.1.0",
+		"superjson": "^2.2.6",
 		"zod": "^4.3.6",
 		"zod-validation-error": "^5.0.0"
 	}

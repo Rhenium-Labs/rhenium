@@ -1,4 +1,4 @@
-import { error, redirect } from "@sveltejs/kit";
+import { error, isHttpError, isRedirect, redirect } from "@sveltejs/kit";
 import type { RawGuildConfig } from "@repo/config";
 import type { LayoutServerLoad } from "./$types";
 import {
@@ -9,6 +9,7 @@ import {
 } from "$lib/server/Discord";
 import { kysely } from "$lib/server/Kysely";
 import { getAccessToken } from "$lib/server/Session";
+import Logger from "$lib/server/Logger";
 
 export const load: LayoutServerLoad = async ({ locals, params }) => {
 	if (!locals.session) {
@@ -75,11 +76,16 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 			}
 		};
 	} catch (err) {
-		if (err && typeof err === "object" && "status" in err) {
+		// Re-throw SvelteKit's own error/redirect responses
+		if (isHttpError(err) || isRedirect(err)) {
 			throw err;
 		}
 
 		console.error("Failed to load server:", err);
+		Logger.errorWithCause("Failed to load guild layout", err, {
+			guildId: params.id,
+			userId: locals.session?.userId ?? null
+		});
 		redirect(302, "/api/auth/logout");
 	}
 };

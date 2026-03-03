@@ -1,0 +1,14 @@
+{
+	"name": "@repo/trpc",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/index.ts",
+		"./client": "./src/client.ts",
+		"./router": "./src/router.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc",
+		"format": "prettier --write src/**/*.ts"
+	}
+}

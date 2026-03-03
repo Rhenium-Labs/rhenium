@@ -1,7 +1,8 @@
-import { redirect, type Handle } from "@sveltejs/kit";
+import { redirect, type Handle, type HandleServerError } from "@sveltejs/kit";
 
 import { getSession } from "$lib/server/Session";
 import { PUBLIC_BASE_URL } from "$env/static/public";
+import Logger from "$lib/server/Logger";
 
 /** Routes that require authentication. */
 const PROTECTED_ROUTES = ["/servers"];
@@ -61,7 +62,14 @@ function buildCSP(): string {
 		.join("; ");
 }
 
+function getRequestId(request: Request): string {
+	return request.headers.get("x-request-id") ?? crypto.randomUUID();
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
+	const requestId = getRequestId(event.request);
+	event.locals.requestId = requestId;
+
 	// Load session for all requests
 	event.locals.session = await getSession(event.cookies);
 
@@ -84,8 +92,24 @@ export const handle: Handle = async ({ event, resolve }) => {
 		redirect(302, "/servers");
 	}
 
-	// Resolve the request
-	const response = await resolve(event);
+	const startedAt = Date.now();
+
+	let response: Response;
+	try {
+		// Resolve the request
+		response = await resolve(event);
+	} catch (error) {
+		Logger.errorWithCause("Unhandled error during request resolution", error, {
+			requestId,
+			method: event.request.method,
+			path: event.url.pathname,
+			search: event.url.search,
+			userId: event.locals.session?.userId ?? null
+		});
+		throw error;
+	}
+
+	response.headers.set("x-request-id", requestId);
 
 	// Apply security headers to all responses
 	for (const [header, value] of Object.entries(SECURITY_HEADERS)) {
@@ -104,5 +128,32 @@ export const handle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
+	if (response.status >= 500) {
+		Logger.error("Server returned 5xx response", {
+			requestId,
+			status: response.status,
+			method: event.request.method,
+			path: event.url.pathname,
+			durationMs: Date.now() - startedAt,
+			userId: event.locals.session?.userId ?? null
+		});
+	}
+
 	return response;
+};
+
+export const handleError: HandleServerError = ({ error, event, status, message }) => {
+	Logger.errorWithCause("SvelteKit handleError captured server error", error, {
+		requestId: event.locals.requestId,
+		status,
+		message,
+		method: event.request.method,
+		path: event.url.pathname,
+		search: event.url.search,
+		userId: event.locals.session?.userId ?? null
+	});
+
+	return {
+		message: "Internal Server Error"
+	};
 };

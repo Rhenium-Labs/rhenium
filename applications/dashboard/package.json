@@ -13,9 +13,11 @@
 		"format": "prettier --write src/**/*.{ts,svelte}"
 	},
 	"dependencies": {
-		"@repo/db": "workspace:*",
-		"@repo/config": "workspace:*",
 		"@discordjs/rest": "^2.6.0",
+		"@lucide/svelte": "^0.576.0",
+		"@repo/config": "workspace:*",
+		"@repo/db": "workspace:*",
+		"@repo/trpc": "workspace:*",
 		"discord-api-types": "^0.38.40",
 		"zod": "^4.3.6"
 	},
