@@ -23,4 +23,5 @@ RUN bun install
 
 # Run the bot.
 WORKDIR /rhenium/applications/bot
-CMD ["bun", "run", "src/index.ts"]
+EXPOSE 3000
+ENTRYPOINT ["bun", "run", "src/index.ts"]

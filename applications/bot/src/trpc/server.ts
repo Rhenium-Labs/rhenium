@@ -5,9 +5,6 @@ import type { TRPCContext } from "@repo/trpc";
 import Logger from "@utils/Logger";
 import { appRouter } from "./router";
 
-/** Port for the tRPC HTTP server. */
-const TRPC_PORT = parseInt(process.env.TRPC_PORT || "3001", 10);
-
 /** Shared secret for authenticating dashboard requests. */
 const TRPC_SECRET = process.env.TRPC_SECRET;
 
@@ -73,7 +70,7 @@ export function startTRPCServer(): void {
 	}
 
 	Bun.serve({
-		port: TRPC_PORT,
+		port: 3000,
 		fetch: async (req: Request) => {
 			const url = new URL(req.url);
 
@@ -117,5 +114,5 @@ export function startTRPCServer(): void {
 		}
 	});
 
-	Logger.info(`tRPC server listening on port ${TRPC_PORT}.`);
+	Logger.info(`tRPC server listening on port 3000.`);
 }
