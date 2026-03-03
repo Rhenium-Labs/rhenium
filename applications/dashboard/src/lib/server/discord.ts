@@ -6,8 +6,12 @@ import {
 	PermissionFlagsBits,
 	Routes
 } from "discord-api-types/v10";
-import { env, DISCORD_API_BASE, DISCORD_OAUTH_SCOPES } from "$lib/env";
-import { cache, CACHE_TTL } from "$lib/server/cache";
+
+import { PUBLIC_BASE_URL } from "$env/static/public";
+import { DISCORD_API_BASE, DISCORD_OAUTH_SCOPES } from "$lib/env";
+import { DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET } from "$env/static/private";
+
+import KeyV, { CACHE_TTL } from "$lib/server/KeyV";
 
 /**
  * Creates a REST client for OAuth Bearer token requests.
@@ -21,8 +25,8 @@ function createUserRest(accessToken: string): REST {
  */
 export function getOAuthUrl(state: string): string {
 	const params = new URLSearchParams({
-		client_id: env.DISCORD_CLIENT_ID,
-		redirect_uri: `${env.PUBLIC_BASE_URL}/api/auth/callback`,
+		client_id: DISCORD_CLIENT_ID,
+		redirect_uri: `${PUBLIC_BASE_URL}/api/auth/callback`,
 		response_type: "code",
 		scope: DISCORD_OAUTH_SCOPES.join(" "),
 		state
@@ -39,11 +43,11 @@ export async function exchangeCode(code: string): Promise<RESTPostOAuth2AccessTo
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body: new URLSearchParams({
-			client_id: env.DISCORD_CLIENT_ID,
-			client_secret: env.DISCORD_CLIENT_SECRET,
+			client_id: DISCORD_CLIENT_ID,
+			client_secret: DISCORD_CLIENT_SECRET,
 			grant_type: "authorization_code",
 			code,
-			redirect_uri: `${env.PUBLIC_BASE_URL}/api/auth/callback`
+			redirect_uri: `${PUBLIC_BASE_URL}/api/auth/callback`
 		})
 	});
 
@@ -80,7 +84,7 @@ export async function fetchUserGuilds(
 
 	// Check cache first (unless force refresh)
 	if (!forceRefresh) {
-		const cached = cache.get<RESTAPIPartialCurrentUserGuild[]>(cacheKey);
+		const cached = KeyV.get<RESTAPIPartialCurrentUserGuild[]>(cacheKey);
 		if (cached) return cached;
 	}
 
@@ -88,8 +92,7 @@ export async function fetchUserGuilds(
 	const guilds = (await rest.get(Routes.userGuilds())) as RESTAPIPartialCurrentUserGuild[];
 
 	// Cache the result
-	cache.set(cacheKey, guilds, CACHE_TTL.USER_GUILDS);
-
+	KeyV.set(cacheKey, guilds, CACHE_TTL.USER_GUILDS);
 	return guilds;
 }
 
@@ -97,7 +100,7 @@ export async function fetchUserGuilds(
  * Invalidate a user's guild cache (e.g., after logout).
  */
 export function invalidateUserGuildsCache(userId: string): void {
-	cache.delete(`guilds:${userId}`);
+	KeyV.delete(`guilds:${userId}`);
 }
 
 /**

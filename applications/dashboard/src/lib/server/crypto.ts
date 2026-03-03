@@ -6,7 +6,8 @@ import {
 	scryptSync,
 	createHmac
 } from "crypto";
-import { env } from "$lib/env";
+
+import { SESSION_SECRET } from "$env/static/private";
 
 /**
  * Encryption configuration.
@@ -23,7 +24,7 @@ const KEY_LENGTH = 32; // 256 bits for AES-256
  * The salt is included to derive different keys for different purposes.
  */
 function deriveKey(salt: Buffer, purpose: string): Buffer {
-	return scryptSync(`${env.SESSION_SECRET}:${purpose}`, salt, KEY_LENGTH);
+	return scryptSync(`${SESSION_SECRET}:${purpose}`, salt, KEY_LENGTH);
 }
 
 /**
@@ -40,14 +41,11 @@ export function encrypt(plaintext: string, purpose: string): string {
 	const iv = randomBytes(IV_LENGTH);
 
 	const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
-
 	const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
-
 	const authTag = cipher.getAuthTag();
 
 	// Combine: salt (16) + iv (12) + authTag (16) + ciphertext
 	const combined = Buffer.concat([salt, iv, authTag, encrypted]);
-
 	return combined.toString("base64url");
 }
 
@@ -127,5 +125,5 @@ export function generateSecureToken(bytes = 32): string {
  * Used for generating session token signatures.
  */
 export function hmacSign(data: string): string {
-	return createHmac("sha256", env.SESSION_SECRET).update(data).digest("hex");
+	return createHmac("sha256", SESSION_SECRET).update(data).digest("hex");
 }

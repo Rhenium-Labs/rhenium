@@ -10,12 +10,12 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check .",
-		"format": "prettier --write ."
+		"format": "prettier --write src/**/*.{ts,svelte}"
 	},
 	"dependencies": {
-		"@discordjs/rest": "^2.6.0",
 		"@repo/db": "workspace:*",
+		"@repo/config": "workspace:*",
+		"@discordjs/rest": "^2.6.0",
 		"discord-api-types": "^0.38.40",
 		"zod": "^4.3.6"
 	},

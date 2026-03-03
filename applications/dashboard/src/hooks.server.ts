@@ -1,7 +1,7 @@
-import type { Handle } from "@sveltejs/kit";
-import { redirect } from "@sveltejs/kit";
-import { getSession } from "$lib/server/session";
-import { env } from "$lib/env";
+import { redirect, type Handle } from "@sveltejs/kit";
+
+import { getSession } from "$lib/server/Session";
+import { PUBLIC_BASE_URL } from "$env/static/public";
 
 /** Routes that require authentication. */
 const PROTECTED_ROUTES = ["/servers"];
@@ -10,7 +10,7 @@ const PROTECTED_ROUTES = ["/servers"];
 const GUEST_ONLY_ROUTES = ["/"];
 
 /** Whether we're running in production (HTTPS). */
-const IS_PRODUCTION = env.PUBLIC_BASE_URL.startsWith("https");
+const IS_PRODUCTION = PUBLIC_BASE_URL.startsWith("https");
 
 /**
  * Security headers applied to all responses.

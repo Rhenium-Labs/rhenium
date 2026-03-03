@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
 	import { onMount } from "svelte";
+	import { goto, invalidateAll } from "$app/navigation";
+
 	import type { PageData } from "./$types";
 
 	let { data }: { data: PageData } = $props();
@@ -10,7 +11,6 @@
 	let pendingInviteRefresh = $state(false);
 	let serversLoaded = $state(false);
 
-	// Track visibility changes to refresh after bot invite
 	onMount(() => {
 		function handleVisibilityChange() {
 			if (document.visibilityState === "visible" && pendingInviteRefresh) {

@@ -65,6 +65,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@discordjs/rest": "^2.6.0",
+        "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "discord-api-types": "^0.38.40",
         "zod": "^4.3.6",

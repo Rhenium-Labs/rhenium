@@ -1,14 +1,14 @@
-import { redirect, error } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import {
 	fetchUserGuilds,
 	canManageGuild,
 	getAvatarUrl,
 	getGuildIconUrl
-} from "$lib/server/discord";
-import { db } from "$lib/server/db";
+} from "$lib/server/Discord";
+import { kysely } from "$lib/server/Kysely";
 import { getBotInviteUrl } from "$lib/env";
-import { getAccessToken } from "$lib/server/session";
+import { getAccessToken } from "$lib/server/Session";
 
 export interface ServerInfo {
 	id: string;
@@ -23,7 +23,7 @@ async function loadServers(accessToken: string, userId: string): Promise<ServerI
 	const userGuilds = await fetchUserGuilds(accessToken, userId);
 
 	// Get list of guild IDs where the bot is present
-	const botGuilds = await db.selectFrom("Guild").select("id").execute();
+	const botGuilds = await kysely.selectFrom("Guild").select("id").execute();
 	const botGuildIds = new Set(botGuilds.map(g => g.id));
 
 	// Only include servers where user has management permission

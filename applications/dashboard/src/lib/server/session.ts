@@ -1,7 +1,9 @@
-import { env, SESSION_COOKIE_NAME, SESSION_DURATION_MS } from "$lib/env";
-import { db } from "./db";
 import type { Cookies } from "@sveltejs/kit";
-import { encrypt, decrypt, safeCompare, generateSecureToken } from "./crypto";
+
+import { kysely } from "./Kysely";
+import { PUBLIC_BASE_URL } from "$env/static/public";
+import { SESSION_COOKIE_NAME, SESSION_DURATION_MS } from "$lib/env";
+import { encrypt, decrypt, safeCompare, generateSecureToken } from "./Crypto";
 
 /**
  * Encryption purposes for key derivation.
@@ -115,7 +117,7 @@ export async function createSession(
 	);
 
 	// Upsert the session in the database
-	await db
+	await kysely
 		.insertInto("AuthSession")
 		.values({
 			user_id: data.userId,
@@ -148,7 +150,7 @@ export async function createSession(
 	cookies.set(SESSION_COOKIE_NAME, cookieValue, {
 		path: "/",
 		httpOnly: true,
-		secure: env.PUBLIC_BASE_URL.startsWith("https"),
+		secure: PUBLIC_BASE_URL.startsWith("https"),
 		sameSite: "lax", // Lax is required for OAuth redirect chains to carry the cookie
 		maxAge: Math.floor(SESSION_DURATION_MS / 1000)
 	});
@@ -169,7 +171,7 @@ export async function getSession(cookies: Cookies): Promise<Session | null> {
 		return null;
 	}
 
-	const session = await db
+	const session = await kysely
 		.selectFrom("AuthSession")
 		.select(["user_id", "session_id", "expires_at", "username", "global_name", "avatar"])
 		.where("user_id", "=", parsed.userId)
@@ -205,7 +207,7 @@ export async function getSession(cookies: Cookies): Promise<Session | null> {
  * NEVER expose the return value to the client.
  */
 export async function getAccessToken(userId: string): Promise<string | null> {
-	const session = await db
+	const session = await kysely
 		.selectFrom("AuthSession")
 		.select(["access_token", "expires_at"])
 		.where("user_id", "=", userId)
@@ -227,7 +229,7 @@ export async function getAccessToken(userId: string): Promise<string | null> {
  * Used for token refresh operations.
  */
 export async function getRefreshToken(userId: string): Promise<string | null> {
-	const session = await db
+	const session = await kysely
 		.selectFrom("AuthSession")
 		.select(["refresh_token"])
 		.where("user_id", "=", userId)
@@ -252,7 +254,7 @@ export async function updateSessionTokens(
 	const encryptedAccessToken = encryptToken(accessToken, ENCRYPTION_PURPOSE.ACCESS_TOKEN);
 	const encryptedRefreshToken = encryptToken(refreshToken, ENCRYPTION_PURPOSE.REFRESH_TOKEN);
 
-	await db
+	await kysely
 		.updateTable("AuthSession")
 		.set({
 			access_token: encryptedAccessToken,
@@ -281,7 +283,7 @@ export async function destroySession(cookies: Cookies, userId?: string): Promise
 	}
 
 	if (uidToDelete) {
-		await db.deleteFrom("AuthSession").where("user_id", "=", uidToDelete).execute();
+		await kysely.deleteFrom("AuthSession").where("user_id", "=", uidToDelete).execute();
 	}
 
 	cookies.delete(SESSION_COOKIE_NAME, { path: "/" });

@@ -1,7 +1,8 @@
 import { redirect } from "@sveltejs/kit";
-import { destroySession } from "$lib/server/session";
-import { invalidateUserGuildsCache } from "$lib/server/discord";
 import type { RequestHandler } from "./$types";
+
+import { destroySession } from "$lib/server/Session";
+import { invalidateUserGuildsCache } from "$lib/server/Discord";
 
 /**
  * Logs the user out by destroying their session.

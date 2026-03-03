@@ -1,5 +1,6 @@
 import { json } from "@sveltejs/kit";
-import { invalidateUserGuildsCache } from "$lib/server/discord";
+
+import { invalidateUserGuildsCache } from "$lib/server/Discord";
 import type { RequestHandler } from "./$types";
 
 /**
@@ -12,6 +13,5 @@ export const POST: RequestHandler = async ({ locals }) => {
 	}
 
 	invalidateUserGuildsCache(locals.session.userId);
-
 	return json({ success: true });
 };
