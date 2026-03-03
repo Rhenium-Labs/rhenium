@@ -7,6 +7,20 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 import type { RequestStatus, ReportStatus, Detector, ContentFilterStatus } from "./Enums.js";
 
+export type AuthSessionTable = {
+	user_id: string;
+	session_id: Generated<string>;
+	access_token: string;
+	refresh_token: string;
+	expires_at: Timestamp;
+	updated_at: Generated<Timestamp>;
+	username: string | null;
+	global_name: string | null;
+	avatar: string | null;
+};
+export type AuthSession = Selectable<AuthSessionTable>;
+export type NewAuthSession = Insertable<AuthSessionTable>;
+export type AuthSessionUpdate = Updateable<AuthSessionTable>;
 export type BanRequestTable = {
 	id: string;
 	guild_id: string;
@@ -149,6 +163,7 @@ export type Whitelist = Selectable<WhitelistTable>;
 export type NewWhitelist = Insertable<WhitelistTable>;
 export type WhitelistUpdate = Updateable<WhitelistTable>;
 export type DB = {
+	AuthSession: AuthSessionTable;
 	BanRequest: BanRequestTable;
 	ContentFilterAlert: ContentFilterAlertTable;
 	ContentFilterLog: ContentFilterLogTable;

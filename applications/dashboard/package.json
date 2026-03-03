@@ -13,6 +13,12 @@
 		"lint": "prettier --check .",
 		"format": "prettier --write ."
 	},
+	"dependencies": {
+		"@discordjs/rest": "^2.6.0",
+		"@repo/db": "workspace:*",
+		"discord-api-types": "^0.38.40",
+		"zod": "^4.3.6"
+	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.5.2",
 		"@sveltejs/kit": "^2.50.2",

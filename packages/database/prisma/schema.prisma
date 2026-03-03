@@ -207,3 +207,17 @@ model Message {
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 }
+
+model AuthSession {
+  user_id       String   @id
+  session_id    String   @unique @default("")
+  access_token  String
+  refresh_token String
+  expires_at    DateTime
+  updated_at    DateTime @default(now())
+
+  // Discord profile info (cached, refreshed on login and periodically)
+  username    String?
+  global_name String?
+  avatar      String?
+}
