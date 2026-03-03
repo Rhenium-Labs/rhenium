@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
 import { HIGHLIGHT_CONFIG_SCHEMA } from "@repo/config";
-import { kysely } from "$lib/server/Kysely";
+import { kysely } from "$lib/server/kysely";
 import {
 	ensureSafeJsonRequest,
 	invalidateBotConfigCache,

@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 
-import { invalidateUserGuildsCache } from "$lib/server/Discord";
+import { invalidateUserGuildsCache } from "$lib/server/discord";
 import type { RequestHandler } from "./$types";
 
 /**

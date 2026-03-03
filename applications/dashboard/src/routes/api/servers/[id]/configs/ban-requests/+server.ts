@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
 import { BAN_REQUEST_CONFIG_SCHEMA } from "@repo/config";
-import { kysely } from "$lib/server/Kysely";
+import { kysely } from "$lib/server/kysely";
 import { createBotClient } from "$lib/server/trpc";
 import {
 	DISCORD_ID_REGEX,

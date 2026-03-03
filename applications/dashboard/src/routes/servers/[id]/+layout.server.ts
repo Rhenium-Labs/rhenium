@@ -6,10 +6,10 @@ import {
 	canManageGuild,
 	getAvatarUrl,
 	getGuildIconUrl
-} from "$lib/server/Discord";
-import { kysely } from "$lib/server/Kysely";
-import { getAccessToken } from "$lib/server/Session";
-import Logger from "$lib/server/Logger";
+} from "$lib/server/discord";
+import { kysely } from "$lib/server/kysely";
+import { getAccessToken } from "$lib/server/session";
+import Logger from "$lib/server/logger";
 
 export const load: LayoutServerLoad = async ({ locals, params }) => {
 	if (!locals.session) {

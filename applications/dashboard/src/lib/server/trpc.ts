@@ -1,6 +1,7 @@
 import { BOT_TRPC_URL, TRPC_SECRET } from "$env/static/private";
 import { createBotClient as _createBotClient } from "@repo/trpc/client";
-import Logger from "$lib/server/Logger";
+
+import Logger from "./logger";
 
 /**
  * Creates a per-request tRPC client scoped to a specific guild and user.

@@ -11,7 +11,7 @@ import { PUBLIC_BASE_URL } from "$env/static/public";
 import { DISCORD_API_BASE, DISCORD_OAUTH_SCOPES } from "$lib/env";
 import { DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET } from "$env/static/private";
 
-import KeyV, { CACHE_TTL } from "$lib/server/KeyV";
+import KeyV, { CACHE_TTL } from "$lib/server/keyv";
 
 /**
  * Creates a REST client for OAuth Bearer token requests.

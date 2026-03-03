@@ -1,9 +1,9 @@
 import { redirect, error, isRedirect, isHttpError } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
-import { hmacSign, safeCompare } from "$lib/server/Crypto";
-import { exchangeCode, fetchUser } from "$lib/server/Discord";
-import { createSession, OAUTH_STATE_COOKIE } from "$lib/server/Session";
+import { hmacSign, safeCompare } from "$lib/server/crypto";
+import { exchangeCode, fetchUser } from "$lib/server/discord";
+import { createSession, OAUTH_STATE_COOKIE } from "$lib/server/session";
 
 /** Maximum age of a state parameter (10 minutes). */
 const STATE_MAX_AGE_MS = 10 * 60 * 1000;

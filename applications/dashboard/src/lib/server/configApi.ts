@@ -1,8 +1,8 @@
 import { json } from "@sveltejs/kit";
 import type { RawGuildConfig } from "@repo/config";
-import { canManageGuild, fetchUserGuilds } from "$lib/server/Discord";
-import { kysely } from "$lib/server/Kysely";
-import { getAccessToken } from "$lib/server/Session";
+import { canManageGuild, fetchUserGuilds } from "$lib/server/discord";
+import { kysely } from "$lib/server/kysely";
+import { getAccessToken } from "$lib/server/session";
 import { createBotClient } from "$lib/server/trpc";
 
 export const DISCORD_ID_REGEX = /^\d{17,20}$/;

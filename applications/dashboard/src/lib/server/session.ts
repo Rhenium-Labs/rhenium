@@ -1,9 +1,9 @@
 import type { Cookies } from "@sveltejs/kit";
 
-import { kysely } from "./Kysely";
+import { kysely } from "./kysely";
 import { PUBLIC_BASE_URL } from "$env/static/public";
 import { SESSION_COOKIE_NAME, SESSION_DURATION_MS } from "$lib/env";
-import { encrypt, decrypt, safeCompare, generateSecureToken } from "./Crypto";
+import { encrypt, decrypt, safeCompare, generateSecureToken } from "./crypto";
 
 /**
  * Encryption purposes for key derivation.

@@ -1,8 +1,8 @@
 import { redirect, type Handle, type HandleServerError } from "@sveltejs/kit";
 
-import { getSession } from "$lib/server/Session";
+import { getSession } from "$lib/server/session";
 import { PUBLIC_BASE_URL } from "$env/static/public";
-import Logger from "$lib/server/Logger";
+import Logger from "$lib/server/logger";
 
 /** Routes that require authentication. */
 const PROTECTED_ROUTES = ["/servers"];

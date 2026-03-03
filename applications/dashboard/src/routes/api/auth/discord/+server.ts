@@ -1,10 +1,10 @@
 import { redirect } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
-import { hmacSign } from "$lib/server/Crypto";
-import { getOAuthUrl } from "$lib/server/Discord";
+import { hmacSign } from "$lib/server/crypto";
+import { getOAuthUrl } from "$lib/server/discord";
 import { PUBLIC_BASE_URL } from "$env/static/public";
-import { generateOAuthState, OAUTH_STATE_COOKIE } from "$lib/server/Session";
+import { generateOAuthState, OAUTH_STATE_COOKIE } from "$lib/server/session";
 
 /**
  * Initiates the Discord OAuth2 flow.

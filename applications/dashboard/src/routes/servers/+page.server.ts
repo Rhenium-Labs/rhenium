@@ -5,10 +5,10 @@ import {
 	canManageGuild,
 	getAvatarUrl,
 	getGuildIconUrl
-} from "$lib/server/Discord";
-import { kysely } from "$lib/server/Kysely";
+} from "$lib/server/discord";
+import { kysely } from "$lib/server/kysely";
 import { getBotInviteUrl } from "$lib/env";
-import { getAccessToken } from "$lib/server/Session";
+import { getAccessToken } from "$lib/server/session";
 
 export interface ServerInfo {
 	id: string;

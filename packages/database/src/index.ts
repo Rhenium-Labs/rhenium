@@ -1,6 +1,7 @@
-import { Kysely, KyselyPlugin } from "kysely";
+import { Kysely, type KyselyPlugin } from "kysely";
 import { PostgresJSDialect } from "kysely-postgres-js";
-import { DB } from "./Schema.js";
+
+import type { DB } from "./Schema.js";
 
 import postgres from "postgres";
 
