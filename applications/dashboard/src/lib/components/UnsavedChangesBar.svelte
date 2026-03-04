@@ -73,59 +73,84 @@
 
 {#if shouldRender}
 	<div
-		class="save-bar fixed right-0 bottom-6 left-64 z-50 mx-auto flex w-max items-center gap-5 rounded-xl border bg-zinc-900/95 px-5 py-3 shadow-2xl backdrop-blur-lg {shaking
-			? 'save-bar-shake border-red-500/60'
-			: 'border-zinc-700/50'} {exiting ? 'save-bar-exit' : ''}"
+		class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
 	>
-		<div class="flex items-center gap-2.5">
-			{#if displaySaveStatus === "error"}
-				<AlertTriangle class="h-4 w-4 text-red-400" strokeWidth={2} />
-				<p class="text-sm text-red-400">{displaySaveError}</p>
-			{:else if displaySaveStatus === "success"}
-				<Check class="h-4 w-4 text-emerald-400" strokeWidth={2.5} />
-				<p class="text-sm text-emerald-400">Settings saved successfully.</p>
-			{:else}
-				<p class="text-sm font-medium text-zinc-300">{message}</p>
-			{/if}
-		</div>
-		<div class="flex items-center gap-3">
-			{#if displayIsDirty && displaySaveStatus !== "saving"}
-				<button
-					type="button"
-					onclick={onReset}
-					class="rounded-lg border border-zinc-600 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-[background-color,border-color] hover:border-zinc-500 hover:bg-zinc-800"
-				>
-					Reset
-				</button>
-			{/if}
-			<button
-				type="submit"
-				form={formId}
-				disabled={displaySaveStatus === "saving" || !displayIsDirty}
-				class="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-[background-color,opacity] hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				{#if displaySaveStatus === "saving"}
-					<span class="flex items-center gap-2">
-						<Loader2 class="h-4 w-4 animate-spin" strokeWidth={2} />
-						Saving…
-					</span>
+		<div
+			class="save-bar pointer-events-auto flex w-[min(calc(100vw-1.5rem),30rem)] flex-col gap-3 rounded-2xl border bg-zinc-900/96 px-4 py-3 shadow-2xl backdrop-blur-xl {shaking
+				? 'save-bar-shake border-zinc-500/80'
+				: 'border-zinc-700/70'} {exiting ? 'save-bar-exit' : ''}"
+		>
+			<div class="flex items-center gap-2.5">
+				{#if displaySaveStatus === "error"}
+					<AlertTriangle class="h-4 w-4 text-zinc-300" strokeWidth={2} />
+					<div>
+						<p
+							class="text-[11px] font-semibold tracking-wide text-zinc-400 uppercase"
+						>
+							Error
+						</p>
+						<p class="text-sm text-zinc-300">{displaySaveError}</p>
+					</div>
+				{:else if displaySaveStatus === "success"}
+					<Check class="h-4 w-4 text-zinc-100" strokeWidth={2.5} />
+					<div>
+						<p
+							class="text-[11px] font-semibold tracking-wide text-zinc-400 uppercase"
+						>
+							Saved
+						</p>
+						<p class="text-sm text-zinc-100">Settings saved successfully.</p>
+					</div>
 				{:else}
-					Save changes
+					<div>
+						<p
+							class="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase"
+						>
+							Unsaved changes
+						</p>
+						<p class="text-sm font-medium text-zinc-300">{message}</p>
+					</div>
 				{/if}
-			</button>
+			</div>
+			<div class="flex items-center justify-end gap-2.5">
+				{#if displayIsDirty && displaySaveStatus !== "saving"}
+					<button
+						type="button"
+						onclick={onReset}
+						class="rounded-lg border border-zinc-700 px-3.5 py-1.5 text-sm font-medium text-zinc-300 transition-[background-color,border-color,color] hover:border-zinc-500 hover:bg-zinc-800 hover:text-zinc-100"
+					>
+						Reset
+					</button>
+				{/if}
+				<button
+					type="submit"
+					form={formId}
+					disabled={displaySaveStatus === "saving" || !displayIsDirty}
+					class="rounded-lg bg-zinc-100 px-3.5 py-1.5 text-sm font-semibold text-zinc-900 transition-[background-color,opacity] hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					{#if displaySaveStatus === "saving"}
+						<span class="flex items-center gap-2">
+							<Loader2 class="h-4 w-4 animate-spin" strokeWidth={2} />
+							Saving…
+						</span>
+					{:else}
+						Save changes
+					{/if}
+				</button>
+			</div>
 		</div>
 	</div>
 {/if}
 
 <style>
 	.save-bar {
-		animation: save-bar-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		animation: save-bar-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	@keyframes save-bar-enter {
 		from {
 			opacity: 0;
-			translate: 0 1rem;
+			translate: 0 0.75rem;
 		}
 		to {
 			opacity: 1;
@@ -150,7 +175,7 @@
 
 	.save-bar-shake {
 		animation: save-bar-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
-		background-color: rgb(127 29 29 / 0.25);
+		background-color: rgb(24 24 27 / 0.96);
 	}
 
 	@keyframes save-bar-shake {

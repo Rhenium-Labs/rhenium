@@ -5,6 +5,7 @@
 	import type { LayoutData } from "./$types";
 	import type { Snippet } from "svelte";
 	import {
+		ArrowLeft,
 		Home,
 		Flag,
 		Ban,
@@ -14,16 +15,12 @@
 		Trash2,
 		Webhook,
 		KeyRound,
-		ChevronDown,
-		ArrowLeftRight,
 		LogOut,
 		Loader2
 	} from "@lucide/svelte";
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
-	let showServerMenu = $state(false);
-	let showUserMenu = $state(false);
 	let direction = $state<"up" | "down">("up");
 	let navPhase = $state<"idle" | "loading" | "revealing">("idle");
 	let pendingCategoryTarget: string | null = null;
@@ -32,13 +29,17 @@
 	let revealTimeout: ReturnType<typeof setTimeout> | undefined;
 	let loadingStartedAt = 0;
 
-	const CATEGORY_NAV_DELAY_MS = 80;
-	const CATEGORY_MIN_LOADING_MS = 220;
+	const CATEGORY_NAV_DELAY_MS = 70;
+	const CATEGORY_MIN_LOADING_MS = 200;
 	const CATEGORY_REVEAL_MS = 220;
 
-	const isHome = $derived($page.url.pathname === `/servers/${data.guild.id}`);
-
 	const modules = $derived([
+		{
+			id: "home",
+			name: "Home",
+			icon: Home,
+			href: `/servers/${data.guild.id}`
+		},
 		{
 			id: "message-reports",
 			name: "Message Reports",
@@ -89,8 +90,18 @@
 		}
 	]);
 
+	function isRouteMatch(href: string, pathname: string): boolean {
+		const homeHref = `/servers/${data.guild.id}`;
+		if (href === homeHref) return pathname === homeHref;
+		return pathname.startsWith(href);
+	}
+
+	const activeModule = $derived(
+		modules.find(module => isRouteMatch(module.href, $page.url.pathname)) ?? modules[0]
+	);
+
 	function isActiveModule(href: string): boolean {
-		return $page.url.pathname.startsWith(href);
+		return isRouteMatch(href, $page.url.pathname);
 	}
 
 	function getInitials(name: string): string {
@@ -106,14 +117,8 @@
 		return session.globalName ?? session.username ?? "User";
 	}
 
-	function handleClickOutside() {
-		showServerMenu = false;
-		showUserMenu = false;
-	}
-
 	function getRouteIndex(pathname: string): number {
-		if (pathname === `/servers/${data.guild.id}`) return -1;
-		const idx = modules.findIndex(m => pathname.startsWith(m.href));
+		const idx = modules.findIndex(m => isRouteMatch(m.href, pathname));
 		return idx;
 	}
 
@@ -137,8 +142,6 @@
 		if (href === $page.url.pathname) return;
 
 		event.preventDefault();
-		showServerMenu = false;
-		showUserMenu = false;
 
 		const fromIndex = getRouteIndex($page.url.pathname);
 		const toIndex = getRouteIndex(href);
@@ -192,297 +195,358 @@
 	});
 </script>
 
-<svelte:window onclick={handleClickOutside} />
-
-<div class="flex min-h-screen flex-col bg-zinc-950">
-	<!-- Top Navbar -->
-	<header
-		class="navbar fixed top-0 right-0 left-0 z-50 flex h-14 items-center justify-between border-b border-zinc-800/80 bg-zinc-900/80 px-4 backdrop-blur-xl"
-	>
-		<!-- Left: Server Selector -->
-		<div class="flex items-center gap-3">
-			<div class="relative">
-				<button
-					onclick={e => {
-						e.stopPropagation();
-						showServerMenu = !showServerMenu;
-					}}
-					class="flex items-center gap-2.5 rounded-lg px-3 py-1.5 transition-[background-color] hover:bg-zinc-800 {showServerMenu
-						? 'bg-zinc-800'
-						: ''}"
-				>
-					{#if data.guild.icon}
-						<img
-							src={data.guild.icon}
-							alt={data.guild.name}
-							class="h-6 w-6 rounded-full ring-1 ring-zinc-700/50"
-						/>
-					{:else}
-						<div
-							class="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-xs font-medium text-zinc-300"
-						>
-							{getInitials(data.guild.name)}
-						</div>
-					{/if}
-					<span class="text-sm font-semibold text-white">{data.guild.name}</span>
-					<ChevronDown
-						class="h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 {showServerMenu
-							? 'rotate-180'
-							: ''}"
-						strokeWidth={2.5}
+<div class="dashboard-shell">
+	<aside class="dashboard-sidebar">
+		<div class="sidebar-top">
+			<a href="/servers" class="sidebar-back-link">
+				<ArrowLeft class="h-4 w-4" strokeWidth={2} />
+				Servers
+			</a>
+			<div class="server-chip">
+				{#if data.guild.icon}
+					<img
+						src={data.guild.icon}
+						alt={data.guild.name}
+						class="server-chip-avatar"
 					/>
-				</button>
-
-				{#if showServerMenu}
-					<div
-						class="dropdown-menu absolute top-full left-0 z-50 mt-1.5 min-w-44 overflow-hidden rounded-lg border border-zinc-700/50 bg-zinc-800/95 shadow-xl backdrop-blur-lg"
-					>
-						<a
-							href="/servers"
-							class="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-zinc-700/50 hover:text-white"
-						>
-							<ArrowLeftRight
-								class="h-4 w-4 text-zinc-500"
-								strokeWidth={1.75}
-							/>
-							Switch Server
-						</a>
-					</div>
+				{:else}
+					<div class="server-chip-fallback">{getInitials(data.guild.name)}</div>
 				{/if}
+				<div class="server-chip-copy">
+					<p class="server-chip-title">{data.guild.name}</p>
+					<p class="server-chip-subtitle">ID: {data.guild.id}</p>
+				</div>
 			</div>
 		</div>
 
-		<!-- Right: User Menu -->
-		<div class="relative flex items-center gap-2">
-			<button
-				onclick={e => {
-					e.stopPropagation();
-					showUserMenu = !showUserMenu;
-				}}
-				class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-[background-color] hover:bg-zinc-800 {showUserMenu
-					? 'bg-zinc-800'
-					: ''}"
-			>
-				<img
-					src={data.session.avatarUrl}
-					alt="Avatar"
-					class="h-7 w-7 rounded-full ring-1 ring-zinc-700/50"
-				/>
-				<span class="text-zinc-300">{getDisplayName(data.session)}</span>
-				<ChevronDown
-					class="h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 {showUserMenu
-						? 'rotate-180'
-						: ''}"
-					strokeWidth={2.5}
-				/>
-			</button>
-
-			{#if showUserMenu}
-				<div
-					class="dropdown-menu absolute top-full right-0 z-50 mt-1.5 min-w-36 overflow-hidden rounded-lg border border-zinc-700/50 bg-zinc-800/95 shadow-xl backdrop-blur-lg"
+		<nav class="sidebar-nav">
+			{#each modules as module (module.id)}
+				{@const active = isActiveModule(module.href)}
+				<a
+					href={module.href}
+					onclick={event => navigateToCategory(event, module.href)}
+					class="sidebar-nav-item {active ? 'is-active' : ''}"
 				>
-					<a
-						href="/api/auth/logout"
-						class="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-zinc-700/50 hover:text-white"
-					>
-						<LogOut class="h-4 w-4 text-zinc-500" strokeWidth={1.75} />
-						Log out
-					</a>
+					<module.icon class="h-4 w-4" strokeWidth={1.8} />
+					<span>{module.name}</span>
+				</a>
+			{/each}
+		</nav>
+
+		<div class="sidebar-bottom">
+			<div class="account-chip">
+				<img src={data.session.avatarUrl} alt="Avatar" class="account-avatar" />
+				<div class="account-copy">
+					<p class="account-name">{getDisplayName(data.session)}</p>
+					<p class="account-username">@{data.session.username}</p>
 				</div>
-			{/if}
+			</div>
+			<a href="/api/auth/logout" class="sidebar-signout">
+				<LogOut class="h-3.5 w-3.5" strokeWidth={1.9} />
+				Sign out
+			</a>
 		</div>
-	</header>
+	</aside>
 
-	<!-- Body -->
-	<div class="flex flex-1 pt-14">
-		<!-- Sidebar -->
-		<aside
-			class="sidebar fixed top-14 left-0 z-40 flex h-[calc(100vh-3.5rem)] w-60 flex-col border-r border-zinc-800/80 bg-zinc-900/50 backdrop-blur-xl"
-		>
-			<nav class="flex-1 overflow-y-auto p-3">
-				<!-- Home Button -->
-				<div class="mb-1 flex justify-center">
+	<div class="dashboard-main">
+		<div class="mobile-nav-wrap">
+			<nav class="mobile-nav">
+				{#each modules as module (module.id)}
+					{@const active = isActiveModule(module.href)}
 					<a
-						href="/servers/{data.guild.id}"
-						onclick={e => navigateToCategory(e, `/servers/${data.guild.id}`)}
-						class="home-btn flex items-center rounded-lg text-sm font-medium {isHome
-							? 'is-expanded text-white'
-							: 'text-zinc-400 hover:text-white'}"
+						href={module.href}
+						onclick={event => navigateToCategory(event, module.href)}
+						class="mobile-nav-item {active ? 'is-active' : ''}"
 					>
-						<Home class="h-4 w-4 shrink-0" strokeWidth={1.75} />
-						<span class="home-label">Home</span>
+						<module.icon class="h-4 w-4" strokeWidth={1.75} />
+						{module.name}
 					</a>
-				</div>
+				{/each}
+			</nav>
+		</div>
 
-				<!-- Modules Section -->
-				<div class="mt-5">
-					<p
-						class="mb-2 px-3 text-[0.65rem] font-semibold tracking-widest text-zinc-600 uppercase"
-					>
-						Modules
-					</p>
-					<div class="space-y-0.5">
-						{#each modules as module (module.id)}
-							{@const active = isActiveModule(module.href)}
-							<a
-								href={module.href}
-								onclick={e => navigateToCategory(e, module.href)}
-								class="nav-item group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[0.8125rem] font-medium transition-[background-color,color] duration-150 {active
-									? 'bg-zinc-800/80 text-white'
-									: 'text-zinc-500 hover:bg-zinc-800/40 hover:text-zinc-200'}"
-							>
-								{#if active}
-									<span
-										class="active-indicator absolute top-1.5 bottom-1.5 left-0 w-0.75 rounded-full bg-indigo-500"
-									></span>
-								{/if}
-								<module.icon
-									class="h-4 w-4 shrink-0 {active
-										? 'text-indigo-400'
-										: 'text-zinc-600 group-hover:text-zinc-400'}"
-									strokeWidth={1.75}
-								/>
-								{module.name}
-							</a>
-						{/each}
+		<main class="workspace-content" aria-busy={navPhase !== "idle"}>
+			{#if navPhase === "loading"}
+				<div class="loading-shell" data-direction={direction}>
+					<div class="loading-pill">
+						<Loader2 class="h-4 w-4 animate-spin" />
+						Loading
 					</div>
 				</div>
-			</nav>
-		</aside>
-
-		<!-- Main Content -->
-		<div class="ml-60 flex flex-1 flex-col">
-			<main
-				class="main-content flex-1 overflow-y-auto p-8"
-				aria-busy={navPhase !== "idle"}
-			>
-				{#if navPhase === "loading"}
+			{:else}
+				{#key $page.url.pathname}
 					<div
-						class="motion-shell loading-stage mx-auto flex h-[calc(100vh-8rem)] max-w-4xl items-center justify-center"
+						class="route-frame {navPhase === 'revealing' ? 'is-revealing' : ''}"
 						data-direction={direction}
 					>
-						<div
-							class="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-2.5 text-sm text-zinc-300"
-						>
-							<Loader2 class="h-4 w-4 animate-spin text-zinc-400" />
-						</div>
+						{@render children()}
 					</div>
-				{:else}
-					{#key $page.url.pathname}
-						<div
-							class="page-content mx-auto max-w-4xl {navPhase === 'revealing'
-								? 'is-revealing'
-								: ''}"
-							data-direction={direction}
-						>
-							{@render children()}
-						</div>
-					{/key}
-				{/if}
-			</main>
-		</div>
+				{/key}
+			{/if}
+		</main>
 	</div>
 </div>
 
 <style>
-	.navbar {
-		animation: navbar-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	.dashboard-shell {
+		display: grid;
+		grid-template-columns: 20rem minmax(0, 1fr);
+		min-height: 100vh;
+		background: rgb(9 9 11);
 	}
-	@keyframes navbar-enter {
+
+	.dashboard-sidebar {
+		position: sticky;
+		top: 0;
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		padding: 1.1rem;
+		border-right: 1px solid rgb(39 39 42 / 0.85);
+		background: linear-gradient(180deg, rgb(9 9 11 / 0.98) 0%, rgb(9 9 11 / 0.93) 100%);
+		backdrop-filter: blur(12px);
+		animation: shell-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.sidebar-top {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.sidebar-back-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		width: fit-content;
+		padding: 0.45rem 0.6rem;
+		border-radius: 0.65rem;
+		color: rgb(161 161 170);
+		font-size: 0.79rem;
+		transition:
+			background-color 160ms ease,
+			color 160ms ease;
+	}
+	.sidebar-back-link:hover {
+		background: rgb(24 24 27);
+		color: rgb(244 244 245);
+	}
+
+	.server-chip {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		padding: 0.7rem;
+		border: 1px solid rgb(39 39 42 / 0.9);
+		border-radius: 0.85rem;
+		background: rgb(24 24 27 / 0.72);
+	}
+	.server-chip-avatar,
+	.server-chip-fallback {
+		height: 2.3rem;
+		width: 2.3rem;
+		border-radius: 0.65rem;
+		object-fit: cover;
+		flex-shrink: 0;
+	}
+	.server-chip-fallback {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgb(39 39 42);
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: rgb(212 212 216);
+	}
+	.server-chip-copy {
+		min-width: 0;
+	}
+	.server-chip-title {
+		font-size: 0.87rem;
+		font-weight: 600;
+		color: rgb(244 244 245);
+		line-height: 1.2;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+	.server-chip-subtitle {
+		margin-top: 0.15rem;
+		font-size: 0.72rem;
+		color: rgb(113 113 122);
+	}
+
+	.sidebar-nav {
+		min-height: 0;
+		overflow: auto;
+		display: grid;
+		gap: 0.2rem;
+		padding-right: 0.15rem;
+	}
+
+	.sidebar-nav-item {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.56rem 0.65rem;
+		border-radius: 0.65rem;
+		font-size: 0.83rem;
+		font-weight: 500;
+		color: rgb(161 161 170);
+		transition:
+			background-color 180ms ease,
+			color 180ms ease,
+			transform 120ms ease;
+	}
+	.sidebar-nav-item:hover {
+		background: rgb(24 24 27);
+		color: rgb(228 228 231);
+	}
+	.sidebar-nav-item.is-active {
+		background: rgb(39 39 42 / 0.9);
+		border: 1px solid rgb(82 82 91 / 0.85);
+		color: rgb(244 244 245);
+	}
+
+	.sidebar-bottom {
+		display: grid;
+		gap: 0.65rem;
+		padding-top: 0.5rem;
+		border-top: 1px solid rgb(39 39 42 / 0.8);
+	}
+	.account-chip {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.55rem 0.2rem;
+	}
+	.account-avatar {
+		height: 2rem;
+		width: 2rem;
+		border-radius: 9999px;
+		border: 1px solid rgb(63 63 70);
+	}
+	.account-copy {
+		min-width: 0;
+	}
+	.account-name {
+		font-size: 0.81rem;
+		font-weight: 500;
+		color: rgb(228 228 231);
+		line-height: 1.25;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+	.account-username {
+		font-size: 0.72rem;
+		color: rgb(113 113 122);
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+	.sidebar-signout {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		padding: 0.52rem 0.7rem;
+		border-radius: 0.65rem;
+		border: 1px solid rgb(63 63 70 / 0.9);
+		font-size: 0.78rem;
+		font-weight: 500;
+		color: rgb(212 212 216);
+		transition:
+			background-color 160ms ease,
+			border-color 160ms ease,
+			color 160ms ease;
+	}
+	.sidebar-signout:hover {
+		background: rgb(24 24 27);
+		border-color: rgb(113 113 122);
+		color: rgb(244 244 245);
+	}
+
+	.dashboard-main {
+		min-width: 0;
+		padding: 1.25rem 1.35rem 1.5rem;
+	}
+
+	.workspace-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+		padding: 0.8rem 0.95rem;
+		border: 1px solid rgb(39 39 42 / 0.9);
+		border-radius: 0.9rem;
+		background: rgb(24 24 27 / 0.68);
+		animation: shell-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.workspace-kicker {
+		font-size: 0.68rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: rgb(113 113 122);
+	}
+	.workspace-title {
+		margin-top: 0.2rem;
+		font-size: 1.15rem;
+		font-weight: 600;
+		line-height: 1.2;
+		color: rgb(244 244 245);
+	}
+
+	.mobile-nav-wrap {
+		display: none;
+	}
+
+	.workspace-content {
+		isolation: isolate;
+	}
+
+	.route-frame {
+		max-width: 80rem;
+		margin: 0 auto;
+	}
+	.route-frame.is-revealing {
+		animation: page-enter-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+	.route-frame.is-revealing[data-direction="down"] {
+		animation-name: page-enter-down;
+	}
+
+	.loading-shell {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: calc(100vh - 7.5rem);
+		animation: spinner-stage-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.loading-shell[data-direction="down"] {
+		animation-name: spinner-stage-down;
+	}
+	.loading-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 0.9rem;
+		border-radius: 0.75rem;
+		border: 1px solid rgb(39 39 42 / 0.95);
+		background: rgb(24 24 27 / 0.85);
+		font-size: 0.83rem;
+		color: rgb(212 212 216);
+	}
+
+	@keyframes shell-enter {
 		from {
 			opacity: 0;
-			transform: translateY(-8px);
+			transform: translateY(8px);
 		}
 		to {
 			opacity: 1;
 			transform: translateY(0);
 		}
-	}
-
-	.sidebar {
-		animation: sidebar-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-	}
-	@keyframes sidebar-enter {
-		from {
-			opacity: 0;
-			transform: translateX(-16px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
-	}
-
-	/* Home button animated expand/collapse */
-	.home-btn {
-		padding: 0.375rem;
-		gap: 0;
-		background-color: transparent;
-		transition:
-			padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-			gap 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-			background-color 0.2s ease,
-			color 0.15s ease;
-	}
-	.home-btn:hover {
-		background-color: rgb(39 39 42 / 0.4);
-	}
-	.home-btn.is-expanded {
-		padding: 0.375rem 0.625rem;
-		gap: 0.5rem;
-		background-color: rgb(39 39 42 / 0.8);
-	}
-	.home-btn.is-expanded:hover {
-		background-color: rgb(39 39 42 / 0.8);
-	}
-
-	.home-label {
-		overflow: hidden;
-		white-space: nowrap;
-		max-width: 0;
-		opacity: 0;
-		transition:
-			max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-			opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	}
-	.home-btn.is-expanded .home-label {
-		max-width: 4rem;
-		opacity: 1;
-	}
-
-	/* Active sidebar indicator */
-	.active-indicator {
-		animation: indicator-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-	@keyframes indicator-in {
-		from {
-			opacity: 0;
-			transform: scaleY(0.5);
-		}
-		to {
-			opacity: 1;
-			transform: scaleY(1);
-		}
-	}
-
-	/* Page transitions */
-	.main-content {
-		isolation: isolate;
-	}
-
-	.motion-shell {
-		will-change: transform, opacity;
-		backface-visibility: hidden;
-	}
-
-	.page-content {
-		backface-visibility: visible;
-	}
-	.page-content.is-revealing {
-		animation: page-enter-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-	}
-	.page-content.is-revealing[data-direction="down"] {
-		animation-name: page-enter-down;
 	}
 
 	@keyframes page-enter-up {
@@ -495,6 +559,7 @@
 			transform: translate3d(0, 0, 0);
 		}
 	}
+
 	@keyframes page-enter-down {
 		from {
 			opacity: 0;
@@ -505,12 +570,7 @@
 			transform: translate3d(0, 0, 0);
 		}
 	}
-	.loading-stage {
-		animation: spinner-stage-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-	.loading-stage[data-direction="down"] {
-		animation-name: spinner-stage-down;
-	}
+
 	@keyframes spinner-stage-up {
 		from {
 			opacity: 0;
@@ -521,6 +581,7 @@
 			transform: translate3d(0, 0, 0);
 		}
 	}
+
 	@keyframes spinner-stage-down {
 		from {
 			opacity: 0;
@@ -532,56 +593,73 @@
 		}
 	}
 
-	/* Dropdown */
-	.dropdown-menu {
-		animation: dropdown-fade-in 0.15s ease-out;
-	}
-	@keyframes dropdown-fade-in {
-		from {
-			opacity: 0;
-			transform: translateY(-4px) scale(0.98);
+	@media (max-width: 1120px) {
+		.dashboard-shell {
+			grid-template-columns: 1fr;
 		}
-		to {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-		}
-	}
 
-	/* Config section/card entrance animations */
-	:global(main .config-card) {
-		animation: section-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
-		transition:
-			border-color 0.2s ease,
-			box-shadow 0.2s ease;
-	}
-	:global(main .config-card:hover) {
-		border-color: rgb(63 63 70 / 0.8);
-		box-shadow: 0 0 0 1px rgb(63 63 70 / 0.15);
-	}
-
-	@keyframes section-enter {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
+		.dashboard-sidebar {
+			display: none;
 		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
+
+		.dashboard-main {
+			padding: 1rem;
+		}
+
+		.workspace-bar {
+			margin-bottom: 0.75rem;
+		}
+
+		.mobile-nav-wrap {
+			display: block;
+			margin-bottom: 0.9rem;
+			overflow-x: auto;
+			padding-bottom: 0.25rem;
+		}
+
+		.mobile-nav {
+			display: inline-flex;
+			gap: 0.35rem;
+			padding: 0.28rem;
+			border-radius: 0.8rem;
+			border: 1px solid rgb(39 39 42 / 0.95);
+			background: rgb(24 24 27 / 0.78);
+		}
+
+		.mobile-nav-item {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.42rem;
+			padding: 0.45rem 0.65rem;
+			border-radius: 0.6rem;
+			font-size: 0.77rem;
+			font-weight: 500;
+			color: rgb(161 161 170);
+			white-space: nowrap;
+			transition:
+				background-color 150ms ease,
+				color 150ms ease;
+		}
+		.mobile-nav-item:hover {
+			background: rgb(39 39 42);
+			color: rgb(228 228 231);
+		}
+		.mobile-nav-item.is-active {
+			background: rgb(39 39 42 / 0.92);
+			border: 1px solid rgb(82 82 91 / 0.85);
+			color: rgb(244 244 245);
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.navbar,
-		.sidebar,
-		.page-content.is-revealing,
-		.loading-stage,
-		.dropdown-menu,
-		:global(main .config-card) {
+		.dashboard-sidebar,
+		.workspace-bar,
+		.route-frame.is-revealing,
+		.loading-shell {
 			animation: none !important;
 		}
 
-		.page-content,
-		:global(main .config-card) {
+		.route-frame {
 			transform: none;
 			opacity: 1;
 		}
