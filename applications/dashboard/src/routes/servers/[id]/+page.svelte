@@ -20,7 +20,7 @@
 		id: string;
 		name: string;
 		description: string;
-		href: string;
+		path: string;
 		icon: typeof Flag;
 	};
 
@@ -29,62 +29,66 @@
 			id: "message-reports",
 			name: "Message Reports",
 			description: "Let users alert you to problematic messages.",
-			href: `/servers/${data.guild.id}/message-reports`,
+			path: "message-reports",
 			icon: Flag
 		},
 		{
 			id: "ban-requests",
 			name: "Ban Requests",
 			description: "Require moderator approval for member bans.",
-			href: `/servers/${data.guild.id}/ban-requests`,
+			path: "ban-requests",
 			icon: Ban
 		},
 		{
 			id: "content-filter",
 			name: "Content Filter",
 			description: "Automatic content moderation powered by OpenAI Moderations.",
-			href: `/servers/${data.guild.id}/content-filter`,
+			path: "content-filter",
 			icon: Filter
 		},
 		{
 			id: "highlights",
 			name: "Highlights",
 			description: "Let users subscribe to regex-based message highlights.",
-			href: `/servers/${data.guild.id}/highlights`,
+			path: "highlights",
 			icon: Bell
 		},
 		{
 			id: "quick-mutes",
 			name: "Quick Mutes",
 			description: "Mute members quickly via reaction workflows.",
-			href: `/servers/${data.guild.id}/quick-mutes`,
+			path: "quick-mutes",
 			icon: VolumeX
 		},
 		{
 			id: "quick-purges",
 			name: "Quick Purges",
 			description: "Bulk-delete messages quickly via reaction workflows.",
-			href: `/servers/${data.guild.id}/quick-purges`,
+			path: "quick-purges",
 			icon: Trash2
 		},
 		{
 			id: "logging",
 			name: "Logging Webhooks",
 			description: "Keep a record of actions taken by Rhenium.",
-			href: `/servers/${data.guild.id}/logging`,
+			path: "logging",
 			icon: FileText
 		},
 		{
 			id: "permissions",
 			name: "Permission Scopes",
 			description: "Manage role-based permission levels for commands.",
-			href: `/servers/${data.guild.id}/permissions`,
+			path: "permissions",
 			icon: KeyRound
 		}
 	];
 
 	function getDisplayName(session: typeof data.session) {
 		return session.globalName ?? session.username ?? "User";
+	}
+
+	function getModuleHref(path: string) {
+		return `/servers/${data.guild.id}/${path}`;
 	}
 </script>
 
@@ -102,7 +106,7 @@
 		<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 			{#each modules as module (module.id)}
 				<a
-					href={module.href}
+					href={getModuleHref(module.path)}
 					class="module-link group rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-4 transition-[border-color,background-color,transform] duration-150 hover:border-zinc-600/80 hover:bg-zinc-900/70"
 				>
 					<div class="flex items-start gap-3">

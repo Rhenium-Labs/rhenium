@@ -472,31 +472,6 @@
 		padding: 1.25rem 1.35rem 1.5rem;
 	}
 
-	.workspace-bar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1rem;
-		padding: 0.8rem 0.95rem;
-		border: 1px solid rgb(39 39 42 / 0.9);
-		border-radius: 0.9rem;
-		background: rgb(24 24 27 / 0.68);
-		animation: shell-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-	.workspace-kicker {
-		font-size: 0.68rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: rgb(113 113 122);
-	}
-	.workspace-title {
-		margin-top: 0.2rem;
-		font-size: 1.15rem;
-		font-weight: 600;
-		line-height: 1.2;
-		color: rgb(244 244 245);
-	}
-
 	.mobile-nav-wrap {
 		display: none;
 	}
@@ -606,10 +581,6 @@
 			padding: 1rem;
 		}
 
-		.workspace-bar {
-			margin-bottom: 0.75rem;
-		}
-
 		.mobile-nav-wrap {
 			display: block;
 			margin-bottom: 0.9rem;
@@ -653,7 +624,6 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.dashboard-sidebar,
-		.workspace-bar,
 		.route-frame.is-revealing,
 		.loading-shell {
 			animation: none !important;
