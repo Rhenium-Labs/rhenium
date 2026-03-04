@@ -84,7 +84,7 @@
 	$effect.pre(() => {
 		const cfg = data.guild.config.content_filter;
 		enabled = cfg.enabled;
-		channelId = "";
+		channelId = cfg.webhook_channel ?? "";
 		useNativeAutomod = cfg.use_native_automod;
 		detectors = [...cfg.detectors];
 		detectorMode = cfg.detector_mode;
