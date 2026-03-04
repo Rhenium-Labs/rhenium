@@ -145,10 +145,10 @@
 	/>
 
 	<form id="ban-requests-form" onsubmit={submitConfig} class="space-y-6">
-		<!-- Report Channel -->
+		<!-- Review Channel -->
 		<ConfigSection
-			title="Report Channel"
-			description="The channel where ban request submissions are posted via webhook."
+			title="Review Channel"
+			description="Select the channel where new ban request submissions will be sent. The bot will automatically create a webhook in this channel."
 		>
 			<select
 				bind:value={channelId}

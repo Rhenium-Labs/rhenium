@@ -185,10 +185,10 @@
 		<input type="hidden" name="notifyRoles" value={JSON.stringify(notifyRoles)} />
 
 		<div class="space-y-6">
-			<!-- Report Channel -->
+			<!-- Review Channel -->
 			<ConfigSection
-				title="Report Channel"
-				description="Select the channel where message reports will be sent. The bot will automatically create a webhook in this channel."
+				title="Review Channel"
+				description="Select the channel where new message reports will be sent. The bot will automatically create a webhook in this channel."
 			>
 				<select
 					bind:value={channelId}
