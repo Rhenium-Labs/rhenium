@@ -63,8 +63,8 @@
 		}
 	}
 
-	function onServersLoaded() {
-		// Small delay to ensure DOM is ready for animation
+	/** Svelte action: runs client-side only when the node mounts */
+	function serversVisible(_node: HTMLElement) {
 		requestAnimationFrame(() => {
 			serversLoaded = true;
 		});
@@ -145,9 +145,8 @@
 						<Loader2 class="h-8 w-8 animate-spin text-zinc-500" />
 					</div>
 				{:then servers}
-					{@const _ = onServersLoaded()}
 					<!-- Server List -->
-					<div class="h-full space-y-1 overflow-y-auto pr-1">
+					<div class="h-full space-y-1 overflow-y-auto pr-1" use:serversVisible>
 						{#each servers as server, index (server.id)}
 							{#if server.hasBot}
 								<a
