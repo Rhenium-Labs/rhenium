@@ -11,22 +11,58 @@
 	let navigating = $state(false);
 	let pendingInviteRefresh = $state(false);
 	let serversLoaded = $state(false);
+	let pendingServerRefresh: Promise<void> | null = null;
+	let serverListAnimationFrame: number | null = null;
+
+	const EXIT_ANIMATION_MS = 300;
+	const MAX_STAGGER_INDEX = 12;
+
+	async function refreshIfPendingInvite() {
+		if (document.visibilityState !== "visible" || !pendingInviteRefresh) return;
+
+		pendingInviteRefresh = false;
+		await refreshServers();
+	}
 
 	onMount(() => {
 		function handleVisibilityChange() {
-			if (document.visibilityState === "visible" && pendingInviteRefresh) {
-				pendingInviteRefresh = false;
-				refreshServers();
-			}
+			void refreshIfPendingInvite();
+		}
+
+		function handleFocus() {
+			void refreshIfPendingInvite();
 		}
 
 		document.addEventListener("visibilitychange", handleVisibilityChange);
-		return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener("focus", handleFocus);
+
+		return () => {
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener("focus", handleFocus);
+
+			if (serverListAnimationFrame !== null) {
+				cancelAnimationFrame(serverListAnimationFrame);
+				serverListAnimationFrame = null;
+			}
+		};
 	});
 
 	async function refreshServers() {
-		await fetch("/api/servers/invalidate-cache", { method: "POST" });
-		await invalidateAll();
+		if (pendingServerRefresh) {
+			await pendingServerRefresh;
+			return;
+		}
+
+		pendingServerRefresh = (async () => {
+			await fetch("/api/servers/invalidate-cache", { method: "POST" });
+			await invalidateAll();
+		})();
+
+		try {
+			await pendingServerRefresh;
+		} finally {
+			pendingServerRefresh = null;
+		}
 	}
 
 	function handleInviteClick() {
@@ -34,13 +70,12 @@
 	}
 
 	async function handleServerClick(e: MouseEvent, serverId: string, hasBot: boolean) {
-		if (!hasBot) return;
+		if (!hasBot || navigating) return;
 
 		e.preventDefault();
 		navigating = true;
 
-		// Wait for exit animation
-		await new Promise(resolve => setTimeout(resolve, 350));
+		await new Promise(resolve => setTimeout(resolve, EXIT_ANIMATION_MS));
 		goto(`/servers/${serverId}`);
 	}
 
@@ -65,9 +100,26 @@
 
 	/** Svelte action: runs client-side only when the node mounts */
 	function serversVisible(_node: HTMLElement) {
-		requestAnimationFrame(() => {
-			serversLoaded = true;
+		serversLoaded = false;
+
+		if (serverListAnimationFrame !== null) {
+			cancelAnimationFrame(serverListAnimationFrame);
+		}
+
+		serverListAnimationFrame = requestAnimationFrame(() => {
+			serverListAnimationFrame = requestAnimationFrame(() => {
+				serversLoaded = true;
+			});
 		});
+
+		return {
+			destroy() {
+				if (serverListAnimationFrame !== null) {
+					cancelAnimationFrame(serverListAnimationFrame);
+					serverListAnimationFrame = null;
+				}
+			}
+		};
 	}
 </script>
 
@@ -126,7 +178,7 @@
 		<div class="relative h-80 overflow-hidden">
 			<!-- Navigating spinner (slides in from right) -->
 			<div
-				class="absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out {navigating
+				class="absolute inset-0 flex items-center justify-center transition-[transform,opacity] duration-300 ease-out will-change-transform {navigating
 					? 'translate-x-0 opacity-100'
 					: 'translate-x-full opacity-0'}"
 			>
@@ -135,7 +187,7 @@
 
 			<!-- Content (slides out to left when navigating) -->
 			<div
-				class="h-full transition-all duration-300 ease-out {navigating
+				class="h-full transition-[transform,opacity] duration-300 ease-out will-change-transform {navigating
 					? '-translate-x-full opacity-0'
 					: 'translate-x-0 opacity-100'}"
 			>
@@ -146,86 +198,95 @@
 					</div>
 				{:then servers}
 					<!-- Server List -->
-					<div class="h-full space-y-1 overflow-y-auto pr-1" use:serversVisible>
-						{#each servers as server, index (server.id)}
-							{#if server.hasBot}
-								<a
-									href="/servers/{server.id}"
-									onclick={e => handleServerClick(e, server.id, true)}
-									class="server-item group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-zinc-800"
-									style="--delay: {index * 50}ms"
-									class:animated={serversLoaded}
-								>
-									{#if server.icon}
-										<img
-											src={server.icon}
-											alt={server.name}
-											class="h-10 w-10 shrink-0 rounded-xl"
-										/>
-									{:else}
-										<div
-											class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-700 text-xs font-medium text-zinc-300"
-										>
-											{getInitials(server.name)}
-										</div>
-									{/if}
-
-									<span
-										class="min-w-0 flex-1 truncate font-medium text-white"
+					{#key servers}
+						<div class="h-full space-y-1 overflow-y-auto pr-1" use:serversVisible>
+							{#each servers as server, index (server.id)}
+								{#if server.hasBot}
+									<a
+										href="/servers/{server.id}"
+										onclick={e =>
+											handleServerClick(e, server.id, true)}
+										class="server-item group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-zinc-800"
+										style="--delay: {Math.min(
+											index,
+											MAX_STAGGER_INDEX
+										) * 40}ms"
+										class:animated={serversLoaded}
 									>
-										{server.name}
-									</span>
+										{#if server.icon}
+											<img
+												src={server.icon}
+												alt={server.name}
+												class="h-10 w-10 shrink-0 rounded-xl"
+											/>
+										{:else}
+											<div
+												class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-700 text-xs font-medium text-zinc-300"
+											>
+												{getInitials(server.name)}
+											</div>
+										{/if}
 
-									<ChevronRight
-										class="h-5 w-5 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400"
-									/>
-								</a>
+										<span
+											class="min-w-0 flex-1 truncate font-medium text-white"
+										>
+											{server.name}
+										</span>
+
+										<ChevronRight
+											class="h-5 w-5 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400"
+										/>
+									</a>
+								{:else}
+									<a
+										href={server.inviteUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										onclick={handleInviteClick}
+										class="server-item server-item-muted group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-zinc-800/50"
+										style="--delay: {Math.min(
+											index,
+											MAX_STAGGER_INDEX
+										) * 40}ms"
+										class:animated={serversLoaded}
+									>
+										{#if server.icon}
+											<img
+												src={server.icon}
+												alt={server.name}
+												class="h-10 w-10 shrink-0 rounded-xl grayscale"
+											/>
+										{:else}
+											<div
+												class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-700 text-xs font-medium text-zinc-500"
+											>
+												{getInitials(server.name)}
+											</div>
+										{/if}
+
+										<span
+											class="min-w-0 flex-1 truncate font-medium text-zinc-400"
+										>
+											{server.name}
+										</span>
+
+										<Plus
+											class="h-5 w-5 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400"
+										/>
+									</a>
+								{/if}
 							{:else}
-								<a
-									href={server.inviteUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									onclick={handleInviteClick}
-									class="server-item server-item-muted group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all hover:bg-zinc-800/50"
-									style="--delay: {index * 50}ms"
-									class:animated={serversLoaded}
-								>
-									{#if server.icon}
-										<img
-											src={server.icon}
-											alt={server.name}
-											class="h-10 w-10 shrink-0 rounded-xl grayscale"
-										/>
-									{:else}
-										<div
-											class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-700 text-xs font-medium text-zinc-500"
-										>
-											{getInitials(server.name)}
-										</div>
-									{/if}
-
-									<span
-										class="min-w-0 flex-1 truncate font-medium text-zinc-400"
-									>
-										{server.name}
-									</span>
-
-									<Plus
-										class="h-5 w-5 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400"
-									/>
-								</a>
-							{/if}
-						{:else}
-							<div class="flex h-full items-center justify-center">
-								<div class="text-center">
-									<p class="text-zinc-400">No servers found.</p>
-									<p class="mt-1 text-sm text-zinc-500">
-										You need Manage Server or Admin permission.
-									</p>
+								<div class="flex h-full items-center justify-center">
+									<div class="text-center">
+										<p class="text-zinc-400">No servers found.</p>
+										<p class="mt-1 text-sm text-zinc-500">
+											You need Manage Server or Admin permission.
+										</p>
+									</div>
 								</div>
-							</div>
-						{/each}
-					</div>
+							{/each}
+						</div>
+					{/key}
 				{:catch}
 					<div class="flex h-full items-center justify-center">
 						<div class="text-center">
@@ -293,7 +354,9 @@
 	/* Server item staggered entrance */
 	.server-item {
 		opacity: 0;
-		transform: translateY(12px);
+		transform: translate3d(0, 12px, 0);
+		will-change: transform, opacity;
+		backface-visibility: hidden;
 	}
 
 	.server-item.animated {
@@ -303,11 +366,11 @@
 	@keyframes server-enter {
 		from {
 			opacity: 0;
-			transform: translateY(12px);
+			transform: translate3d(0, 12px, 0);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0);
+			transform: translate3d(0, 0, 0);
 		}
 	}
 
@@ -324,11 +387,27 @@
 	@keyframes server-enter-muted {
 		from {
 			opacity: 0;
-			transform: translateY(12px);
+			transform: translate3d(0, 12px, 0);
 		}
 		to {
 			opacity: 0.5;
-			transform: translateY(0);
+			transform: translate3d(0, 0, 0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.card-container,
+		.user-header,
+		.dropdown-menu,
+		.server-item.animated,
+		.server-item-muted.animated {
+			animation: none !important;
+		}
+
+		.server-item,
+		.server-item-muted {
+			opacity: 1;
+			transform: none;
 		}
 	}
 </style>
