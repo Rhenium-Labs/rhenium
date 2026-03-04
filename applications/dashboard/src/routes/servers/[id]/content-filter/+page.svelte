@@ -124,6 +124,7 @@
 
 	const isDirty = $derived(
 		enabled !== config.enabled ||
+			channelId !== (config.webhook_channel ?? "") ||
 			useNativeAutomod !== config.use_native_automod ||
 			JSON.stringify(normalizeDetectorSet(detectors)) !==
 				JSON.stringify(normalizeDetectorSet(config.detectors)) ||
@@ -175,6 +176,7 @@
 
 	function resetForm() {
 		enabled = config.enabled;
+		channelId = config.webhook_channel ?? "";
 		useNativeAutomod = config.use_native_automod;
 		detectors = [...config.detectors];
 		detectorMode = config.detector_mode;
