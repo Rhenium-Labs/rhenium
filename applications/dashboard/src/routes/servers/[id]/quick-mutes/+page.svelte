@@ -5,7 +5,7 @@
 	import { cubicOut } from "svelte/easing";
 	import { fade, slide } from "svelte/transition";
 	import { ChannelScopingType, LoggingEvent } from "@repo/config";
-	import { TriangleAlert, VolumeOff, Plus, Trash2 } from "@lucide/svelte";
+	import { VolumeOff, Plus, Trash2, Folder, ChevronDown } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
 	import PageHeader from "$lib/components/PageHeader.svelte";
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
@@ -15,6 +15,8 @@
 		id: string;
 		name: string;
 		type: number;
+		parentId: string | null;
+		position: number;
 	}
 
 	type ScopeRow = {
@@ -35,13 +37,39 @@
 			)
 		)
 	);
-	const channels: ChannelInfo[] = $derived(
-		data.channels.filter((c: ChannelInfo) => c.type === 0 || c.type === 5)
-	);
+	const scopingChannels: ChannelInfo[] = $derived.by(() => {
+		const scoped = data.channels.filter(
+			(channel: ChannelInfo) =>
+				channel.type === 0 || channel.type === 4 || channel.type === 5
+		);
+
+		const scopedById = new Map(scoped.map(channel => [channel.id, channel]));
+		const topLevel = scoped
+			.filter(channel => channel.parentId === null || !scopedById.has(channel.parentId))
+			.sort((a, b) => a.position - b.position);
+
+		const ordered: ChannelInfo[] = [];
+		for (const channel of topLevel) {
+			ordered.push(channel);
+			if (channel.type === 4) {
+				const children = scoped
+					.filter(
+						candidate =>
+							(candidate.type === 0 || candidate.type === 5) &&
+							candidate.parentId === channel.id
+					)
+					.sort((a, b) => a.position - b.position);
+				ordered.push(...children);
+			}
+		}
+
+		return ordered;
+	});
 
 	let enabled = $state(false);
 	let purgeLimit = $state(100);
 	let channelScoping = $state<ScopeRow[]>([]);
+	let openScopeMenuUiId = $state<string | null>(null);
 	let nextScopeUiId = 0;
 	let scopeRowMeasureEl: HTMLDivElement | undefined;
 	let reservedEmptyHeight = $state(0);
@@ -130,12 +158,32 @@
 	}
 
 	function addScope() {
-		const fallbackChannel = channels[0]?.id;
+		const fallbackChannel = scopingChannels[0]?.id;
 		if (!fallbackChannel) return;
 		channelScoping = [
 			...channelScoping,
 			createScopeRow(fallbackChannel, ChannelScopingType.Include)
 		];
+	}
+
+	function getScopeChannelById(channelId: string): ChannelInfo | undefined {
+		return scopingChannels.find(channel => channel.id === channelId);
+	}
+
+	function setScopeChannel(scopeUiId: string, channelId: string) {
+		channelScoping = channelScoping.map(scope =>
+			scope.uiId === scopeUiId ? { ...scope, channelId } : scope
+		);
+		openScopeMenuUiId = null;
+	}
+
+	function isCategoryChannel(channel: ChannelInfo | undefined): boolean {
+		return channel?.type === 4;
+	}
+
+	function getScopeChannelName(channel: ChannelInfo | undefined): string {
+		if (!channel) return "Unknown channel";
+		return channel.name;
 	}
 
 	function removeScope(scopeUiId: string) {
@@ -245,20 +293,68 @@
 					</p>
 				{/if}
 				{#each channelScoping as scope (scope.uiId)}
+					{@const selectedChannel = getScopeChannelById(scope.channelId)}
 					<div
 						animate:flip={{ duration: 170, easing: cubicOut }}
 						in:fade={{ duration: 120 }}
 						out:slide={{ duration: 140, easing: cubicOut }}
 						class="grid gap-2 rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 md:grid-cols-[1fr_auto_auto]"
 					>
-						<select
-							bind:value={scope.channelId}
-							class="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-						>
-							{#each channels as channel}
-								<option value={channel.id}>#{channel.name}</option>
-							{/each}
-						</select>
+						<div class="relative">
+							<button
+								type="button"
+								onclick={() =>
+									(openScopeMenuUiId =
+										openScopeMenuUiId === scope.uiId
+											? null
+											: scope.uiId)}
+								class="flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none hover:border-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+							>
+								<span class="flex min-w-0 items-center gap-2">
+									{#if isCategoryChannel(selectedChannel)}
+										<Folder
+											class="h-4 w-4 shrink-0 text-white"
+											fill="currentColor"
+											strokeWidth={2.25}
+										/>
+									{:else}
+										<span class="shrink-0 text-zinc-400">#</span>
+									{/if}
+									<span class="truncate"
+										>{getScopeChannelName(selectedChannel)}</span
+									>
+								</span>
+								<ChevronDown class="h-4 w-4 shrink-0 text-zinc-400" />
+							</button>
+
+							{#if openScopeMenuUiId === scope.uiId}
+								<div
+									class="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 p-1 shadow-2xl"
+								>
+									{#each scopingChannels as channel}
+										<button
+											type="button"
+											onclick={() =>
+												setScopeChannel(scope.uiId, channel.id)}
+											class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-white transition-colors hover:bg-zinc-700"
+										>
+											{#if channel.type === 4}
+												<Folder
+													class="h-4 w-4 shrink-0 text-white"
+													fill="currentColor"
+													strokeWidth={2.25}
+												/>
+											{:else}
+												<span class="shrink-0 text-zinc-400"
+													>#</span
+												>
+											{/if}
+											<span class="truncate">{channel.name}</span>
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
 						<select
 							bind:value={scope.type}
 							class="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"

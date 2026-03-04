@@ -14,8 +14,6 @@
 		id: string;
 		name: string;
 		type: number;
-		parentId: string | null;
-		position: number;
 	}
 
 	/** Simplified role representation from the bot. */
@@ -30,7 +28,9 @@
 	let { data }: { data: PageData } = $props();
 
 	const config = $derived(data.guild.config.message_reports);
-	const channels: ChannelInfo[] = $derived(data.channels);
+	const channels: ChannelInfo[] = $derived(
+		data.channels.filter((ch: ChannelInfo) => ch.type === 0 || ch.type === 5)
+	);
 	const roles: RoleInfo[] = $derived(data.roles);
 
 	let enabled = $state(false);
@@ -164,25 +164,6 @@
 		}
 	}
 
-	// ── Channel helpers ─────────────────────────────────────────────────
-	const categories = $derived(
-		channels
-			.filter((ch: ChannelInfo) => ch.type === 4)
-			.sort((a: ChannelInfo, b: ChannelInfo) => a.position - b.position)
-	);
-
-	const textChannels = $derived(
-		channels.filter((ch: ChannelInfo) => ch.type === 0 || ch.type === 5)
-	);
-
-	function channelsInCategory(categoryId: string | null): ChannelInfo[] {
-		return textChannels
-			.filter((ch: ChannelInfo) => ch.parentId === categoryId)
-			.sort((a: ChannelInfo, b: ChannelInfo) => a.position - b.position);
-	}
-
-	const uncategorizedChannels = $derived(channelsInCategory(null));
-
 	// ── Duration helpers ────────────────────────────────────────────────
 	function formatDuration(ms: string): string {
 		const val = BigInt(ms);
@@ -224,17 +205,8 @@
 					class="w-full max-w-sm rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">No channel selected</option>
-					{#if uncategorizedChannels.length > 0}
-						{#each uncategorizedChannels as ch (ch.id)}
-							<option value={ch.id}>#{ch.name}</option>
-						{/each}
-					{/if}
-					{#each categories as cat (cat.id)}
-						<optgroup label={cat.name}>
-							{#each channelsInCategory(cat.id) as ch (ch.id)}
-								<option value={ch.id}>#{ch.name}</option>
-							{/each}
-						</optgroup>
+					{#each channels as ch (ch.id)}
+						<option value={ch.id}>#{ch.name}</option>
 					{/each}
 				</select>
 			</ConfigSection>

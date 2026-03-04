@@ -9,7 +9,7 @@
 		ContentFilterVerbosity,
 		DetectorMode
 	} from "@repo/config";
-	import { Shield, Plus, Trash2 } from "@lucide/svelte";
+	import { Shield, Plus, Trash2, Folder, ChevronDown } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
 	import PageHeader from "$lib/components/PageHeader.svelte";
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
@@ -21,6 +21,8 @@
 		id: string;
 		name: string;
 		type: number;
+		parentId: string | null;
+		position: number;
 	}
 
 	interface RoleInfo {
@@ -33,9 +35,37 @@
 
 	let { data }: { data: PageData } = $props();
 	const config = $derived(data.guild.config.content_filter);
-	const channels: ChannelInfo[] = $derived(
+	const webhookChannels: ChannelInfo[] = $derived(
 		data.channels.filter((c: ChannelInfo) => c.type === 0 || c.type === 5)
 	);
+	const scopingChannels: ChannelInfo[] = $derived.by(() => {
+		const scoped = data.channels.filter(
+			(channel: ChannelInfo) =>
+				channel.type === 0 || channel.type === 4 || channel.type === 5
+		);
+
+		const scopedById = new Map(scoped.map(channel => [channel.id, channel]));
+		const topLevel = scoped
+			.filter(channel => channel.parentId === null || !scopedById.has(channel.parentId))
+			.sort((a, b) => a.position - b.position);
+
+		const ordered: ChannelInfo[] = [];
+		for (const channel of topLevel) {
+			ordered.push(channel);
+			if (channel.type === 4) {
+				const children = scoped
+					.filter(
+						candidate =>
+							(candidate.type === 0 || candidate.type === 5) &&
+							candidate.parentId === channel.id
+					)
+					.sort((a, b) => a.position - b.position);
+				ordered.push(...children);
+			}
+		}
+
+		return ordered;
+	});
 	const roles: RoleInfo[] = $derived(data.roles);
 
 	let enabled = $state(false);
@@ -47,6 +77,7 @@
 	let immuneRoles = $state<string[]>([]);
 	let notifyRoles = $state<string[]>([]);
 	let channelScoping = $state<Array<{ channelId: string; type: ChannelScopingType }>>([]);
+	let openScopeMenuIndex = $state<number | null>(null);
 	let ocrKeywordsRaw = $state("");
 	let ocrRegexRaw = $state("");
 
@@ -159,12 +190,32 @@
 	}
 
 	function addScope() {
-		const firstChannel = channels[0]?.id;
+		const firstChannel = scopingChannels[0]?.id;
 		if (!firstChannel) return;
 		channelScoping = [
 			...channelScoping,
 			{ channelId: firstChannel, type: ChannelScopingType.Include }
 		];
+	}
+
+	function getScopeChannelById(channelId: string): ChannelInfo | undefined {
+		return scopingChannels.find(channel => channel.id === channelId);
+	}
+
+	function setScopeChannel(index: number, channelId: string) {
+		channelScoping = channelScoping.map((scope, scopeIndex) =>
+			scopeIndex === index ? { ...scope, channelId } : scope
+		);
+		openScopeMenuIndex = null;
+	}
+
+	function isCategoryChannel(channel: ChannelInfo | undefined): boolean {
+		return channel?.type === 4;
+	}
+
+	function getScopeChannelName(channel: ChannelInfo | undefined): string {
+		if (!channel) return "Unknown channel";
+		return channel.name;
 	}
 
 	async function submitConfig(event: SubmitEvent) {
@@ -238,7 +289,7 @@
 							class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
 						>
 							<option value="">No channel selected</option>
-							{#each channels as channel}
+							{#each webhookChannels as channel}
 								<option value={channel.id}>#{channel.name}</option>
 							{/each}
 						</select>
@@ -354,20 +405,66 @@
 					</p>
 				{/if}
 				{#each channelScoping as scope, index (scope)}
+					{@const selectedChannel = getScopeChannelById(scope.channelId)}
 					<div
 						animate:flip={{ duration: 180 }}
 						in:fade={{ duration: 140 }}
 						out:fade={{ duration: 110 }}
 						class="grid gap-2 rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 md:grid-cols-[1fr_auto_auto]"
 					>
-						<select
-							bind:value={scope.channelId}
-							class="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-						>
-							{#each channels as channel}
-								<option value={channel.id}>#{channel.name}</option>
-							{/each}
-						</select>
+						<div class="relative">
+							<button
+								type="button"
+								onclick={() =>
+									(openScopeMenuIndex =
+										openScopeMenuIndex === index ? null : index)}
+								class="flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none hover:border-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+							>
+								<span class="flex min-w-0 items-center gap-2">
+									{#if isCategoryChannel(selectedChannel)}
+										<Folder
+											class="h-4 w-4 shrink-0 text-white"
+											fill="currentColor"
+											strokeWidth={2.25}
+										/>
+									{:else}
+										<span class="shrink-0 text-zinc-400">#</span>
+									{/if}
+									<span class="truncate"
+										>{getScopeChannelName(selectedChannel)}</span
+									>
+								</span>
+								<ChevronDown class="h-4 w-4 shrink-0 text-zinc-400" />
+							</button>
+
+							{#if openScopeMenuIndex === index}
+								<div
+									class="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 p-1 shadow-2xl"
+								>
+									{#each scopingChannels as channel}
+										<button
+											type="button"
+											onclick={() =>
+												setScopeChannel(index, channel.id)}
+											class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-white transition-colors hover:bg-zinc-700"
+										>
+											{#if channel.type === 4}
+												<Folder
+													class="h-4 w-4 shrink-0 text-white"
+													fill="currentColor"
+													strokeWidth={2.25}
+												/>
+											{:else}
+												<span class="shrink-0 text-zinc-400"
+													>#</span
+												>
+											{/if}
+											<span class="truncate">{channel.name}</span>
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
 						<select
 							bind:value={scope.type}
 							class="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
