@@ -2,7 +2,8 @@
 	import { beforeNavigate, invalidateAll } from "$app/navigation";
 	import { onDestroy } from "svelte";
 	import { flip } from "svelte/animate";
-	import { fade } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
+	import { fade, slide } from "svelte/transition";
 	import { LoggingEvent } from "@repo/config";
 	import { Webhook, Plus, Trash2 } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
@@ -17,6 +18,7 @@
 	}
 
 	type WebhookRow = {
+		uiId: string;
 		id: string | null;
 		channelId: string;
 		events: LoggingEvent[];
@@ -27,22 +29,34 @@
 		data.channels.filter((c: ChannelInfo) => c.type === 0 || c.type === 5)
 	);
 	const configRows = $derived(
-		data.guild.config.logging_webhooks.map(webhook => ({
-			id: webhook.id,
-			channelId: webhook.channel_id,
-			events: [...webhook.events]
-		}))
+		data.guild.config.logging_webhooks.map(webhook =>
+			createWebhookRow(webhook.id, webhook.channel_id, webhook.events)
+		)
 	);
 	const allEvents = Object.values(LoggingEvent);
+	let nextWebhookUiId = 0;
 
 	let webhooks = $state<WebhookRow[]>([]);
+	let webhookRowMeasureEl: HTMLDivElement | undefined;
+	let reservedEmptyHeight = $state(0);
+
+	function createWebhookRow(
+		id: string | null,
+		channelId: string,
+		events: LoggingEvent[]
+	): WebhookRow {
+		return {
+			uiId: `webhook-${nextWebhookUiId++}`,
+			id,
+			channelId,
+			events: [...events]
+		};
+	}
 
 	$effect.pre(() => {
-		webhooks = data.guild.config.logging_webhooks.map(webhook => ({
-			id: webhook.id,
-			channelId: webhook.channel_id,
-			events: [...webhook.events]
-		}));
+		webhooks = data.guild.config.logging_webhooks.map(webhook =>
+			createWebhookRow(webhook.id, webhook.channel_id, webhook.events)
+		);
 	});
 	let saveStatus = $state<"idle" | "saving" | "success" | "error">("idle");
 	let saveError = $state("");
@@ -50,7 +64,32 @@
 	let shakeTimeout: ReturnType<typeof setTimeout> | undefined;
 	let statusTimeout: ReturnType<typeof setTimeout> | undefined;
 
-	const isDirty = $derived(JSON.stringify(webhooks) !== JSON.stringify(configRows));
+	function normalizeWebhooks(rows: WebhookRow[]) {
+		return rows
+			.map(row => ({
+				id: row.id,
+				channelId: row.channelId,
+				events: [...row.events].sort((a, b) => a.localeCompare(b))
+			}))
+			.sort((a, b) => {
+				const idCompare = (a.id ?? "").localeCompare(b.id ?? "");
+				if (idCompare !== 0) return idCompare;
+				return a.channelId.localeCompare(b.channelId);
+			});
+	}
+
+	const isDirty = $derived(
+		JSON.stringify(normalizeWebhooks(webhooks)) !==
+			JSON.stringify(normalizeWebhooks(configRows))
+	);
+
+	$effect(() => {
+		if (!webhookRowMeasureEl) return;
+		const measuredHeight = Math.ceil(webhookRowMeasureEl.getBoundingClientRect().height);
+		if (measuredHeight > 0 && measuredHeight !== reservedEmptyHeight) {
+			reservedEmptyHeight = measuredHeight;
+		}
+	});
 
 	function triggerShake() {
 		shaking = true;
@@ -81,7 +120,7 @@
 	});
 
 	function resetForm() {
-		webhooks = [...configRows];
+		webhooks = configRows.map(row => createWebhookRow(row.id, row.channelId, row.events));
 	}
 
 	function addWebhook() {
@@ -89,8 +128,12 @@
 		if (!channelId) return;
 		webhooks = [
 			...webhooks,
-			{ id: null, channelId, events: [LoggingEvent.MessageReportReviewed] }
+			createWebhookRow(null, channelId, [LoggingEvent.MessageReportReviewed])
 		];
+	}
+
+	function removeWebhook(webhookUiId: string) {
+		webhooks = webhooks.filter(webhook => webhook.uiId !== webhookUiId);
 	}
 
 	async function submitConfig(event: SubmitEvent) {
@@ -144,17 +187,24 @@
 				</button>
 			</div>
 
-			<div class="space-y-4">
+			<div
+				class="relative space-y-4"
+				style:min-height={webhooks.length === 0 && reservedEmptyHeight > 0
+					? `${reservedEmptyHeight}px`
+					: undefined}
+			>
 				{#if webhooks.length === 0}
-					<p class="py-4 text-center text-sm text-zinc-600">
+					<p
+						class="absolute inset-0 flex items-center justify-center text-sm text-zinc-600"
+					>
 						No webhooks configured.
 					</p>
 				{/if}
-				{#each webhooks as webhook, index (webhook)}
+				{#each webhooks as webhook (webhook.uiId)}
 					<div
-						animate:flip={{ duration: 180 }}
-						in:fade={{ duration: 140 }}
-						out:fade={{ duration: 110 }}
+						animate:flip={{ duration: 170, easing: cubicOut }}
+						in:fade={{ duration: 120 }}
+						out:slide={{ duration: 140, easing: cubicOut }}
 						class="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-4"
 					>
 						<div class="flex items-center justify-between gap-3">
@@ -168,8 +218,7 @@
 							</select>
 							<button
 								type="button"
-								onclick={() =>
-									(webhooks = webhooks.filter((_, i) => i !== index))}
+								onclick={() => removeWebhook(webhook.uiId)}
 								class="inline-flex items-center gap-1.5 rounded-lg border border-red-900/50 px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-950/40"
 							>
 								<Trash2 class="h-3.5 w-3.5" strokeWidth={2} />
@@ -203,6 +252,40 @@
 						</div>
 					</div>
 				{/each}
+
+				<div
+					bind:this={webhookRowMeasureEl}
+					aria-hidden="true"
+					class="pointer-events-none invisible absolute inset-x-0 top-0 space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-4"
+				>
+					<div class="flex items-center justify-between gap-3">
+						<div
+							class="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white"
+						>
+							#placeholder-channel
+						</div>
+						<button
+							type="button"
+							class="inline-flex items-center gap-1.5 rounded-lg border border-red-900/50 px-3 py-2 text-sm text-red-400"
+						>
+							<Trash2 class="h-3.5 w-3.5" strokeWidth={2} />
+							Remove
+						</button>
+					</div>
+					<div class="grid gap-x-4 gap-y-2 md:grid-cols-2">
+						{#each allEvents as eventName}
+							<label
+								class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-zinc-300"
+							>
+								<input
+									type="checkbox"
+									class="h-4 w-4 rounded border-zinc-600 bg-zinc-800"
+								/>
+								{eventName}
+							</label>
+						{/each}
+					</div>
+				</div>
 			</div>
 		</ConfigSection>
 	</form>

@@ -62,6 +62,10 @@
 	let shakeTimeout: ReturnType<typeof setTimeout> | undefined;
 	let statusTimeout: ReturnType<typeof setTimeout> | undefined;
 
+	function normalizeStringSet(values: string[]) {
+		return [...values].sort((a, b) => a.localeCompare(b));
+	}
+
 	const isDirty = $derived(
 		enabled !== config.enabled ||
 			channelId !== (config.webhook_channel ?? "") ||
@@ -70,8 +74,10 @@
 			placeholderReason !== (config.placeholder_reason ?? "") ||
 			enforceMember !== config.enforce_member_in_guild ||
 			enforceReason !== config.enforce_report_reason ||
-			JSON.stringify(immuneRoles) !== JSON.stringify(config.immune_roles) ||
-			JSON.stringify(notifyRoles) !== JSON.stringify(config.notify_roles)
+			JSON.stringify(normalizeStringSet(immuneRoles)) !==
+				JSON.stringify(normalizeStringSet(config.immune_roles)) ||
+			JSON.stringify(normalizeStringSet(notifyRoles)) !==
+				JSON.stringify(normalizeStringSet(config.notify_roles))
 	);
 
 	function triggerShake() {

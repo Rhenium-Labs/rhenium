@@ -64,14 +64,20 @@
 	let shakeTimeout: ReturnType<typeof setTimeout> | undefined;
 	let statusTimeout: ReturnType<typeof setTimeout> | undefined;
 
+	function normalizeStringSet(values: string[]) {
+		return [...values].sort((a, b) => a.localeCompare(b));
+	}
+
 	const isDirty = $derived(
 		enabled !== config.enabled ||
 			channelId !== (config.webhook_channel ?? "") ||
 			automaticallyTimeout !== config.automatically_timeout ||
 			enforceSubmissionReason !== config.enforce_submission_reason ||
 			enforceDenyReason !== config.enforce_deny_reason ||
-			JSON.stringify(immuneRoles) !== JSON.stringify(config.immune_roles) ||
-			JSON.stringify(notifyRoles) !== JSON.stringify(config.notify_roles) ||
+			JSON.stringify(normalizeStringSet(immuneRoles)) !==
+				JSON.stringify(normalizeStringSet(config.immune_roles)) ||
+			JSON.stringify(normalizeStringSet(notifyRoles)) !==
+				JSON.stringify(normalizeStringSet(config.notify_roles)) ||
 			notifyTarget !== config.notify_target ||
 			disableReasonField !== config.disable_reason_field ||
 			additionalInfo !== (config.additional_info ?? "") ||
@@ -172,7 +178,7 @@
 		<!-- Review Channel -->
 		<ConfigSection
 			title="Review Channel"
-			description="Select the channel where new ban request submissions will be sent. The bot will automatically create a webhook in this channel."
+			description="Select the channel where new ban request submissions will be sent. Rhenium will automatically create a webhook in this channel."
 		>
 			<select
 				bind:value={channelId}
@@ -190,9 +196,12 @@
 			<div class="space-y-6">
 				<div class="flex items-center justify-between gap-4">
 					<div>
-						<p class="text-sm font-medium text-zinc-300">Automatically Timeout</p>
+						<p class="text-sm font-medium text-zinc-300">
+							Time out automatically
+						</p>
 						<p class="text-xs text-zinc-500">
-							Timeout the user automatically when a ban request is approved.
+							Time out the target user for 28 days when a ban request is
+							submitted.
 						</p>
 					</div>
 					<Toggle

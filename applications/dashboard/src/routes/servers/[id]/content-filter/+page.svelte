@@ -83,14 +83,25 @@
 			.filter(Boolean);
 	}
 
+	function normalizeStringSet(values: string[]) {
+		return [...values].sort((a, b) => a.localeCompare(b));
+	}
+
+	function normalizeDetectorSet(values: Detector[]) {
+		return [...values].sort((a, b) => a.localeCompare(b));
+	}
+
 	const isDirty = $derived(
 		enabled !== config.enabled ||
 			useNativeAutomod !== config.use_native_automod ||
-			JSON.stringify(detectors) !== JSON.stringify(config.detectors) ||
+			JSON.stringify(normalizeDetectorSet(detectors)) !==
+				JSON.stringify(normalizeDetectorSet(config.detectors)) ||
 			detectorMode !== config.detector_mode ||
 			verbosity !== config.verbosity ||
-			JSON.stringify(immuneRoles) !== JSON.stringify(config.immune_roles) ||
-			JSON.stringify(notifyRoles) !== JSON.stringify(config.notify_roles) ||
+			JSON.stringify(normalizeStringSet(immuneRoles)) !==
+				JSON.stringify(normalizeStringSet(config.immune_roles)) ||
+			JSON.stringify(normalizeStringSet(notifyRoles)) !==
+				JSON.stringify(normalizeStringSet(config.notify_roles)) ||
 			JSON.stringify(channelScoping) !==
 				JSON.stringify(
 					config.channel_scoping.map(scope => ({
