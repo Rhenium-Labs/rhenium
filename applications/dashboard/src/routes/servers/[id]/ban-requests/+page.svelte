@@ -31,6 +31,32 @@
 	);
 	const roles: RoleInfo[] = $derived(data.roles);
 
+	const DELETE_PREVIOUS_MESSAGES_OPTIONS = [
+		{ value: "0", label: "Disabled", seconds: null },
+		{ value: "1h", label: "Previous hour", seconds: 60 * 60 },
+		{ value: "6h", label: "Previous 6 hours", seconds: 6 * 60 * 60 },
+		{ value: "12h", label: "Previous 12 hours", seconds: 12 * 60 * 60 },
+		{ value: "24h", label: "Previous 24 hours", seconds: 24 * 60 * 60 },
+		{ value: "3d", label: "Previous 3 days", seconds: 3 * 24 * 60 * 60 },
+		{ value: "7d", label: "Previous 7 days", seconds: 7 * 24 * 60 * 60 }
+	] as const;
+
+	function deleteDurationToSeconds(value: string): number | null {
+		const option = DELETE_PREVIOUS_MESSAGES_OPTIONS.find(option => option.value === value);
+		return option?.seconds ?? null;
+	}
+
+	function secondsToDeleteDuration(seconds: number | null | undefined): string {
+		const option = DELETE_PREVIOUS_MESSAGES_OPTIONS.find(
+			option => option.seconds === (seconds ?? null)
+		);
+		return option?.value ?? "0";
+	}
+
+	function getComparableDeleteSeconds(seconds: number | null | undefined): number | null {
+		return deleteDurationToSeconds(secondsToDeleteDuration(seconds));
+	}
+
 	let enabled = $state(false);
 	let channelId = $state("");
 	let automaticallyTimeout = $state(false);
@@ -41,7 +67,7 @@
 	let notifyTarget = $state(true);
 	let disableReasonField = $state(false);
 	let additionalInfo = $state("");
-	let deleteMessageSeconds = $state(30);
+	let deletePreviousMessages = $state("0");
 
 	$effect.pre(() => {
 		const cfg = data.guild.config.ban_requests;
@@ -55,7 +81,7 @@
 		notifyTarget = cfg.notify_target;
 		disableReasonField = cfg.disable_reason_field;
 		additionalInfo = cfg.additional_info ?? "";
-		deleteMessageSeconds = cfg.delete_message_seconds ?? 30;
+		deletePreviousMessages = secondsToDeleteDuration(cfg.delete_message_seconds);
 	});
 
 	let saveStatus = $state<"idle" | "saving" | "success" | "error">("idle");
@@ -81,7 +107,8 @@
 			notifyTarget !== config.notify_target ||
 			disableReasonField !== config.disable_reason_field ||
 			additionalInfo !== (config.additional_info ?? "") ||
-			deleteMessageSeconds !== (config.delete_message_seconds ?? 30)
+			deleteDurationToSeconds(deletePreviousMessages) !==
+				getComparableDeleteSeconds(config.delete_message_seconds)
 	);
 
 	function triggerShake() {
@@ -123,7 +150,7 @@
 		notifyTarget = config.notify_target;
 		disableReasonField = config.disable_reason_field;
 		additionalInfo = config.additional_info ?? "";
-		deleteMessageSeconds = config.delete_message_seconds ?? 30;
+		deletePreviousMessages = secondsToDeleteDuration(config.delete_message_seconds);
 	}
 
 	async function submitConfig(event: SubmitEvent) {
@@ -147,7 +174,7 @@
 					notifyTarget,
 					disableReasonField,
 					additionalInfo: additionalInfo.trim() ? additionalInfo : null,
-					deleteMessageSeconds
+					deleteMessageSeconds: deleteDurationToSeconds(deletePreviousMessages)
 				})
 			});
 			const payload = (await response.json()) as { success: boolean; error?: string };
@@ -195,21 +222,24 @@
 		<ConfigSection title="Behavior" description="Control how ban requests are processed.">
 			<div class="space-y-6">
 				<div>
-					<label for="deleteSeconds" class="text-sm font-medium text-zinc-300"
-						>Delete Message Seconds</label
+					<label
+						for="deletePreviousMessages"
+						class="text-sm font-medium text-zinc-300"
+						>Delete previous messages</label
 					>
 					<p class="mt-0.5 text-xs text-zinc-500">
-						Number of seconds of message history to delete when the user is
-						banned.
+						When the ban request is approved, delete messages sent by the target
+						user in the specified time range.
 					</p>
-					<input
-						id="deleteSeconds"
-						type="number"
-						min="1"
-						max="86400"
-						bind:value={deleteMessageSeconds}
+					<select
+						id="deletePreviousMessages"
+						bind:value={deletePreviousMessages}
 						class="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-					/>
+					>
+						{#each DELETE_PREVIOUS_MESSAGES_OPTIONS as option}
+							<option value={option.value}>{option.label}</option>
+						{/each}
+					</select>
 				</div>
 
 				<div class="flex items-center justify-between gap-4">

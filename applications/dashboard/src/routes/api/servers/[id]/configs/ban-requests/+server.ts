@@ -25,7 +25,16 @@ const BAN_REQUESTS_UPDATE_SCHEMA = z
 		notifyTarget: z.boolean(),
 		disableReasonField: z.boolean(),
 		additionalInfo: z.string().max(2000).nullable(),
-		deleteMessageSeconds: z.number().int().min(1).max(86_400).nullable()
+		deleteMessageSeconds: z
+			.union([
+				z.literal(60 * 60),
+				z.literal(6 * 60 * 60),
+				z.literal(12 * 60 * 60),
+				z.literal(24 * 60 * 60),
+				z.literal(3 * 24 * 60 * 60),
+				z.literal(7 * 24 * 60 * 60)
+			])
+			.nullable()
 	})
 	.strict();
 
