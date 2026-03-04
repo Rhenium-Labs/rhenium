@@ -112,8 +112,9 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 
 	const current = access.currentConfig.content_filter;
 	let webhookUrl = current.webhook_url;
+	let webhookChannel = current.webhook_channel;
 
-	if (payload.channelId) {
+	if (payload.channelId && payload.channelId !== webhookChannel) {
 		try {
 			const result = await trpc.guild.createWebhook.mutate({
 				guildId: params.id,
@@ -121,6 +122,7 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 				existingUrl: webhookUrl ?? undefined
 			});
 			webhookUrl = result.url;
+			webhookChannel = payload.channelId;
 		} catch {
 			return json(
 				{
@@ -130,6 +132,9 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 				{ status: 500 }
 			);
 		}
+	} else if (!payload.channelId) {
+		webhookUrl = null;
+		webhookChannel = null;
 	}
 
 	const parsedScoping = payload.channelScoping.map(scope => ({
@@ -150,6 +155,7 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 	const parsed = CONTENT_FILTER_CONFIG_SCHEMA.safeParse({
 		enabled: payload.enabled,
 		webhook_url: webhookUrl,
+		webhook_channel: webhookChannel,
 		use_native_automod: payload.useNativeAutomod,
 		detectors: [...new Set(payload.detectors)],
 		detector_mode: payload.detectorMode,

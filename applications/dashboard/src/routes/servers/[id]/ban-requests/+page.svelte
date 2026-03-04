@@ -211,7 +211,7 @@
 				bind:value={channelId}
 				class="w-full max-w-sm rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
 			>
-				<option value="">No channel selected</option>
+				<option value="">Disabled</option>
 				{#each channels as channel}
 					<option value={channel.id}>#{channel.name}</option>
 				{/each}
