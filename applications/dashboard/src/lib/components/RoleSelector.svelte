@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { X } from "@lucide/svelte";
+	import { flip } from "svelte/animate";
+	import { scale } from "svelte/transition";
 
 	interface RoleInfo {
 		id: string;
@@ -62,6 +64,9 @@
 			{#each selected as roleId (roleId)}
 				{@const role = getRoleById(roleId)}
 				<span
+					animate:flip={{ duration: 160 }}
+					in:scale={{ duration: 140, start: 0.92 }}
+					out:scale={{ duration: 100, start: 1 }}
 					class="role-chip group inline-flex items-center gap-1.5 rounded-md border border-zinc-700/50 bg-zinc-800/80 px-2.5 py-1 text-xs font-medium text-zinc-200 transition-colors hover:border-zinc-600/60 hover:bg-zinc-800"
 				>
 					<span
@@ -95,20 +100,3 @@
 		{/each}
 	</select>
 </div>
-
-<style>
-	.role-chip {
-		animation: chip-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	@keyframes chip-in {
-		from {
-			opacity: 0;
-			transform: scale(0.9);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1);
-		}
-	}
-</style>

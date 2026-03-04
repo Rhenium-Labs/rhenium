@@ -27,6 +27,17 @@
 	let shouldRender = $state(false);
 	let exiting = $state(false);
 	let hideTimeout: ReturnType<typeof setTimeout> | undefined;
+	let displaySaveStatus = $state<SaveStatus>("idle");
+	let displaySaveError = $state("");
+	let displayIsDirty = $state(false);
+
+	$effect(() => {
+		if (!visible || exiting) return;
+
+		displaySaveStatus = saveStatus;
+		displaySaveError = saveError;
+		displayIsDirty = isDirty;
+	});
 
 	$effect(() => {
 		if (visible) {
@@ -34,6 +45,9 @@
 				clearTimeout(hideTimeout);
 				hideTimeout = undefined;
 			}
+			displaySaveStatus = saveStatus;
+			displaySaveError = saveError;
+			displayIsDirty = isDirty;
 			shouldRender = true;
 			exiting = false;
 			return;
@@ -64,10 +78,10 @@
 			: 'border-zinc-700/50'} {exiting ? 'save-bar-exit' : ''}"
 	>
 		<div class="flex items-center gap-2.5">
-			{#if saveStatus === "error"}
+			{#if displaySaveStatus === "error"}
 				<AlertTriangle class="h-4 w-4 text-red-400" strokeWidth={2} />
-				<p class="text-sm text-red-400">{saveError}</p>
-			{:else if saveStatus === "success"}
+				<p class="text-sm text-red-400">{displaySaveError}</p>
+			{:else if displaySaveStatus === "success"}
 				<Check class="h-4 w-4 text-emerald-400" strokeWidth={2.5} />
 				<p class="text-sm text-emerald-400">Settings saved successfully.</p>
 			{:else}
@@ -75,11 +89,11 @@
 			{/if}
 		</div>
 		<div class="flex items-center gap-3">
-			{#if isDirty && saveStatus !== "saving"}
+			{#if displayIsDirty && displaySaveStatus !== "saving"}
 				<button
 					type="button"
 					onclick={onReset}
-					class="rounded-lg border border-zinc-600 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-all hover:border-zinc-500 hover:bg-zinc-800"
+					class="rounded-lg border border-zinc-600 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-[background-color,border-color] hover:border-zinc-500 hover:bg-zinc-800"
 				>
 					Reset
 				</button>
@@ -87,10 +101,10 @@
 			<button
 				type="submit"
 				form={formId}
-				disabled={saveStatus === "saving" || !isDirty}
-				class="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+				disabled={displaySaveStatus === "saving" || !displayIsDirty}
+				class="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-[background-color,opacity] hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				{#if saveStatus === "saving"}
+				{#if displaySaveStatus === "saving"}
 					<span class="flex items-center gap-2">
 						<Loader2 class="h-4 w-4 animate-spin" strokeWidth={2} />
 						Saving…
@@ -156,6 +170,18 @@
 		60%,
 		80% {
 			translate: 4px 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.save-bar,
+		.save-bar-exit,
+		.save-bar-shake {
+			animation: none !important;
+		}
+
+		.save-bar {
+			translate: 0 0;
 		}
 	}
 </style>

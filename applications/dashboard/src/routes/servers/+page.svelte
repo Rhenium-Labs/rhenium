@@ -137,7 +137,7 @@
 						e.stopPropagation();
 						showLogoutMenu = !showLogoutMenu;
 					}}
-					class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all {showLogoutMenu
+					class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-[background-color,color] {showLogoutMenu
 						? 'bg-zinc-800 text-white'
 						: 'text-zinc-300 hover:bg-zinc-800/50 hover:text-white'}"
 				>
@@ -156,11 +156,8 @@
 				</button>
 
 				{#if showLogoutMenu}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<div
 						class="dropdown-menu absolute top-full right-0 z-10 mt-1.5 min-w-35 overflow-hidden rounded-lg border border-zinc-700/50 bg-zinc-800 shadow-xl"
-						onclick={e => e.stopPropagation()}
 					>
 						<a
 							href="/api/auth/logout"
@@ -402,6 +399,12 @@
 		.server-item.animated,
 		.server-item-muted.animated {
 			animation: none !important;
+		}
+
+		.card-container,
+		.user-header {
+			transform: none;
+			opacity: 1;
 		}
 
 		.server-item,

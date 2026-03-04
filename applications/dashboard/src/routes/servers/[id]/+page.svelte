@@ -87,7 +87,7 @@
 <div class="grid gap-6 lg:grid-cols-2">
 	{#each modules as module, index (module.id)}
 		<div
-			class="module-card rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all hover:border-zinc-700 hover:bg-zinc-900"
+			class="module-card rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 transition-[background-color,border-color] hover:border-zinc-700 hover:bg-zinc-900"
 			style="--delay: {100 + index * 75}ms"
 		>
 			<!-- Icon -->
@@ -248,16 +248,26 @@
 	/* Module cards staggered entrance */
 	.module-card {
 		animation: card-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0ms) both;
+		will-change: transform, opacity;
 	}
 
 	@keyframes card-enter {
 		from {
 			opacity: 0;
-			transform: translateY(20px);
+			transform: translate3d(0, 20px, 0);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0);
+			transform: translate3d(0, 0, 0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.welcome-section,
+		.module-card {
+			animation: none !important;
+			transform: none;
+			opacity: 1;
 		}
 	}
 </style>

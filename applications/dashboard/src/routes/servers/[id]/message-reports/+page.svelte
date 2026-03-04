@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { beforeNavigate, invalidateAll } from "$app/navigation";
+	import { onDestroy } from "svelte";
 	import { Flag } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
 	import PageHeader from "$lib/components/PageHeader.svelte";
@@ -58,6 +59,8 @@
 	let saveStatus = $state<"idle" | "saving" | "success" | "error">("idle");
 	let saveError = $state("");
 	let shaking = $state(false);
+	let shakeTimeout: ReturnType<typeof setTimeout> | undefined;
+	let statusTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	const isDirty = $derived(
 		enabled !== config.enabled ||
@@ -71,11 +74,32 @@
 			JSON.stringify(notifyRoles) !== JSON.stringify(config.notify_roles)
 	);
 
+	function triggerShake() {
+		shaking = true;
+		if (shakeTimeout) clearTimeout(shakeTimeout);
+		shakeTimeout = setTimeout(() => {
+			shaking = false;
+			shakeTimeout = undefined;
+		}, 600);
+	}
+
+	function scheduleStatusReset(delayMs: number) {
+		if (statusTimeout) clearTimeout(statusTimeout);
+		statusTimeout = setTimeout(() => {
+			saveStatus = "idle";
+			statusTimeout = undefined;
+		}, delayMs);
+	}
+
+	onDestroy(() => {
+		if (shakeTimeout) clearTimeout(shakeTimeout);
+		if (statusTimeout) clearTimeout(statusTimeout);
+	});
+
 	beforeNavigate(({ cancel }) => {
 		if (isDirty) {
 			cancel();
-			shaking = true;
-			setTimeout(() => (shaking = false), 600);
+			triggerShake();
 		}
 	});
 
@@ -126,11 +150,11 @@
 
 			await invalidateAll();
 			saveStatus = "success";
-			setTimeout(() => (saveStatus = "idle"), 2500);
+			scheduleStatusReset(2500);
 		} catch (error) {
 			saveStatus = "error";
 			saveError = error instanceof Error ? error.message : "An unknown error occurred.";
-			setTimeout(() => (saveStatus = "idle"), 5000);
+			scheduleStatusReset(5000);
 		}
 	}
 
@@ -174,8 +198,7 @@
 		onToggle={() => (enabled = !enabled)}
 	/>
 
-	<!-- svelte-ignore a11y_no_redundant_roles -->
-	<form id="config-form" method="POST" role="form" onsubmit={submitConfig}>
+	<form id="config-form" method="POST" onsubmit={submitConfig}>
 		<input type="hidden" name="enabled" value={enabled.toString()} />
 		<input type="hidden" name="channelId" value={channelId} />
 		<input type="hidden" name="deleteOnHandle" value={deleteOnHandle.toString()} />

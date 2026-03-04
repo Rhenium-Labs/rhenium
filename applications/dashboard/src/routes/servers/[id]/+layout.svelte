@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import { beforeNavigate } from "$app/navigation";
+	import { afterNavigate, beforeNavigate, goto } from "$app/navigation";
+	import { onDestroy } from "svelte";
 	import type { LayoutData } from "./$types";
 	import type { Snippet } from "svelte";
 	import {
@@ -15,7 +16,8 @@
 		KeyRound,
 		ChevronDown,
 		ArrowLeftRight,
-		LogOut
+		LogOut,
+		Loader2
 	} from "@lucide/svelte";
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
@@ -23,6 +25,16 @@
 	let showServerMenu = $state(false);
 	let showUserMenu = $state(false);
 	let direction = $state<"up" | "down">("up");
+	let navPhase = $state<"idle" | "loading" | "revealing">("idle");
+	let pendingCategoryTarget: string | null = null;
+	let pendingCategoryNavigation = false;
+	let navDelayTimeout: ReturnType<typeof setTimeout> | undefined;
+	let revealTimeout: ReturnType<typeof setTimeout> | undefined;
+	let loadingStartedAt = 0;
+
+	const CATEGORY_NAV_DELAY_MS = 80;
+	const CATEGORY_MIN_LOADING_MS = 220;
+	const CATEGORY_REVEAL_MS = 220;
 
 	const isHome = $derived($page.url.pathname === `/servers/${data.guild.id}`);
 
@@ -105,11 +117,78 @@
 		return idx;
 	}
 
+	function shouldBypassIntercept(event: MouseEvent): boolean {
+		return (
+			event.defaultPrevented ||
+			event.button !== 0 ||
+			event.metaKey ||
+			event.ctrlKey ||
+			event.shiftKey ||
+			event.altKey
+		);
+	}
+
+	function navigateToCategory(event: MouseEvent, href: string) {
+		if (shouldBypassIntercept(event)) return;
+		if (navPhase !== "idle") {
+			event.preventDefault();
+			return;
+		}
+		if (href === $page.url.pathname) return;
+
+		event.preventDefault();
+		showServerMenu = false;
+		showUserMenu = false;
+
+		const fromIndex = getRouteIndex($page.url.pathname);
+		const toIndex = getRouteIndex(href);
+		direction = toIndex >= fromIndex ? "up" : "down";
+
+		pendingCategoryNavigation = true;
+		pendingCategoryTarget = href;
+		navPhase = "loading";
+		loadingStartedAt = Date.now();
+
+		if (navDelayTimeout) clearTimeout(navDelayTimeout);
+		if (revealTimeout) clearTimeout(revealTimeout);
+
+		navDelayTimeout = setTimeout(() => {
+			navDelayTimeout = undefined;
+			void goto(href);
+		}, CATEGORY_NAV_DELAY_MS);
+	}
+
 	beforeNavigate(({ to }) => {
 		if (!to?.url) return;
+
 		const fromIndex = getRouteIndex($page.url.pathname);
 		const toIndex = getRouteIndex(to.url.pathname);
 		direction = toIndex >= fromIndex ? "up" : "down";
+	});
+
+	afterNavigate(({ to }) => {
+		if (!pendingCategoryNavigation) return;
+		if (!to?.url || to.url.pathname !== pendingCategoryTarget) return;
+
+		const elapsed = Date.now() - loadingStartedAt;
+		const remainingLoading = Math.max(0, CATEGORY_MIN_LOADING_MS - elapsed);
+
+		if (revealTimeout) clearTimeout(revealTimeout);
+		revealTimeout = setTimeout(() => {
+			navPhase = "revealing";
+
+			revealTimeout = setTimeout(() => {
+				navPhase = "idle";
+				pendingCategoryNavigation = false;
+				pendingCategoryTarget = null;
+				revealTimeout = undefined;
+			}, CATEGORY_REVEAL_MS);
+		}, remainingLoading);
+	});
+
+	onDestroy(() => {
+		if (navDelayTimeout) clearTimeout(navDelayTimeout);
+		if (revealTimeout) clearTimeout(revealTimeout);
 	});
 </script>
 
@@ -128,7 +207,7 @@
 						e.stopPropagation();
 						showServerMenu = !showServerMenu;
 					}}
-					class="flex items-center gap-2.5 rounded-lg px-3 py-1.5 transition-all hover:bg-zinc-800 {showServerMenu
+					class="flex items-center gap-2.5 rounded-lg px-3 py-1.5 transition-[background-color] hover:bg-zinc-800 {showServerMenu
 						? 'bg-zinc-800'
 						: ''}"
 				>
@@ -155,11 +234,8 @@
 				</button>
 
 				{#if showServerMenu}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<div
 						class="dropdown-menu absolute top-full left-0 z-50 mt-1.5 min-w-44 overflow-hidden rounded-lg border border-zinc-700/50 bg-zinc-800/95 shadow-xl backdrop-blur-lg"
-						onclick={e => e.stopPropagation()}
 					>
 						<a
 							href="/servers"
@@ -177,13 +253,13 @@
 		</div>
 
 		<!-- Right: User Menu -->
-		<div class="relative">
+		<div class="relative flex items-center gap-2">
 			<button
 				onclick={e => {
 					e.stopPropagation();
 					showUserMenu = !showUserMenu;
 				}}
-				class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-all hover:bg-zinc-800 {showUserMenu
+				class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-[background-color] hover:bg-zinc-800 {showUserMenu
 					? 'bg-zinc-800'
 					: ''}"
 			>
@@ -202,11 +278,8 @@
 			</button>
 
 			{#if showUserMenu}
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<div
 					class="dropdown-menu absolute top-full right-0 z-50 mt-1.5 min-w-36 overflow-hidden rounded-lg border border-zinc-700/50 bg-zinc-800/95 shadow-xl backdrop-blur-lg"
-					onclick={e => e.stopPropagation()}
 				>
 					<a
 						href="/api/auth/logout"
@@ -231,6 +304,7 @@
 				<div class="mb-1 flex justify-center">
 					<a
 						href="/servers/{data.guild.id}"
+						onclick={e => navigateToCategory(e, `/servers/${data.guild.id}`)}
 						class="home-btn flex items-center rounded-lg text-sm font-medium {isHome
 							? 'is-expanded text-white'
 							: 'text-zinc-400 hover:text-white'}"
@@ -252,7 +326,8 @@
 							{@const active = isActiveModule(module.href)}
 							<a
 								href={module.href}
-								class="nav-item group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[0.8125rem] font-medium transition-all duration-150 {active
+								onclick={e => navigateToCategory(e, module.href)}
+								class="nav-item group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[0.8125rem] font-medium transition-[background-color,color] duration-150 {active
 									? 'bg-zinc-800/80 text-white'
 									: 'text-zinc-500 hover:bg-zinc-800/40 hover:text-zinc-200'}"
 							>
@@ -277,12 +352,33 @@
 
 		<!-- Main Content -->
 		<div class="ml-60 flex flex-1 flex-col">
-			<main class="flex-1 overflow-y-auto p-8">
-				{#key $page.url.pathname}
-					<div class="page-transition mx-auto max-w-4xl" data-direction={direction}>
-						{@render children()}
+			<main
+				class="main-content flex-1 overflow-y-auto p-8"
+				aria-busy={navPhase !== "idle"}
+			>
+				{#if navPhase === "loading"}
+					<div
+						class="motion-shell loading-stage mx-auto flex h-[calc(100vh-8rem)] max-w-4xl items-center justify-center"
+						data-direction={direction}
+					>
+						<div
+							class="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-2.5 text-sm text-zinc-300"
+						>
+							<Loader2 class="h-4 w-4 animate-spin text-zinc-400" />
+						</div>
 					</div>
-				{/key}
+				{:else}
+					{#key $page.url.pathname}
+						<div
+							class="page-content mx-auto max-w-4xl {navPhase === 'revealing'
+								? 'is-revealing'
+								: ''}"
+							data-direction={direction}
+						>
+							{@render children()}
+						</div>
+					{/key}
+				{/if}
 			</main>
 		</div>
 	</div>
@@ -370,31 +466,69 @@
 	}
 
 	/* Page transitions */
-	.page-transition {
-		animation: page-enter-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	.main-content {
+		isolation: isolate;
 	}
-	.page-transition[data-direction="down"] {
+
+	.motion-shell {
+		will-change: transform, opacity;
+		backface-visibility: hidden;
+	}
+
+	.page-content {
+		backface-visibility: visible;
+	}
+	.page-content.is-revealing {
+		animation: page-enter-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+	.page-content.is-revealing[data-direction="down"] {
 		animation-name: page-enter-down;
 	}
 
 	@keyframes page-enter-up {
 		from {
 			opacity: 0;
-			transform: translateY(16px);
+			transform: translate3d(0, 16px, 0);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0);
+			transform: translate3d(0, 0, 0);
 		}
 	}
 	@keyframes page-enter-down {
 		from {
 			opacity: 0;
-			transform: translateY(-16px);
+			transform: translate3d(0, -16px, 0);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0);
+			transform: translate3d(0, 0, 0);
+		}
+	}
+	.loading-stage {
+		animation: spinner-stage-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.loading-stage[data-direction="down"] {
+		animation-name: spinner-stage-down;
+	}
+	@keyframes spinner-stage-up {
+		from {
+			opacity: 0;
+			transform: translate3d(0, 10px, 0);
+		}
+		to {
+			opacity: 1;
+			transform: translate3d(0, 0, 0);
+		}
+	}
+	@keyframes spinner-stage-down {
+		from {
+			opacity: 0;
+			transform: translate3d(0, -10px, 0);
+		}
+		to {
+			opacity: 1;
+			transform: translate3d(0, 0, 0);
 		}
 	}
 
@@ -433,6 +567,23 @@
 		to {
 			opacity: 1;
 			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.navbar,
+		.sidebar,
+		.page-content.is-revealing,
+		.loading-stage,
+		.dropdown-menu,
+		:global(main .config-card) {
+			animation: none !important;
+		}
+
+		.page-content,
+		:global(main .config-card) {
+			transform: none;
+			opacity: 1;
 		}
 	}
 </style>

@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { beforeNavigate, invalidateAll } from "$app/navigation";
+	import { onDestroy } from "svelte";
+	import { flip } from "svelte/animate";
+	import { fade } from "svelte/transition";
 	import { UserPermission } from "@repo/config";
 	import { KeyRound, Plus, Trash2 } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
@@ -13,7 +16,11 @@
 		managed: boolean;
 	}
 
-	type ScopeRow = { roleId: string; allowedPermissions: UserPermission[] };
+	type ScopeRow = {
+		roleId: string;
+		allowedPermissions: UserPermission[];
+		roleLocked: boolean;
+	};
 
 	let { data }: { data: PageData } = $props();
 	const config = $derived(data.guild.config.permission_scopes);
@@ -25,16 +32,21 @@
 	$effect.pre(() => {
 		scopes = data.guild.config.permission_scopes.map(scope => ({
 			roleId: scope.role_id,
-			allowedPermissions: [...scope.allowed_permissions]
+			allowedPermissions: [...scope.allowed_permissions],
+			roleLocked: true
 		}));
 	});
 
 	let saveStatus = $state<"idle" | "saving" | "success" | "error">("idle");
 	let saveError = $state("");
 	let shaking = $state(false);
+	let shakeTimeout: ReturnType<typeof setTimeout> | undefined;
+	let statusTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	const isDirty = $derived(
-		JSON.stringify(scopes) !==
+		JSON.stringify(
+			scopes.map(({ roleId, allowedPermissions }) => ({ roleId, allowedPermissions }))
+		) !==
 			JSON.stringify(
 				config.map(scope => ({
 					roleId: scope.role_id,
@@ -43,24 +55,50 @@
 			)
 	);
 
+	function triggerShake() {
+		shaking = true;
+		if (shakeTimeout) clearTimeout(shakeTimeout);
+		shakeTimeout = setTimeout(() => {
+			shaking = false;
+			shakeTimeout = undefined;
+		}, 600);
+	}
+
+	function scheduleStatusReset(delayMs: number) {
+		if (statusTimeout) clearTimeout(statusTimeout);
+		statusTimeout = setTimeout(() => {
+			saveStatus = "idle";
+			statusTimeout = undefined;
+		}, delayMs);
+	}
+
+	onDestroy(() => {
+		if (shakeTimeout) clearTimeout(shakeTimeout);
+		if (statusTimeout) clearTimeout(statusTimeout);
+	});
+
 	beforeNavigate(({ cancel }) => {
 		if (!isDirty) return;
 		cancel();
-		shaking = true;
-		setTimeout(() => (shaking = false), 600);
+		triggerShake();
 	});
 
 	function resetForm() {
 		scopes = config.map(scope => ({
 			roleId: scope.role_id,
-			allowedPermissions: [...scope.allowed_permissions]
+			allowedPermissions: [...scope.allowed_permissions],
+			roleLocked: true
 		}));
 	}
 
 	function addScope() {
 		const roleId = roles[0]?.id;
 		if (!roleId) return;
-		scopes = [...scopes, { roleId, allowedPermissions: [] }];
+		scopes = [...scopes, { roleId, allowedPermissions: [], roleLocked: false }];
+	}
+
+	function getRoleName(roleId: string): string {
+		return roles.find(role => role.id === roleId)?.name ?? "Unknown role";
 	}
 
 	async function submitConfig(event: SubmitEvent) {
@@ -73,7 +111,12 @@
 			const response = await fetch(`/api/servers/${data.guild.id}/configs/permissions`, {
 				method: "POST",
 				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ scopes })
+				body: JSON.stringify({
+					scopes: scopes.map(({ roleId, allowedPermissions }) => ({
+						roleId,
+						allowedPermissions
+					}))
+				})
 			});
 
 			const payload = (await response.json()) as { success: boolean; error?: string };
@@ -82,11 +125,11 @@
 
 			await invalidateAll();
 			saveStatus = "success";
-			setTimeout(() => (saveStatus = "idle"), 2500);
+			scheduleStatusReset(2500);
 		} catch (error) {
 			saveStatus = "error";
 			saveError = error instanceof Error ? error.message : "An unknown error occurred.";
-			setTimeout(() => (saveStatus = "idle"), 5000);
+			scheduleStatusReset(5000);
 		}
 	}
 </script>
@@ -118,19 +161,32 @@
 				{#if scopes.length === 0}
 					<p class="py-4 text-center text-sm text-zinc-600">No scopes configured.</p>
 				{/if}
-				{#each scopes as scope, index}
+				{#each scopes as scope, index (scope)}
 					<div
+						animate:flip={{ duration: 180 }}
+						in:fade={{ duration: 140 }}
+						out:fade={{ duration: 110 }}
 						class="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-4"
 					>
 						<div class="flex items-center justify-between gap-3">
-							<select
-								bind:value={scope.roleId}
-								class="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-							>
-								{#each roles as role}
-									<option value={role.id}>{role.name}</option>
-								{/each}
-							</select>
+							{#if scope.roleLocked}
+								<div
+									class="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900/70 px-3 py-2 text-sm text-zinc-300"
+								>
+									@<span class="font-medium text-white"
+										>{getRoleName(scope.roleId)}</span
+									>
+								</div>
+							{:else}
+								<select
+									bind:value={scope.roleId}
+									class="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+								>
+									{#each roles as role}
+										<option value={role.id}>{role.name}</option>
+									{/each}
+								</select>
+							{/if}
 							<button
 								type="button"
 								onclick={() =>

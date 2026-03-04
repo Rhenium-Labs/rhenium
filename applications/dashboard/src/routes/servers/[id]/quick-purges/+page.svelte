@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { beforeNavigate, invalidateAll } from "$app/navigation";
+	import { onDestroy } from "svelte";
+	import { flip } from "svelte/animate";
+	import { fade } from "svelte/transition";
 	import { ChannelScopingType } from "@repo/config";
 	import { Trash2, Plus } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
@@ -37,6 +40,8 @@
 	let saveStatus = $state<"idle" | "saving" | "success" | "error">("idle");
 	let saveError = $state("");
 	let shaking = $state(false);
+	let shakeTimeout: ReturnType<typeof setTimeout> | undefined;
+	let statusTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	const isDirty = $derived(
 		enabled !== config.enabled ||
@@ -50,11 +55,32 @@
 				)
 	);
 
+	function triggerShake() {
+		shaking = true;
+		if (shakeTimeout) clearTimeout(shakeTimeout);
+		shakeTimeout = setTimeout(() => {
+			shaking = false;
+			shakeTimeout = undefined;
+		}, 600);
+	}
+
+	function scheduleStatusReset(delayMs: number) {
+		if (statusTimeout) clearTimeout(statusTimeout);
+		statusTimeout = setTimeout(() => {
+			saveStatus = "idle";
+			statusTimeout = undefined;
+		}, delayMs);
+	}
+
+	onDestroy(() => {
+		if (shakeTimeout) clearTimeout(shakeTimeout);
+		if (statusTimeout) clearTimeout(statusTimeout);
+	});
+
 	beforeNavigate(({ cancel }) => {
 		if (!isDirty) return;
 		cancel();
-		shaking = true;
-		setTimeout(() => (shaking = false), 600);
+		triggerShake();
 	});
 
 	function resetForm() {
@@ -94,11 +120,11 @@
 
 			await invalidateAll();
 			saveStatus = "success";
-			setTimeout(() => (saveStatus = "idle"), 2500);
+			scheduleStatusReset(2500);
 		} catch (error) {
 			saveStatus = "error";
 			saveError = error instanceof Error ? error.message : "An unknown error occurred.";
-			setTimeout(() => (saveStatus = "idle"), 5000);
+			scheduleStatusReset(5000);
 		}
 	}
 </script>
@@ -152,8 +178,11 @@
 						No channel scoping rules configured.
 					</p>
 				{/if}
-				{#each channelScoping as scope, index}
+				{#each channelScoping as scope, index (scope)}
 					<div
+						animate:flip={{ duration: 180 }}
+						in:fade={{ duration: 140 }}
+						out:fade={{ duration: 110 }}
 						class="grid gap-2 rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 md:grid-cols-[1fr_auto_auto]"
 					>
 						<select
