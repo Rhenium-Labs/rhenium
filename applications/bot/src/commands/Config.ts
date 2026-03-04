@@ -1140,6 +1140,20 @@ export default class Config extends Command {
 				};
 			}
 
+			const updatedConfig = {
+				...configClass.data,
+				content_filter: {
+					...configClass.data.content_filter,
+					webhook_channel: channel.id
+				}
+			};
+
+			await kysely
+				.updateTable("Guild")
+				.set({ config: updatedConfig })
+				.where("id", "=", interaction.guild.id)
+				.execute();
+
 			return {
 				content: `Successfully moved the content filter review channel webhook to ${channel}.`
 			};
@@ -1159,7 +1173,8 @@ export default class Config extends Command {
 				...configClass.data,
 				content_filter: {
 					...configClass.data.content_filter,
-					webhook_url: newWebhook.url
+					webhook_url: newWebhook.url,
+					webhook_channel: channel.id
 				}
 			};
 

@@ -109,7 +109,8 @@ export enum ContentFilterVerbosity {
 
 export const CONTENT_FILTER_CONFIG_SCHEMA = z.object({
 	enabled: z.boolean().default(true),
-	webhook_url: z.string().nullable().optional(),
+	webhook_url: z.string().nullable().default(null),
+	webhook_channel: z.string().nullable().default(null),
 	use_native_automod: z.boolean().default(false),
 
 	detectors: z.array(z.enum(Detector)).default([]),
@@ -197,6 +198,7 @@ export const DEFAULT_GUILD_CONFIG: RawGuildConfig = {
 	content_filter: {
 		enabled: true,
 		webhook_url: null,
+		webhook_channel: null,
 		use_native_automod: false,
 
 		detectors: [],
