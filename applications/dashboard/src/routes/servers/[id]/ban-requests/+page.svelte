@@ -174,7 +174,7 @@
 		onToggle={() => (enabled = !enabled)}
 	/>
 
-	<form id="ban-requests-form" onsubmit={submitConfig} class="space-y-6">
+	<form id="ban-requests-form" onsubmit={submitConfig}>
 		<!-- Review Channel -->
 		<ConfigSection
 			title="Review Channel"
@@ -194,6 +194,24 @@
 		<!-- Behavior Toggles -->
 		<ConfigSection title="Behavior" description="Control how ban requests are processed.">
 			<div class="space-y-6">
+				<div>
+					<label for="deleteSeconds" class="text-sm font-medium text-zinc-300"
+						>Delete Message Seconds</label
+					>
+					<p class="mt-0.5 text-xs text-zinc-500">
+						Number of seconds of message history to delete when the user is
+						banned.
+					</p>
+					<input
+						id="deleteSeconds"
+						type="number"
+						min="1"
+						max="86400"
+						bind:value={deleteMessageSeconds}
+						class="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+					/>
+				</div>
+
 				<div class="flex items-center justify-between gap-4">
 					<div>
 						<p class="text-sm font-medium text-zinc-300">
@@ -214,10 +232,10 @@
 				<div class="flex items-center justify-between gap-4">
 					<div>
 						<p class="text-sm font-medium text-zinc-300">
-							Enforce Submission Reason
+							Require a reason before submitting
 						</p>
 						<p class="text-xs text-zinc-500">
-							Require a reason when submitting a ban request.
+							Require users to provide a reason when submitting a ban request.
 						</p>
 					</div>
 					<Toggle
@@ -229,9 +247,10 @@
 
 				<div class="flex items-center justify-between gap-4">
 					<div>
-						<p class="text-sm font-medium text-zinc-300">Enforce Deny Reason</p>
+						<p class="text-sm font-medium text-zinc-300">Require denial reason</p>
 						<p class="text-xs text-zinc-500">
-							Require a reason when denying a ban request.
+							Require moderators to provide a reason when denying a ban
+							request.
 						</p>
 					</div>
 					<Toggle
@@ -243,7 +262,7 @@
 
 				<div class="flex items-center justify-between gap-4">
 					<div>
-						<p class="text-sm font-medium text-zinc-300">Notify Target User</p>
+						<p class="text-sm font-medium text-zinc-300">Notify target user</p>
 						<p class="text-xs text-zinc-500">
 							Send a DM to the target user when they are banned via a request.
 						</p>
@@ -257,9 +276,9 @@
 
 				<div class="flex items-center justify-between gap-4">
 					<div>
-						<p class="text-sm font-medium text-zinc-300">Disable Reason Field</p>
+						<p class="text-sm font-medium text-zinc-300">Disable reason field</p>
 						<p class="text-xs text-zinc-500">
-							Hide the reason field from the ban request submission form.
+							Hide the reason field in the embed sent to the target user.
 						</p>
 					</div>
 					<Toggle
@@ -274,7 +293,7 @@
 		<!-- Roles -->
 		<ConfigSection
 			title="Roles"
-			description="Configure role-based immunities and notifications."
+			description="Set role base immunity and notification preferences."
 		>
 			<div class="space-y-8">
 				<RoleSelector
@@ -286,51 +305,36 @@
 				<RoleSelector
 					bind:selected={notifyRoles}
 					{roles}
-					label="Notify Roles"
-					placeholder="Add a notify role…"
+					label="Notification Roles"
+					placeholder="Add a notification role…"
 					showHere
 				/>
 			</div>
 		</ConfigSection>
 
 		<!-- Message Settings -->
-		<ConfigSection title="Message Settings" description="Configure ban message behavior.">
+		<ConfigSection
+			title="Message Settings"
+			description="Configure the contents of the ban request notification message."
+		>
 			<div class="space-y-6">
-				<div>
-					<label for="deleteSeconds" class="text-sm font-medium text-zinc-300"
-						>Delete Message Seconds</label
-					>
-					<p class="mt-0.5 text-xs text-zinc-500">
-						Number of seconds of message history to delete when the user is
-						banned.
-					</p>
-					<input
-						id="deleteSeconds"
-						type="number"
-						min="1"
-						max="86400"
-						bind:value={deleteMessageSeconds}
-						class="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-					/>
-				</div>
-
 				<div>
 					<label for="additionalInfo" class="text-sm font-medium text-zinc-300"
 						>Additional Info</label
 					>
 					<p class="mt-0.5 text-xs text-zinc-500">
 						Extra information shown on the ban request embed. Supports basic
-						Markdown.
+						markdown.
 					</p>
 					<textarea
 						id="additionalInfo"
 						bind:value={additionalInfo}
 						rows={4}
-						maxlength={2000}
+						maxlength={1024}
 						class="mt-2 w-full max-w-2xl rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
 					></textarea>
 					<p class="mt-1 text-xs text-zinc-600">
-						{additionalInfo.length}/2000 characters
+						{additionalInfo.length}/1024 characters
 					</p>
 				</div>
 			</div>

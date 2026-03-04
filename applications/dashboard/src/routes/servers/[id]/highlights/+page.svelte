@@ -101,8 +101,8 @@
 
 	<form id="highlights-form" onsubmit={submitConfig} class="space-y-6">
 		<ConfigSection
-			title="Pattern Limits"
-			description="Control the number of highlight patterns each user can create."
+			title="Limits"
+			description="Define limits on how many highlight patterns users can have to prevent abuse."
 		>
 			<label for="maxPatterns" class="text-sm font-medium text-zinc-300"
 				>Maximum Patterns Per User</label

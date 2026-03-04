@@ -42,7 +42,7 @@
 	}
 
 	:where(main p) {
-		line-height: 1.55;
+		line-height: 1.45;
 	}
 
 	:where(main) label {
@@ -56,7 +56,20 @@
 	}
 
 	:where(main) .text-sm {
-		line-height: 1.45;
+		line-height: 1.4;
+	}
+
+	:where(main) form {
+		display: grid;
+		gap: 1rem;
+	}
+
+	:where(main) .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+		margin-top: 1.25rem !important;
+	}
+
+	:where(main) .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+		margin-top: 0.9rem !important;
 	}
 
 	:where(main) .text-zinc-500,

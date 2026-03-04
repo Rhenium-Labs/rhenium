@@ -73,71 +73,61 @@
 
 {#if shouldRender}
 	<div
-		class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+		class="save-bar fixed right-4 bottom-4 z-50 flex w-[min(calc(100vw-1.5rem),30rem)] flex-col gap-3 rounded-2xl border bg-zinc-900/96 px-4 py-3 shadow-2xl backdrop-blur-xl sm:right-6 sm:bottom-6 {shaking
+			? 'save-bar-shake border-zinc-500/80'
+			: 'border-zinc-700/70'} {exiting ? 'save-bar-exit' : ''}"
 	>
-		<div
-			class="save-bar pointer-events-auto flex w-[min(calc(100vw-1.5rem),30rem)] flex-col gap-3 rounded-2xl border bg-zinc-900/96 px-4 py-3 shadow-2xl backdrop-blur-xl {shaking
-				? 'save-bar-shake border-zinc-500/80'
-				: 'border-zinc-700/70'} {exiting ? 'save-bar-exit' : ''}"
-		>
-			<div class="flex items-center gap-2.5">
-				{#if displaySaveStatus === "error"}
-					<AlertTriangle class="h-4 w-4 text-zinc-300" strokeWidth={2} />
-					<div>
-						<p
-							class="text-[11px] font-semibold tracking-wide text-zinc-400 uppercase"
-						>
-							Error
-						</p>
-						<p class="text-sm text-zinc-300">{displaySaveError}</p>
-					</div>
-				{:else if displaySaveStatus === "success"}
-					<Check class="h-4 w-4 text-zinc-100" strokeWidth={2.5} />
-					<div>
-						<p
-							class="text-[11px] font-semibold tracking-wide text-zinc-400 uppercase"
-						>
-							Saved
-						</p>
-						<p class="text-sm text-zinc-100">Settings saved successfully.</p>
-					</div>
-				{:else}
-					<div>
-						<p
-							class="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase"
-						>
-							Unsaved changes
-						</p>
-						<p class="text-sm font-medium text-zinc-300">{message}</p>
-					</div>
-				{/if}
-			</div>
-			<div class="flex items-center justify-end gap-2.5">
-				{#if displayIsDirty && displaySaveStatus !== "saving"}
-					<button
-						type="button"
-						onclick={onReset}
-						class="rounded-lg border border-zinc-700 px-3.5 py-1.5 text-sm font-medium text-zinc-300 transition-[background-color,border-color,color] hover:border-zinc-500 hover:bg-zinc-800 hover:text-zinc-100"
-					>
-						Reset
-					</button>
-				{/if}
+		<div class="flex items-center gap-2.5">
+			{#if displaySaveStatus === "error"}
+				<AlertTriangle class="h-4 w-4 text-zinc-300" strokeWidth={2} />
+				<div>
+					<p class="text-[11px] font-semibold tracking-wide text-zinc-400 uppercase">
+						Error
+					</p>
+					<p class="text-sm text-zinc-300">{displaySaveError}</p>
+				</div>
+			{:else if displaySaveStatus === "success"}
+				<Check class="h-4 w-4 text-zinc-100" strokeWidth={2.5} />
+				<div>
+					<p class="text-[11px] font-semibold tracking-wide text-zinc-400 uppercase">
+						Saved
+					</p>
+					<p class="text-sm text-zinc-100">Settings saved successfully.</p>
+				</div>
+			{:else}
+				<div>
+					<p class="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+						Unsaved changes
+					</p>
+					<p class="text-sm font-medium text-zinc-300">{message}</p>
+				</div>
+			{/if}
+		</div>
+		<div class="flex items-center justify-end gap-2.5">
+			{#if displayIsDirty && displaySaveStatus !== "saving"}
 				<button
-					type="submit"
-					form={formId}
-					disabled={displaySaveStatus === "saving" || !displayIsDirty}
-					class="rounded-lg bg-zinc-100 px-3.5 py-1.5 text-sm font-semibold text-zinc-900 transition-[background-color,opacity] hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+					type="button"
+					onclick={onReset}
+					class="rounded-lg border border-zinc-700 px-3.5 py-1.5 text-sm font-medium text-zinc-300 transition-[background-color,border-color,color] hover:border-zinc-500 hover:bg-zinc-800 hover:text-zinc-100"
 				>
-					{#if displaySaveStatus === "saving"}
-						<span class="flex items-center gap-2">
-							<Loader2 class="h-4 w-4 animate-spin" strokeWidth={2} />
-							Saving…
-						</span>
-					{:else}
-						Save changes
-					{/if}
+					Reset
 				</button>
-			</div>
+			{/if}
+			<button
+				type="submit"
+				form={formId}
+				disabled={displaySaveStatus === "saving" || !displayIsDirty}
+				class="rounded-lg bg-zinc-100 px-3.5 py-1.5 text-sm font-semibold text-zinc-900 transition-[background-color,opacity] hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+			>
+				{#if displaySaveStatus === "saving"}
+					<span class="flex items-center gap-2">
+						<Loader2 class="h-4 w-4 animate-spin" strokeWidth={2} />
+						Saving…
+					</span>
+				{:else}
+					Save changes
+				{/if}
+			</button>
 		</div>
 	</div>
 {/if}
@@ -195,6 +185,14 @@
 		60%,
 		80% {
 			translate: 4px 0;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.save-bar {
+			left: 0.75rem;
+			right: 0.75rem;
+			width: auto;
 		}
 	}
 

@@ -30,47 +30,34 @@
 
 <style>
 	.config-card {
-		border: 1px solid rgb(39 39 42 / 0.9);
-		border-radius: 1rem;
-		background: linear-gradient(180deg, rgb(24 24 27 / 0.82) 0%, rgb(24 24 27 / 0.62) 100%);
-		overflow: hidden;
-		backdrop-filter: blur(12px);
-		transition:
-			border-color 180ms ease,
-			background-color 180ms ease,
-			transform 180ms ease;
+		padding: 0;
 	}
 
 	.config-head {
-		padding: 1rem 1.2rem;
-		border-bottom: 1px solid rgb(39 39 42 / 0.8);
-		background: rgb(9 9 11 / 0.35);
+		padding: 0 0 0.7rem;
+		border-bottom: 1px solid rgb(39 39 42 / 0.55);
 	}
 
 	.config-title {
-		font-size: 0.98rem;
-		font-weight: 620;
+		font-size: 1.05rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
 		color: rgb(244 244 245);
-		line-height: 1.25;
+		line-height: 1.2;
 	}
 
 	.config-description {
-		margin-top: 0.4rem;
-		font-size: 0.84rem;
-		line-height: 1.45;
+		margin-top: 0.3rem;
+		font-size: 0.82rem;
+		line-height: 1.35;
 		color: rgb(161 161 170);
 	}
 
 	.config-content {
-		padding: 1.25rem;
+		padding: 0.75rem 0 0;
 	}
 
 	.config-content.has-head {
-		padding-top: 1.1rem;
-	}
-
-	.config-card:hover {
-		border-color: rgb(82 82 91 / 0.9);
-		background-color: rgb(24 24 27 / 0.88);
+		padding-top: 0.75rem;
 	}
 </style>

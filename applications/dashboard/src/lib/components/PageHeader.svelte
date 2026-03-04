@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Component, SvelteComponent } from "svelte";
 	import Toggle from "./Toggle.svelte";
 
 	let {
@@ -18,105 +17,81 @@
 	} = $props();
 </script>
 
-<header class="hero-shell">
-	<div class="hero-main">
+<header class="page-header">
+	<div class="page-header-main">
 		{#if Icon}
-			<div class="hero-icon-wrap">
-				<Icon class="h-5 w-5 text-zinc-100" strokeWidth={1.9} />
+			<div class="page-header-icon">
+				<Icon class="h-4 w-4 text-zinc-300" strokeWidth={1.9} />
 			</div>
 		{/if}
 		<div>
-			<p class="hero-kicker">Module Configuration</p>
-			<h1 class="hero-title">{title}</h1>
-			<p class="hero-description">{description}</p>
+			<h1 class="page-header-title">{title}</h1>
+			{#if description}
+				<p class="page-header-description">{description}</p>
+			{/if}
 		</div>
 	</div>
 	{#if enabled !== undefined && onToggle}
-		<div class="hero-toggle">
-			<p class="hero-toggle-label">Enabled</p>
+		<div class="page-header-toggle">
 			<Toggle checked={enabled} {onToggle} size="lg" label="Toggle {title}" />
 		</div>
 	{/if}
 </header>
 
 <style>
-	.hero-shell {
+	.page-header {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-		padding: 1rem 1rem 0.9rem;
-		border: 1px solid rgb(39 39 42 / 0.9);
-		border-radius: 1rem;
-		background: linear-gradient(180deg, rgb(24 24 27 / 0.78), rgb(24 24 27 / 0.55));
+		padding: 0.25rem 0 0.15rem;
 	}
 
-	.hero-main {
+	.page-header-main {
 		display: flex;
-		align-items: flex-start;
-		gap: 0.8rem;
+		align-items: center;
+		gap: 0.55rem;
 		min-width: 0;
 	}
 
-	.hero-icon-wrap {
-		display: grid;
-		place-items: center;
-		height: 2.5rem;
-		width: 2.5rem;
-		flex-shrink: 0;
-		border-radius: 0.8rem;
-		border: 1px solid rgb(63 63 70 / 0.9);
-		background: rgb(9 9 11 / 0.8);
-	}
-
-	.hero-kicker {
-		font-size: 0.69rem;
-		text-transform: uppercase;
-		letter-spacing: 0.09em;
-		color: rgb(113 113 122);
-	}
-
-	.hero-title {
-		margin-top: 0.2rem;
-		font-size: clamp(1.45rem, 2vw, 1.95rem);
-		font-weight: 650;
-		line-height: 1.1;
-		color: rgb(250 250 250);
-	}
-
-	.hero-description {
-		margin-top: 0.45rem;
-		max-width: 50rem;
-		font-size: 0.9rem;
-		line-height: 1.45;
-		color: rgb(161 161 170);
-	}
-
-	.hero-toggle {
+	.page-header-icon {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		padding: 0.45rem 0.6rem;
-		border-radius: 0.8rem;
-		border: 1px solid rgb(63 63 70 / 0.9);
-		background: rgb(9 9 11 / 0.55);
+		justify-content: center;
+		height: 1.25rem;
+		width: 1.25rem;
+		flex-shrink: 0;
 	}
 
-	.hero-toggle-label {
-		font-size: 0.76rem;
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
+	.page-header-title {
+		font-size: clamp(1.14rem, 1.6vw, 1.45rem);
+		font-weight: 600;
+		line-height: 1.15;
+		color: rgb(244 244 245);
+	}
+
+	.page-header-description {
+		margin-top: 0.25rem;
+		font-size: 0.82rem;
+		line-height: 1.4;
 		color: rgb(161 161 170);
+	}
+
+	.page-header-toggle {
+		display: flex;
+		align-items: center;
+		padding-left: 0.5rem;
 	}
 
 	@media (max-width: 720px) {
-		.hero-shell {
+		.page-header {
 			flex-direction: column;
+			align-items: flex-start;
 		}
 
-		.hero-toggle {
+		.page-header-toggle {
 			align-self: flex-start;
+			padding-left: 0;
 		}
 	}
 </style>

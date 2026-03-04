@@ -13,7 +13,7 @@
 		Sparkles,
 		VolumeOff,
 		Trash2,
-		Webhook,
+		PencilIcon,
 		KeyRound,
 		LogOut,
 		Loader2
@@ -29,9 +29,9 @@
 	let revealTimeout: ReturnType<typeof setTimeout> | undefined;
 	let loadingStartedAt = 0;
 
-	const CATEGORY_NAV_DELAY_MS = 70;
-	const CATEGORY_MIN_LOADING_MS = 200;
-	const CATEGORY_REVEAL_MS = 220;
+	const CATEGORY_NAV_DELAY_MS = 40;
+	const CATEGORY_MIN_LOADING_MS = 150;
+	const CATEGORY_REVEAL_MS = 170;
 
 	const modules = $derived([
 		{
@@ -79,7 +79,7 @@
 		{
 			id: "logging",
 			name: "Logging",
-			icon: Webhook,
+			icon: PencilIcon,
 			href: `/servers/${data.guild.id}/logging`
 		},
 		{
@@ -95,10 +95,6 @@
 		if (href === homeHref) return pathname === homeHref;
 		return pathname.startsWith(href);
 	}
-
-	const activeModule = $derived(
-		modules.find(module => isRouteMatch(module.href, $page.url.pathname)) ?? modules[0]
-	);
 
 	function isActiveModule(href: string): boolean {
 		return isRouteMatch(href, $page.url.pathname);
@@ -214,7 +210,6 @@
 				{/if}
 				<div class="server-chip-copy">
 					<p class="server-chip-title">{data.guild.name}</p>
-					<p class="server-chip-subtitle">ID: {data.guild.id}</p>
 				</div>
 			</div>
 		</div>
@@ -238,7 +233,6 @@
 				<img src={data.session.avatarUrl} alt="Avatar" class="account-avatar" />
 				<div class="account-copy">
 					<p class="account-name">{getDisplayName(data.session)}</p>
-					<p class="account-username">@{data.session.username}</p>
 				</div>
 			</div>
 			<a href="/api/auth/logout" class="sidebar-signout">
@@ -290,7 +284,7 @@
 <style>
 	.dashboard-shell {
 		display: grid;
-		grid-template-columns: 20rem minmax(0, 1fr);
+		grid-template-columns: 17.5rem minmax(0, 1fr);
 		min-height: 100vh;
 		background: rgb(9 9 11);
 	}
@@ -302,9 +296,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-		padding: 1.1rem;
-		border-right: 1px solid rgb(39 39 42 / 0.85);
-		background: linear-gradient(180deg, rgb(9 9 11 / 0.98) 0%, rgb(9 9 11 / 0.93) 100%);
+		padding: 0.95rem;
+		border-right: 1px solid rgb(39 39 42 / 0.65);
+		background: rgb(9 9 11 / 0.94);
 		backdrop-filter: blur(12px);
 		animation: shell-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 	}
@@ -336,10 +330,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.7rem;
-		padding: 0.7rem;
-		border: 1px solid rgb(39 39 42 / 0.9);
-		border-radius: 0.85rem;
-		background: rgb(24 24 27 / 0.72);
+		padding: 0.4rem 0.2rem;
 	}
 	.server-chip-avatar,
 	.server-chip-fallback {
@@ -362,18 +353,13 @@
 		min-width: 0;
 	}
 	.server-chip-title {
-		font-size: 0.87rem;
+		font-size: 0.82rem;
 		font-weight: 600;
 		color: rgb(244 244 245);
 		line-height: 1.2;
 		text-overflow: ellipsis;
 		overflow: hidden;
 		white-space: nowrap;
-	}
-	.server-chip-subtitle {
-		margin-top: 0.15rem;
-		font-size: 0.72rem;
-		color: rgb(113 113 122);
 	}
 
 	.sidebar-nav {
@@ -388,7 +374,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.6rem;
-		padding: 0.56rem 0.65rem;
+		padding: 0.5rem 0.55rem;
 		border-radius: 0.65rem;
 		font-size: 0.83rem;
 		font-weight: 500;
@@ -399,12 +385,12 @@
 			transform 120ms ease;
 	}
 	.sidebar-nav-item:hover {
-		background: rgb(24 24 27);
+		background: rgb(24 24 27 / 0.7);
 		color: rgb(228 228 231);
 	}
 	.sidebar-nav-item.is-active {
-		background: rgb(39 39 42 / 0.9);
-		border: 1px solid rgb(82 82 91 / 0.85);
+		background: rgb(39 39 42 / 0.6);
+		border: 1px solid rgb(63 63 70 / 0.75);
 		color: rgb(244 244 245);
 	}
 
@@ -412,7 +398,7 @@
 		display: grid;
 		gap: 0.65rem;
 		padding-top: 0.5rem;
-		border-top: 1px solid rgb(39 39 42 / 0.8);
+		border-top: 1px solid rgb(39 39 42 / 0.55);
 	}
 	.account-chip {
 		display: flex;
@@ -430,17 +416,10 @@
 		min-width: 0;
 	}
 	.account-name {
-		font-size: 0.81rem;
+		font-size: 0.78rem;
 		font-weight: 500;
 		color: rgb(228 228 231);
 		line-height: 1.25;
-		text-overflow: ellipsis;
-		overflow: hidden;
-		white-space: nowrap;
-	}
-	.account-username {
-		font-size: 0.72rem;
-		color: rgb(113 113 122);
 		text-overflow: ellipsis;
 		overflow: hidden;
 		white-space: nowrap;
@@ -469,7 +448,7 @@
 
 	.dashboard-main {
 		min-width: 0;
-		padding: 1.25rem 1.35rem 1.5rem;
+		padding: 1rem 1.1rem 1.2rem;
 	}
 
 	.mobile-nav-wrap {

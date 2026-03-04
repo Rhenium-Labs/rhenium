@@ -180,8 +180,8 @@
 
 	<form id="permissions-form" onsubmit={submitConfig} class="space-y-6">
 		<ConfigSection
-			title="Role Scopes"
-			description="Map roles to the permissions they're allowed to use."
+			title="Scoping"
+			description="Define permission scopes by role and what features they should have access to."
 		>
 			<div class="mb-4 flex justify-end">
 				<button

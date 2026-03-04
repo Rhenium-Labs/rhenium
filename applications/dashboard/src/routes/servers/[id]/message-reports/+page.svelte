@@ -269,11 +269,11 @@
 					<div class="flex items-center justify-between gap-4">
 						<div>
 							<p class="text-sm font-medium text-zinc-300">
-								Delete Submission on Handle
+								Delete submission once handled
 							</p>
 							<p class="text-xs text-zinc-500">
-								Delete the report webhook message when a moderator resolves
-								or disregards it.
+								Delete the submission message once it has been resolved or
+								disregarded.
 							</p>
 						</div>
 						<Toggle
@@ -283,14 +283,47 @@
 						/>
 					</div>
 
+					<div class="flex items-center justify-between gap-4">
+						<div>
+							<p class="text-sm font-medium text-zinc-300">
+								Require the message author to be a member of the server
+							</p>
+							<p class="text-xs text-zinc-500">
+								Restrict report submissions to only messages sent by users
+								who are currently in the server.
+							</p>
+						</div>
+						<Toggle
+							checked={enforceMember}
+							onToggle={() => (enforceMember = !enforceMember)}
+							label="Toggle enforce member requirement."
+						/>
+					</div>
+
+					<div class="flex items-center justify-between gap-4">
+						<div>
+							<p class="text-sm font-medium text-zinc-300">
+								Require a reason before submitting
+							</p>
+							<p class="text-xs text-zinc-500">
+								Require reporters to provide a reason when submitting a
+								report.
+							</p>
+						</div>
+						<Toggle
+							checked={enforceReason}
+							onToggle={() => (enforceReason = !enforceReason)}
+							label="Toggle enforce reason requirement."
+						/>
+					</div>
+
 					<div>
 						<label
 							for="placeholderReason"
-							class="text-sm font-medium text-zinc-300"
-							>Placeholder Reason</label
+							class="text-sm font-medium text-zinc-300">Default reason</label
 						>
 						<p class="mt-0.5 text-xs text-zinc-500">
-							Default reason text shown when the reporter does not provide a
+							The default reason provided when a report is submitted without a
 							reason.
 						</p>
 						<textarea
@@ -309,52 +342,10 @@
 				</div>
 			</ConfigSection>
 
-			<!-- Enforcement -->
-			<ConfigSection
-				title="Enforcement"
-				description="Set requirements for report submissions."
-			>
-				<div class="space-y-6">
-					<div class="flex items-center justify-between gap-4">
-						<div>
-							<p class="text-sm font-medium text-zinc-300">
-								Require Reporter in Server
-							</p>
-							<p class="text-xs text-zinc-500">
-								Only allow members currently in the server to submit
-								reports.
-							</p>
-						</div>
-						<Toggle
-							checked={enforceMember}
-							onToggle={() => (enforceMember = !enforceMember)}
-							label="Toggle require reporter in server"
-						/>
-					</div>
-
-					<div class="flex items-center justify-between gap-4">
-						<div>
-							<p class="text-sm font-medium text-zinc-300">
-								Require Report Reason
-							</p>
-							<p class="text-xs text-zinc-500">
-								Require reporters to provide a reason when submitting a
-								report.
-							</p>
-						</div>
-						<Toggle
-							checked={enforceReason}
-							onToggle={() => (enforceReason = !enforceReason)}
-							label="Toggle require report reason"
-						/>
-					</div>
-				</div>
-			</ConfigSection>
-
 			<!-- Roles -->
 			<ConfigSection
 				title="Roles"
-				description="Configure role-based immunities and notifications."
+				description="Set role base immunity and notification preferences."
 			>
 				<div class="space-y-8">
 					<RoleSelector
@@ -366,8 +357,8 @@
 					<RoleSelector
 						bind:selected={notifyRoles}
 						{roles}
-						label="Notify Roles"
-						placeholder="Add a notify role…"
+						label="Notification Roles"
+						placeholder="Add a notification role…"
 						showHere
 					/>
 				</div>

@@ -5,7 +5,7 @@
 	import { cubicOut } from "svelte/easing";
 	import { fade, slide } from "svelte/transition";
 	import { LoggingEvent } from "@repo/config";
-	import { Webhook, Plus, Trash2 } from "@lucide/svelte";
+	import { Plus, Trash2, PencilIcon } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
 	import PageHeader from "$lib/components/PageHeader.svelte";
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
@@ -168,13 +168,13 @@
 	<PageHeader
 		title="Logging"
 		description="Configure webhook destinations and event subscriptions for audit logs."
-		icon={Webhook}
+		icon={PencilIcon}
 	/>
 
 	<form id="logging-form" onsubmit={submitConfig} class="space-y-6">
 		<ConfigSection
-			title="Webhook Targets"
-			description="Route specific events to different channels via webhooks."
+			title="Channels"
+			description="Send specific events to specific channels through webhooks."
 		>
 			<div class="mb-4 flex justify-end">
 				<button
