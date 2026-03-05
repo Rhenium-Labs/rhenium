@@ -1,9 +1,11 @@
 import { json } from "@sveltejs/kit";
 import type { RawGuildConfig } from "@repo/config";
-import { canManageGuild, fetchUserGuilds } from "$lib/server/discord";
-import { kysely } from "$lib/server/kysely";
-import { getAccessToken } from "$lib/server/session";
-import { createBotClient } from "$lib/server/trpc";
+
+import { kysely } from "$utils/server/DB";
+import { createBotClient } from "$utils/server/TRPC";
+
+import DiscordUtils from "$utils/server/Discord";
+import SessionManager from "$utils/server/Session";
 
 export const DISCORD_ID_REGEX = /^\d{17,20}$/;
 
@@ -49,7 +51,8 @@ export async function requireGuildConfigAccess(context: AccessContext, guildId: 
 		};
 	}
 
-	const accessToken = await getAccessToken(context.locals.session.userId);
+	const accessToken = await SessionManager.getAccessToken(context.locals.session.userId);
+
 	if (!accessToken) {
 		return {
 			ok: false as const,
@@ -57,7 +60,11 @@ export async function requireGuildConfigAccess(context: AccessContext, guildId: 
 		};
 	}
 
-	const userGuilds = await fetchUserGuilds(accessToken, context.locals.session.userId);
+	const userGuilds = await DiscordUtils.getUserGuilds({
+		token: accessToken,
+		userId: context.locals.session.userId
+	});
+
 	const userGuild = userGuilds.find(g => g.id === guildId);
 
 	if (!userGuild) {
@@ -67,7 +74,7 @@ export async function requireGuildConfigAccess(context: AccessContext, guildId: 
 		};
 	}
 
-	if (!canManageGuild(userGuild)) {
+	if (!DiscordUtils.canManage(userGuild)) {
 		return {
 			ok: false as const,
 			response: json(

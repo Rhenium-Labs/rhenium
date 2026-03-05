@@ -16,22 +16,7 @@
 	import Toggle from "$lib/components/Toggle.svelte";
 	import RoleSelector from "$lib/components/RoleSelector.svelte";
 	import type { PageData } from "./$types";
-
-	interface ChannelInfo {
-		id: string;
-		name: string;
-		type: number;
-		parentId: string | null;
-		position: number;
-	}
-
-	interface RoleInfo {
-		id: string;
-		name: string;
-		color: number;
-		position: number;
-		managed: boolean;
-	}
+	import type { ChannelInfo, RoleInfo } from "@repo/trpc";
 
 	let { data }: { data: PageData } = $props();
 	const config = $derived(data.guild.config.content_filter);

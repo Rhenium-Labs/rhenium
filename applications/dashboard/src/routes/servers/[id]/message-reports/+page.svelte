@@ -8,22 +8,7 @@
 	import Toggle from "$lib/components/Toggle.svelte";
 	import RoleSelector from "$lib/components/RoleSelector.svelte";
 	import type { PageData } from "./$types";
-
-	/** Simplified channel representation from the bot. */
-	interface ChannelInfo {
-		id: string;
-		name: string;
-		type: number;
-	}
-
-	/** Simplified role representation from the bot. */
-	interface RoleInfo {
-		id: string;
-		name: string;
-		color: number;
-		position: number;
-		managed: boolean;
-	}
+	import type { RoleInfo, ChannelInfo } from "@repo/trpc";
 
 	let { data }: { data: PageData } = $props();
 

@@ -8,8 +8,8 @@ import {
 	ContentFilterVerbosity,
 	DetectorMode
 } from "@repo/config";
-import { kysely } from "$lib/server/kysely";
-import { createBotClient } from "$lib/server/trpc";
+import { kysely } from "$utils/server/DB";
+import { createBotClient } from "$utils/server/TRPC";
 import {
 	DISCORD_ID_REGEX,
 	ensureSafeJsonRequest,

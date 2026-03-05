@@ -10,12 +10,7 @@
 	import PageHeader from "$lib/components/PageHeader.svelte";
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
 	import type { PageData } from "./$types";
-
-	interface RoleInfo {
-		id: string;
-		name: string;
-		managed: boolean;
-	}
+	import type { RoleInfo } from "@repo/trpc";
 
 	type ScopeRow = {
 		id: string;

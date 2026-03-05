@@ -2,8 +2,9 @@ import { redirect, error, isRedirect, isHttpError } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
 import { hmacSign, safeCompare } from "$lib/server/crypto";
-import { exchangeCode, fetchUser } from "$lib/server/discord";
-import { createSession, OAUTH_STATE_COOKIE } from "$lib/server/session";
+
+import SessionManager, { OAUTH_STATE_COOKIE } from "$utils/server/Session";
+import DiscordUtils from "$utils/server/Discord";
 
 /** Maximum age of a state parameter (10 minutes). */
 const STATE_MAX_AGE_MS = 10 * 60 * 1000;
@@ -20,11 +21,13 @@ function verifyState(state: string, storedState: string): boolean {
 
 	// Parse and verify the signature
 	const parts = state.split(".");
+
 	if (parts.length !== 3) {
 		return false;
 	}
 
 	const [nonce, timestamp, providedSig] = parts;
+
 	const payload = `${nonce}.${timestamp}`;
 	const expectedSig = hmacSign(payload).slice(0, 16);
 
@@ -35,6 +38,7 @@ function verifyState(state: string, storedState: string): boolean {
 
 	// Verify timestamp is within acceptable range (prevents replay attacks)
 	const stateTime = parseInt(timestamp, 36);
+
 	if (isNaN(stateTime) || Date.now() - stateTime > STATE_MAX_AGE_MS) {
 		return false;
 	}
@@ -72,13 +76,13 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 
 	try {
 		// Exchange the code for tokens
-		const tokens = await exchangeCode(code);
+		const tokens = await DiscordUtils.exchangeCode(code);
 
 		// Fetch the user's profile
-		const user = await fetchUser(tokens.access_token);
+		const user = await DiscordUtils.getUser(tokens.access_token);
 
 		// Create the session
-		await createSession(cookies, {
+		await SessionManager.create(cookies, {
 			userId: user.id,
 			accessToken: tokens.access_token,
 			refreshToken: tokens.refresh_token,

@@ -5,17 +5,12 @@
 	import { cubicOut } from "svelte/easing";
 	import { fade, slide } from "svelte/transition";
 	import { LoggingEvent } from "@repo/config";
-	import { Plus, Trash2, PencilIcon } from "@lucide/svelte";
+	import { Plus, Trash2, PencilIcon, FolderIcon } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
 	import PageHeader from "$lib/components/PageHeader.svelte";
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
 	import type { PageData } from "./$types";
-
-	interface ChannelInfo {
-		id: string;
-		name: string;
-		type: number;
-	}
+	import type { ChannelInfo } from "@repo/trpc";
 
 	type WebhookRow = {
 		uiId: string;
@@ -201,6 +196,7 @@
 					</p>
 				{/if}
 				{#each webhooks as webhook (webhook.uiId)}
+					{@const channel = channels.find(c => c.id === webhook.channelId)}
 					<div
 						animate:flip={{ duration: 170, easing: cubicOut }}
 						in:fade={{ duration: 120 }}
@@ -208,14 +204,34 @@
 						class="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-4"
 					>
 						<div class="flex items-center justify-between gap-3">
-							<select
-								bind:value={webhook.channelId}
-								class="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-							>
-								{#each channels as channel}
-									<option value={channel.id}>#{channel.name}</option>
-								{/each}
-							</select>
+							{#if webhook.id === null}
+								<select
+									bind:value={webhook.channelId}
+									class="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+								>
+									{#each channels as channel}
+										<option value={channel.id}>#{channel.name}</option
+										>
+									{/each}
+								</select>
+							{:else}
+								<div
+									class="flex w-full max-w-md cursor-default items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white opacity-80 select-none"
+								>
+									{#if channel?.type === 4}
+										<FolderIcon
+											class="h-4 w-4 shrink-0 text-white"
+											fill="currentColor"
+											strokeWidth={2.25}
+										/>
+									{:else}
+										<span class="shrink-0 text-zinc-400">#</span>
+									{/if}
+									<span class="truncate"
+										>{channel?.name ?? webhook.channelId}</span
+									>
+								</div>
+							{/if}
 							<button
 								type="button"
 								onclick={() => removeWebhook(webhook.uiId)}

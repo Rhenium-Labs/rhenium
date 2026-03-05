@@ -1,13 +1,20 @@
-interface CacheEntry<T> {
+/**
+ * Represents a cache entry with its data and expiration time.
+ *
+ * @template T The type of the cached data.
+ * @property {T} data The cached value.
+ * @property {number} expiresAt The timestamp (in milliseconds) when the cache entry expires.
+ *
+ */
+export type KVEntry<T> = {
 	data: T;
 	expiresAt: number;
-}
+};
 
-// What is going on with git.
-
-export default class KeyV {
+/** A simple key-value store with TTL support. */
+export default class KeyValueStore {
 	/** Map of cache entries. */
-	private static _cache = new Map<string, CacheEntry<unknown>>();
+	private static _entries = new Map<string, KVEntry<unknown>>();
 
 	/**
 	 * Get a cached value if it exists and hasn't expired.
@@ -16,11 +23,11 @@ export default class KeyV {
 	 * @returns The cached value or null if not found/expired.
 	 */
 	static get<T>(key: string): T | null {
-		const entry = this._cache.get(key) as CacheEntry<T> | undefined;
+		const entry = this._entries.get(key) as KVEntry<T> | undefined;
 		if (!entry) return null;
 
 		if (Date.now() > entry.expiresAt) {
-			this._cache.delete(key);
+			this._entries.delete(key);
 			return null;
 		}
 
@@ -37,7 +44,7 @@ export default class KeyV {
 	 */
 
 	static set<T>(key: string, data: T, ttlSeconds: number): void {
-		this._cache.set(key, {
+		this._entries.set(key, {
 			data,
 			expiresAt: Date.now() + ttlSeconds * 1000
 		});
@@ -50,7 +57,7 @@ export default class KeyV {
 	 * @returns void
 	 */
 	static delete(key: string): void {
-		this._cache.delete(key);
+		this._entries.delete(key);
 	}
 
 	/**
@@ -61,9 +68,9 @@ export default class KeyV {
 	 * @returns void
 	 */
 	static deleteByPrefix(prefix: string): void {
-		for (const key of this._cache.keys()) {
+		for (const key of this._entries.keys()) {
 			if (key.startsWith(prefix)) {
-				this._cache.delete(key);
+				this._entries.delete(key);
 			}
 		}
 	}
@@ -76,26 +83,21 @@ export default class KeyV {
 	static cleanup(): void {
 		const now = Date.now();
 
-		for (const [key, entry] of this._cache.entries()) {
+		for (const [key, entry] of this._entries.entries()) {
 			if (now > entry.expiresAt) {
-				this._cache.delete(key);
+				this._entries.delete(key);
 			}
 		}
 	}
 }
 
-// Cache TTL constants (in seconds)
+/** Cache TTL constants in seconds. */
 export const CACHE_TTL = {
 	/** User's guild list - 5 minutes */
 	USER_GUILDS: 5 * 60,
-	/** Individual guild data - 10 minutes */
-	GUILD_DATA: 10 * 60
+	/** Individual guild data - 5 minutes */
+	GUILD_DATA: 5 * 60
 } as const;
 
-// Cleanup expired entries every 5 minutes.
-setInterval(
-	() => {
-		KeyV.cleanup();
-	},
-	5 * 60 * 1000
-);
+/** Cleanup expired entries every 5 minutes. */
+setInterval(() => KeyValueStore.cleanup(), 5 * 60 * 1000);

@@ -1,9 +1,8 @@
 import { redirect, type Handle, type HandleServerError } from "@sveltejs/kit";
-
-import { getSession } from "$lib/server/session";
 import { PUBLIC_BASE_URL } from "$env/static/public";
 
-import Logger from "$lib/server/logger";
+import Logger from "$utils/Logger";
+import SessionManager from "$utils/server/Session";
 
 /** Routes that require authentication. */
 const PROTECTED_ROUTES = ["/servers"];
@@ -72,7 +71,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.requestId = requestId;
 
 	// Load session for all requests
-	event.locals.session = await getSession(event.cookies);
+	event.locals.session = await SessionManager.get(event.cookies);
 
 	const { pathname } = event.url;
 

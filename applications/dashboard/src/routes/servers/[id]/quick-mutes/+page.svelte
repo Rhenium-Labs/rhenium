@@ -10,14 +10,7 @@
 	import PageHeader from "$lib/components/PageHeader.svelte";
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
 	import type { PageData } from "./$types";
-
-	interface ChannelInfo {
-		id: string;
-		name: string;
-		type: number;
-		parentId: string | null;
-		position: number;
-	}
+	import type { ChannelInfo } from "@repo/trpc";
 
 	type ScopeRow = {
 		uiId: string;
@@ -294,6 +287,9 @@
 				{/if}
 				{#each channelScoping as scope (scope.uiId)}
 					{@const selectedChannel = getScopeChannelById(scope.channelId)}
+					{@const isNew = !config.channel_scoping.some(
+						s => s.channel_id === scope.channelId && s.type === scope.type
+					)}
 					<div
 						animate:flip={{ duration: 170, easing: cubicOut }}
 						in:fade={{ duration: 120 }}
@@ -301,16 +297,69 @@
 						class="grid gap-2 rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 md:grid-cols-[1fr_auto_auto]"
 					>
 						<div class="relative">
-							<button
-								type="button"
-								onclick={() =>
-									(openScopeMenuUiId =
-										openScopeMenuUiId === scope.uiId
-											? null
-											: scope.uiId)}
-								class="flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none hover:border-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-							>
-								<span class="flex min-w-0 items-center gap-2">
+							{#if isNew}
+								<button
+									type="button"
+									onclick={() =>
+										(openScopeMenuUiId =
+											openScopeMenuUiId === scope.uiId
+												? null
+												: scope.uiId)}
+									class="flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none hover:border-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+								>
+									<span class="flex min-w-0 items-center gap-2">
+										{#if isCategoryChannel(selectedChannel)}
+											<Folder
+												class="h-4 w-4 shrink-0 text-white"
+												fill="currentColor"
+												strokeWidth={2.25}
+											/>
+										{:else}
+											<span class="shrink-0 text-zinc-400">#</span>
+										{/if}
+										<span class="truncate"
+											>{getScopeChannelName(selectedChannel)}</span
+										>
+									</span>
+									<ChevronDown class="h-4 w-4 shrink-0 text-zinc-400" />
+								</button>
+								{#if openScopeMenuUiId === scope.uiId}
+									<div
+										class="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 p-1 shadow-2xl"
+									>
+										{#each scopingChannels as channel}
+											<button
+												type="button"
+												onclick={() =>
+													setScopeChannel(
+														scope.uiId,
+														channel.id
+													)}
+												class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-white transition-colors hover:bg-zinc-700"
+											>
+												{#if channel.type === 4}
+													<Folder
+														class="h-4 w-4 shrink-0 text-white"
+														fill="currentColor"
+														strokeWidth={2.25}
+													/>
+												{:else}
+													<span
+														class="shrink-0 text-zinc-400"
+														>#</span
+													>
+												{/if}
+												<span class="truncate"
+													>{channel.name}</span
+												>
+											</button>
+										{/each}
+									</div>
+								{/if}
+							{:else}
+								<div
+									class="flex w-full cursor-default items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white opacity-80 select-none"
+								>
 									{#if isCategoryChannel(selectedChannel)}
 										<Folder
 											class="h-4 w-4 shrink-0 text-white"
@@ -318,40 +367,11 @@
 											strokeWidth={2.25}
 										/>
 									{:else}
-										<span class="shrink-0 text-zinc-400">#</span>
+										<span class="mr-2 shrink-0 text-zinc-400">#</span>
 									{/if}
 									<span class="truncate"
 										>{getScopeChannelName(selectedChannel)}</span
 									>
-								</span>
-								<ChevronDown class="h-4 w-4 shrink-0 text-zinc-400" />
-							</button>
-
-							{#if openScopeMenuUiId === scope.uiId}
-								<div
-									class="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 p-1 shadow-2xl"
-								>
-									{#each scopingChannels as channel}
-										<button
-											type="button"
-											onclick={() =>
-												setScopeChannel(scope.uiId, channel.id)}
-											class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-white transition-colors hover:bg-zinc-700"
-										>
-											{#if channel.type === 4}
-												<Folder
-													class="h-4 w-4 shrink-0 text-white"
-													fill="currentColor"
-													strokeWidth={2.25}
-												/>
-											{:else}
-												<span class="shrink-0 text-zinc-400"
-													>#</span
-												>
-											{/if}
-											<span class="truncate">{channel.name}</span>
-										</button>
-									{/each}
 								</div>
 							{/if}
 						</div>
