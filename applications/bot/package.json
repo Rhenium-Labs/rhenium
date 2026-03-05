@@ -10,6 +10,7 @@
 	"dependencies": {
 		"@repo/db": "workspace:*",
 		"@repo/config": "workspace:*",
+		"@repo/trpc": "workspace:*",
 		"@sapphire/discord-utilities": "^4.0.0",
 		"@sapphire/lexure": "^1.1.12",
 		"@sapphire/pieces": "^4.4.1",
