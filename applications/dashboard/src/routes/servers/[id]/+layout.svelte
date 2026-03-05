@@ -16,11 +16,14 @@
 		PencilIcon,
 		KeyRound,
 		LogOut,
-		Loader2
+		Loader2,
+		Menu,
+		X
 	} from "@lucide/svelte";
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
+	let sidebarOpen = $state(false);
 	let direction = $state<"up" | "down">("up");
 	let navPhase = $state<"idle" | "loading" | "revealing">("idle");
 	let pendingCategoryTarget: string | null = null;
@@ -135,7 +138,10 @@
 			event.preventDefault();
 			return;
 		}
-		if (href === $page.url.pathname) return;
+		if (href === $page.url.pathname) {
+			sidebarOpen = false;
+			return;
+		}
 
 		event.preventDefault();
 
@@ -147,6 +153,7 @@
 		pendingCategoryTarget = href;
 		navPhase = "loading";
 		loadingStartedAt = Date.now();
+		sidebarOpen = false;
 
 		if (navDelayTimeout) clearTimeout(navDelayTimeout);
 		if (revealTimeout) clearTimeout(revealTimeout);
@@ -192,12 +199,30 @@
 </script>
 
 <div class="dashboard-shell">
-	<aside class="dashboard-sidebar">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="sidebar-backdrop"
+		class:is-open={sidebarOpen}
+		onclick={() => (sidebarOpen = false)}
+		onkeydown={e => e.key === "Escape" && (sidebarOpen = false)}
+	></div>
+
+	<aside class="dashboard-sidebar" class:is-open={sidebarOpen}>
 		<div class="sidebar-top">
-			<a href="/servers" class="sidebar-back-link">
-				<ArrowLeft class="h-4 w-4" strokeWidth={2} />
-				Servers
-			</a>
+			<div class="sidebar-top-row">
+				<a href="/servers" class="sidebar-back-link">
+					<ArrowLeft class="h-4 w-4" strokeWidth={2} />
+					Servers
+				</a>
+				<button
+					type="button"
+					class="sidebar-close-btn"
+					onclick={() => (sidebarOpen = false)}
+					aria-label="Close sidebar"
+				>
+					<X class="h-4 w-4" strokeWidth={2} />
+				</button>
+			</div>
 			<div class="server-chip">
 				{#if data.guild.icon}
 					<img
@@ -243,20 +268,16 @@
 	</aside>
 
 	<div class="dashboard-main">
-		<div class="mobile-nav-wrap">
-			<nav class="mobile-nav">
-				{#each modules as module (module.id)}
-					{@const active = isActiveModule(module.href)}
-					<a
-						href={module.href}
-						onclick={event => navigateToCategory(event, module.href)}
-						class="mobile-nav-item {active ? 'is-active' : ''}"
-					>
-						<module.icon class="h-4 w-4" strokeWidth={1.75} />
-						{module.name}
-					</a>
-				{/each}
-			</nav>
+		<div class="mobile-header">
+			<button
+				type="button"
+				class="mobile-menu-btn"
+				onclick={() => (sidebarOpen = !sidebarOpen)}
+				aria-label="Toggle sidebar"
+			>
+				<Menu class="h-5 w-5" strokeWidth={1.8} />
+			</button>
+			<p class="mobile-header-title">{data.guild.name}</p>
 		</div>
 
 		<main class="workspace-content" aria-busy={navPhase !== "idle"}>
@@ -289,6 +310,12 @@
 		background: rgb(9 9 11);
 	}
 
+	/* ── Sidebar backdrop (mobile only) ── */
+	.sidebar-backdrop {
+		display: none;
+	}
+
+	/* ── Sidebar ── */
 	.dashboard-sidebar {
 		position: sticky;
 		top: 0;
@@ -306,6 +333,28 @@
 	.sidebar-top {
 		display: grid;
 		gap: 0.75rem;
+	}
+
+	.sidebar-top-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.sidebar-close-btn {
+		display: none;
+		align-items: center;
+		justify-content: center;
+		padding: 0.4rem;
+		border-radius: 0.5rem;
+		color: rgb(161 161 170);
+		transition:
+			background-color 150ms ease,
+			color 150ms ease;
+	}
+	.sidebar-close-btn:hover {
+		background: rgb(39 39 42);
+		color: rgb(244 244 245);
 	}
 
 	.sidebar-back-link {
@@ -363,10 +412,12 @@
 	}
 
 	.sidebar-nav {
+		flex: 1;
 		min-height: 0;
-		overflow: auto;
+		overflow-y: auto;
 		display: grid;
 		gap: 0.2rem;
+		align-content: start;
 		padding-right: 0.15rem;
 	}
 
@@ -446,12 +497,13 @@
 		color: rgb(244 244 245);
 	}
 
+	/* ── Main content ── */
 	.dashboard-main {
 		min-width: 0;
 		padding: 1rem 1.1rem 1.2rem;
 	}
 
-	.mobile-nav-wrap {
+	.mobile-header {
 		display: none;
 	}
 
@@ -492,6 +544,7 @@
 		color: rgb(212 212 216);
 	}
 
+	/* ── Keyframes ── */
 	@keyframes shell-enter {
 		from {
 			opacity: 0;
@@ -547,57 +600,84 @@
 		}
 	}
 
+	/* ── Small screens: collapsible sidebar overlay ── */
 	@media (max-width: 1120px) {
 		.dashboard-shell {
 			grid-template-columns: 1fr;
 		}
 
+		.sidebar-backdrop {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 40;
+			background: rgb(0 0 0 / 0);
+			pointer-events: none;
+			transition: background-color 250ms ease;
+		}
+		.sidebar-backdrop.is-open {
+			background: rgb(0 0 0 / 0.55);
+			pointer-events: auto;
+		}
+
 		.dashboard-sidebar {
-			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			bottom: 0;
+			z-index: 50;
+			width: 17.5rem;
+			transform: translateX(-100%);
+			transition:
+				transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
+				opacity 200ms ease;
+			opacity: 0;
+			animation: none;
+		}
+		.dashboard-sidebar.is-open {
+			transform: translateX(0);
+			opacity: 1;
+		}
+
+		.sidebar-close-btn {
+			display: flex;
 		}
 
 		.dashboard-main {
-			padding: 1rem;
+			padding: 0 1rem 1.2rem;
 		}
 
-		.mobile-nav-wrap {
-			display: block;
-			margin-bottom: 0.9rem;
-			overflow-x: auto;
-			padding-bottom: 0.25rem;
-		}
-
-		.mobile-nav {
-			display: inline-flex;
-			gap: 0.35rem;
-			padding: 0.28rem;
-			border-radius: 0.8rem;
-			border: 1px solid rgb(39 39 42 / 0.95);
-			background: rgb(24 24 27 / 0.78);
-		}
-
-		.mobile-nav-item {
-			display: inline-flex;
+		.mobile-header {
+			display: flex;
 			align-items: center;
-			gap: 0.42rem;
-			padding: 0.45rem 0.65rem;
+			gap: 0.65rem;
+			padding: 0.75rem 0;
+			margin-bottom: 0.35rem;
+		}
+
+		.mobile-menu-btn {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0.45rem;
 			border-radius: 0.6rem;
-			font-size: 0.77rem;
-			font-weight: 500;
 			color: rgb(161 161 170);
-			white-space: nowrap;
 			transition:
 				background-color 150ms ease,
 				color 150ms ease;
 		}
-		.mobile-nav-item:hover {
+		.mobile-menu-btn:hover {
 			background: rgb(39 39 42);
-			color: rgb(228 228 231);
-		}
-		.mobile-nav-item.is-active {
-			background: rgb(39 39 42 / 0.92);
-			border: 1px solid rgb(82 82 91 / 0.85);
 			color: rgb(244 244 245);
+		}
+
+		.mobile-header-title {
+			font-size: 0.88rem;
+			font-weight: 600;
+			color: rgb(244 244 245);
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
 		}
 	}
 
@@ -606,6 +686,11 @@
 		.route-frame.is-revealing,
 		.loading-shell {
 			animation: none !important;
+			transition: none !important;
+		}
+
+		.sidebar-backdrop {
+			transition: none !important;
 		}
 
 		.route-frame {
