@@ -2,7 +2,7 @@ import { useState } from "react";
 import { LoggingService } from "@/service/logging";
 import { useGuild } from "@/contexts/GuildContext";
 import { ChannelSelect, DataTable } from "@/components/form";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { SettingsLoading } from "@/components/SettingsLoading";
 import { cn } from "@/lib/utils";
 import { Trash2, Plus, Pencil } from "lucide-react";
 
@@ -31,7 +31,7 @@ export function LoggingPage() {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editEvents, setEditEvents] = useState<LoggingEvent[]>([]);
 
-	if (isLoading) return <LoadingScreen className="relative bg-transparent" />;
+	if (isLoading) return <SettingsLoading />;
 	if (error) {
 		return <div className="p-6 text-sm text-discord-muted">{error}</div>;
 	}

@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface BaseModalProps {
 	isOpen: boolean;
@@ -12,7 +13,7 @@ export function BaseModal({
 	isOpen,
 	onClose,
 	children,
-	className = "h-[min(80vh,480px)] w-[min(90vw,640px)]",
+	className = "h-full w-full md:h-[min(80vh,480px)] md:w-[min(90vw,640px)]",
 }: BaseModalProps) {
 	if (!isOpen) return null;
 
@@ -24,7 +25,14 @@ export function BaseModal({
 				aria-hidden
 			/>
 			<div
-				className={`fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-discord-panel shadow-2xl ${className}`}
+				className={cn(
+					"fixed z-50 flex flex-col overflow-hidden bg-discord-panel shadow-2xl",
+					// Mobile: full-screen \"page\" layout
+					"inset-0 rounded-none md:inset-auto",
+					// Desktop: centered floating modal
+					"md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl",
+					className,
+				)}
 				role="dialog"
 				aria-modal="true"
 			>

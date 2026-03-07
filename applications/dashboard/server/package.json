@@ -19,7 +19,8 @@
     "trpc": "^0.11.3"
   },
   "scripts": {
-    "dev": "bun run serve.ts",
-    "start": "bun run serve.ts"
+    "dev": "bun --watch run index.ts",
+    "build": "bun build index.ts --target=bun --outdir=dist --minify",
+    "start": "bun run dist/index.js"
   }
 }

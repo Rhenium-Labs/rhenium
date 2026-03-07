@@ -1,0 +1,54 @@
+{
+  "message_reports": {
+    "enabled": true,
+    "webhook_url": null,
+    "webhook_channel": null,
+    "auto_disregard_after": "0",
+    "delete_submission_on_handle": true,
+    "immune_roles": [],
+    "notify_roles": [],
+    "blacklisted_users": [],
+    "placeholder_reason": null,
+    "enforce_member_in_guild": true,
+    "enforce_report_reason": true
+  },
+  "ban_requests": {
+    "enabled": true,
+    "webhook_url": null,
+    "webhook_channel": null,
+    "automatically_timeout": false,
+    "enforce_submission_reason": true,
+    "enforce_deny_reason": true,
+    "immune_roles": [],
+    "notify_roles": []
+  },
+  "content_filter": {
+    "enabled": true,
+    "webhook_url": null,
+    "use_native_automod": false,
+    "detectors": [],
+    "detector_mode": "Medium",
+    "verbosity": "Minimal",
+    "immune_roles": [],
+    "notify_roles": [],
+    "channel_scoping": [],
+    "ocr_filter_keywords": [],
+    "ocr_filter_regex": []
+  },
+  "highlights": {
+    "enabled": true,
+    "max_patterns": 15
+  },
+  "quick_mutes": {
+    "enabled": true,
+    "purge_limit": 100,
+    "channel_scoping": []
+  },
+  "quick_purges": {
+    "enabled": true,
+    "max_limit": 100,
+    "channel_scoping": []
+  },
+  "logging_webhooks": [],
+  "permission_scopes": []
+}

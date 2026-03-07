@@ -26,6 +26,8 @@ const buttonVariants = cva(
           "bg-discord-panel text-discord-text hover:bg-discord-hover/80 focus-visible:ring-discord-blurple/40",
         discordDanger:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/40",
+        discordSuccess:
+          "bg-discord-success text-white shadow-sm hover:bg-discord-success/90 focus-visible:ring-discord-success/40",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

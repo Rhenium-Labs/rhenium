@@ -1,14 +1,14 @@
 import { HighlightsService } from "@/service/highlights";
 import { useGuild } from "@/contexts/GuildContext";
 import { ConfigForm, ToggleSwitch, NumberInput } from "@/components/form";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { SettingsLoading } from "@/components/SettingsLoading";
 
 export function HighlightsPage() {
 	const { guildId } = useGuild();
 	const { data: config, isLoading, error } = HighlightsService.useConfig(guildId);
-	const { mutate: updateConfig, isPending } = HighlightsService.useUpdateConfig(guildId);
+	const { mutateAsync: updateConfig, isPending } = HighlightsService.useUpdateConfig(guildId);
 
-	if (isLoading) return <LoadingScreen className="relative bg-transparent" />;
+	if (isLoading) return <SettingsLoading />;
 	if (error || !config) {
 		return <div className="p-6 text-sm text-discord-muted">{error ?? "Config not found"}</div>;
 	}
@@ -16,7 +16,7 @@ export function HighlightsPage() {
 	return (
 		<ConfigForm
 			initialData={config}
-			onSave={(data) => updateConfig({ guildId, data })}
+			onSave={async (data) => { await updateConfig({ guildId, data }); }}
 			isSaving={isPending}
 		>
 			{({ values, update }) => (
@@ -33,14 +33,16 @@ export function HighlightsPage() {
 						onChange={(v) => update("enabled", v)}
 					/>
 
-					<NumberInput
-						label="Max Patterns Per User"
-						description="Maximum number of highlight patterns a user can set."
-						value={values.max_patterns}
-						onChange={(v) => update("max_patterns", v)}
-						min={1}
-						max={30}
-					/>
+					{values.enabled && (
+						<NumberInput
+							label="Max Patterns Per User"
+							description="Maximum number of highlight patterns a user can set."
+							value={values.max_patterns}
+							onChange={(v) => update("max_patterns", v)}
+							min={1}
+							max={30}
+						/>
+					)}
 				</>
 			)}
 		</ConfigForm>

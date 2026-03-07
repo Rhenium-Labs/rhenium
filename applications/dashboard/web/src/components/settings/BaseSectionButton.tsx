@@ -1,9 +1,10 @@
-import { type LucideIcon, Palette } from "lucide-react";
+import { type LucideIcon, LogOut, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const ICON_MAP: Record<string, LucideIcon> = {
 	Palette,
+	LogOut,
 };
 
 interface BaseSectionButtonProps {
@@ -35,7 +36,7 @@ export function BaseSectionButton({
 				"hover:bg-discord-hover/70 hover:text-discord-text",
 				"active:bg-discord-hover active:text-discord-text",
 				"focus-visible:bg-discord-hover/70 focus-visible:text-discord-text",
-				isActive && "bg-discord-hover font-semibold text-white",
+				isActive && "bg-discord-hover font-semibold text-discord-text",
 				className
 			)}
 		>

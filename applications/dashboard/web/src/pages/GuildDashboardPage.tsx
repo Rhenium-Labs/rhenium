@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { useGuild } from "@/contexts/GuildContext";
 import { useGuildStore } from "@/stores/guild";
 import { FeatureCard } from "@/components/ui/FeatureCard";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { SettingsLoading } from "@/components/SettingsLoading";
 
 const FEATURES = [
 	{ key: "message_reports" as const, name: "Message Reports", description: "Allow members to report messages to staff for review." },
@@ -19,11 +19,7 @@ export function GuildDashboardPage() {
 	const { selectedGuild } = useGuildStore();
 
 	if (isLoading) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<LoadingScreen className="relative bg-transparent" />
-			</div>
-		);
+		return <SettingsLoading />;
 	}
 
 	if (error) {

@@ -22,6 +22,15 @@ export type BanRequestTable = {
 export type BanRequest = Selectable<BanRequestTable>;
 export type NewBanRequest = Insertable<BanRequestTable>;
 export type BanRequestUpdate = Updateable<BanRequestTable>;
+export type ChannelCacheTable = {
+    guild_id: string;
+    channel_id: string;
+    name: string;
+    updated_at: Generated<Timestamp>;
+};
+export type ChannelCache = Selectable<ChannelCacheTable>;
+export type NewChannelCache = Insertable<ChannelCacheTable>;
+export type ChannelCacheUpdate = Updateable<ChannelCacheTable>;
 export type ContentFilterAlertTable = {
     id: string;
     guild_id: string;
@@ -132,6 +141,16 @@ export type QuickPurgeTable = {
 export type QuickPurge = Selectable<QuickPurgeTable>;
 export type NewQuickPurge = Insertable<QuickPurgeTable>;
 export type QuickPurgeUpdate = Updateable<QuickPurgeTable>;
+export type RoleCacheTable = {
+    guild_id: string;
+    role_id: string;
+    name: string;
+    color: Generated<number>;
+    updated_at: Generated<Timestamp>;
+};
+export type RoleCache = Selectable<RoleCacheTable>;
+export type NewRoleCache = Insertable<RoleCacheTable>;
+export type RoleCacheUpdate = Updateable<RoleCacheTable>;
 export type SessionTable = {
     user_id: string;
     access_token: string;
@@ -150,6 +169,18 @@ export type TemporaryBanTable = {
 export type TemporaryBan = Selectable<TemporaryBanTable>;
 export type NewTemporaryBan = Insertable<TemporaryBanTable>;
 export type TemporaryBanUpdate = Updateable<TemporaryBanTable>;
+export type UserGuildCacheTable = {
+    user_id: string;
+    guild_id: string;
+    name: string;
+    icon: string | null;
+    permissions: string;
+    bot_in_guild: Generated<boolean>;
+    cached_at: Generated<Timestamp>;
+};
+export type UserGuildCache = Selectable<UserGuildCacheTable>;
+export type NewUserGuildCache = Insertable<UserGuildCacheTable>;
+export type UserGuildCacheUpdate = Updateable<UserGuildCacheTable>;
 export type WhitelistTable = {
     id: string;
     created_at: Generated<Timestamp>;
@@ -161,6 +192,10 @@ export type DB = {
     BanRequest: BanRequestTable;
     ContentFilterAlert: ContentFilterAlertTable;
     ContentFilterLog: ContentFilterLogTable;
+    "dashboard.ChannelCache": ChannelCacheTable;
+    "dashboard.RoleCache": RoleCacheTable;
+    "dashboard.Session": SessionTable;
+    "dashboard.UserGuildCache": UserGuildCacheTable;
     Guild: GuildTable;
     Highlight: HighlightTable;
     HighlightChannelScoping: HighlightChannelScopingTable;
@@ -168,7 +203,6 @@ export type DB = {
     MessageReport: MessageReportTable;
     QuickMute: QuickMuteTable;
     QuickPurge: QuickPurgeTable;
-    Session: SessionTable;
     TemporaryBan: TemporaryBanTable;
     Whitelist: WhitelistTable;
 };

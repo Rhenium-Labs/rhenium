@@ -5,10 +5,12 @@ generator kysely {
   enumFileName       = "Enums.ts"
   importExtension    = ".js"
   exportWrappedTypes = true
+  previewFeatures    = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public", "dashboard"]
 }
 
 enum RequestStatus {
@@ -17,6 +19,8 @@ enum RequestStatus {
   Disregarded
   Accepted
   Denied
+
+  @@schema("public")
 }
 
 enum ReportStatus {
@@ -24,12 +28,16 @@ enum ReportStatus {
   Pending
   Disregarded
   Resolved
+
+  @@schema("public")
 }
 
 enum Detector {
   NSFW
   OCR
   TEXT
+
+  @@schema("public")
 }
 
 enum ContentFilterStatus {
@@ -37,28 +45,31 @@ enum ContentFilterStatus {
   Resolved
   False
   Deleted
+
+  @@schema("public")
 }
 
 model Guild {
-  id String @id
-
-  // JSON column to store the guild's configuration.
+  id     String @id
   config Json
 
-  ban_requests          BanRequest[]
-  highlights            Highlight[]
-  message_reports       MessageReport[]
-  quick_mutes           QuickMute[]
-  messages              Message[]
-  quick_purges          QuickPurge[]
-  content_filter_alerts ContentFilterAlert[]
-  content_filter_logs   ContentFilterLog[]
+  ban_requests            BanRequest[]
+  highlights              Highlight[]
+  message_reports         MessageReport[]
+  quick_mutes             QuickMute[]
+  messages                Message[]
+  quick_purges            QuickPurge[]
+  content_filter_alerts   ContentFilterAlert[]
+  content_filter_logs     ContentFilterLog[]
+
+  @@schema("public")
 }
 
 model Whitelist {
-  // ID of the whitelisted guild.
   id         String   @id
   created_at DateTime @default(now())
+
+  @@schema("public")
 }
 
 model ContentFilterAlert {
@@ -79,6 +90,7 @@ model ContentFilterAlert {
 
   @@index([guild_id, channel_id, created_at])
   @@index([message_id])
+  @@schema("public")
 }
 
 model ContentFilterLog {
@@ -92,6 +104,7 @@ model ContentFilterLog {
 
   @@index([alert_id])
   @@index([created_at])
+  @@schema("public")
 }
 
 model BanRequest {
@@ -112,6 +125,8 @@ model BanRequest {
   reason String
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@schema("public")
 }
 
 model TemporaryBan {
@@ -120,6 +135,7 @@ model TemporaryBan {
   expires_at DateTime
 
   @@unique([guild_id, target_id])
+  @@schema("public")
 }
 
 model MessageReport {
@@ -143,6 +159,8 @@ model MessageReport {
   resolved_by String?
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@schema("public")
 }
 
 model Highlight {
@@ -155,6 +173,7 @@ model Highlight {
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, guild_id])
+  @@schema("public")
 }
 
 model HighlightChannelScoping {
@@ -166,6 +185,7 @@ model HighlightChannelScoping {
   highlight  Highlight @relation(fields: [user_id, guild_id], references: [user_id, guild_id], onDelete: Cascade)
 
   @@id([user_id, guild_id, channel_id])
+  @@schema("public")
 }
 
 model QuickMute {
@@ -180,6 +200,7 @@ model QuickMute {
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, guild_id, reaction])
+  @@schema("public")
 }
 
 model QuickPurge {
@@ -191,6 +212,7 @@ model QuickPurge {
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, guild_id, reaction])
+  @@schema("public")
 }
 
 model Message {
@@ -206,7 +228,11 @@ model Message {
   deleted      Boolean  @default(false)
 
   guild Guild @relation(fields: [guild_id], references: [id], onDelete: Cascade)
+
+  @@schema("public")
 }
+
+// ── Dashboard schema ──────────────────────────────────────────────────
 
 model Session {
   user_id       String   @id
@@ -214,4 +240,41 @@ model Session {
   refresh_token String
   expires_at    DateTime
   updated_at    DateTime @default(now())
+
+  @@schema("dashboard")
+}
+
+model UserGuildCache {
+  user_id      String
+  guild_id     String
+  name         String
+  icon         String?
+  permissions  BigInt
+  bot_in_guild Boolean  @default(false)
+  cached_at    DateTime @default(now())
+
+  @@id([user_id, guild_id])
+  @@index([user_id, cached_at])
+  @@schema("dashboard")
+}
+
+model ChannelCache {
+  guild_id   String
+  channel_id String
+  name       String
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@id([guild_id, channel_id])
+  @@schema("dashboard")
+}
+
+model RoleCache {
+  guild_id   String
+  role_id    String
+  name       String
+  color      Int      @default(0)
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@id([guild_id, role_id])
+  @@schema("dashboard")
 }

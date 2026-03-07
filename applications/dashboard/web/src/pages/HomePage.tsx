@@ -2,14 +2,16 @@ import { authUrls } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import RheniumLogo from "@/assets/Rhenium.png";
 import { APP_NAME } from "@/constants";
-
+import { useWebHaptics } from "web-haptics/react";
 export function HomePage() {
+	const { trigger } = useWebHaptics();
+
 	return (
 		<div
 			className="fixed inset-0 flex items-center justify-center bg-cover bg-center bg-no-repeat"
 			style={{ backgroundImage: "url(/background_homepage.svg)" }}
 		>
-			<div className="flex w-full max-h-[400px] flex-row items-center justify-center gap-6 rounded-xl bg-discord-panel/95 px-10 py-8 shadow-xl backdrop-blur-sm md:h-1/2 md:w-1/2 md:max-h-none">
+			<div className="flex w-full max-h-100 flex-row items-center justify-center gap-6 rounded-xl bg-discord-panel/95 px-10 py-8 shadow-xl backdrop-blur-sm md:h-1/2 md:w-1/2 md:max-h-none">
 				<div className="flex w-2/3 flex-col items-center justify-center gap-6">
 					<h2 className="text-lg font-semibold text-discord-text">
 						Welcome to {APP_NAME} dashboard!
@@ -18,6 +20,7 @@ export function HomePage() {
 					<Button
 						variant="discordPrimary"
 						onClick={() => {
+							trigger("success");
 							window.location.href = authUrls.discord();
 						}}
 					>

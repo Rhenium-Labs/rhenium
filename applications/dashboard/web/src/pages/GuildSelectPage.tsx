@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { GuildService } from "@/service/guild";
 import { useGuildStore } from "@/stores/guild";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { SettingsLoading } from "@/components/SettingsLoading";
 
 export function GuildSelectPage() {
 	const navigate = useNavigate();
@@ -9,11 +9,7 @@ export function GuildSelectPage() {
 	const { data: guilds, isLoading, error } = GuildService.useUserGuilds();
 
 	if (isLoading) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<LoadingScreen className="relative bg-transparent" />
-			</div>
-		);
+		return <SettingsLoading />;
 	}
 
 	if (error) {

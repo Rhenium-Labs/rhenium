@@ -1,35 +1,45 @@
 import { ContentFilterService } from "@/service/content-filter";
+import { GuildService } from "@/service/guild";
 import { useGuild } from "@/contexts/GuildContext";
-import { ConfigForm, ToggleSwitch, ChannelSelect, RoleSelect, DataTable } from "@/components/form";
-import { LoadingScreen } from "@/components/LoadingScreen";
-import { cn } from "@/lib/utils";
+import {
+	ConfigForm,
+	ToggleSwitch,
+	ChannelSelect,
+	RoleSelect,
+	DataTable,
+	RadioButtonGroup,
+} from "@/components/form";
+import { SettingsLoading } from "@/components/SettingsLoading";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
-
-const DETECTORS = ["NSFW", "OCR", "TEXT"] as const;
-const DETECTOR_MODES = ["Lenient", "Medium", "Strict"] as const;
-const VERBOSITY_LEVELS = ["Minimal", "Medium", "Verbose"] as const;
+import { Button } from "@/components/ui/button";
+import { CONTENT_FILTER } from "./constant";
+import { useDiscordCacheStore } from "@/stores/discord-cache";
 
 export function ContentFilterPage() {
 	const { guildId } = useGuild();
 	const { data: config, isLoading, error } = ContentFilterService.useConfig(guildId);
-	const { data: scoping } = ContentFilterService.useChannelScoping(guildId);
-	const { mutate: updateConfig, isPending } = ContentFilterService.useUpdateConfig(guildId);
-	const { mutate: setScope } = ContentFilterService.useSetChannelScope(guildId);
-	const { mutate: removeScope } = ContentFilterService.useRemoveChannelScope(guildId);
+	const { mutateAsync: updateConfig, isPending } = ContentFilterService.useUpdateConfig(guildId);
+
+	GuildService.useCachedChannels(guildId);
+	const channelCache = useDiscordCacheStore((s) => s.channels[guildId]);
 
 	const [newScopeChannel, setNewScopeChannel] = useState<string | null>(null);
 	const [newScopeType, setNewScopeType] = useState<0 | 1>(0);
 
-	if (isLoading) return <LoadingScreen className="relative bg-transparent" />;
+	if (isLoading) return <SettingsLoading />;
 	if (error || !config) {
-		return <div className="p-6 text-sm text-discord-muted">{error ?? "Config not found"}</div>;
+		return (
+			<div className="p-6 text-sm text-discord-muted">{error ?? "Config not found"}</div>
+		);
 	}
 
 	return (
 		<ConfigForm
 			initialData={config}
-			onSave={(data) => updateConfig({ guildId, data })}
+			onSave={async data => {
+				await updateConfig({ guildId, data });
+			}}
 			isSaving={isPending}
 		>
 			{({ values, update }) => (
@@ -42,170 +52,175 @@ export function ContentFilterPage() {
 					<ToggleSwitch
 						label="Enable Content Filter"
 						checked={values.enabled}
-						onChange={(v) => update("enabled", v)}
+						onChange={v => update("enabled", v)}
 					/>
 
-					<ToggleSwitch
-						label="Use Native AutoMod"
-						description="Use Discord's native AutoMod in conjunction with the content filter."
-						checked={values.use_native_automod}
-						onChange={(v) => update("use_native_automod", v)}
-					/>
-
-					<div className="space-y-1.5">
-						<label className="text-xs font-medium uppercase tracking-wider text-discord-muted">
-							Detectors
-						</label>
-						<div className="flex flex-wrap gap-2">
-							{DETECTORS.map((detector) => {
-								const active = values.detectors.includes(detector);
-								return (
-									<button
-										key={detector}
-										type="button"
-										onClick={() => {
-											const next = active
-												? values.detectors.filter((d) => d !== detector)
-												: [...values.detectors, detector];
-											update("detectors", next);
-										}}
-										className={cn(
-											"rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-											active
-												? "border-discord-blurple bg-discord-blurple/20 text-discord-text"
-												: "border-discord-divider text-discord-muted hover:text-discord-text",
-										)}
-									>
-										{detector}
-									</button>
-								);
-							})}
-						</div>
-					</div>
-
-					<SelectGroup
-						label="Detector Mode"
-						value={values.detector_mode}
-						options={DETECTOR_MODES}
-						onChange={(v) => update("detector_mode", v)}
-					/>
-
-					<SelectGroup
-						label="Verbosity"
-						value={values.verbosity}
-						options={VERBOSITY_LEVELS}
-						onChange={(v) => update("verbosity", v)}
-					/>
-
-					<RoleSelect
-						guildId={guildId}
-						value={values.immune_roles}
-						onChange={(v) => update("immune_roles", v)}
-						label="Immune Roles"
-					/>
-
-					<RoleSelect
-						guildId={guildId}
-						value={values.notify_roles}
-						onChange={(v) => update("notify_roles", v)}
-						label="Notify Roles"
-					/>
-
-					<div className="space-y-3 pt-4">
-						<h3 className="text-sm font-semibold text-discord-text">Channel Scoping</h3>
-						<DataTable
-							columns={[
-								{ key: "channel_id", header: "Channel ID", render: (r) => r.channel_id },
-								{ key: "type", header: "Type", render: (r) => (r.type === 0 ? "Whitelist" : "Blacklist") },
-								{
-									key: "actions",
-									header: "",
-									className: "w-12",
-									render: (r) => (
-										<button
-											type="button"
-											onClick={() => removeScope({ guildId, channelId: r.channel_id })}
-											className="text-discord-muted transition-colors hover:text-destructive"
-										>
-											<Trash2 className="size-4" />
-										</button>
-									),
-								},
-							]}
-							data={scoping ?? []}
-							keyExtractor={(r) => r.channel_id}
-							emptyMessage="No channel scoping configured"
-						/>
-						<div className="flex items-end gap-2">
-							<ChannelSelect
-								guildId={guildId}
-								value={newScopeChannel}
-								onChange={setNewScopeChannel}
-								label="Add Channel"
-								filterTypes={[0]}
+					{values.enabled && (
+						<>
+							<ToggleSwitch
+								label="Use Native AutoMod"
+								description="Use Discord's native AutoMod in conjunction with the content filter."
+								checked={values.use_native_automod}
+								onChange={v => update("use_native_automod", v)}
 							/>
-							<select
-								value={newScopeType}
-								onChange={(e) => setNewScopeType(Number(e.target.value) as 0 | 1)}
-								className="rounded-md border border-discord-divider bg-discord-sidebar px-3 py-2 text-sm text-discord-text"
-							>
-								<option value={0}>Whitelist</option>
-								<option value={1}>Blacklist</option>
-							</select>
-							<button
-								type="button"
-								disabled={!newScopeChannel}
-								onClick={() => {
-									if (newScopeChannel) {
-										setScope({ guildId, channelId: newScopeChannel, data: { type: newScopeType } });
-										setNewScopeChannel(null);
+
+							<div className="space-y-1.5">
+								<label className="text-xs font-medium uppercase tracking-wider text-discord-muted">
+									Detectors
+								</label>
+								<RadioButtonGroup
+									value={values.detectors[0] ?? CONTENT_FILTER.DETECTORS[0]}
+									onChange={v =>
+										update("detectors", [v as typeof values.detectors[0]])
 									}
-								}}
-								className="rounded-md bg-discord-blurple px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-discord-blurple/80 disabled:opacity-50"
-							>
-								Add
-							</button>
-						</div>
-					</div>
+									options={CONTENT_FILTER.DETECTORS}
+								/>
+							</div>
+
+							<div className="space-y-1.5">
+								<label className="text-xs font-medium uppercase tracking-wider text-discord-muted">
+									Detector Mode
+								</label>
+								<RadioButtonGroup
+									value={values.detector_mode}
+									onChange={v =>
+										update("detector_mode", v as typeof values.detector_mode)
+									}
+									options={CONTENT_FILTER.DETECTOR_MODE_OPTIONS}
+								/>
+							</div>
+
+							<div className="space-y-1.5">
+								<label className="text-xs font-medium uppercase tracking-wider text-discord-muted">
+									Verbosity
+								</label>
+								<RadioButtonGroup
+									value={values.verbosity}
+									onChange={v =>
+										update("verbosity", v as typeof values.verbosity)
+									}
+									options={CONTENT_FILTER.VERBOSITY_OPTIONS}
+								/>
+							</div>
+
+							<RoleSelect
+								guildId={guildId}
+								value={values.immune_roles}
+								onChange={v => update("immune_roles", v)}
+								label="Immune Roles"
+							/>
+
+							<RoleSelect
+								guildId={guildId}
+								value={values.notify_roles}
+								onChange={v => update("notify_roles", v)}
+								label="Notify Roles"
+							/>
+
+							<div className="space-y-3 pt-4">
+								<h3 className="text-sm font-semibold text-discord-text">
+									Channel Scoping
+								</h3>
+								<DataTable
+									columns={[
+										{
+											key: "channel_id",
+											header: "Channel ID",
+											render: (r: { channel_id: string; type: number }) => r.channel_id
+										},
+										{
+											key: "channel_name",
+											header: "Channel Name",
+											render: (r: { channel_id: string; type: number }) => {
+												const cached = channelCache?.data.find(c => c.id === r.channel_id);
+												return cached ? `# ${cached.name}` : "Unknown";
+											}
+										},
+										{
+											key: "type",
+											header: "Type",
+											render: (r: { channel_id: string; type: number }) =>
+												r.type === 0 ? "Whitelist" : "Blacklist"
+										},
+										{
+											key: "actions",
+											header: "",
+											className: "w-12",
+											render: (r: { channel_id: string; type: number }) => (
+												<button
+													type="button"
+													onClick={() =>
+														update("channel_scoping", values.channel_scoping.filter(
+															s => s.channel_id !== r.channel_id
+														))
+													}
+													className="text-discord-muted transition-colors hover:text-destructive"
+												>
+													<Trash2 className="size-4" />
+												</button>
+											)
+										}
+									]}
+									data={values.channel_scoping}
+									keyExtractor={(r: { channel_id: string }) => r.channel_id}
+									emptyMessage="No channel scoping configured"
+								/>
+								<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-end">
+									<div className="min-w-0 sm:flex-1">
+										<ChannelSelect
+											guildId={guildId}
+											value={newScopeChannel}
+											onChange={setNewScopeChannel}
+											label="Add Channel"
+											filterTypes={[0]}
+										/>
+									</div>
+									<select
+										value={newScopeType}
+										onChange={e =>
+											setNewScopeType(
+												Number(e.target.value) as 0 | 1
+											)
+										}
+										className="w-full rounded-md border border-discord-divider bg-discord-sidebar px-3 py-2 text-sm text-discord-text sm:w-40"
+									>
+										<option value={0}>Whitelist</option>
+										<option value={1}>Blacklist</option>
+									</select>
+									<Button
+										type="button"
+										variant="discordPrimary"
+										disabled={!newScopeChannel}
+										onClick={() => {
+											if (newScopeChannel) {
+												const existing = values.channel_scoping.find(
+													s => s.channel_id === newScopeChannel
+												);
+												if (existing) {
+													if (existing.type !== newScopeType) {
+														update("channel_scoping", values.channel_scoping.map(
+															s => s.channel_id === newScopeChannel ? { ...s, type: newScopeType } : s
+														));
+													}
+												} else {
+													update("channel_scoping", [
+														...values.channel_scoping,
+														{ channel_id: newScopeChannel, type: newScopeType },
+													]);
+												}
+												setNewScopeChannel(null);
+											}
+										}}
+										className="w-full px-3 py-2 text-sm font-medium sm:w-24"
+									>
+										Add
+									</Button>
+								</div>
+							</div>
+						</>
+					)}
 				</>
 			)}
 		</ConfigForm>
-	);
-}
-
-function SelectGroup<T extends string>({
-	label,
-	value,
-	options,
-	onChange,
-}: {
-	label: string;
-	value: T;
-	options: readonly T[];
-	onChange: (value: T) => void;
-}) {
-	return (
-		<div className="space-y-1.5">
-			<label className="text-xs font-medium uppercase tracking-wider text-discord-muted">
-				{label}
-			</label>
-			<div className="flex gap-2">
-				{options.map((opt) => (
-					<button
-						key={opt}
-						type="button"
-						onClick={() => onChange(opt)}
-						className={cn(
-							"rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-							value === opt
-								? "border-discord-blurple bg-discord-blurple/20 text-discord-text"
-								: "border-discord-divider text-discord-muted hover:text-discord-text",
-						)}
-					>
-						{opt}
-					</button>
-				))}
-			</div>
-		</div>
 	);
 }

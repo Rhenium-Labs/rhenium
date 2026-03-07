@@ -1,5 +1,4 @@
-import type { ErrorCode } from '../constants/errors'
-import type { HttpStatus } from '../constants/http'
+import type { ErrorCode, HttpStatus } from '../constants'
 
 export interface AppErrorMeta {
     errorCode: ErrorCode

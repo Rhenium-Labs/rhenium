@@ -1,34 +1,29 @@
-import { useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useGuildConfigStore } from "@/stores/guild-config";
 
 function useConfig(guildId: string) {
-	const query = trpc.messageReports.getConfig.useQuery({ guildId });
-
-	useEffect(() => {
-		if (query.error) console.error("[MessageReportsService.useConfig]", query.error);
-	}, [query.error]);
+	const config = useGuildConfigStore((s) => s.getConfig(guildId)?.message_reports);
 
 	return {
-		data: query.data,
-		isLoading: query.isLoading,
-		error: query.error?.message,
+		data: config,
+		isLoading: !config,
+		error: undefined as string | undefined,
 	};
 }
 
 function useUpdateConfig(guildId: string) {
-	const utils = trpc.useUtils();
+	const setConfig = useGuildConfigStore((s) => s.setConfig);
+
 	const mutation = trpc.messageReports.updateConfig.useMutation({
-		onSuccess() {
-			utils.messageReports.getConfig.invalidate({ guildId });
+		onSuccess(data) {
+			const current = useGuildConfigStore.getState().getConfig(guildId);
+			if (current) setConfig(guildId, { ...current, message_reports: data });
 		},
 	});
 
-	useEffect(() => {
-		if (mutation.error) console.error("[MessageReportsService.useUpdateConfig]", mutation.error);
-	}, [mutation.error]);
-
 	return {
 		mutate: mutation.mutate,
+		mutateAsync: mutation.mutateAsync,
 		isPending: mutation.isPending,
 	};
 }

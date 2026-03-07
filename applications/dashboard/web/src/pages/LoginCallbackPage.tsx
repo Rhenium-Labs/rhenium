@@ -22,7 +22,11 @@ export function LoginCallbackPage() {
 				if (!res.ok) throw new Error("Token exchange failed");
 				const data = (await res.json()) as {
 					token: string;
-					user: { id: string; username: string; avatar: string | null };
+					user: {
+						id: string;
+						username: string;
+						avatar: string | null;
+					};
 				};
 				login(data.token, data.user);
 				navigate("/home", { replace: true });

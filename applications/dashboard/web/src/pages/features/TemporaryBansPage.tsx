@@ -1,13 +1,13 @@
 import { TemporaryBansService } from "@/service/temporary-bans";
 import { useGuild } from "@/contexts/GuildContext";
 import { DataTable } from "@/components/form";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { SettingsLoading } from "@/components/SettingsLoading";
 
 export function TemporaryBansPage() {
 	const { guildId } = useGuild();
 	const { data: bans, isLoading, error } = TemporaryBansService.useList(guildId);
 
-	if (isLoading) return <LoadingScreen className="relative bg-transparent" />;
+	if (isLoading) return <SettingsLoading />;
 	if (error) {
 		return <div className="p-6 text-sm text-discord-muted">{error}</div>;
 	}

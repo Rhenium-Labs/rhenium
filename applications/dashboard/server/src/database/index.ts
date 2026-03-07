@@ -2,17 +2,21 @@ import { Kysely } from 'kysely'
 import { PostgresJSDialect } from 'kysely-postgres-js'
 import postgres from 'postgres'
 import type { DashboardDB } from './types'
-import { env } from '../utils/env'
+import { env } from '../config/env'
 
-let instance: Kysely<DashboardDB> | undefined
+export class DatabaseInstance{
+    private static instance: Kysely<DashboardDB> | undefined = undefined
 
-export function getDatabase(): Kysely<DashboardDB> {
-    if (!instance) {
-        instance = new Kysely<DashboardDB>({
-            dialect: new PostgresJSDialect({ postgres: postgres(env.database.url) }),
-        })
+    private constructor(){}
+
+    public static getInstance(): Kysely<DashboardDB> {
+        if (!this.instance) {
+            this.instance = new Kysely<DashboardDB>({
+                dialect: new PostgresJSDialect({ postgres: postgres(env.database.url) }),
+            })
+        }
+        return this.instance
     }
-    return instance
 }
 
 export type { DashboardDB } from './types'

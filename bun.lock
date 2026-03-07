@@ -93,6 +93,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@base-ui/react": "^1.2.0",
+        "@repo/config": "workspace:*",
         "@tailwindcss/vite": "^4.2.1",
         "@tanstack/react-query": "^5.90.21",
         "@trpc/client": "^11.10.0",
@@ -106,6 +107,7 @@
         "react-router": "^7.13.1",
         "tailwind-merge": "^3.5.0",
         "tailwindcss": "^4.2.1",
+        "web-haptics": "^0.0.6",
         "zod": "^4.3.6",
         "zustand": "^5.0.11",
       },
@@ -1809,6 +1811,8 @@
     "weak-lru-cache": ["weak-lru-cache@1.2.2", "", {}, "sha512-DEAoo25RfSYMuTGc9vPJzZcZullwIqRDSI9LOy+fkCJPi6hykCnfKaXTuPBDuXAUcqHXyOgFtHNp/kB2FjYHbw=="],
 
     "web": ["web@workspace:applications/dashboard/web"],
+
+    "web-haptics": ["web-haptics@0.0.6", "", { "peerDependencies": { "react": ">=18", "react-dom": ">=18", "svelte": ">=4", "vue": ">=3" }, "optionalPeers": ["react", "react-dom", "svelte", "vue"] }, "sha512-eCzcf1LDi20+Fr0x9V3OkX92k0gxEQXaHajmhXHitsnk6SxPeshv8TBtBRqxyst8HI1uf2FyFVE7QS3jo1gkrw=="],
 
     "web-streams-polyfill": ["web-streams-polyfill@3.3.3", "", {}, "sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw=="],
 

@@ -11,7 +11,9 @@
 	},
 	"contributors": [
 		"Eddy <cobaltorum>",
-		"SpiderMat <SplderMat>"
+		"SpiderMat <SplderMat>",
+		"Darkie <Darkie12>",
+		"DoofusWolfie <TofuWaffle>"
 	],
 	"packageManager": "bun@1.3.10",
 	"workspaces": [
@@ -20,12 +22,15 @@
 		"applications/dashboard/*"
 	],
 	"scripts": {
+		"dev": "turbo run dev",
+		"build": "turbo run build",
 		"typecheck": "turbo run typecheck",
 		"lint": "oxlint .",
 		"lint:fix": "oxlint . --fix",
 		"format": "turbo run format",
-"db:generate": "prisma generate --schema=packages/database/prisma/schema.prisma",
-    "db:migrate": "prisma migrate deploy --schema=packages/database/prisma/schema.prisma"
+		"db:generate": "prisma generate --schema=packages/database/prisma/schema.prisma",
+		"db:migrate": "prisma migrate deploy --schema=packages/database/prisma/schema.prisma",
+		"db:push": "prisma db push --schema=packages/database/prisma/schema.prisma"
 	},
 	"devDependencies": {
 		"@types/react": "^19.2.14",

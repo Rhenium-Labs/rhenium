@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { ChevronLeft } from "lucide-react";
 import { BaseModal, BaseModalHeader } from "@/components/ui/BaseModal";
 import { BaseSectionButton } from "@/components/settings/BaseSectionButton";
-import { SubSection } from "@/components/settings/SubSection";
-import { useTheme } from "@/components/theme/ThemeProvider";
+import { UserAvatar } from "@/components/UserAvatar";
+import { useMobileSidebar } from "@/contexts/MobileSidebarContext";
+import { cn } from "@/lib/utils";
 import { useUserSettings } from "@/contexts/UserSettingsContext";
 import { useAuthStore } from "@/stores/auth";
-import { discordAvatarUrl } from "@/constants/discord";
+import { AppearanceSection } from "./settings/Apperance";
 
 type SettingId = "appearance";
 
@@ -15,31 +18,52 @@ const APP_SETTINGS: { id: SettingId; label: string; icon: string | null }[] = [
 
 export function UserSettingsPage() {
 	const { isOpen, close } = useUserSettings();
-	const { user } = useAuthStore();
+	const { user, logout } = useAuthStore();
+	const navigate = useNavigate();
 	const [activeSetting, setActiveSetting] = useState<SettingId>("appearance");
+	const [mobilePane, setMobilePane] = useState<"list" | "content">("list");
+	const { open: openMobileSidebar } = useMobileSidebar();
+
+	useEffect(() => {
+		if (isOpen) setMobilePane("list");
+	}, [isOpen]);
+
+	const closeToSidebar = () => {
+		close();
+		// On mobile, user expects to land back on server/channel list.
+		if (window.matchMedia("(max-width: 767px)").matches) {
+			openMobileSidebar();
+		}
+	};
+
+	const handleLogout = () => {
+		logout();
+		closeToSidebar();
+		navigate("/");
+	};
 
 	return (
 		<BaseModal
 			isOpen={isOpen}
 			onClose={close}
-			className="h-[min(80vh,520px)] w-[min(90vw,720px)]"
+			className="h-full w-full md:h-[min(80vh,520px)] md:w-[min(90vw,720px)]"
 		>
-			<div className="flex min-h-0 flex-1">
-				<aside className="flex w-3/10 shrink-0 flex-col border-r border-discord-divider bg-discord-sidebar">
+			<div className="flex h-full min-h-0 flex-1 flex-col md:flex-row">
+				<aside
+					className={cn(
+						"flex w-full flex-1 flex-col border-b border-discord-divider bg-discord-sidebar md:w-3/10 md:flex-none md:border-b-0 md:border-r",
+						mobilePane === "content" && "hidden md:flex",
+					)}
+				>
+					<div className="md:hidden">
+						<BaseModalHeader onClose={closeToSidebar}>
+							<span className="text-base font-semibold text-discord-text">
+								Settings
+							</span>
+						</BaseModalHeader>
+					</div>
 					<div className="flex items-center gap-3 border-b border-discord-divider px-4 py-3">
-						<div className="relative size-10 shrink-0 overflow-hidden rounded-full bg-discord-blurple">
-							{user?.avatar ? (
-								<img
-									src={discordAvatarUrl(user.id, user.avatar) ?? undefined}
-									alt=""
-									className="size-full object-cover"
-								/>
-							) : (
-								<span className="flex size-full items-center justify-center text-base font-medium text-white">
-									{user?.username?.charAt(0).toUpperCase() ?? "?"}
-								</span>
-							)}
-						</div>
+						<UserAvatar user={user} size="md" />
 						<div className="min-w-0 flex-1 overflow-hidden">
 							<div className="truncate text-sm font-semibold text-discord-text">
 								{user?.username ?? "User"}
@@ -60,18 +84,44 @@ export function UserSettingsPage() {
 								icon={s.icon}
 								name={s.label}
 								isActive={activeSetting === s.id}
-								onClick={() => setActiveSetting(s.id)}
+								onClick={() => {
+									setActiveSetting(s.id);
+									setMobilePane("content");
+								}}
 							/>
 						))}
 					</nav>
+					<div className="shrink-0 border-t border-discord-divider p-2">
+						<BaseSectionButton
+							icon="LogOut"
+							name="Log out"
+							onClick={handleLogout}
+							className="text-red-400 hover:bg-red-500/10 hover:text-red-400"
+						/>
+					</div>
 				</aside>
 
-				<div className="flex w-7/10 min-h-0 flex-1 flex-col">
-					<BaseModalHeader onClose={close}>
-						<span className="text-base font-semibold text-discord-text">
-							{APP_SETTINGS.find((s) => s.id === activeSetting)?.label ??
-								"Settings"}
-						</span>
+				<div
+					className={cn(
+						"flex w-full min-h-0 flex-1 flex-col md:w-7/10",
+						mobilePane === "list" && "hidden md:flex",
+					)}
+				>
+					<BaseModalHeader onClose={closeToSidebar}>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => setMobilePane("list")}
+								aria-label="Back"
+								className="mr-1 rounded p-1 text-discord-muted transition-colors hover:bg-discord-hover hover:text-discord-text md:hidden"
+							>
+								<ChevronLeft className="size-4" />
+							</button>
+							<span className="truncate text-base font-semibold text-discord-text">
+								{APP_SETTINGS.find((s) => s.id === activeSetting)?.label ??
+									"Settings"}
+							</span>
+						</div>
 					</BaseModalHeader>
 					<main className="flex-1 overflow-y-auto p-4">
 						{activeSetting === "appearance" && <AppearanceSection />}
@@ -82,54 +132,3 @@ export function UserSettingsPage() {
 	);
 }
 
-const THEME_SWATCHES: { id: "light" | "dark"; color: string; label: string }[] = [
-	{ id: "light", color: "#ffffff", label: "Light" },
-	{ id: "dark", color: "#313338", label: "Dark" },
-];
-
-function AppearanceSection() {
-	const { theme, setTheme } = useTheme();
-
-	return (
-		<SubSection id="theme" title="Theme">
-			<div className="flex gap-3">
-				{THEME_SWATCHES.map(({ id, color, label }) => (
-					<ThemeOption
-						key={id}
-						color={color}
-						label={label}
-						isActive={theme === id}
-						onClick={() => setTheme(id)}
-					/>
-				))}
-			</div>
-		</SubSection>
-	);
-}
-
-interface ThemeOptionProps {
-	color: string;
-	label: string;
-	isActive: boolean;
-	onClick: () => void;
-}
-
-function ThemeOption({ color, label, isActive, onClick }: ThemeOptionProps) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			aria-label={label}
-			title={label}
-			className={`flex flex-col items-center gap-2 transition-colors outline-none focus-visible:ring-0 focus-visible:ring-offset-0 ${
-				isActive ? "" : "hover:opacity-90 active:opacity-80"
-			}`}
-		>
-			<div
-				className="size-14 shrink-0 rounded-lg border-2 border-white"
-				style={{ backgroundColor: color }}
-			/>
-			<span className="text-xs font-medium text-discord-muted">{label}</span>
-		</button>
-	);
-}

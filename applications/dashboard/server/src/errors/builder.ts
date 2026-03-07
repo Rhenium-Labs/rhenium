@@ -1,8 +1,7 @@
 import { TRPCError } from '@trpc/server'
-import { ERROR_CODES, type ErrorCode } from '../constants/errors'
-import { HTTP_STATUS, type HttpStatus } from '../constants/http'
+import { ERROR_CODES, HTTP_STATUS, type ErrorCode, type HttpStatus } from '../constants'
 import type { AppErrorMeta, ErrorResponse } from './types'
-import { err, type Result, type AppError } from '../types/result'
+import { err, type Result, type AppError } from './domain'
 
 type TRPCCode = ConstructorParameters<typeof TRPCError>[0]['code']
 
@@ -38,27 +37,13 @@ export class ErrorBuilder {
         this._message = message
     }
 
-    errorCode(code: ErrorCode): this {
-        this._errorCode = code
-        return this
-    }
-
-    message(message: string): this {
-        this._message = message
-        return this
-    }
-
     cause(cause: unknown): this {
         this._originalCause = cause
         return this
     }
 
     toAppError(): AppError {
-        return {
-            code: this._errorCode,
-            message: this._message,
-            cause: this._originalCause,
-        }
+        return { code: this._errorCode, message: this._message, cause: this._originalCause }
     }
 
     toResult<T = never>(): Result<T> {
@@ -66,19 +51,11 @@ export class ErrorBuilder {
     }
 
     toResponse(): ErrorResponse {
-        return {
-            error: this._errorCode,
-            message: this._message,
-            status: STATUS_MAP[this._errorCode],
-        }
+        return { error: this._errorCode, message: this._message, status: STATUS_MAP[this._errorCode] }
     }
 
     build(): TRPCError {
-        const meta: AppErrorMeta = {
-            errorCode: this._errorCode,
-            status: STATUS_MAP[this._errorCode],
-        }
-
+        const meta: AppErrorMeta = { errorCode: this._errorCode, status: STATUS_MAP[this._errorCode] }
         return new TRPCError({
             code: TRPC_CODE_MAP[this._errorCode],
             message: this._message,
@@ -90,39 +67,13 @@ export class ErrorBuilder {
         throw this.build()
     }
 
-    static validation(message: string): ErrorBuilder {
-        return new ErrorBuilder(ERROR_CODES.VALIDATION_ERROR, message)
-    }
-
-    static unauthorized(message = 'Missing or invalid authentication'): ErrorBuilder {
-        return new ErrorBuilder(ERROR_CODES.UNAUTHORIZED, message)
-    }
-
-    static forbidden(message = 'Insufficient permissions'): ErrorBuilder {
-        return new ErrorBuilder(ERROR_CODES.FORBIDDEN, message)
-    }
-
-    static notFound(message = 'Resource not found'): ErrorBuilder {
-        return new ErrorBuilder(ERROR_CODES.NOT_FOUND, message)
-    }
-
-    static conflict(message: string): ErrorBuilder {
-        return new ErrorBuilder(ERROR_CODES.CONFLICT, message)
-    }
-
-    static rateLimited(message = 'Too many requests'): ErrorBuilder {
-        return new ErrorBuilder(ERROR_CODES.RATE_LIMITED, message)
-    }
-
-    static internal(message = 'Internal server error'): ErrorBuilder {
-        return new ErrorBuilder(ERROR_CODES.INTERNAL_ERROR, message)
-    }
-
-    static webhookError(message: string): ErrorBuilder {
-        return new ErrorBuilder(ERROR_CODES.WEBHOOK_ERROR, message)
-    }
-
-    static fromAppError(appError: AppError): ErrorBuilder {
-        return new ErrorBuilder(appError.code, appError.message).cause(appError.cause)
-    }
+    static validation(message: string) { return new ErrorBuilder(ERROR_CODES.VALIDATION_ERROR, message) }
+    static unauthorized(message = 'Missing or invalid authentication') { return new ErrorBuilder(ERROR_CODES.UNAUTHORIZED, message) }
+    static forbidden(message = 'Insufficient permissions') { return new ErrorBuilder(ERROR_CODES.FORBIDDEN, message) }
+    static notFound(message = 'Resource not found') { return new ErrorBuilder(ERROR_CODES.NOT_FOUND, message) }
+    static conflict(message: string) { return new ErrorBuilder(ERROR_CODES.CONFLICT, message) }
+    static rateLimited(message = 'Too many requests') { return new ErrorBuilder(ERROR_CODES.RATE_LIMITED, message) }
+    static internal(message = 'Internal server error') { return new ErrorBuilder(ERROR_CODES.INTERNAL_ERROR, message) }
+    static webhookError(message: string) { return new ErrorBuilder(ERROR_CODES.WEBHOOK_ERROR, message) }
+    static fromAppError(appError: AppError) { return new ErrorBuilder(appError.code, appError.message).cause(appError.cause) }
 }

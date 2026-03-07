@@ -9,7 +9,7 @@ export enum UserPermission {
 	UseQuickPurge = "UseQuickPurge"
 }
 
-const permissionScopeSchema = z.object({
+export const permissionScopeSchema = z.object({
 	role_id: z.string().nonempty(),
 	allowed_permissions: z.array(z.enum(UserPermission)).default([])
 });
@@ -26,7 +26,7 @@ export enum LoggingEvent {
 	QuickMuteExecuted = "QuickMuteExecuted"
 }
 
-const loggingWebhookSchema = z.object({
+export const loggingWebhookSchema = z.object({
 	id: z.string().nonempty(),
 	url: z.string().nonempty(),
 	token: z.string().nonempty(),
@@ -43,7 +43,7 @@ export enum ChannelScopingType {
 	Exclude = 1
 }
 
-const channelScopingSchema = z.object({
+export const channelScopingSchema = z.object({
 	channel_id: z.string().nonempty(),
 	type: z.enum(ChannelScopingType)
 });
@@ -54,7 +54,7 @@ export type ParsedChannelScoping = {
 	excluded_channels: string[];
 };
 
-const messageReportConfigSchema = z.object({
+export const messageReportConfigSchema = z.object({
 	enabled: z.boolean().default(true),
 	webhook_url: z.string().nullable().optional(),
 	webhook_channel: z.string().nullable().optional(),
@@ -73,7 +73,7 @@ const messageReportConfigSchema = z.object({
 
 export type MessageReportConfig = z.infer<typeof messageReportConfigSchema>;
 
-const banRequestConfigSchema = z.object({
+export const banRequestConfigSchema = z.object({
 	enabled: z.boolean().default(true),
 	webhook_url: z.string().nullable().optional(),
 	webhook_channel: z.string().nullable().optional(),
@@ -100,7 +100,7 @@ export enum ContentFilterVerbosity {
 	Verbose = "Verbose"
 }
 
-const contentFilterConfigSchema = z.object({
+export const contentFilterConfigSchema = z.object({
 	enabled: z.boolean().default(true),
 	webhook_url: z.string().nullable().optional(),
 	use_native_automod: z.boolean().default(false),
@@ -120,14 +120,14 @@ const contentFilterConfigSchema = z.object({
 
 export type ContentFilterConfig = z.infer<typeof contentFilterConfigSchema>;
 
-const highlightConfigSchema = z.object({
+export const highlightConfigSchema = z.object({
 	enabled: z.boolean().default(true),
 	max_patterns: z.number().min(1).max(30).default(15)
 });
 
 export type HighlightConfig = z.infer<typeof highlightConfigSchema>;
 
-const quickMuteConfigSchema = z.object({
+export const quickMuteConfigSchema = z.object({
 	enabled: z.boolean().default(true),
 	purge_limit: z.number().min(2).max(500).default(100),
 	channel_scoping: z.array(channelScopingSchema).default([])
@@ -135,7 +135,7 @@ const quickMuteConfigSchema = z.object({
 
 export type QuickMuteConfig = z.infer<typeof quickMuteConfigSchema>;
 
-const quickPurgeConfigSchema = z.object({
+export const quickPurgeConfigSchema = z.object({
 	enabled: z.boolean().default(true),
 	max_limit: z.number().min(2).max(500).default(100),
 	channel_scoping: z.array(channelScopingSchema).default([])
@@ -214,3 +214,42 @@ export const DEFAULT_GUILD_CONFIG: RawGuildConfig = {
 	logging_webhooks: [],
 	permission_scopes: []
 };
+
+/**
+ * Safely parse raw config data into a valid RawGuildConfig.
+ *
+ * Unlike `GUILD_CONFIG_SCHEMA.parse()`, this does NOT throw on
+ * missing or invalid sections. Instead, each section is parsed
+ * individually — valid fields are preserved and missing fields are
+ * filled from Zod defaults. If an entire section is unparseable,
+ * it falls back to `DEFAULT_GUILD_CONFIG` for that section.
+ */
+export function parseConfigSafe(raw: unknown): RawGuildConfig {
+	const data = (typeof raw === "object" && raw !== null ? raw : {}) as Record<string, unknown>;
+
+	const section = <T>(schema: z.ZodType<T>, key: string, fallback: T): T => {
+		const result = schema.safeParse(data[key] ?? {});
+		return result.success ? result.data : fallback;
+	};
+
+	const arraySection = <T>(schema: z.ZodType<T>, key: string, fallback: T[]): T[] => {
+		const raw = data[key];
+		if (!Array.isArray(raw)) return fallback;
+
+		return raw
+			.map((item) => schema.safeParse(item))
+			.filter((r): r is z.ZodSafeParseSuccess<T> => r.success)
+			.map((r) => r.data);
+	};
+
+	return {
+		message_reports: section(messageReportConfigSchema, "message_reports", DEFAULT_GUILD_CONFIG.message_reports),
+		ban_requests: section(banRequestConfigSchema, "ban_requests", DEFAULT_GUILD_CONFIG.ban_requests),
+		content_filter: section(contentFilterConfigSchema, "content_filter", DEFAULT_GUILD_CONFIG.content_filter),
+		highlights: section(highlightConfigSchema, "highlights", DEFAULT_GUILD_CONFIG.highlights),
+		quick_mutes: section(quickMuteConfigSchema, "quick_mutes", DEFAULT_GUILD_CONFIG.quick_mutes),
+		quick_purges: section(quickPurgeConfigSchema, "quick_purges", DEFAULT_GUILD_CONFIG.quick_purges),
+		logging_webhooks: arraySection(loggingWebhookSchema, "logging_webhooks", DEFAULT_GUILD_CONFIG.logging_webhooks),
+		permission_scopes: arraySection(permissionScopeSchema, "permission_scopes", DEFAULT_GUILD_CONFIG.permission_scopes),
+	};
+}
