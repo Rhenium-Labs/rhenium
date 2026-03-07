@@ -5,6 +5,8 @@
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
 	import PageHeader from "$lib/components/PageHeader.svelte";
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
+	import Select from "$lib/components/Select.svelte";
+	import type { SelectOption } from "$lib/components/Select.svelte";
 	import Toggle from "$lib/components/Toggle.svelte";
 	import RoleSelector from "$lib/components/RoleSelector.svelte";
 	import type { PageData } from "./$types";
@@ -161,7 +163,7 @@
 	}
 </script>
 
-<div class="space-y-8">
+<div class="page-content space-y-8">
 	<PageHeader
 		title="Message Reports"
 		description="Let users alert your moderator team to problematic messages."
@@ -185,15 +187,15 @@
 				title="Review Channel"
 				description="Select the channel where new message reports will be sent. The bot will automatically create a webhook in this channel."
 			>
-				<select
+				{@const channelOptions: SelectOption[] = [
+					{ value: '', label: 'Disabled' },
+					...channels.map(ch => ({ value: ch.id, label: `#${ch.name}` }))
+				]}
+				<Select
 					bind:value={channelId}
-					class="w-full max-w-sm rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-				>
-					<option value="">Disabled</option>
-					{#each channels as ch (ch.id)}
-						<option value={ch.id}>#{ch.name}</option>
-					{/each}
-				</select>
+					options={channelOptions}
+					class="w-full max-w-sm"
+				/>
 			</ConfigSection>
 
 			<!-- Behavior -->
@@ -216,7 +218,7 @@
 							type="text"
 							bind:value={autoDisregardAfter}
 							placeholder="e.g. 3d, 12h, 1w"
-							class="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+							class="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none placeholder:text-zinc-600"
 						/>
 						<p class="mt-1 text-xs text-zinc-600">
 							Supported: m (minutes), h (hours), d (days), w (weeks)
@@ -290,7 +292,7 @@
 							maxlength={1024}
 							rows={4}
 							placeholder="No reason provided."
-							class="mt-2 w-full max-w-2xl rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+							class="mt-2 w-full max-w-2xl rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none placeholder:text-zinc-600"
 						></textarea>
 						<p class="mt-1 text-xs text-zinc-600">
 							{placeholderReason.length}/1024 characters

@@ -1,20 +1,21 @@
 <script lang="ts">
 	import { beforeNavigate, invalidateAll } from "$app/navigation";
 	import { onDestroy } from "svelte";
-	import { flip } from "svelte/animate";
-	import { fade } from "svelte/transition";
 	import {
 		Detector,
 		ChannelScopingType,
 		ContentFilterVerbosity,
 		DetectorMode
 	} from "@repo/config";
-	import { Shield, Plus, Trash2, Folder, ChevronDown } from "@lucide/svelte";
+	import { Shield } from "@lucide/svelte";
 	import UnsavedChangesBar from "$lib/components/UnsavedChangesBar.svelte";
 	import PageHeader from "$lib/components/PageHeader.svelte";
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
 	import Toggle from "$lib/components/Toggle.svelte";
 	import RoleSelector from "$lib/components/RoleSelector.svelte";
+	import ChannelScopeList from "$lib/components/ChannelScopeList.svelte";
+	import Select from "$lib/components/Select.svelte";
+	import type { SelectOption } from "$lib/components/Select.svelte";
 	import type { PageData } from "./$types";
 	import type { ChannelInfo, RoleInfo } from "@repo/trpc";
 
@@ -61,8 +62,9 @@
 	let verbosity = $state(ContentFilterVerbosity.Medium);
 	let immuneRoles = $state<string[]>([]);
 	let notifyRoles = $state<string[]>([]);
-	let channelScoping = $state<Array<{ channelId: string; type: ChannelScopingType }>>([]);
-	let openScopeMenuIndex = $state<number | null>(null);
+	let channelScoping = $state<{ uiId: string; channelId: string; type: ChannelScopingType }[]>(
+		[]
+	);
 	let ocrKeywordsRaw = $state("");
 	let ocrRegexRaw = $state("");
 
@@ -77,6 +79,7 @@
 		immuneRoles = [...cfg.immune_roles];
 		notifyRoles = [...cfg.notify_roles];
 		channelScoping = cfg.channel_scoping.map(scope => ({
+			uiId: scope.channel_id,
 			channelId: scope.channel_id,
 			type: scope.type
 		}));
@@ -119,7 +122,9 @@
 				JSON.stringify(normalizeStringSet(config.immune_roles)) ||
 			JSON.stringify(normalizeStringSet(notifyRoles)) !==
 				JSON.stringify(normalizeStringSet(config.notify_roles)) ||
-			JSON.stringify(channelScoping) !==
+			JSON.stringify(
+				channelScoping.map(({ channelId, type }) => ({ channelId, type }))
+			) !==
 				JSON.stringify(
 					config.channel_scoping.map(scope => ({
 						channelId: scope.channel_id,
@@ -169,6 +174,7 @@
 		immuneRoles = [...config.immune_roles];
 		notifyRoles = [...config.notify_roles];
 		channelScoping = config.channel_scoping.map(scope => ({
+			uiId: scope.channel_id,
 			channelId: scope.channel_id,
 			type: scope.type
 		}));
@@ -177,32 +183,7 @@
 	}
 
 	function addScope() {
-		const firstChannel = scopingChannels[0]?.id;
-		if (!firstChannel) return;
-		channelScoping = [
-			...channelScoping,
-			{ channelId: firstChannel, type: ChannelScopingType.Include }
-		];
-	}
-
-	function getScopeChannelById(channelId: string): ChannelInfo | undefined {
-		return scopingChannels.find(channel => channel.id === channelId);
-	}
-
-	function setScopeChannel(index: number, channelId: string) {
-		channelScoping = channelScoping.map((scope, scopeIndex) =>
-			scopeIndex === index ? { ...scope, channelId } : scope
-		);
-		openScopeMenuIndex = null;
-	}
-
-	function isCategoryChannel(channel: ChannelInfo | undefined): boolean {
-		return channel?.type === 4;
-	}
-
-	function getScopeChannelName(channel: ChannelInfo | undefined): string {
-		if (!channel) return "Unknown channel";
-		return channel.name;
+		// handled by ChannelScopeList component
 	}
 
 	async function submitConfig(event: SubmitEvent) {
@@ -226,7 +207,10 @@
 						verbosity,
 						immuneRoles,
 						notifyRoles,
-						channelScoping,
+						channelScoping: channelScoping.map(({ channelId, type }) => ({
+							channelId,
+							type
+						})),
 						ocrFilterKeywords: splitLines(ocrKeywordsRaw),
 						ocrFilterRegex: splitLines(ocrRegexRaw)
 					})
@@ -248,7 +232,7 @@
 	}
 </script>
 
-<div class="space-y-8">
+<div class="page-content space-y-8">
 	<PageHeader
 		title="Content Filter"
 		description="Configure automated moderation detectors and routing."
@@ -270,31 +254,31 @@
 							for="cf-webhook-channel"
 							class="text-sm font-medium text-zinc-300">Webhook Channel</label
 						>
-						<select
-							id="cf-webhook-channel"
+						<Select
 							bind:value={channelId}
-							class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-						>
-							<option value="">Disabled</option>
-							{#each webhookChannels as channel}
-								<option value={channel.id}>#{channel.name}</option>
-							{/each}
-						</select>
+							options={[
+								{ value: "", label: "Disabled" },
+								...webhookChannels.map(c => ({
+									value: c.id,
+									label: `#${c.name}`
+								}))
+							]}
+							class="mt-2 w-full"
+						/>
 					</div>
 					<div>
 						<label
 							for="cf-detector-mode"
 							class="text-sm font-medium text-zinc-300">Detector Mode</label
 						>
-						<select
-							id="cf-detector-mode"
+						<Select
 							bind:value={detectorMode}
-							class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-						>
-							{#each Object.values(DetectorMode) as mode}
-								<option value={mode}>{mode}</option>
-							{/each}
-						</select>
+							options={Object.values(DetectorMode).map(m => ({
+								value: m,
+								label: m
+							}))}
+							class="mt-2 w-full"
+						/>
 					</div>
 				</div>
 
@@ -303,15 +287,14 @@
 						<label for="cf-verbosity" class="text-sm font-medium text-zinc-300"
 							>Verbosity</label
 						>
-						<select
-							id="cf-verbosity"
+						<Select
 							bind:value={verbosity}
-							class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-						>
-							{#each Object.values(ContentFilterVerbosity) as level}
-								<option value={level}>{level}</option>
-							{/each}
-						</select>
+							options={Object.values(ContentFilterVerbosity).map(v => ({
+								value: v,
+								label: v
+							}))}
+							class="mt-2 w-full"
+						/>
 					</div>
 					<div class="flex items-end pb-1">
 						<div class="flex items-center justify-between gap-4">
@@ -385,102 +368,7 @@
 			title="Channel Scoping"
 			description="Include or exclude specific channels from the content filter."
 		>
-			<div class="space-y-3">
-				{#if channelScoping.length === 0}
-					<p class="text-sm text-zinc-500">
-						No scoping rules configured — all channels are filtered.
-					</p>
-				{/if}
-				{#each channelScoping as scope, index (scope)}
-					{@const selectedChannel = getScopeChannelById(scope.channelId)}
-					<div
-						animate:flip={{ duration: 180 }}
-						in:fade={{ duration: 140 }}
-						out:fade={{ duration: 110 }}
-						class="grid gap-2 rounded-lg border border-zinc-800 bg-zinc-950/50 p-3 md:grid-cols-[1fr_auto_auto]"
-					>
-						<div class="relative">
-							<button
-								type="button"
-								onclick={() =>
-									(openScopeMenuIndex =
-										openScopeMenuIndex === index ? null : index)}
-								class="flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none hover:border-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-							>
-								<span class="flex min-w-0 items-center gap-2">
-									{#if isCategoryChannel(selectedChannel)}
-										<Folder
-											class="h-4 w-4 shrink-0 text-white"
-											fill="currentColor"
-											strokeWidth={2.25}
-										/>
-									{:else}
-										<span class="shrink-0 text-zinc-400">#</span>
-									{/if}
-									<span class="truncate"
-										>{getScopeChannelName(selectedChannel)}</span
-									>
-								</span>
-								<ChevronDown class="h-4 w-4 shrink-0 text-zinc-400" />
-							</button>
-
-							{#if openScopeMenuIndex === index}
-								<div
-									class="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 p-1 shadow-2xl"
-								>
-									{#each scopingChannels as channel}
-										<button
-											type="button"
-											onclick={() =>
-												setScopeChannel(index, channel.id)}
-											class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-white transition-colors hover:bg-zinc-700"
-										>
-											{#if channel.type === 4}
-												<Folder
-													class="h-4 w-4 shrink-0 text-white"
-													fill="currentColor"
-													strokeWidth={2.25}
-												/>
-											{:else}
-												<span class="shrink-0 text-zinc-400"
-													>#</span
-												>
-											{/if}
-											<span class="truncate">{channel.name}</span>
-										</button>
-									{/each}
-								</div>
-							{/if}
-						</div>
-						<select
-							bind:value={scope.type}
-							class="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-						>
-							<option value={ChannelScopingType.Include}>Include</option>
-							<option value={ChannelScopingType.Exclude}>Exclude</option>
-						</select>
-						<button
-							type="button"
-							onclick={() =>
-								(channelScoping = channelScoping.filter(
-									(_, i) => i !== index
-								))}
-							class="inline-flex items-center gap-1.5 rounded-lg border border-red-900/50 px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-950/40"
-						>
-							<Trash2 class="h-3.5 w-3.5" />
-							Remove
-						</button>
-					</div>
-				{/each}
-				<button
-					type="button"
-					onclick={addScope}
-					class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
-				>
-					<Plus class="h-4 w-4" />
-					Add Scope
-				</button>
-			</div>
+			<ChannelScopeList bind:scoping={channelScoping} channels={scopingChannels} />
 		</ConfigSection>
 
 		<!-- OCR Filters -->
@@ -498,7 +386,7 @@
 						bind:value={ocrKeywordsRaw}
 						rows={8}
 						placeholder="Enter keywords, one per line…"
-						class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-white transition-colors outline-none placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+						class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-white transition-colors outline-none placeholder:text-zinc-600"
 					></textarea>
 				</div>
 				<div>
@@ -510,7 +398,7 @@
 						bind:value={ocrRegexRaw}
 						rows={8}
 						placeholder="Enter regex patterns, one per line…"
-						class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-white transition-colors outline-none placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+						class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-white transition-colors outline-none placeholder:text-zinc-600"
 					></textarea>
 				</div>
 			</div>

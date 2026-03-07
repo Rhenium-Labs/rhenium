@@ -90,7 +90,7 @@
 	}
 </script>
 
-<div class="space-y-8">
+<div class="page-content space-y-8">
 	<PageHeader
 		title="Highlights"
 		description="Configure highlight subscriptions and limits."
@@ -114,7 +114,7 @@
 				min="1"
 				max="30"
 				bind:value={maxPatterns}
-				class="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+				class="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none"
 			/>
 		</ConfigSection>
 	</form>

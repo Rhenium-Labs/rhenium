@@ -1,7 +1,5 @@
-<script lang="ts">
-	import { page } from "$app/stores";
-	import { afterNavigate, beforeNavigate, goto } from "$app/navigation";
-	import { onDestroy } from "svelte";
+﻿<script lang="ts">
+	import { page, navigating } from "$app/stores";
 	import type { LayoutData } from "./$types";
 	import type { Snippet } from "svelte";
 	import {
@@ -16,7 +14,6 @@
 		PencilIcon,
 		KeyRound,
 		LogOut,
-		Loader2,
 		Menu,
 		X
 	} from "@lucide/svelte";
@@ -24,25 +21,9 @@
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
 	let sidebarOpen = $state(false);
-	let direction = $state<"up" | "down">("up");
-	let navPhase = $state<"idle" | "loading" | "revealing">("idle");
-	let pendingCategoryTarget: string | null = null;
-	let pendingCategoryNavigation = false;
-	let navDelayTimeout: ReturnType<typeof setTimeout> | undefined;
-	let revealTimeout: ReturnType<typeof setTimeout> | undefined;
-	let loadingStartedAt = 0;
-
-	const CATEGORY_NAV_DELAY_MS = 40;
-	const CATEGORY_MIN_LOADING_MS = 150;
-	const CATEGORY_REVEAL_MS = 170;
 
 	const modules = $derived([
-		{
-			id: "home",
-			name: "Home",
-			icon: Home,
-			href: `/servers/${data.guild.id}`
-		},
+		{ id: "home", name: "Home", icon: Home, href: `/servers/${data.guild.id}` },
 		{
 			id: "message-reports",
 			name: "Message Reports",
@@ -93,125 +74,47 @@
 		}
 	]);
 
-	function isRouteMatch(href: string, pathname: string): boolean {
-		const homeHref = `/servers/${data.guild.id}`;
-		if (href === homeHref) return pathname === homeHref;
-		return pathname.startsWith(href);
-	}
-
 	function isActiveModule(href: string): boolean {
-		return isRouteMatch(href, $page.url.pathname);
-	}
-
-	function getInitials(name: string): string {
-		return name
-			.split(/\s+/)
-			.map(word => word[0])
-			.slice(0, 2)
-			.join("")
-			.toUpperCase();
+		const homeHref = `/servers/${data.guild.id}`;
+		if (href === homeHref) return $page.url.pathname === homeHref;
+		return $page.url.pathname.startsWith(href);
 	}
 
 	function getDisplayName(session: typeof data.session) {
 		return session.globalName ?? session.username ?? "User";
 	}
 
-	function getRouteIndex(pathname: string): number {
-		const idx = modules.findIndex(m => isRouteMatch(m.href, pathname));
-		return idx;
+	function getInitials(name: string): string {
+		return name
+			.split(/\s+/)
+			.map(w => w[0])
+			.slice(0, 2)
+			.join("")
+			.toUpperCase();
 	}
-
-	function shouldBypassIntercept(event: MouseEvent): boolean {
-		return (
-			event.defaultPrevented ||
-			event.button !== 0 ||
-			event.metaKey ||
-			event.ctrlKey ||
-			event.shiftKey ||
-			event.altKey
-		);
-	}
-
-	function navigateToCategory(event: MouseEvent, href: string) {
-		if (shouldBypassIntercept(event)) return;
-		if (navPhase !== "idle") {
-			event.preventDefault();
-			return;
-		}
-		if (href === $page.url.pathname) {
-			sidebarOpen = false;
-			return;
-		}
-
-		event.preventDefault();
-
-		const fromIndex = getRouteIndex($page.url.pathname);
-		const toIndex = getRouteIndex(href);
-		direction = toIndex >= fromIndex ? "up" : "down";
-
-		pendingCategoryNavigation = true;
-		pendingCategoryTarget = href;
-		navPhase = "loading";
-		loadingStartedAt = Date.now();
-		sidebarOpen = false;
-
-		if (navDelayTimeout) clearTimeout(navDelayTimeout);
-		if (revealTimeout) clearTimeout(revealTimeout);
-
-		navDelayTimeout = setTimeout(() => {
-			navDelayTimeout = undefined;
-			void goto(href);
-		}, CATEGORY_NAV_DELAY_MS);
-	}
-
-	beforeNavigate(({ to }) => {
-		if (!to?.url) return;
-
-		const fromIndex = getRouteIndex($page.url.pathname);
-		const toIndex = getRouteIndex(to.url.pathname);
-		direction = toIndex >= fromIndex ? "up" : "down";
-	});
-
-	afterNavigate(({ to }) => {
-		if (!pendingCategoryNavigation) return;
-		if (!to?.url || to.url.pathname !== pendingCategoryTarget) return;
-
-		const elapsed = Date.now() - loadingStartedAt;
-		const remainingLoading = Math.max(0, CATEGORY_MIN_LOADING_MS - elapsed);
-
-		if (revealTimeout) clearTimeout(revealTimeout);
-		revealTimeout = setTimeout(() => {
-			navPhase = "revealing";
-
-			revealTimeout = setTimeout(() => {
-				navPhase = "idle";
-				pendingCategoryNavigation = false;
-				pendingCategoryTarget = null;
-				revealTimeout = undefined;
-			}, CATEGORY_REVEAL_MS);
-		}, remainingLoading);
-	});
-
-	onDestroy(() => {
-		if (navDelayTimeout) clearTimeout(navDelayTimeout);
-		if (revealTimeout) clearTimeout(revealTimeout);
-	});
 </script>
 
 <div class="dashboard-shell">
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="sidebar-backdrop"
-		class:is-open={sidebarOpen}
-		onclick={() => (sidebarOpen = false)}
-		onkeydown={e => e.key === "Escape" && (sidebarOpen = false)}
-	></div>
+	{#if $navigating}
+		<div class="nav-progress" aria-hidden="true">
+			<div class="nav-progress-fill"></div>
+		</div>
+	{/if}
+	<!-- Mobile backdrop -->
+	{#if sidebarOpen}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="sidebar-backdrop"
+			onclick={() => (sidebarOpen = false)}
+			onkeydown={e => e.key === "Escape" && (sidebarOpen = false)}
+		></div>
+	{/if}
 
 	<aside class="dashboard-sidebar" class:is-open={sidebarOpen}>
 		<div class="sidebar-top">
 			<div class="sidebar-top-row">
 				<a href="/servers" class="sidebar-back-link">
-					<ArrowLeft class="h-4 w-4" strokeWidth={2} />
+					<ArrowLeft class="h-3.5 w-3.5" strokeWidth={2} />
 					Servers
 				</a>
 				<button
@@ -223,6 +126,7 @@
 					<X class="h-4 w-4" strokeWidth={2} />
 				</button>
 			</div>
+
 			<div class="server-chip">
 				{#if data.guild.icon}
 					<img
@@ -233,9 +137,7 @@
 				{:else}
 					<div class="server-chip-fallback">{getInitials(data.guild.name)}</div>
 				{/if}
-				<div class="server-chip-copy">
-					<p class="server-chip-title">{data.guild.name}</p>
-				</div>
+				<p class="server-chip-title">{data.guild.name}</p>
 			</div>
 		</div>
 
@@ -244,7 +146,7 @@
 				{@const active = isActiveModule(module.href)}
 				<a
 					href={module.href}
-					onclick={event => navigateToCategory(event, module.href)}
+					onclick={() => (sidebarOpen = false)}
 					class="sidebar-nav-item {active ? 'is-active' : ''}"
 				>
 					<module.icon class="h-4 w-4" strokeWidth={1.8} />
@@ -256,9 +158,7 @@
 		<div class="sidebar-bottom">
 			<div class="account-chip">
 				<img src={data.session.avatarUrl} alt="Avatar" class="account-avatar" />
-				<div class="account-copy">
-					<p class="account-name">{getDisplayName(data.session)}</p>
-				</div>
+				<p class="account-name">{getDisplayName(data.session)}</p>
 			</div>
 			<a href="/api/auth/logout" class="sidebar-signout">
 				<LogOut class="h-3.5 w-3.5" strokeWidth={1.9} />
@@ -280,24 +180,8 @@
 			<p class="mobile-header-title">{data.guild.name}</p>
 		</div>
 
-		<main class="workspace-content" aria-busy={navPhase !== "idle"}>
-			{#if navPhase === "loading"}
-				<div class="loading-shell" data-direction={direction}>
-					<div class="loading-pill">
-						<Loader2 class="h-4 w-4 animate-spin" />
-						Loading
-					</div>
-				</div>
-			{:else}
-				{#key $page.url.pathname}
-					<div
-						class="route-frame {navPhase === 'revealing' ? 'is-revealing' : ''}"
-						data-direction={direction}
-					>
-						{@render children()}
-					</div>
-				{/key}
-			{/if}
+		<main class="workspace-content">
+			{@render children()}
 		</main>
 	</div>
 </div>
@@ -305,7 +189,7 @@
 <style>
 	.dashboard-shell {
 		display: grid;
-		grid-template-columns: 17.5rem minmax(0, 1fr);
+		grid-template-columns: 16rem minmax(0, 1fr);
 		min-height: 100vh;
 		background: rgb(9 9 11);
 	}
@@ -322,17 +206,15 @@
 		height: 100vh;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		padding: 0.95rem;
-		border-right: 1px solid rgb(39 39 42 / 0.65);
-		background: rgb(9 9 11 / 0.94);
-		backdrop-filter: blur(12px);
-		animation: shell-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+		gap: 0.75rem;
+		padding: 0.9rem 0.75rem;
+		border-right: 1px solid rgb(39 39 42 / 0.7);
+		background: rgb(9 9 11);
 	}
 
 	.sidebar-top {
 		display: grid;
-		gap: 0.75rem;
+		gap: 0.65rem;
 	}
 
 	.sidebar-top-row {
@@ -345,12 +227,12 @@
 		display: none;
 		align-items: center;
 		justify-content: center;
-		padding: 0.4rem;
+		padding: 0.35rem;
 		border-radius: 0.5rem;
 		color: rgb(161 161 170);
 		transition:
-			background-color 150ms ease,
-			color 150ms ease;
+			background-color 140ms ease,
+			color 140ms ease;
 	}
 	.sidebar-close-btn:hover {
 		background: rgb(39 39 42);
@@ -360,32 +242,32 @@
 	.sidebar-back-link {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.45rem;
-		width: fit-content;
-		padding: 0.45rem 0.6rem;
-		border-radius: 0.65rem;
-		color: rgb(161 161 170);
-		font-size: 0.79rem;
+		gap: 0.4rem;
+		padding: 0.4rem 0.55rem;
+		border-radius: 0.6rem;
+		color: rgb(113 113 122);
+		font-size: 0.77rem;
+		font-weight: 500;
 		transition:
-			background-color 160ms ease,
-			color 160ms ease;
+			background-color 140ms ease,
+			color 140ms ease;
 	}
 	.sidebar-back-link:hover {
 		background: rgb(24 24 27);
-		color: rgb(244 244 245);
+		color: rgb(228 228 231);
 	}
 
 	.server-chip {
 		display: flex;
 		align-items: center;
-		gap: 0.7rem;
-		padding: 0.4rem 0.2rem;
+		gap: 0.6rem;
+		padding: 0.35rem 0.2rem;
 	}
 	.server-chip-avatar,
 	.server-chip-fallback {
-		height: 2.3rem;
-		width: 2.3rem;
-		border-radius: 0.65rem;
+		height: 2.1rem;
+		width: 2.1rem;
+		border-radius: 0.6rem;
 		object-fit: cover;
 		flex-shrink: 0;
 	}
@@ -394,21 +276,19 @@
 		align-items: center;
 		justify-content: center;
 		background: rgb(39 39 42);
-		font-size: 0.72rem;
+		font-size: 0.7rem;
 		font-weight: 700;
 		color: rgb(212 212 216);
 	}
-	.server-chip-copy {
-		min-width: 0;
-	}
 	.server-chip-title {
-		font-size: 0.82rem;
+		font-size: 0.8rem;
 		font-weight: 600;
 		color: rgb(244 244 245);
-		line-height: 1.2;
+		line-height: 1.25;
 		text-overflow: ellipsis;
 		overflow: hidden;
 		white-space: nowrap;
+		min-width: 0;
 	}
 
 	.sidebar-nav {
@@ -416,286 +296,202 @@
 		min-height: 0;
 		overflow-y: auto;
 		display: grid;
-		gap: 0.2rem;
+		gap: 0.15rem;
 		align-content: start;
-		padding-right: 0.15rem;
 	}
 
 	.sidebar-nav-item {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		padding: 0.5rem 0.55rem;
-		border-radius: 0.65rem;
-		font-size: 0.83rem;
+		gap: 0.55rem;
+		padding: 0.475rem 0.6rem;
+		border-radius: 0.6rem;
+		font-size: 0.82rem;
 		font-weight: 500;
-		color: rgb(161 161 170);
+		color: rgb(113 113 122);
 		transition:
-			background-color 180ms ease,
-			color 180ms ease,
-			transform 120ms ease;
+			background-color 150ms ease,
+			color 150ms ease;
 	}
 	.sidebar-nav-item:hover {
-		background: rgb(24 24 27 / 0.7);
-		color: rgb(228 228 231);
+		background: rgb(24 24 27);
+		color: rgb(212 212 216);
 	}
 	.sidebar-nav-item.is-active {
-		background: rgb(39 39 42 / 0.6);
-		border: 1px solid rgb(63 63 70 / 0.75);
+		background: rgb(24 24 27);
+		border: 1px solid rgb(39 39 42);
 		color: rgb(244 244 245);
 	}
 
 	.sidebar-bottom {
 		display: grid;
-		gap: 0.65rem;
+		gap: 0.55rem;
 		padding-top: 0.5rem;
-		border-top: 1px solid rgb(39 39 42 / 0.55);
+		border-top: 1px solid rgb(39 39 42 / 0.6);
 	}
+
 	.account-chip {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		padding: 0.55rem 0.2rem;
+		gap: 0.55rem;
+		padding: 0.4rem 0.2rem;
 	}
 	.account-avatar {
-		height: 2rem;
-		width: 2rem;
+		height: 1.75rem;
+		width: 1.75rem;
 		border-radius: 9999px;
-		border: 1px solid rgb(63 63 70);
-	}
-	.account-copy {
-		min-width: 0;
+		border: 1px solid rgb(39 39 42);
+		flex-shrink: 0;
 	}
 	.account-name {
-		font-size: 0.78rem;
+		font-size: 0.77rem;
 		font-weight: 500;
-		color: rgb(228 228 231);
+		color: rgb(212 212 216);
 		line-height: 1.25;
 		text-overflow: ellipsis;
 		overflow: hidden;
 		white-space: nowrap;
+		min-width: 0;
 	}
 	.sidebar-signout {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.45rem;
-		padding: 0.52rem 0.7rem;
-		border-radius: 0.65rem;
-		border: 1px solid rgb(63 63 70 / 0.9);
-		font-size: 0.78rem;
+		gap: 0.4rem;
+		padding: 0.475rem 0.65rem;
+		border-radius: 0.6rem;
+		border: 1px solid rgb(39 39 42);
+		font-size: 0.77rem;
 		font-weight: 500;
-		color: rgb(212 212 216);
+		color: rgb(161 161 170);
 		transition:
-			background-color 160ms ease,
-			border-color 160ms ease,
-			color 160ms ease;
+			background-color 150ms ease,
+			border-color 150ms ease,
+			color 150ms ease;
 	}
 	.sidebar-signout:hover {
 		background: rgb(24 24 27);
-		border-color: rgb(113 113 122);
-		color: rgb(244 244 245);
+		border-color: rgb(63 63 70);
+		color: rgb(228 228 231);
 	}
 
 	/* ── Main content ── */
 	.dashboard-main {
-		min-width: 0;
-		padding: 1rem 1.1rem 1.2rem;
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
 	}
 
 	.mobile-header {
 		display: none;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.85rem 1rem;
+		border-bottom: 1px solid rgb(39 39 42 / 0.6);
+		background: rgb(9 9 11 / 0.95);
+		backdrop-filter: blur(10px);
+		position: sticky;
+		top: 0;
+		z-index: 10;
+	}
+	.mobile-menu-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.35rem;
+		border-radius: 0.5rem;
+		color: rgb(161 161 170);
+		transition:
+			background-color 140ms ease,
+			color 140ms ease;
+	}
+	.mobile-menu-btn:hover {
+		background: rgb(24 24 27);
+		color: rgb(244 244 245);
+	}
+	.mobile-header-title {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: rgb(244 244 245);
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
 	}
 
 	.workspace-content {
-		isolation: isolate;
+		flex: 1;
+		padding: 2rem 2.5rem;
+		max-width: 56rem;
 	}
 
-	.route-frame {
-		max-width: 80rem;
-		margin: 0 auto;
-	}
-	.route-frame.is-revealing {
-		animation: page-enter-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-	}
-	.route-frame.is-revealing[data-direction="down"] {
-		animation-name: page-enter-down;
-	}
-
-	.loading-shell {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: calc(100vh - 7.5rem);
-		animation: spinner-stage-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-	.loading-shell[data-direction="down"] {
-		animation-name: spinner-stage-down;
-	}
-	.loading-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.6rem 0.9rem;
-		border-radius: 0.75rem;
-		border: 1px solid rgb(39 39 42 / 0.95);
-		background: rgb(24 24 27 / 0.85);
-		font-size: 0.83rem;
-		color: rgb(212 212 216);
-	}
-
-	/* ── Keyframes ── */
-	@keyframes shell-enter {
-		from {
-			opacity: 0;
-			transform: translateY(8px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	@keyframes page-enter-up {
-		from {
-			opacity: 0;
-			transform: translate3d(0, 16px, 0);
-		}
-		to {
-			opacity: 1;
-			transform: translate3d(0, 0, 0);
-		}
-	}
-
-	@keyframes page-enter-down {
-		from {
-			opacity: 0;
-			transform: translate3d(0, -16px, 0);
-		}
-		to {
-			opacity: 1;
-			transform: translate3d(0, 0, 0);
-		}
-	}
-
-	@keyframes spinner-stage-up {
-		from {
-			opacity: 0;
-			transform: translate3d(0, 10px, 0);
-		}
-		to {
-			opacity: 1;
-			transform: translate3d(0, 0, 0);
-		}
-	}
-
-	@keyframes spinner-stage-down {
-		from {
-			opacity: 0;
-			transform: translate3d(0, -10px, 0);
-		}
-		to {
-			opacity: 1;
-			transform: translate3d(0, 0, 0);
-		}
-	}
-
-	/* ── Small screens: collapsible sidebar overlay ── */
-	@media (max-width: 1120px) {
+	/* ── Mobile ── */
+	@media (max-width: 768px) {
 		.dashboard-shell {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.dashboard-sidebar {
+			position: fixed;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 40;
+			width: 16rem;
+			transform: translateX(-100%);
+			transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+			border-right-color: rgb(39 39 42);
+		}
+		.dashboard-sidebar.is-open {
+			transform: translateX(0);
 		}
 
 		.sidebar-backdrop {
 			display: block;
 			position: fixed;
 			inset: 0;
-			z-index: 40;
-			background: rgb(0 0 0 / 0);
-			pointer-events: none;
-			transition: background-color 250ms ease;
-		}
-		.sidebar-backdrop.is-open {
-			background: rgb(0 0 0 / 0.55);
-			pointer-events: auto;
-		}
-
-		.dashboard-sidebar {
-			position: fixed;
-			top: 0;
-			left: 0;
-			bottom: 0;
-			z-index: 50;
-			width: 17.5rem;
-			transform: translateX(-100%);
-			transition:
-				transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
-				opacity 200ms ease;
-			opacity: 0;
-			animation: none;
-		}
-		.dashboard-sidebar.is-open {
-			transform: translateX(0);
-			opacity: 1;
+			z-index: 30;
+			background: rgb(0 0 0 / 0.6);
+			backdrop-filter: blur(2px);
 		}
 
 		.sidebar-close-btn {
 			display: flex;
 		}
 
-		.dashboard-main {
-			padding: 0 1rem 1.2rem;
-		}
-
 		.mobile-header {
 			display: flex;
-			align-items: center;
-			gap: 0.65rem;
-			padding: 0.75rem 0;
-			margin-bottom: 0.35rem;
 		}
 
-		.mobile-menu-btn {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 0.45rem;
-			border-radius: 0.6rem;
-			color: rgb(161 161 170);
-			transition:
-				background-color 150ms ease,
-				color 150ms ease;
-		}
-		.mobile-menu-btn:hover {
-			background: rgb(39 39 42);
-			color: rgb(244 244 245);
-		}
-
-		.mobile-header-title {
-			font-size: 0.88rem;
-			font-weight: 600;
-			color: rgb(244 244 245);
-			text-overflow: ellipsis;
-			overflow: hidden;
-			white-space: nowrap;
+		.workspace-content {
+			padding: 1.25rem 1rem;
 		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.dashboard-sidebar,
-		.route-frame.is-revealing,
-		.loading-shell {
-			animation: none !important;
-			transition: none !important;
-		}
+	.nav-progress {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 2px;
+		z-index: 100;
+		overflow: hidden;
+		pointer-events: none;
+	}
 
-		.sidebar-backdrop {
-			transition: none !important;
-		}
+	.nav-progress-fill {
+		height: 100%;
+		width: 35%;
+		background: rgb(161 161 170 / 0.7);
+		border-radius: 9999px;
+		animation: nav-progress-slide 1.3s ease-in-out infinite;
+	}
 
-		.route-frame {
-			transform: none;
-			opacity: 1;
+	@keyframes nav-progress-slide {
+		0% {
+			margin-left: -35%;
+		}
+		100% {
+			margin-left: 110%;
 		}
 	}
 </style>

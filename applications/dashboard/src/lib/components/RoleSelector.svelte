@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { X } from "@lucide/svelte";
-	import { flip } from "svelte/animate";
-	import { scale } from "svelte/transition";
+	import Select from "./Select.svelte";
+	import type { SelectOption } from "./Select.svelte";
 
 	interface RoleInfo {
 		id: string;
@@ -44,7 +44,6 @@
 		}
 		target.value = "";
 	}
-
 	function removeRole(roleId: string) {
 		selected = selected.filter(r => r !== roleId);
 	}
@@ -52,6 +51,20 @@
 	const availableRoles = $derived(
 		roles.filter((r: RoleInfo) => !r.managed && !selected.includes(r.id))
 	);
+
+	let addValue = $state("");
+
+	const addOptions = $derived<SelectOption[]>([
+		...(showHere && !selected.includes("here") ? [{ value: "here", label: "@here" }] : []),
+		...availableRoles.map(r => ({ value: r.id, label: r.name }))
+	]);
+
+	function handleAdd(val: string) {
+		if (val && !selected.includes(val)) {
+			selected = [...selected, val];
+		}
+		addValue = "";
+	}
 </script>
 
 <div>
@@ -64,10 +77,7 @@
 			{#each selected as roleId (roleId)}
 				{@const role = getRoleById(roleId)}
 				<span
-					animate:flip={{ duration: 160 }}
-					in:scale={{ duration: 140, start: 0.92 }}
-					out:scale={{ duration: 100, start: 1 }}
-					class="role-chip group inline-flex items-center gap-1.5 rounded-md border border-zinc-700/50 bg-zinc-800/80 px-2.5 py-1 text-xs font-medium text-zinc-200 transition-colors hover:border-zinc-600/60 hover:bg-zinc-800"
+					class="item-enter inline-flex items-center gap-1.5 rounded-md border border-zinc-700/50 bg-zinc-800/80 px-2.5 py-1 text-xs font-medium text-zinc-200"
 				>
 					<span
 						class="h-2.5 w-2.5 shrink-0 rounded-full shadow-sm"
@@ -87,16 +97,11 @@
 		</div>
 	{/if}
 
-	<select
-		onchange={addRole}
-		class="mt-2 w-full max-w-sm rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-400 transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-	>
-		<option value="">{placeholder}</option>
-		{#if showHere && !selected.includes("here")}
-			<option value="here">@here</option>
-		{/if}
-		{#each availableRoles as role (role.id)}
-			<option value={role.id}>{role.name}</option>
-		{/each}
-	</select>
+	<Select
+		bind:value={addValue}
+		{placeholder}
+		options={addOptions}
+		onchange={handleAdd}
+		class="mt-2 w-full max-w-sm"
+	/>
 </div>

@@ -17,81 +17,25 @@
 	} = $props();
 </script>
 
-<header class="page-header">
-	<div class="page-header-main">
+<header class="flex items-start justify-between gap-4">
+	<div class="flex items-start gap-3">
 		{#if Icon}
-			<div class="page-header-icon">
-				<Icon class="h-4 w-4 text-zinc-300" strokeWidth={1.9} />
+			<div
+				class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900"
+			>
+				<Icon class="h-4 w-4 text-zinc-300" strokeWidth={1.8} />
 			</div>
 		{/if}
-		<div>
-			<h1 class="page-header-title">{title}</h1>
+		<div class="min-w-0">
+			<h1 class="text-base leading-tight font-semibold text-zinc-50">{title}</h1>
 			{#if description}
-				<p class="page-header-description">{description}</p>
+				<p class="mt-0.5 text-xs leading-relaxed text-zinc-400">{description}</p>
 			{/if}
 		</div>
 	</div>
 	{#if enabled !== undefined && onToggle}
-		<div class="page-header-toggle">
+		<div class="mt-0.5 shrink-0">
 			<Toggle checked={enabled} {onToggle} size="lg" label="Toggle {title}" />
 		</div>
 	{/if}
 </header>
-
-<style>
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 0.25rem 0 0.15rem;
-	}
-
-	.page-header-main {
-		display: flex;
-		align-items: center;
-		gap: 0.55rem;
-		min-width: 0;
-	}
-
-	.page-header-icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		height: 1.25rem;
-		width: 1.25rem;
-		flex-shrink: 0;
-	}
-
-	.page-header-title {
-		font-size: clamp(1.14rem, 1.6vw, 1.45rem);
-		font-weight: 600;
-		line-height: 1.15;
-		color: rgb(244 244 245);
-	}
-
-	.page-header-description {
-		margin-top: 0.25rem;
-		font-size: 0.82rem;
-		line-height: 1.4;
-		color: rgb(161 161 170);
-	}
-
-	.page-header-toggle {
-		display: flex;
-		align-items: center;
-		padding-left: 0.5rem;
-	}
-
-	@media (max-width: 720px) {
-		.page-header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-
-		.page-header-toggle {
-			align-self: flex-start;
-			padding-left: 0;
-		}
-	}
-</style>

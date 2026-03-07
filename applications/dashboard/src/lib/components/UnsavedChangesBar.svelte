@@ -134,58 +134,15 @@
 
 <style>
 	.save-bar {
-		animation: save-bar-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	@keyframes save-bar-enter {
-		from {
-			opacity: 0;
-			translate: 0 0.75rem;
-		}
-		to {
-			opacity: 1;
-			translate: 0 0;
-		}
+		animation: bar-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
 	.save-bar-exit {
-		animation: save-bar-exit 0.22s ease-in forwards;
-	}
-
-	@keyframes save-bar-exit {
-		from {
-			opacity: 1;
-			translate: 0 0;
-		}
-		to {
-			opacity: 0;
-			translate: 0 0.75rem;
-		}
+		animation: bar-exit 0.22s ease-in forwards;
 	}
 
 	.save-bar-shake {
-		animation: save-bar-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
-		background-color: rgb(24 24 27 / 0.96);
-	}
-
-	@keyframes save-bar-shake {
-		0%,
-		100% {
-			translate: 0 0;
-		}
-		10%,
-		30%,
-		50%,
-		70%,
-		90% {
-			translate: -4px 0;
-		}
-		20%,
-		40%,
-		60%,
-		80% {
-			translate: 4px 0;
-		}
+		animation: bar-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 	}
 
 	@media (max-width: 640px) {
@@ -201,9 +158,6 @@
 		.save-bar-exit,
 		.save-bar-shake {
 			animation: none !important;
-		}
-
-		.save-bar {
 			translate: 0 0;
 		}
 	}

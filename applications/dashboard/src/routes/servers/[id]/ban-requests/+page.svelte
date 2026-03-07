@@ -7,6 +7,8 @@
 	import ConfigSection from "$lib/components/ConfigSection.svelte";
 	import Toggle from "$lib/components/Toggle.svelte";
 	import RoleSelector from "$lib/components/RoleSelector.svelte";
+	import Select from "$lib/components/Select.svelte";
+	import type { SelectOption } from "$lib/components/Select.svelte";
 	import type { PageData } from "./$types";
 	import type { ChannelInfo, RoleInfo } from "@repo/trpc";
 
@@ -43,6 +45,16 @@
 	function getComparableDeleteSeconds(seconds: number | null | undefined): number | null {
 		return deleteDurationToSeconds(secondsToDeleteDuration(seconds));
 	}
+
+	const channelOptions = $derived<SelectOption[]>([
+		{ value: "", label: "Disabled" },
+		...channels.map(c => ({ value: c.id, label: `#${c.name}` }))
+	]);
+
+	const deleteDurationOptions: SelectOption[] = DELETE_PREVIOUS_MESSAGES_OPTIONS.map(o => ({
+		value: o.value,
+		label: o.label
+	}));
 
 	let enabled = $state(false);
 	let channelId = $state("");
@@ -179,7 +191,7 @@
 	}
 </script>
 
-<div class="space-y-8">
+<div class="page-content space-y-8">
 	<PageHeader
 		title="Ban Requests"
 		description="Configure moderation approval flow for ban actions."
@@ -188,21 +200,13 @@
 		onToggle={() => (enabled = !enabled)}
 	/>
 
-	<form id="ban-requests-form" onsubmit={submitConfig}>
+	<form id="ban-requests-form" onsubmit={submitConfig} class="space-y-6">
 		<!-- Review Channel -->
 		<ConfigSection
 			title="Review Channel"
 			description="Select the channel where new ban request submissions will be sent. Rhenium will automatically create a webhook in this channel."
 		>
-			<select
-				bind:value={channelId}
-				class="w-full max-w-sm rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-			>
-				<option value="">Disabled</option>
-				{#each channels as channel}
-					<option value={channel.id}>#{channel.name}</option>
-				{/each}
-			</select>
+			<Select bind:value={channelId} options={channelOptions} class="w-full max-w-sm" />
 		</ConfigSection>
 
 		<!-- Behavior Toggles -->
@@ -218,15 +222,11 @@
 						When the ban request is approved, delete messages sent by the target
 						user in the specified time range.
 					</p>
-					<select
-						id="deletePreviousMessages"
+					<Select
 						bind:value={deletePreviousMessages}
-						class="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-					>
-						{#each DELETE_PREVIOUS_MESSAGES_OPTIONS as option}
-							<option value={option.value}>{option.label}</option>
-						{/each}
-					</select>
+						options={deleteDurationOptions}
+						class="mt-2 w-full max-w-xs"
+					/>
 				</div>
 
 				<div class="flex items-center justify-between gap-4">
@@ -348,7 +348,7 @@
 						bind:value={additionalInfo}
 						rows={4}
 						maxlength={1024}
-						class="mt-2 w-full max-w-2xl rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+						class="mt-2 w-full max-w-2xl rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none placeholder:text-zinc-600"
 					></textarea>
 					<p class="mt-1 text-xs text-zinc-600">
 						{additionalInfo.length}/1024 characters

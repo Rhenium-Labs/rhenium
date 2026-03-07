@@ -11,13 +11,7 @@
 		size?: "default" | "lg";
 	} = $props();
 
-	const trackClasses = $derived(size === "lg" ? "h-7 w-[3.25rem] p-0.5" : "h-6 w-10 p-0.5");
-
-	const thumbClasses = $derived(size === "lg" ? "h-[1.2rem] w-[1.2rem]" : "h-4 w-4");
-
-	const thumbTranslate = $derived(
-		size === "lg" ? (checked ? "1.8rem" : "0rem") : checked ? "1.25rem" : "0rem"
-	);
+	const isLg = $derived(size === "lg");
 </script>
 
 <button
@@ -26,20 +20,17 @@
 	aria-checked={checked}
 	aria-label={label}
 	onclick={onToggle}
-	class="toggle-button inline-flex items-center rounded-full border transition-[background-color,border-color,box-shadow] duration-200 ease-in-out focus-visible:ring-2 focus-visible:ring-zinc-400/40 focus-visible:outline-none {trackClasses} {checked
-		? 'border-zinc-500 bg-zinc-700'
-		: 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'}"
+	class="relative inline-flex shrink-0 cursor-pointer rounded-full border-2 border-transparent ring-offset-zinc-950 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-zinc-400/40 focus-visible:ring-offset-2 focus-visible:outline-none {isLg
+		? 'h-6 w-11'
+		: 'h-5 w-9'} {checked ? 'bg-zinc-300' : 'bg-zinc-700'}"
 >
 	<span
-		class="transform-gpu rounded-full bg-zinc-100 shadow-[0_1px_2px_rgb(0_0_0/0.35)] transition-[transform,background-color] duration-200 ease-in-out will-change-transform {thumbClasses} {checked
-			? 'bg-white'
-			: ''}"
-		style:transform={`translateX(${thumbTranslate})`}
+		class="pointer-events-none block rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 {isLg
+			? 'h-5 w-5'
+			: 'h-4 w-4'} {checked
+			? isLg
+				? 'translate-x-5'
+				: 'translate-x-4'
+			: 'translate-x-0'}"
 	></span>
 </button>
-
-<style>
-	.toggle-button:active {
-		transform: none;
-	}
-</style>
