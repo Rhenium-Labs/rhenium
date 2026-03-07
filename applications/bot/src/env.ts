@@ -12,7 +12,9 @@ export const zEnvSchema = z.object({
 			}
 		),
 	SENTRY_DSN: z.string(),
-	OPENAI_API_KEY: z.string()
+	OPENAI_API_KEY: z.string(),
+	TRPC_SECRET: z.string().min(32, "TRPC_SECRET must be at least 32 characters"),
+	DASHBOARD_ORIGIN: z.string().url().optional().default("http://localhost:5173")
 });
 
 /** Trigger validation when the module is loaded. */

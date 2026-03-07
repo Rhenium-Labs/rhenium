@@ -1,4 +1,4 @@
-FROM node:24.13.1@sha256:00e9195ebd49985a6da8921f419978d85dfe354589755192dc090425ce4da2f7 AS base
+FROM node:24.14.0@sha256:3a09aa6354567619221ef6c45a5051b671f953f0a1924d1f819ffb236e520e6b AS base
 WORKDIR /rhenium
 
 # Install bun.
@@ -16,10 +16,12 @@ COPY package.json bun.lock tsconfig.base.json turbo.json ./
 COPY applications/bot ./applications/bot
 COPY packages/database ./packages/database
 COPY packages/config ./packages/config
+COPY packages/trpc ./packages/trpc
 
 # Install dependencies.
 RUN bun install
 
 # Run the bot.
 WORKDIR /rhenium/applications/bot
-CMD ["bun", "run", "src/index.ts"]
+EXPOSE 3000
+ENTRYPOINT ["bun", "run", "src/index.ts"]

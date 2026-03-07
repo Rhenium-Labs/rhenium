@@ -142,15 +142,21 @@ export async function formatMessageContent(data: {
 	url: string | null;
 	content: string | null;
 	stickerId: string | null;
+	authorId?: string;
 	createdAt?: Date;
 	includeUrl?: boolean;
 }): Promise<string> {
-	const { url, content, stickerId, createdAt, includeUrl = true } = data;
+	const { url, content, stickerId, authorId, createdAt, includeUrl = true } = data;
 	const parts: string[] = [];
 
-	if (createdAt) {
+	if (createdAt && authorId) {
+		const timestamp = Math.floor(createdAt.getTime() / 1000);
+		parts.push(`Sent by <@${authorId}> on <t:${timestamp}:f>`);
+	} else if (createdAt) {
 		const timestamp = Math.floor(createdAt.getTime() / 1000);
 		parts.push(`Sent on <t:${timestamp}:f>`);
+	} else if (authorId) {
+		parts.push(`Sent by <@${authorId}>`);
 	}
 
 	if (url && includeUrl) {

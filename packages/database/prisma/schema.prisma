@@ -278,3 +278,4 @@ model RoleCache {
   @@id([guild_id, role_id])
   @@schema("dashboard")
 }
+

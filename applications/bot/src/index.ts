@@ -30,6 +30,7 @@ import CommandManager from "@commands/CommandManager";
 import ComponentManager from "@components/ComponentManager";
 import EventListenerManager from "@events/EventListenerManager";
 import ConfigCacheInvalidatorPlugin from "@managers/database/Invalidator";
+import { startTRPCServer } from "./trpc/server";
 
 /** The Discord client instance. */
 export const client = new Client<true>({
@@ -109,6 +110,9 @@ async function main(): Promise<void> {
 
 	// Log in to Discord.
 	await client.login(process.env.BOT_TOKEN);
+
+	// Start the tRPC API server for the dashboard.
+	startTRPCServer();
 
 	// Register application commands.
 	await sleep(2000); // Short delay since this likes to fail if done immediately.

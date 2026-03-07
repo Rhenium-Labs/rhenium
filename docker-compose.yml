@@ -13,9 +13,9 @@ services:
           container_name: rhenium_dashboard_server
           build:
                context: .
-               dockerfile: ./applications/dashboard/server/Dockerfile
+               dockerfile: ./applications/dashboard3/server/Dockerfile
           env_file:
-               - ./applications/dashboard/server/.env
+               - ./applications/dashboard3/server/.env
           ports:
                - "4000:4000"
           healthcheck:
@@ -39,7 +39,7 @@ services:
           container_name: rhenium_dashboard_web
           build:
                context: .
-               dockerfile: ./applications/dashboard/web/Dockerfile
+               dockerfile: ./applications/dashboard3/web/Dockerfile
                args:
                     VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api/v1}
           ports:

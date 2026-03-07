@@ -334,6 +334,7 @@ export default class Highlights extends Command {
 			url: message.url,
 			content: message.content,
 			stickerId: null,
+			authorId: message.author.id,
 			createdAt: message.createdAt
 		});
 
