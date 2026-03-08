@@ -2,9 +2,7 @@ import { authUrls } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import RheniumLogo from "@/assets/Rhenium.png";
 import { APP_NAME } from "@/constants";
-import { useWebHaptics } from "web-haptics/react";
 export function HomePage() {
-	const { trigger } = useWebHaptics();
 
 	return (
 		<div
@@ -20,7 +18,6 @@ export function HomePage() {
 					<Button
 						variant="discordPrimary"
 						onClick={() => {
-							trigger("success");
 							window.location.href = authUrls.discord();
 						}}
 					>

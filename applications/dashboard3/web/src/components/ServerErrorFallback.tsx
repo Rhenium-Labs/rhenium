@@ -1,5 +1,4 @@
 import { ServerCrash } from "lucide-react";
-import { trigger } from "web-haptics";
 
 export function ServerErrorFallback() {
 	return (
@@ -17,7 +16,6 @@ export function ServerErrorFallback() {
 				<button
 					type="button"
 					onClick={() => {
-						trigger("impact-medium");
 						window.location.reload();
 					}}
 					className="rounded-md bg-discord-blurple px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-discord-blurple/80 active:scale-95"
