@@ -121,6 +121,12 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 			);
 		}
 	} else if (!payload.channelId) {
+		if (webhookUrl) {
+			await trpc.guild.deleteWebhook
+				.mutate({ guildId: params.id, webhookUrl })
+				.catch(() => null);
+		}
+
 		webhookUrl = null;
 		webhookChannel = null;
 	}
@@ -139,6 +145,7 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 		additional_info: payload.additionalInfo?.trim() ? payload.additionalInfo.trim() : null,
 		delete_message_seconds: payload.deleteMessageSeconds
 	});
+
 	if (!parsed.success) {
 		return json(
 			{ success: false, error: parsed.error.issues.map(i => i.message).join(", ") },

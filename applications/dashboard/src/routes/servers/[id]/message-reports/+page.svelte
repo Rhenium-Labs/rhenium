@@ -188,7 +188,7 @@
 				description="Select the channel where new message reports will be sent. The bot will automatically create a webhook in this channel."
 			>
 				{@const channelOptions: SelectOption[] = [
-					{ value: '', label: 'Disabled' },
+					{ value: '', label: 'None' },
 					...channels.map(ch => ({ value: ch.id, label: `#${ch.name}` }))
 				]}
 				<Select

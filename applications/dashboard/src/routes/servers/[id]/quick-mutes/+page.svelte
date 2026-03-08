@@ -187,14 +187,15 @@
 			</div>
 		{/if}
 
-		<ConfigSection
-			title="Purge Limit"
-			description="Number of messages to purge when muting a user."
-		>
+		<ConfigSection title="Behavior" description="Control how quick mutes are processed.">
 			<label for="purgeLimit" class="text-sm font-medium text-zinc-300"
-				>Messages to purge</label
+				>Message Purge Limit</label
 			>
-			<p class="mt-0.5 text-xs text-zinc-500">Allowed range: 2 to 500 messages.</p>
+			<p class="mt-0.5 text-xs text-zinc-500">
+				Decide the maximum number of messages allowed to be purged when a quick mute is
+				executed.
+			</p>
+			<p class="mt-0.5 text-xs text-zinc-500">Allowed Range: 2 to 500 messages.</p>
 			<input
 				id="purgeLimit"
 				type="number"

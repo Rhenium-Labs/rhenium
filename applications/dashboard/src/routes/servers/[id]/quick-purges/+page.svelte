@@ -191,14 +191,13 @@
 			</div>
 		{/if}
 
-		<ConfigSection
-			title="Purge Limit"
-			description="Maximum number of messages that can be purged at once."
-		>
-			<label for="maxLimit" class="text-sm font-medium text-zinc-300"
-				>Maximum Purge Limit</label
-			>
-			<p class="mt-0.5 text-xs text-zinc-500">Allowed range: 2 to 500 messages.</p>
+		<ConfigSection title="Behavior" description="Control how quick purges are processed.">
+			<label for="maxLimit" class="text-sm font-medium text-zinc-300">Limit</label>
+			<p class="mt-0.5 text-xs text-zinc-500">
+				Decide the maximum number of messages allowed to be purged when a quick purge is
+				executed.
+			</p>
+			<p class="mt-0.5 text-xs text-zinc-500">Allowed Range: 2 to 500 messages.</p>
 			<input
 				id="maxLimit"
 				type="number"

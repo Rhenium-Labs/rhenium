@@ -88,6 +88,7 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 			});
 
 			const parsed = parseWebhook(result.url);
+			
 			if (!parsed) {
 				return json(
 					{
@@ -116,7 +117,18 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 		}
 	}
 
+	// Delete Discord webhooks for any entries that were removed.
+	const nextIds = new Set(nextWebhooks.map(w => w.id));
+	const removedWebhooks = [...existingById.values()].filter(w => !nextIds.has(w.id));
+
+	await Promise.allSettled(
+		removedWebhooks.map(w =>
+			trpc.guild.deleteWebhook.mutate({ guildId: params.id, webhookUrl: w.url })
+		)
+	);
+
 	const validation = z.array(LOGGING_WEBHOOK_SCHEMA).safeParse(nextWebhooks);
+
 	if (!validation.success) {
 		return json(
 			{ success: false, error: validation.error.issues.map(i => i.message).join(", ") },

@@ -30,24 +30,25 @@
 
 	const availableChannels = $derived(
 		channels.filter(
-			c => (c.type === 0 || c.type === 5) && !scoping.some(s => s.channelId === c.id)
+			c =>
+				(c.type === 0 || c.type === 4 || c.type === 5) &&
+				!scoping.some(s => s.channelId === c.id)
 		)
 	);
-
-	function getChannelName(channelId: string): string {
-		return channels.find(c => c.id === channelId)?.name ?? channelId;
-	}
 
 	function channelOptionsFor(uiId: string): SelectOption[] {
 		const current = scoping.find(s => s.uiId === uiId)?.channelId;
 		return channels
 			.filter(
 				c =>
-					(c.type === 0 || c.type === 5) &&
+					(c.type === 0 || c.type === 4 || c.type === 5) &&
 					(c.id === current ||
 						!scoping.some(s => s.uiId !== uiId && s.channelId === c.id))
 			)
-			.map(c => ({ value: c.id, label: `#${c.name}` }));
+			.map(c => ({
+				value: c.id,
+				label: `${c.type === 4 ? c.name.toUpperCase() : `#${c.name}`}`
+			}));
 	}
 
 	function addScope() {
@@ -109,11 +110,13 @@
 							onchange={v => setChannel(scope.uiId, v)}
 						/>
 					{:else}
+						{@const ch = channels.find(c => c.id === scope.channelId)}
 						<div
 							class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-300 select-none"
 						>
-							<span class="shrink-0 text-zinc-500">#</span>
-							<span class="truncate">{getChannelName(scope.channelId)}</span>
+							<span class="truncate"
+								>{ch?.name.toUpperCase() ?? scope.channelId}</span
+							>
 						</div>
 					{/if}
 					<Select

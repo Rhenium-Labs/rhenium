@@ -1,8 +1,9 @@
-import { ChannelType, TextChannel, NewsChannel } from "discord.js";
+import { ChannelType, TextChannel, NewsChannel, parseWebhookURL, Routes } from "discord.js";
 import { createAppRouter, type ChannelInfo, type RoleInfo } from "@repo/trpc/router";
 
 import { client } from "@root/index";
 import ConfigManager from "@config/ConfigManager";
+import Logger from "@utils/Logger";
 
 /**
  * The app router instance with Discord.js resolvers.
@@ -114,6 +115,18 @@ export const appRouter = createAppRouter({
 		});
 
 		return { url: webhook.url };
+	},
+
+	async deleteWebhook(guildId: string, webhookUrl: string): Promise<void> {
+		const guild = client.guilds.cache.get(guildId);
+		if (!guild) return;
+
+		const data = parseWebhookURL(webhookUrl);
+		if (!data) return;
+
+		return void client.rest
+			.delete(Routes.webhook(data.id, data.token))
+			.catch(error => Logger.warn(`Webhook deletion failed. URL: ${webhookUrl}`, error));
 	}
 });
 

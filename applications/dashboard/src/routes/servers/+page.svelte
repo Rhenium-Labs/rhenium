@@ -6,7 +6,6 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let showLogoutMenu = $state(false);
 	let pendingInviteRefresh = $state(false);
 	let pendingServerRefresh: Promise<void> | null = null;
 
@@ -61,13 +60,7 @@
 			.join("")
 			.toUpperCase();
 	}
-
-	function handleClickOutside() {
-		if (showLogoutMenu) showLogoutMenu = false;
-	}
 </script>
-
-<svelte:window onclick={handleClickOutside} />
 
 <div class="flex min-h-screen items-center justify-center px-4 py-8">
 	<div
@@ -82,40 +75,20 @@
 					>{getDisplayName(data.session)}</span
 				>
 			</div>
-			<div class="relative">
-				<button
-					onclick={e => {
-						e.stopPropagation();
-						showLogoutMenu = !showLogoutMenu;
-					}}
-					class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
-					aria-label="Account menu"
-				>
-					<LogOut class="h-3.5 w-3.5" strokeWidth={2} />
-					Log out
-				</button>
-				{#if showLogoutMenu}
-					<div
-						class="absolute top-full right-0 z-10 mt-1 overflow-hidden rounded-lg border border-zinc-700/60 bg-zinc-800 shadow-xl"
-						style="animation: fade-in 120ms ease both"
-					>
-						<a
-							href="/api/auth/logout"
-							class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-zinc-700/70 hover:text-white"
-						>
-							<LogOut class="h-3.5 w-3.5" strokeWidth={2} />
-							Log out
-						</a>
-					</div>
-				{/if}
-			</div>
+			<a
+				href="/api/auth/logout"
+				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+			>
+				<LogOut class="h-3.5 w-3.5" strokeWidth={2} />
+				Log out
+			</a>
 		</div>
 
 		<!-- Server list -->
-		<div class="px-3 py-2">
+		<div class="max-h-[240px] overflow-y-auto px-3 py-2">
 			{#await data.servers}
 				<!-- Skeleton loading -->
-				{#each { length: 5 } as _}
+				{#each { length: 4 } as _}
 					<div class="flex items-center gap-3 px-3 py-2.5">
 						<div class="skeleton h-9 w-9 shrink-0 rounded-xl"></div>
 						<div

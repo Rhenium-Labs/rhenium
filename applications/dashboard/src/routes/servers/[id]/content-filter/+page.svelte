@@ -252,12 +252,12 @@
 					<div>
 						<label
 							for="cf-webhook-channel"
-							class="text-sm font-medium text-zinc-300">Webhook Channel</label
+							class="text-sm font-medium text-zinc-300">Alert Channel</label
 						>
 						<Select
 							bind:value={channelId}
 							options={[
-								{ value: "", label: "Disabled" },
+								{ value: "", label: "None" },
 								...webhookChannels.map(c => ({
 									value: c.id,
 									label: `#${c.name}`

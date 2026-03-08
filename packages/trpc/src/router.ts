@@ -46,6 +46,7 @@ export function createAppRouter(resolvers: {
 		channelId: string,
 		existingUrl?: string
 	) => Promise<{ url: string }>;
+	deleteWebhook: (guildId: string, webhookUrl: string) => Promise<void>;
 }) {
 	return router({
 		/** Health check — no auth needed. */
@@ -106,6 +107,25 @@ export function createAppRouter(resolvers: {
 						input.channelId,
 						input.existingUrl
 					);
+				}),
+
+			/** Delete an existing Discord webhook by URL. */
+			deleteWebhook: authedProcedure
+				.input(
+					z.object({
+						guildId: z.string(),
+						webhookUrl: z.string()
+					})
+				)
+				.mutation(async ({ input, ctx }) => {
+					const isMember = await resolvers.verifyMember(input.guildId, ctx.userId);
+					if (!isMember) {
+						throw new Error("You do not have access to this guild.");
+					}
+
+					await resolvers.deleteWebhook(input.guildId, input.webhookUrl);
+
+					return { success: true as const };
 				})
 		})
 	});

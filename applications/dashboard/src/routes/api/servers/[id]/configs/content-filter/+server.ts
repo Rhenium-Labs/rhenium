@@ -133,6 +133,12 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 			);
 		}
 	} else if (!payload.channelId) {
+		if (webhookUrl) {
+			await trpc.guild.deleteWebhook
+				.mutate({ guildId: params.id, webhookUrl })
+				.catch(() => null);
+		}
+
 		webhookUrl = null;
 		webhookChannel = null;
 	}

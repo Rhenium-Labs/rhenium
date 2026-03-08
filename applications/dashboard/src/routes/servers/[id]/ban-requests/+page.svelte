@@ -21,7 +21,7 @@
 	const roles: RoleInfo[] = $derived(data.roles);
 
 	const DELETE_PREVIOUS_MESSAGES_OPTIONS = [
-		{ value: "0", label: "Disabled", seconds: null },
+		{ value: "0", label: "None", seconds: null },
 		{ value: "1h", label: "Previous hour", seconds: 60 * 60 },
 		{ value: "6h", label: "Previous 6 hours", seconds: 6 * 60 * 60 },
 		{ value: "12h", label: "Previous 12 hours", seconds: 12 * 60 * 60 },
@@ -47,7 +47,7 @@
 	}
 
 	const channelOptions = $derived<SelectOption[]>([
-		{ value: "", label: "Disabled" },
+		{ value: "", label: "None" },
 		...channels.map(c => ({ value: c.id, label: `#${c.name}` }))
 	]);
 
