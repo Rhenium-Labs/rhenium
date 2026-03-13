@@ -70,7 +70,7 @@
       "dependencies": {
         "@discordjs/rest": "^2.6.0",
         "@fontsource-variable/geist": "^5.2.8",
-        "@lucide/svelte": "^0.576.0",
+        "@lucide/svelte": "^0.577.0",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/trpc": "workspace:*",
@@ -269,7 +269,7 @@
 
     "@lmdb/lmdb-win32-x64": ["@lmdb/lmdb-win32-x64@3.5.1", "", { "os": "win32", "cpu": "x64" }, "sha512-qwosvPyl+zpUlp3gRb7UcJ3H8S28XHCzkv0Y0EgQToXjQP91ZD67EHSCDmaLjtKhe+GVIW5om1KUpzVLA0l6pg=="],
 
-    "@lucide/svelte": ["@lucide/svelte@0.576.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-/xO9QPnPj5F5hvmPVdos+f9TeDQm0DntBdD7SpNPG9ZB7hOjzl8qUbfR6RsMik3yHvNlT4rUKE/ZMqzoBoiFDQ=="],
+    "@lucide/svelte": ["@lucide/svelte@0.577.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-0P6mkySd2MapIEgq08tADPmcN4DHndC/02PWwaLkOerXlx5Sv9aT4BxyXLIY+eccr0g/nEyCYiJesqS61YdBZQ=="],
 
     "@mrleebo/prisma-ast": ["@mrleebo/prisma-ast@0.13.1", "", { "dependencies": { "chevrotain": "^10.5.0", "lilconfig": "^2.1.0" } }, "sha512-XyroGQXcHrZdvmrGJvsA9KNeOOgGMg1Vg9OlheUsBOSKznLMDl+YChxbkboRHvtFYJEMRYmlV3uoo/njCw05iw=="],
 
