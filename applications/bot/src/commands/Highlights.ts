@@ -375,13 +375,10 @@ export default class Highlights extends Command {
 					name: `Message from @${message.author.username}`,
 					iconURL: message.author.displayAvatarURL()
 				})
+				.setDescription(formattedContent)
 				.setFields([
 					{
-						name: `Highlight in ${message.channel}`,
-						value: formattedContent
-					},
-					{
-						name: "Pattern",
+						name: `Pattern matched in ${message.channel}`,
 						value: `\`${matchedPattern}\``
 					}
 				])
