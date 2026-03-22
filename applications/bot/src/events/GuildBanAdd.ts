@@ -11,16 +11,16 @@ import {
 import ms from "ms";
 
 import { LoggingEvent } from "@repo/config";
-import { client, kysely } from "@root/index";
-import { formatMessageContent } from "@utils/Messages";
-import { EMPTY_MESSAGE_CONTENT } from "@utils/Constants";
-import { cropLines, userMentionWithId } from "@utils/index";
+import { client, kysely } from "#root/index.js";
+import { formatMessageContent } from "#utils/Messages.js";
+import { EMPTY_MESSAGE_CONTENT } from "#utils/Constants.js";
+import { cropLines, userMentionWithId } from "#utils/index.js";
 
-import Logger from "@utils/Logger";
-import GuildConfig from "@config/GuildConfig";
-import ConfigManager from "@config/ConfigManager";
-import EventListener from "@events/EventListener";
-import MessageManager from "@database/Messages";
+import Logger from "#utils/Logger.js";
+import GuildConfig from "#config/GuildConfig.js";
+import ConfigManager from "#config/ConfigManager.js";
+import EventListener from "#events/EventListener.js";
+import MessageManager from "#database/Messages.js";
 
 export default class GuildBanAdd extends EventListener {
 	constructor() {

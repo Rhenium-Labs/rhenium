@@ -1,11 +1,11 @@
 import { Events, RESTEvents } from "discord.js";
 
-import Logger from "@utils/Logger";
-import GlobalConfig from "@config/GlobalConfig";
-import EventListener from "@events/EventListener";
-import AutomatedScanner from "@cf/AutomatedScanner";
-import HeuristicScanner from "@cf/HeuristicScanner";
-import ReportMessageCtx from "@root/commands/ReportMessageCtx";
+import Logger from "#utils/Logger.js";
+import GlobalConfig from "#config/GlobalConfig.js";
+import EventListener from "#events/EventListener.js";
+import AutomatedScanner from "#cf/AutomatedScanner.js";
+import HeuristicScanner from "#cf/HeuristicScanner.js";
+import ReportMessageCtx from "#root/commands/ReportMessageCtx.js";
 
 export default class Ready extends EventListener {
 	constructor() {

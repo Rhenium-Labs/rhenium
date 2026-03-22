@@ -15,10 +15,10 @@ import { jsonArrayFrom } from "kysely/helpers/postgres";
 
 import safe from "safe-regex";
 
-import { client, kysely } from "@root/index";
+import { client, kysely } from "#root/index.js";
 import { UserPermission } from "@repo/config";
-import { formatMessageContent } from "@utils/Messages";
-import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "@utils/index";
+import { formatMessageContent } from "#utils/Messages.js";
+import { channelInScope, hastebin, inflect, parseChannelScoping, truncate } from "#utils/index.js";
 
 import type { Highlight } from "@repo/db";
 
@@ -26,11 +26,11 @@ import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "@commands/Command";
+} from "#commands/Command.js";
 
-import RateLimiter from "@utils/RateLimiter";
-import GuildConfig from "@config/GuildConfig";
-import ConfigManager from "@config/ConfigManager";
+import RateLimiter from "#utils/RateLimiter.js";
+import GuildConfig from "#config/GuildConfig.js";
+import ConfigManager from "#config/ConfigManager.js";
 
 /** Rate limiter for highlights. */
 const ratelimiter = new RateLimiter(1, 15000);

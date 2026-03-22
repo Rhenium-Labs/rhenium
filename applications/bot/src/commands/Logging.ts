@@ -13,16 +13,16 @@ import {
 	channelMention
 } from "discord.js";
 
-import { client, kysely } from "@root/index";
+import { client, kysely } from "#root/index.js";
 import { LoggingEvent, LoggingWebhook } from "@repo/config";
 
-import GuildConfig from "@config/GuildConfig";
+import GuildConfig from "#config/GuildConfig.js";
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "@commands/Command";
-import ConfigManager from "@config/ConfigManager";
+} from "#commands/Command.js";
+import ConfigManager from "#config/ConfigManager.js";
 
 export default class Logging extends Command {
 	constructor() {

@@ -8,15 +8,15 @@ import {
 	TextInputBuilder,
 	TextInputStyle
 } from "discord.js";
-import { startCronJob } from "@utils/index";
+import { startCronJob } from "#utils/index.js";
 
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "@commands/Command";
+} from "#commands/Command.js";
 
-import MessageReportUtils from "@utils/MessageReports";
+import MessageReportUtils from "#utils/MessageReports.js";
 
 /**
  * KV for storing target messages for reports.

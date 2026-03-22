@@ -1,10 +1,10 @@
 import { type ButtonComponent, type ButtonInteraction, ComponentType } from "discord.js";
 
-import type { ResponseData } from "@commands/Command";
+import type { ResponseData } from "#commands/Command.js";
 
-import Component, { type ComponentExecutionContext } from "@components/Component";
-import GuildConfig from "@config/GuildConfig";
-import MessageReportUtils from "@utils/MessageReports";
+import Component, { type ComponentExecutionContext } from "#components/Component.js";
+import GuildConfig from "#config/GuildConfig.js";
+import MessageReportUtils from "#utils/MessageReports.js";
 
 export default class MessageReportSearchPagination extends Component {
 	constructor() {

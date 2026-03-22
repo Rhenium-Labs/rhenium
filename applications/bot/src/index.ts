@@ -1,5 +1,5 @@
 import "dotenv/config";
-import "./env";
+import "./env.js";
 
 import OpenAI from "openai";
 
@@ -20,17 +20,17 @@ import {
 	CLIENT_PARTIALS,
 	PROCESS_EXIT_EVENTS,
 	CLIENT_CACHE_OPTIONS
-} from "@utils/Constants";
-import { sleep } from "@utils/index";
+} from "#utils/Constants.js";
+import { sleep } from "#utils/index.js";
+import { startTRPCServer } from "./trpc/server.js";
 
-import Logger from "@utils/Logger";
-import GlobalConfig from "@config/GlobalConfig";
-import MessageManager from "@database/Messages";
-import CommandManager from "@commands/CommandManager";
-import ComponentManager from "@components/ComponentManager";
-import EventListenerManager from "@events/EventListenerManager";
-import ConfigCacheInvalidatorPlugin from "@managers/database/Invalidator";
-import { startTRPCServer } from "./trpc/server";
+import Logger from "#utils/Logger.js";
+import GlobalConfig from "#config/GlobalConfig.js";
+import MessageManager from "#database/Messages.js";
+import CommandManager from "#commands/CommandManager.js";
+import ComponentManager from "#components/ComponentManager.js";
+import EventListenerManager from "#events/EventListenerManager.js";
+import ConfigCacheInvalidatorPlugin from "#managers/database/Invalidator.js";
 
 /** The Discord client instance. */
 export const client = new Client<true>({

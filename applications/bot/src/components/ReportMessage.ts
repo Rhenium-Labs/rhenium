@@ -1,10 +1,10 @@
 import { MessageFlags } from "discord.js";
 
-import { TARGET_MESSAGE_KV } from "@root/commands/ReportMessageCtx";
-import type { ResponseData } from "@commands/Command";
+import { TARGET_MESSAGE_KV } from "#root/commands/ReportMessageCtx.js";
+import type { ResponseData } from "#commands/Command.js";
 
-import MessageReportUtils from "@utils/MessageReports";
-import Component, { type ComponentExecutionContext } from "@components/Component";
+import MessageReportUtils from "#utils/MessageReports.js";
+import Component, { type ComponentExecutionContext } from "#components/Component.js";
 
 export default class ReportMessage extends Component {
 	constructor() {

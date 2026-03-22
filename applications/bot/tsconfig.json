@@ -2,23 +2,11 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"rootDir": "./src",
+		"outDir": "./dist",
 
 		// Source map options.
 		"sourceRoot": "/",
 		"sourceMap": true,
-		"inlineSources": true,
-
-		// Path aliases.
-		"paths": {
-			"@config/*": ["./src/managers/config/*"],
-			"@database/*": ["./src/managers/database/*"],
-			"@utils/*": ["./src/utils/*"],
-			"@cf/*": ["./src/managers/content-filtering/*"],
-			"@commands/*": ["./src/managers/runtime/commands/*"],
-			"@components/*": ["./src/managers/runtime/components/*"],
-			"@events/*": ["./src/managers/runtime/events/*"],
-			"@managers/*": ["./src/managers/*"],
-			"@root/*": ["./src/*"]
-		}
+		"inlineSources": true
 	}
 }

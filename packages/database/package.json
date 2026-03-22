@@ -3,11 +3,18 @@
 	"type": "module",
 	"private": true,
 	"exports": {
-		".": "./src/index.ts",
-		"./enums": "./src/Enums.ts"
+		".": {
+			"default": "./dist/index.js",
+			"types": "./src/index.ts"
+		},
+		"./enums": {
+			"default": "./dist/Enums.js",
+			"types": "./src/Enums.ts"
+		}
 	},
 	"scripts": {
-		"typecheck": "tsc",
-		"format": "prettier --write src/**/*.ts"
+		"format": "prettier --write src/**/*.ts",
+		"compile": "tsc",
+		"typecheck": "tsc --noEmit"
 	}
 }

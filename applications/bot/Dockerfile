@@ -21,7 +21,11 @@ COPY packages/trpc ./packages/trpc
 # Install dependencies.
 RUN bun install
 
+# Compile the bot and its dependencies.
+RUN bun run compile
+
 # Run the bot.
 WORKDIR /rhenium/applications/bot
+# Expose the port for the API server.
 EXPOSE 3000
-ENTRYPOINT ["bun", "run", "src/index.ts"]
+ENTRYPOINT ["bun", "start"]

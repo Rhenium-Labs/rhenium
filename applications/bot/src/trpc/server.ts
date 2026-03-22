@@ -2,8 +2,8 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import type { AnyRouter } from "@trpc/server";
 import type { TRPCContext } from "@repo/trpc";
 
-import Logger from "@utils/Logger";
-import { appRouter } from "./router";
+import Logger from "#utils/Logger.js";
+import { appRouter } from "./router.js";
 
 /** Shared secret for authenticating dashboard requests. */
 const TRPC_SECRET = process.env.TRPC_SECRET;

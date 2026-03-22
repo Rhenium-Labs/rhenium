@@ -19,8 +19,9 @@
 		"applications/*"
 	],
 	"scripts": {
-		"typecheck": "turbo run typecheck",
 		"format": "turbo run format",
+		"typecheck": "turbo run typecheck",
+		"compile": "turbo run compile",
 		"db:generate": "prisma generate",
 		"db:migrate": "prisma migrate deploy"
 	},

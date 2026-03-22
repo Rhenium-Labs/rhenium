@@ -10,11 +10,11 @@ import type {
 	UserContextMenuCommandInteraction
 } from "discord.js";
 
-import { client, kysely } from "@root/index";
+import { client, kysely } from "#root/index.js";
 
-import GuildConfig from "@config/GuildConfig";
-import FlagStrategy from "./FlagOptionStrategy";
-import ArgumentParser from "./ArgumentParser";
+import GuildConfig from "#config/GuildConfig.js";
+import FlagStrategy from "./FlagOptionStrategy.js";
+import ArgumentParser from "./ArgumentParser.js";
 
 export default abstract class Command {
 	/**

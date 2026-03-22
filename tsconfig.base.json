@@ -8,9 +8,9 @@
 		"lib": ["ES2024"],
 		"types": ["bun-types"],
 		"target": "es2024",
-		"module": "esnext",
-		"noEmit": true,
-		"moduleResolution": "bundler",
+		"module": "nodenext",
+		"incremental": true,
+		"moduleResolution": "nodenext",
 
 		// Advanced Options
 		"skipLibCheck": true,

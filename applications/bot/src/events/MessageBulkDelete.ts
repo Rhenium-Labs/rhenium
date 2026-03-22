@@ -1,7 +1,7 @@
 import { Events, type Collection, type PartialMessage, type Snowflake } from "discord.js";
 
-import EventListener from "@events/EventListener";
-import MessageManager from "@database/Messages";
+import EventListener from "#events/EventListener.js";
+import MessageManager from "#database/Messages.js";
 
 export default class MessageBulkDelete extends EventListener {
 	constructor() {

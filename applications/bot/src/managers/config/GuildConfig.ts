@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 import { captureException, metrics } from "@sentry/node";
 
-import Logger from "@utils/Logger";
+import Logger from "#utils/Logger.js";
 
 import {
 	ContentFilterConfig,
@@ -16,7 +16,7 @@ import {
 	RawChannelScoping
 } from "@repo/config";
 import { Result } from "@sapphire/result";
-import { SENTRY_METRICS_COUNTERS } from "@utils/Constants";
+import { SENTRY_METRICS_COUNTERS } from "#utils/Constants.js";
 
 export default class GuildConfig {
 	/**

@@ -20,17 +20,17 @@ import {
 import { metrics } from "@sentry/node";
 
 import { ReportStatus } from "@repo/db";
-import { client, kysely } from "@root/index";
+import { client, kysely } from "#root/index.js";
 import { LoggingEvent, UserPermission } from "@repo/config";
-import { cleanContent, formatMessageContent } from "./Messages";
-import { cropLines, truncate, userMentionWithId } from "./index";
-import { EMPTY_MESSAGE_CONTENT, SENTRY_METRICS_COUNTERS } from "./Constants";
+import { cleanContent, formatMessageContent } from "./Messages.js";
+import { cropLines, truncate, userMentionWithId } from "./index.js";
+import { EMPTY_MESSAGE_CONTENT, SENTRY_METRICS_COUNTERS } from "./Constants.js";
 
-import type { SimpleResult } from "./Types";
-import type { ResponseData } from "@commands/Command";
+import type { SimpleResult } from "./Types.js";
+import type { ResponseData } from "#commands/Command.js";
 import type { MessageReport } from "@repo/db";
 
-import GuildConfig from "@config/GuildConfig";
+import GuildConfig from "#config/GuildConfig.js";
 
 export default class MessageReportUtils {
 	/**

@@ -1,8 +1,8 @@
 import { MessageFlags } from "discord.js";
-import type { ResponseData } from "@commands/Command";
+import type { ResponseData } from "#commands/Command.js";
 
-import BanRequestUtils, { BanRequestAction } from "@utils/BanRequests";
-import Component, { type ComponentExecutionContext } from "@components/Component";
+import BanRequestUtils, { BanRequestAction } from "#utils/BanRequests.js";
+import Component, { type ComponentExecutionContext } from "#components/Component.js";
 
 export default class BanRequestDenyModal extends Component {
 	constructor() {

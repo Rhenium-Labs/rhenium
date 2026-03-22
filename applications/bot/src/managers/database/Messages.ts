@@ -1,13 +1,13 @@
 import { Collection, type Message as DiscordMessage } from "discord.js";
 
-import { kysely } from "@root/index";
-import { inflect } from "@utils/index";
-import { cleanContent } from "@utils/Messages";
-import { EMPTY_MESSAGE_CONTENT } from "@utils/Constants";
+import { kysely } from "#root/index.js";
+import { inflect } from "#utils/index.js";
+import { cleanContent } from "#utils/Messages.js";
+import { EMPTY_MESSAGE_CONTENT } from "#utils/Constants.js";
 
 import type { Message } from "@repo/db";
 
-import Logger from "@utils/Logger";
+import Logger from "#utils/Logger.js";
 
 /** Simple mutex for message insertion operations. */
 let isInserting = false;

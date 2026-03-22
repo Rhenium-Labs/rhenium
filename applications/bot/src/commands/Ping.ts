@@ -9,7 +9,7 @@ import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "@commands/Command";
+} from "#commands/Command.js";
 
 export default class Ping extends Command {
 	constructor() {

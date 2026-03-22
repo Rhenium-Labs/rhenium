@@ -1,10 +1,10 @@
 import { fromZodError } from "zod-validation-error";
-import { kysely } from "@root/index";
+import { kysely } from "#root/index.js";
 
 import { DEFAULT_GUILD_CONFIG, GUILD_CONFIG_SCHEMA } from "@repo/config";
 
-import GuildConfig from "./GuildConfig";
-import Logger from "@utils/Logger";
+import GuildConfig from "./GuildConfig.js";
+import Logger from "#utils/Logger.js";
 
 export default class ConfigManager {
 	/** Cached guild configurations. */

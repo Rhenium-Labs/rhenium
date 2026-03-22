@@ -3,14 +3,14 @@ import { fromError } from "zod-validation-error";
 import ms from "ms";
 import fs from "node:fs";
 
-import { client, kysely } from "@root/index";
-import { LOG_DATE_FORMAT } from "@utils/Constants";
-import { inflect, readYamlFile, startCronJob } from "@utils/index";
-import { GLOBAL_CONFIG_SCHEMA, RawGlobalConfig } from "./Schema";
+import { client, kysely } from "#root/index.js";
+import { LOG_DATE_FORMAT } from "#utils/Constants.js";
+import { inflect, readYamlFile, startCronJob } from "#utils/index.js";
+import { GLOBAL_CONFIG_SCHEMA, RawGlobalConfig } from "./Schema.js";
 
-import Logger from "@utils/Logger";
-import ConfigManager from "./ConfigManager";
-import MessageManager from "@database/Messages";
+import Logger from "#utils/Logger.js";
+import ConfigManager from "./ConfigManager.js";
+import MessageManager from "#database/Messages.js";
 
 export default class GlobalConfig {
 	/** Data representing the global configuration. */

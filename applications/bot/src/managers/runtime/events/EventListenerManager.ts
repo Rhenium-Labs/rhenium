@@ -3,11 +3,11 @@ import { pathToFileURL } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-import { client } from "@root/index";
-import { inflect } from "@utils/index";
+import { client } from "#root/index.js";
+import { inflect } from "#utils/index.js";
 
-import Logger from "@utils/Logger";
-import EventListener from "./EventListener";
+import Logger from "#utils/Logger.js";
+import EventListener from "./EventListener.js";
 
 export default class EventListenerManager {
 	/** Mount all event listeners from the `events` directory. */

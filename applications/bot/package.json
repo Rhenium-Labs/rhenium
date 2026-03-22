@@ -1,11 +1,13 @@
 {
 	"name": "@rhenium/bot",
 	"type": "module",
-	"module": "src/index.ts",
+	"main": "./dist/index.js",
 	"private": true,
 	"scripts": {
-		"typecheck": "tsc",
-		"format": "prettier --write src/**/*.ts"
+		"start": "bun run ./dist/index.js",
+		"format": "prettier --write src/**/*.ts",
+		"compile": "tsc",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@repo/db": "workspace:*",
@@ -41,5 +43,16 @@
 		"@types/ms": "2.1.0",
 		"@types/safe-regex": "1.1.6",
 		"@types/yaml": "1.9.7"
+	},
+	"imports": {
+		"#config/*": "./dist/managers/config/*",
+		"#database/*": "./dist/managers/database/*",
+		"#utils/*": "./dist/utils/*",
+		"#cf/*": "./dist/managers/content-filtering/*",
+		"#commands/*": "./dist/managers/runtime/commands/*",
+		"#components/*": "./dist/managers/runtime/components/*",
+		"#events/*": "./dist/managers/runtime/events/*",
+		"#managers/*": "./dist/managers/*",
+		"#root/*": "./dist/*"
 	}
 }

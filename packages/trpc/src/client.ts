@@ -5,7 +5,7 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
 
-import type { AppRouter } from "./router";
+import type { AppRouter } from "./router.js";
 
 /** Per-request context for guild/user scoped calls. */
 export interface ClientContext {

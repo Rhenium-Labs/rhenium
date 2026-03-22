@@ -4,11 +4,11 @@ import { pathToFileURL } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-import { client } from "@root/index";
-import { inflect } from "@utils/index";
+import { client } from "#root/index.js";
+import { inflect } from "#utils/index.js";
 
-import Command from "./Command";
-import Logger from "@utils/Logger";
+import Command from "./Command.js";
+import Logger from "#utils/Logger.js";
 
 export default class CommandManager {
 	/** Collection of cached commands. */

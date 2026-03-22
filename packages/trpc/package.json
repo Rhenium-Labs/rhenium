@@ -3,12 +3,22 @@
 	"type": "module",
 	"private": true,
 	"exports": {
-		".": "./src/index.ts",
-		"./client": "./src/client.ts",
-		"./router": "./src/router.ts"
+		".": {
+			"default": "./dist/index.js",
+			"types": "./src/index.ts"
+		},
+		"./client": {
+			"default": "./dist/client.js",
+			"types": "./src/client.ts"
+		},
+		"./router": {
+			"default": "./dist/router.js",
+			"types": "./src/router.ts"
+		}
 	},
 	"scripts": {
-		"typecheck": "tsc",
-		"format": "prettier --write src/**/*.ts"
+		"format": "prettier --write src/**/*.ts",
+		"compile": "tsc",
+		"typecheck": "tsc --noEmit"
 	}
 }

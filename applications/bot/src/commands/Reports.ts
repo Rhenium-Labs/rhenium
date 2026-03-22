@@ -10,7 +10,7 @@ import {
 	userMention
 } from "discord.js";
 
-import { kysely } from "@root/index";
+import { kysely } from "#root/index.js";
 import { ReportStatus } from "@repo/db";
 import { RawGuildConfig } from "@repo/config";
 
@@ -18,8 +18,8 @@ import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "@commands/Command";
-import MessageReportUtils from "@utils/MessageReports";
+} from "#commands/Command.js";
+import MessageReportUtils from "#utils/MessageReports.js";
 
 export default class Reports extends Command {
 	constructor() {

@@ -4,10 +4,10 @@ import { pathToFileURL } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-import { inflect } from "@utils/index";
+import { inflect } from "#utils/index.js";
 
-import Logger from "@utils/Logger";
-import Component, { type ComponentCustomID } from "./Component";
+import Logger from "#utils/Logger.js";
+import Component, { type ComponentCustomID } from "./Component.js";
 
 export default class ComponentManager {
 	/** Collection of cached components. */

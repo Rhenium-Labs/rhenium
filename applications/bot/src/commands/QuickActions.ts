@@ -21,17 +21,17 @@ import {
 	truncate,
 	validateDuration,
 	validateEmoji
-} from "@utils/index";
+} from "#utils/index.js";
 
-import { kysely } from "@root/index";
+import { kysely } from "#root/index.js";
 
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "@commands/Command";
+} from "#commands/Command.js";
 
-import GuildConfig from "@config/GuildConfig";
+import GuildConfig from "#config/GuildConfig.js";
 
 export default class QuickActions extends Command {
 	constructor() {

@@ -16,15 +16,15 @@ import {
 import ms from "ms";
 
 import { Detector } from "@repo/db";
-import { kysely, client } from "@root/index";
+import { kysely, client } from "#root/index.js";
 import { ContentFilterVerbosity, DetectorMode, UserPermission } from "@repo/config";
 
 import Command, {
 	CommandCategory,
 	type ResponseData,
 	type CommandExecutionContext
-} from "@commands/Command";
-import GuildConfig from "@config/GuildConfig";
+} from "#commands/Command.js";
+import GuildConfig from "#config/GuildConfig.js";
 
 export default class Config extends Command {
 	constructor() {

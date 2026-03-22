@@ -1,9 +1,9 @@
 import { ChannelType, TextChannel, NewsChannel, parseWebhookURL, Routes } from "discord.js";
 import { createAppRouter, type ChannelInfo, type RoleInfo } from "@repo/trpc/router";
 
-import { client } from "@root/index";
-import ConfigManager from "@config/ConfigManager";
-import Logger from "@utils/Logger";
+import { client } from "#root/index.js";
+import ConfigManager from "#config/ConfigManager.js";
+import Logger from "#utils/Logger.js";
 
 /**
  * The app router instance with Discord.js resolvers.

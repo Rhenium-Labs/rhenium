@@ -27,18 +27,18 @@ import {
 	sleep,
 	truncate,
 	userMentionWithId
-} from "@utils/index";
+} from "#utils/index.js";
 import { LoggingEvent, UserPermission } from "@repo/config";
-import { client, kysely } from "@root/index";
-import { LOG_DATE_FORMAT, SENTRY_METRICS_COUNTERS } from "@utils/Constants";
+import { client, kysely } from "#root/index.js";
+import { LOG_DATE_FORMAT, SENTRY_METRICS_COUNTERS } from "#utils/Constants.js";
 
 import type { Message as SerializedMessage } from "@repo/db";
 
-import GuildConfig from "@config/GuildConfig";
-import ConfigManager from "@config/ConfigManager";
-import EventListener from "@events/EventListener";
-import MessageManager from "@database/Messages";
-import ModerationUtils from "@utils/Moderation";
+import GuildConfig from "#config/GuildConfig.js";
+import ConfigManager from "#config/ConfigManager.js";
+import EventListener from "#events/EventListener.js";
+import MessageManager from "#database/Messages.js";
+import ModerationUtils from "#utils/Moderation.js";
 
 /** The maximum age of messages that can be bulk deleted (14 days in milliseconds). */
 const BULK_DELETE_MAX_AGE = 14 * 24 * 60 * 60 * 1000;

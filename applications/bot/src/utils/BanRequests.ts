@@ -19,17 +19,17 @@ import { metrics } from "@sentry/node";
 
 import ms from "ms";
 
-import { kysely } from "@root/index";
+import { kysely } from "#root/index.js";
 import { RequestStatus } from "@repo/db";
-import { SENTRY_METRICS_COUNTERS } from "./Constants";
+import { SENTRY_METRICS_COUNTERS } from "./Constants.js";
 import { LoggingEvent, UserPermission } from "@repo/config";
-import { parseDurationString, userMentionWithId, validateDuration } from "./index";
+import { parseDurationString, userMentionWithId, validateDuration } from "./index.js";
 
 import type { BanRequest, BanRequestUpdate } from "@repo/db";
-import type { SimpleResult } from "./Types";
+import type { SimpleResult } from "./Types.js";
 
-import GuildConfig from "@config/GuildConfig";
-import ModerationUtils from "./Moderation";
+import GuildConfig from "#config/GuildConfig.js";
+import ModerationUtils from "./Moderation.js";
 
 export default class BanRequestUtils {
 	/**

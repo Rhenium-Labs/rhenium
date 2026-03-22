@@ -7,7 +7,7 @@ import type {
 	QueryResult
 } from "kysely";
 
-import ConfigManager from "@config/ConfigManager";
+import ConfigManager from "#config/ConfigManager.js";
 
 type QueryMetadata = { guildId: string };
 

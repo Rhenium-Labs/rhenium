@@ -1,11 +1,11 @@
 import { Colors, MessageFlags, messageLink } from "discord.js";
-import type { ResponseData } from "@commands/Command";
+import type { ResponseData } from "#commands/Command.js";
 
 import MessageReportUtils, {
 	MessageReportAction,
 	REPORT_ACTION_TO_PAST_TENSE
-} from "@utils/MessageReports";
-import Component, { type ComponentExecutionContext } from "@components/Component";
+} from "#utils/MessageReports.js";
+import Component, { type ComponentExecutionContext } from "#components/Component.js";
 
 export default class MessageReportButton extends Component {
 	constructor() {

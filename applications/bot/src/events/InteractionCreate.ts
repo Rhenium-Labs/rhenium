@@ -10,19 +10,19 @@ import {
 } from "discord.js";
 import { captureException, metrics } from "@sentry/node";
 
-import { getWhitelistStatus } from "@utils/index";
-import { SENTRY_METRICS_COUNTERS } from "@utils/Constants";
+import { getWhitelistStatus } from "#utils/index.js";
+import { SENTRY_METRICS_COUNTERS } from "#utils/Constants.js";
 
-import type { ResponseData } from "@commands/Command";
-import type { ComponentInteraction } from "@components/Component";
+import type { ResponseData } from "#commands/Command.js";
+import type { ComponentInteraction } from "#components/Component.js";
 
-import Logger from "@utils/Logger";
-import GuildConfig from "@config/GuildConfig";
-import GlobalConfig from "@config/GlobalConfig";
-import EventListener from "@events/EventListener";
-import ConfigManager from "@config/ConfigManager";
-import CommandManager from "@commands/CommandManager";
-import ComponentManager from "@components/ComponentManager";
+import Logger from "#utils/Logger.js";
+import GuildConfig from "#config/GuildConfig.js";
+import GlobalConfig from "#config/GlobalConfig.js";
+import EventListener from "#events/EventListener.js";
+import ConfigManager from "#config/ConfigManager.js";
+import CommandManager from "#commands/CommandManager.js";
+import ComponentManager from "#components/ComponentManager.js";
 
 export default class InteractionCreate extends EventListener {
 	constructor() {
