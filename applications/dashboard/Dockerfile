@@ -18,6 +18,9 @@ COPY packages/trpc ./packages/trpc
 # Install dependencies.
 RUN bun install
 
+# Compile dependencies.
+RUN bun run compile
+
 # Build dashboard.
 WORKDIR /rhenium/applications/dashboard
 RUN bun run build
