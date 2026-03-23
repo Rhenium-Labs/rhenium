@@ -112,7 +112,7 @@ async function main(): Promise<void> {
 	await client.login(process.env.BOT_TOKEN);
 
 	// Start the tRPC API server for the dashboard.
-	startTRPCServer();
+	await startTRPCServer();
 
 	// Register application commands.
 	await sleep(2000); // Short delay since this likes to fail if done immediately.

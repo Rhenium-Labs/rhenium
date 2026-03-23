@@ -12,7 +12,7 @@ import EventListener from "./EventListener.js";
 export default class EventListenerManager {
 	/** Mount all event listeners from the `events` directory. */
 	static async mount(): Promise<void> {
-		const directory = path.resolve("src/events");
+		const directory = path.resolve("dist/events");
 
 		if (!fs.existsSync(directory)) {
 			Logger.fatal("Events directory not found.");
@@ -24,7 +24,7 @@ export default class EventListenerManager {
 		// prettier-ignore
 		const filenames = fs
             .readdirSync(directory)
-            .filter(file => file.endsWith(""));
+            .filter(file => file.endsWith(".js"));
 
 		if (filenames.length === 0) {
 			Logger.warn("No event listeners found to mount.");

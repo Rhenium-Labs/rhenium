@@ -1,9 +1,12 @@
-import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import type { AnyRouter } from "@trpc/server";
+import Fastify, { type FastifyRequest } from "fastify";
+import cors from "@fastify/cors";
+
+import { fastifyTRPCPlugin, type FastifyTRPCPluginOptions } from "@trpc/server/adapters/fastify";
+
+import { appRouter } from "./router.js";
 import type { TRPCContext } from "@repo/trpc";
 
 import Logger from "#utils/Logger.js";
-import { appRouter } from "./router.js";
 
 /** Shared secret for authenticating dashboard requests. */
 const TRPC_SECRET = process.env.TRPC_SECRET;
@@ -33,8 +36,8 @@ function safeCompare(a: string, b: string): boolean {
  * Returns null fields if auth is invalid — the authedProcedure middleware
  * will reject these requests.
  */
-function createContext(req: Request): TRPCContext {
-	const authHeader = req.headers.get("authorization");
+function createContext(req: FastifyRequest): TRPCContext {
+	const authHeader = req.headers["authorization"];
 
 	if (!TRPC_SECRET || !authHeader) {
 		return { guildId: null, userId: null };
@@ -50,69 +53,45 @@ function createContext(req: Request): TRPCContext {
 	// The dashboard sends the authenticated user's guildId and userId
 	// as custom headers after it has already verified the user's session
 	// and guild permissions via its own auth middleware.
-	const guildId = req.headers.get("x-guild-id");
-	const userId = req.headers.get("x-user-id");
+	const guildId = req.headers["x-guild-id"];
+	const userId = req.headers["x-user-id"];
 
 	return {
-		guildId: guildId || null,
-		userId: userId || null
+		guildId: (Array.isArray(guildId) ? guildId[0] : guildId) ?? null,
+		userId: (Array.isArray(userId) ? userId[0] : userId) ?? null
 	};
 }
 
 /**
- * Starts the tRPC HTTP server using Bun's native server.
+ * Starts the tRPC HTTP server using Fastify.
  * This runs alongside the Discord gateway in the bot process.
  */
-export function startTRPCServer(): void {
+export async function startTRPCServer(): Promise<void> {
 	if (!TRPC_SECRET) {
 		Logger.warn("TRPC_SECRET is not set — tRPC server will not start.");
 		return;
 	}
 
-	Bun.serve({
-		port: 3000,
-		fetch: async (req: Request) => {
-			const url = new URL(req.url);
+	const server = Fastify();
 
-			// Only handle /trpc/* paths.
-			if (!url.pathname.startsWith("/trpc")) {
-				return new Response("Not Found", { status: 404 });
-			}
-
-			// CORS handling for preflight requests.
-			if (req.method === "OPTIONS") {
-				return new Response(null, {
-					status: 204,
-					headers: {
-						"Access-Control-Allow-Origin":
-							process.env.DASHBOARD_ORIGIN || "http://localhost:5173",
-						"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-						"Access-Control-Allow-Headers":
-							"authorization, content-type, x-guild-id, x-user-id",
-						"Access-Control-Max-Age": "86400"
-					}
-				});
-			}
-
-			const response = await fetchRequestHandler({
-				endpoint: "/trpc",
-				req,
-				router: appRouter as AnyRouter,
-				createContext: () => createContext(req),
-				onError: ({ error, path }: { error: { message: string }; path?: string }) => {
-					Logger.error(`tRPC error on '${path}':`, error.message);
-				}
-			});
-
-			// Attach CORS headers to the response.
-			response.headers.set(
-				"Access-Control-Allow-Origin",
-				process.env.DASHBOARD_ORIGIN || "http://localhost:5173"
-			);
-
-			return response;
-		}
+	await server.register(cors, {
+		origin: process.env.DASHBOARD_ORIGIN || "http://localhost:5173",
+		methods: ["GET", "POST", "OPTIONS"],
+		allowedHeaders: ["authorization", "content-type", "x-guild-id", "x-user-id"],
+		maxAge: 86400
 	});
 
+	await server.register(fastifyTRPCPlugin, {
+		prefix: "/trpc",
+		trpcOptions: {
+			router: appRouter,
+			createContext: ({ req }) => createContext(req),
+			onError: ({ path, error }) => {
+				Logger.error(`tRPC error on '${path}':`, error.message);
+			}
+		} satisfies FastifyTRPCPluginOptions<typeof appRouter>["trpcOptions"]
+	});
+
+	await server.listen({ port: 3000, host: "0.0.0.0" });
 	Logger.info(`tRPC server listening on port 3000.`);
 }

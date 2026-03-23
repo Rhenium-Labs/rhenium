@@ -26,7 +26,7 @@ export default class CommandManager {
 
 	/** Cache all commands from the `commands` directory. */
 	static async cache(): Promise<void> {
-		const directory = path.resolve("src/commands");
+		const directory = path.resolve("dist/commands");
 
 		if (!fs.existsSync(directory)) {
 			Logger.fatal("Commands directory not found.");
@@ -38,7 +38,7 @@ export default class CommandManager {
 		// prettier-ignore
 		const filenames = fs
             .readdirSync(directory)
-            .filter(file => file.endsWith(".ts"));
+            .filter(file => file.endsWith(".js"));
 
 		if (filenames.length === 0) {
 			Logger.warn("No commands found to cache.");

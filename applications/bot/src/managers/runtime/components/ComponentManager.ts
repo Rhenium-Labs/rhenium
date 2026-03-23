@@ -44,7 +44,7 @@ export default class ComponentManager {
 
 	/** Cache all components from the `components` directory. */
 	static async cache(): Promise<void> {
-		const directory = path.resolve("src/components");
+		const directory = path.resolve("dist/components");
 
 		if (!fs.existsSync(directory)) {
 			Logger.fatal("Components directory not found.");
@@ -56,7 +56,7 @@ export default class ComponentManager {
 		// prettier-ignore
 		const filenames = fs
             .readdirSync(directory)
-            .filter(file => file.endsWith(""));
+            .filter(file => file.endsWith(".js"));
 
 		if (filenames.length === 0) {
 			Logger.warn("No components found to cache.");

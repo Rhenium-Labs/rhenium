@@ -28,4 +28,4 @@ RUN bun run compile
 WORKDIR /rhenium/applications/bot
 # Expose the port for the API server.
 EXPOSE 3000
-ENTRYPOINT ["bun", "start"]
+ENTRYPOINT ["node", "./dist/index.js"]
