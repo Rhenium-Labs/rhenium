@@ -186,8 +186,8 @@ export default class ContentFilterButton extends Component {
 			inline: true
 		});
 
-		await interaction.message
-			.edit({
+		await interaction
+			.editReply({
 				embeds: [embed],
 				components: []
 			})
