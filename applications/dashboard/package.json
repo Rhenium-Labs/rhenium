@@ -15,7 +15,7 @@
 	"dependencies": {
 		"@discordjs/rest": "^2.6.0",
 		"@fontsource-variable/geist": "^5.2.8",
-		"@lucide/svelte": "^0.577.0",
+		"@lucide/svelte": "^1.0.0",
 		"@repo/config": "workspace:*",
 		"@repo/db": "workspace:*",
 		"@repo/trpc": "workspace:*",
