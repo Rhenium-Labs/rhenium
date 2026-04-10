@@ -8,6 +8,13 @@
 
 	let pendingInviteRefresh = $state(false);
 	let pendingServerRefresh: Promise<void> | null = null;
+	let developerGuildId = $state("");
+	const isDeveloper = $derived(
+		(data as PageData & { isDeveloper?: boolean }).isDeveloper ?? false
+	);
+
+	const DISCORD_ID_REGEX = /^\d{17,20}$/;
+	const canOpenDeveloperGuild = $derived(DISCORD_ID_REGEX.test(developerGuildId.trim()));
 
 	onMount(() => {
 		const handleVisibility = () => {
@@ -60,6 +67,13 @@
 			.join("")
 			.toUpperCase();
 	}
+
+	async function openDeveloperGuild() {
+		const guildId = developerGuildId.trim();
+		if (!DISCORD_ID_REGEX.test(guildId)) return;
+
+		await goto(`/servers/${guildId}`);
+	}
 </script>
 
 <div class="flex min-h-screen items-center justify-center px-4 py-8">
@@ -86,6 +100,36 @@
 
 		<!-- Server list -->
 		<div class="max-h-[240px] overflow-y-auto px-3 py-2">
+			{#if isDeveloper}
+				<form
+					onsubmit={async event => {
+						event.preventDefault();
+						await openDeveloperGuild();
+					}}
+					class="mb-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-2"
+				>
+					<p class="text-[11px] font-medium tracking-wide text-amber-300 uppercase">
+						Developer Access
+					</p>
+					<div class="mt-2 flex items-center gap-2">
+						<input
+							type="text"
+							inputmode="numeric"
+							placeholder="Server ID"
+							bind:value={developerGuildId}
+							class="h-8 min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-200 transition-colors outline-none placeholder:text-zinc-500 focus:border-amber-400"
+						/>
+						<button
+							type="submit"
+							disabled={!canOpenDeveloperGuild}
+							class="h-8 rounded-md bg-amber-500 px-3 text-xs font-semibold text-zinc-950 transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+						>
+							Open
+						</button>
+					</div>
+				</form>
+			{/if}
+
 			{#await data.servers}
 				<!-- Skeleton loading -->
 				{#each { length: 4 } as _}
@@ -99,6 +143,8 @@
 				{/each}
 			{:then servers}
 				{#each servers as server (server.id)}
+					{@const isDeveloperOnlyServer =
+						(server as { developerOnly?: boolean }).developerOnly === true}
 					{#if server.hasBot}
 						<a
 							href="/servers/{server.id}"
@@ -117,10 +163,16 @@
 									{getInitials(server.name)}
 								</div>
 							{/if}
-							<span
-								class="min-w-0 flex-1 truncate text-sm font-medium text-zinc-100"
-								>{server.name}</span
-							>
+							<div class="min-w-0 flex-1">
+								<p class="truncate text-sm font-medium text-zinc-100">
+									{server.name}
+								</p>
+								{#if isDeveloperOnlyServer}
+									<p class="text-[11px] text-amber-300">
+										Developer-only listing
+									</p>
+								{/if}
+							</div>
 							<ChevronRight
 								class="h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400"
 								strokeWidth={2}

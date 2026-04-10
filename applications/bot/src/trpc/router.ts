@@ -3,6 +3,7 @@ import { createAppRouter, type ChannelInfo, type RoleInfo } from "@repo/trpc/rou
 
 import { client } from "#root/index.js";
 import ConfigManager from "#config/ConfigManager.js";
+import GlobalConfig from "#config/GlobalConfig.js";
 import Logger from "#utils/Logger.js";
 
 /**
@@ -62,12 +63,20 @@ export const appRouter = createAppRouter({
 	},
 
 	async verifyMember(guildId: string, userId: string): Promise<boolean> {
+		if (GlobalConfig.isDeveloper(userId)) {
+			return true;
+		}
+
 		const guild = client.guilds.cache.get(guildId);
 		if (!guild) return false;
 
 		// Fetch will always check the cache first.
 		const member = await guild.members.fetch(userId).catch(() => null);
 		return member !== null;
+	},
+
+	async isDeveloper(userId: string): Promise<boolean> {
+		return GlobalConfig.isDeveloper(userId);
 	},
 
 	async invalidateConfigCache(guildId: string): Promise<void> {

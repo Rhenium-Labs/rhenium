@@ -4,6 +4,7 @@ import type { RawGuildConfig } from "@repo/config";
 import { kysely } from "$utils/server/DB";
 import { createBotClient } from "$utils/server/TRPC";
 
+import { isDeveloperUser } from "$utils/server/Authz";
 import DiscordUtils from "$utils/server/Discord";
 import SessionManager from "$utils/server/Session";
 
@@ -66,15 +67,16 @@ export async function requireGuildConfigAccess(context: AccessContext, guildId: 
 	});
 
 	const userGuild = userGuilds.find(g => g.id === guildId);
+	const isDeveloper = await isDeveloperUser(context.locals.session.userId);
 
-	if (!userGuild) {
+	if (!userGuild && !isDeveloper) {
 		return {
 			ok: false as const,
 			response: json({ success: false, error: "Access denied." }, { status: 403 })
 		};
 	}
 
-	if (!DiscordUtils.canManage(userGuild)) {
+	if (!isDeveloper && userGuild && !DiscordUtils.canManage(userGuild)) {
 		return {
 			ok: false as const,
 			response: json(

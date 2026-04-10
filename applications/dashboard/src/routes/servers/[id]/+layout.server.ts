@@ -5,6 +5,7 @@ import type { LayoutServerLoad } from "./$types";
 import { kysely } from "$utils/server/DB";
 
 import Logger from "$utils/Logger";
+import { isDeveloperUser } from "$utils/server/Authz";
 import DiscordUtils from "$utils/server/Discord";
 import SessionManager from "$utils/server/Session";
 
@@ -13,6 +14,7 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 
 	const { session } = locals;
 	const guildId = params.id;
+	const isDeveloper = await isDeveloperUser(session.userId);
 
 	// Get the access token securely (never exposed to client)
 	const accessToken = await SessionManager.getAccessToken(session.userId);
@@ -43,14 +45,14 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 
 		const userGuild = userGuilds.find(g => g.id === guildId);
 
-		if (!userGuild) {
+		if (!userGuild && !isDeveloper) {
 			error(403, {
 				message: "Access denied",
 				description: "You are not a member of this server."
 			});
 		}
 
-		if (!DiscordUtils.canManage(userGuild)) {
+		if (!isDeveloper && userGuild && !DiscordUtils.canManage(userGuild)) {
 			error(403, {
 				message: "Insufficient permissions",
 				description:
@@ -66,9 +68,11 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 				avatarUrl: DiscordUtils.generateAvatarURL(session.userId, session.avatar)
 			},
 			guild: {
-				id: userGuild.id,
-				name: userGuild.name,
-				icon: DiscordUtils.generateGuildIconURL(userGuild.id, userGuild.icon, 256),
+				id: guild.id,
+				name: userGuild?.name ?? `Server ${guild.id}`,
+				icon: userGuild
+					? DiscordUtils.generateGuildIconURL(userGuild.id, userGuild.icon, 256)
+					: "",
 				config: guild.config
 			}
 		};

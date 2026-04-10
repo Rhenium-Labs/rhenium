@@ -40,6 +40,7 @@ export function createAppRouter(resolvers: {
 	getChannels: (guildId: string) => Promise<ChannelInfo[]>;
 	getRoles: (guildId: string) => Promise<RoleInfo[]>;
 	verifyMember: (guildId: string, userId: string) => Promise<boolean>;
+	isDeveloper: (userId: string) => Promise<boolean>;
 	invalidateConfigCache: (guildId: string) => Promise<void>;
 	createWebhook: (
 		guildId: string,
@@ -54,6 +55,13 @@ export function createAppRouter(resolvers: {
 			status: "ok" as const,
 			timestamp: new Date()
 		})),
+
+		auth: router({
+			/** Returns whether the authenticated user is a bot developer. */
+			isDeveloper: authedProcedure.query(async ({ ctx }) => {
+				return resolvers.isDeveloper(ctx.userId);
+			})
+		}),
 
 		guild: router({
 			/** Fetch all channels for a guild. */
