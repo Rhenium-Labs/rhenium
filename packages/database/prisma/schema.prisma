@@ -61,6 +61,11 @@ model Whitelist {
   created_at DateTime @default(now())
 }
 
+model ContentFilterPriority {
+  // The ID of the guild.
+  id String @id
+}
+
 model ContentFilterAlert {
   id               String              @id
   guild_id         String

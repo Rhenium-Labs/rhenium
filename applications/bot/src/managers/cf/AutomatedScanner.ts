@@ -7,7 +7,7 @@ import {
 	WebhookClient
 } from "discord.js";
 
-import { client } from "#root/index.js";
+import { client, kysely } from "#root/index.js";
 import { CF_CONSTANTS } from "#utils/Constants.js";
 import { channelInScope, parseChannelScoping, userMentionWithId } from "#utils/index.js";
 import { RetryableScanError } from "./ContentFilter.js";
@@ -174,11 +174,22 @@ export default class AutomatedScanner {
 	 * @param guildId Guild identifier.
 	 * @param enabled Whether prioritization should be enabled.
 	 */
-	static setGuildPrioritized(guildId: Snowflake, enabled: boolean): void {
+	static async setGuildPriority(guildId: Snowflake, enabled: boolean): Promise<void> {
 		if (enabled) {
+			await kysely
+				.insertInto("ContentFilterPriority")
+				.values({ id: guildId })
+				.onConflict(conflict => conflict.column("id").doNothing())
+				.execute();
+
 			this._prioritizedGuilds.add(guildId);
 			return;
 		}
+
+		await kysely
+			.deleteFrom("ContentFilterPriority")
+			.where("id", "=", guildId)
+			.executeTakeFirst();
 
 		this._prioritizedGuilds.delete(guildId);
 	}
@@ -189,7 +200,7 @@ export default class AutomatedScanner {
 	 * @param guildId Guild identifier.
 	 * @returns True when prioritization is enabled for the guild.
 	 */
-	static isGuildPrioritized(guildId: Snowflake): boolean {
+	static isPrioritizedGuild(guildId: Snowflake): boolean {
 		return this._prioritizedGuilds.has(guildId);
 	}
 
@@ -200,6 +211,24 @@ export default class AutomatedScanner {
 	 */
 	static getPrioritizedGuilds(): Snowflake[] {
 		return [...this._prioritizedGuilds.values()];
+	}
+
+	/**
+	 * Loads all prioritized guilds from the database into memory.
+	 * This is only called once on startup.
+	 */
+	static async loadPrioritizedGuilds(): Promise<void> {
+		// prettier-ignore
+		const records = await kysely
+			.selectFrom('ContentFilterPriority')
+			.select('id')
+			.execute();
+
+		for (const { id } of records) {
+			this._prioritizedGuilds.add(id);
+		}
+
+		Logger.custom("CF", `Loaded ${records.length} prioritized guilds into memory.`);
 	}
 
 	/**
@@ -225,7 +254,7 @@ export default class AutomatedScanner {
 
 		const now = Date.now();
 		const state = this.getOrInitChannelState(message.channel.id, message.guildId);
-		const isPrioritizedGuild = this.isGuildPrioritized(message.guildId);
+		const isPrioritizedGuild = this.isPrioritizedGuild(message.guildId);
 
 		state.messageTimestamps.push(now);
 		state.messageTimestamps = state.messageTimestamps.filter(
@@ -643,7 +672,7 @@ export default class AutomatedScanner {
 	} | null> {
 		if (!config.enabled || !config.webhook_url) return null;
 		if (this._isImmuneAuthor(message, config)) return null;
-		const isPrioritizedGuild = this.isGuildPrioritized(message.guildId);
+		const isPrioritizedGuild = this.isPrioritizedGuild(message.guildId);
 
 		const state = this.getOrInitChannelState(channel.id, channel.guildId);
 		this.cleanupOldTimestamps(state, now, CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL);

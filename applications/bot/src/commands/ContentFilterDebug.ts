@@ -262,11 +262,11 @@ export default class ContentFilterDebug extends Command {
 	 * @param defaultGuildId Current guild identifier for context.
 	 * @returns A message response describing the prioritization result.
 	 */
-	private static _prioritize(
+	private static async _prioritize(
 		action: string,
 		guildId: string,
 		defaultGuildId: string
-	): ResponseData<"message"> {
+	): Promise<ResponseData<"message">> {
 		if (action === "list") {
 			const prioritized = AutomatedScanner.getPrioritizedGuilds();
 			if (prioritized.length === 0) {
@@ -284,7 +284,8 @@ export default class ContentFilterDebug extends Command {
 		}
 
 		if (action === "on" || action === "enable" || action === "add") {
-			AutomatedScanner.setGuildPrioritized(guildId as `${number}`, true);
+			await AutomatedScanner.setGuildPriority(guildId, true);
+
 			return {
 				content:
 					guildId === defaultGuildId
@@ -299,7 +300,8 @@ export default class ContentFilterDebug extends Command {
 			action === "remove" ||
 			action === "clear"
 		) {
-			AutomatedScanner.setGuildPrioritized(guildId as `${number}`, false);
+			await AutomatedScanner.setGuildPriority(guildId, false);
+
 			return {
 				content:
 					guildId === defaultGuildId
@@ -309,7 +311,8 @@ export default class ContentFilterDebug extends Command {
 		}
 
 		if (action === "status") {
-			const prioritized = AutomatedScanner.isGuildPrioritized(guildId as `${number}`);
+			const prioritized = AutomatedScanner.isPrioritizedGuild(guildId);
+
 			return {
 				content:
 					guildId === defaultGuildId

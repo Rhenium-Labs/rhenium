@@ -22,6 +22,7 @@ export default class Ready extends EventListener {
 
 		return Promise.all([
 			AutomatedScanner.startTickLoop(),
+			AutomatedScanner.loadPrioritizedGuilds(),
 			HeuristicScanner.startCleanupInterval(),
 			GlobalConfig.startMessageReportDisregardCronJob(),
 			GlobalConfig.startMessageRetentionCronJobs(),

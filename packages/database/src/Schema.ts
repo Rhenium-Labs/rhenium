@@ -64,6 +64,12 @@ export type ContentFilterLogTable = {
 export type ContentFilterLog = Selectable<ContentFilterLogTable>;
 export type NewContentFilterLog = Insertable<ContentFilterLogTable>;
 export type ContentFilterLogUpdate = Updateable<ContentFilterLogTable>;
+export type ContentFilterPriorityTable = {
+	id: string;
+};
+export type ContentFilterPriority = Selectable<ContentFilterPriorityTable>;
+export type NewContentFilterPriority = Insertable<ContentFilterPriorityTable>;
+export type ContentFilterPriorityUpdate = Updateable<ContentFilterPriorityTable>;
 export type GuildTable = {
 	id: string;
 	config: unknown;
@@ -167,6 +173,7 @@ export type DB = {
 	BanRequest: BanRequestTable;
 	ContentFilterAlert: ContentFilterAlertTable;
 	ContentFilterLog: ContentFilterLogTable;
+	ContentFilterPriority: ContentFilterPriorityTable;
 	Guild: GuildTable;
 	Highlight: HighlightTable;
 	HighlightChannelScoping: HighlightChannelScopingTable;
