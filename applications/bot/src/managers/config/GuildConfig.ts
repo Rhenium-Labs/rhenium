@@ -232,8 +232,7 @@ export default class GuildConfig {
 
 /**
  * Parsed content filter configuration with channel scoping and webhook URL.
- * Unlike the other types, we export this one because spidermat's content filtering
- * module needs to use it.
+ * Exported because multiple content-filter managers consume it.
  */
 export type ParsedContentFilterConfig = ContentFilterConfig & {
 	channel_scoping: RawChannelScoping[];

@@ -1,5 +1,5 @@
 import type { Snowflake } from "discord.js";
-import type { ChannelScanState } from "#cf/Types.js";
+import type { ChannelScanState } from "#managers/cf/Types.js";
 
 import { kysely } from "#root/index.js";
 import { CF_CONSTANTS } from "./Constants.js";
