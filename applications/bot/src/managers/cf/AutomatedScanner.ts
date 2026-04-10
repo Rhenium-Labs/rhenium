@@ -59,6 +59,7 @@ export default class AutomatedScanner {
 	>();
 	private static _openAiRateLimitLogWindowUntil = 0;
 	private static _lastHeartbeatLogAt = 0;
+	private static _prioritizedGuilds = new Set<Snowflake>();
 
 	/**
 	 * Starts scheduler processing, cache pruning, and heartbeat logging intervals.
@@ -168,6 +169,40 @@ export default class AutomatedScanner {
 	}
 
 	/**
+	 * Enables or disables manual scan prioritization for a guild.
+	 *
+	 * @param guildId Guild identifier.
+	 * @param enabled Whether prioritization should be enabled.
+	 */
+	static setGuildPrioritized(guildId: Snowflake, enabled: boolean): void {
+		if (enabled) {
+			this._prioritizedGuilds.add(guildId);
+			return;
+		}
+
+		this._prioritizedGuilds.delete(guildId);
+	}
+
+	/**
+	 * Checks whether a guild has manual scan prioritization enabled.
+	 *
+	 * @param guildId Guild identifier.
+	 * @returns True when prioritization is enabled for the guild.
+	 */
+	static isGuildPrioritized(guildId: Snowflake): boolean {
+		return this._prioritizedGuilds.has(guildId);
+	}
+
+	/**
+	 * Returns all guild IDs with manual prioritization enabled.
+	 *
+	 * @returns Prioritized guild identifier list.
+	 */
+	static getPrioritizedGuilds(): Snowflake[] {
+		return [...this._prioritizedGuilds.values()];
+	}
+
+	/**
 	 * Enqueues an automated scan job for a newly observed message.
 	 *
 	 * @param message Source Discord message.
@@ -190,6 +225,7 @@ export default class AutomatedScanner {
 
 		const now = Date.now();
 		const state = this.getOrInitChannelState(message.channel.id, message.guildId);
+		const isPrioritizedGuild = this.isGuildPrioritized(message.guildId);
 
 		state.messageTimestamps.push(now);
 		state.messageTimestamps = state.messageTimestamps.filter(
@@ -203,8 +239,11 @@ export default class AutomatedScanner {
 			CF_CONSTANTS.HEURISTIC_EWMA_MPM_ALPHA
 		);
 
-		const risk = ContentFilterUtils.computeMessageRisk(config, serializedMessage);
-		const nextRunAt = this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
+		const computedRisk = ContentFilterUtils.computeMessageRisk(config, serializedMessage);
+		const risk = isPrioritizedGuild ? Math.max(computedRisk, 0.85) : computedRisk;
+		const nextRunAt = isPrioritizedGuild
+			? now
+			: this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
 
 		this._scheduler.enqueue({
 			messageId: message.id,
@@ -217,7 +256,7 @@ export default class AutomatedScanner {
 			attempts: 0,
 			maxAttempts: MAX_RETRIES,
 			source: "automated",
-			force: false,
+			force: isPrioritizedGuild,
 			heuristicSignals: [],
 			isRetry: false
 		});
@@ -311,6 +350,7 @@ export default class AutomatedScanner {
 		messageCacheSize: number;
 		deadLetters: ReturnType<typeof DeadLetterStore.getSummary>;
 		recentDeadLetters: ReturnType<typeof DeadLetterStore.getRecent>;
+		prioritizedGuilds: Snowflake[];
 	} {
 		return {
 			queue: this._scheduler.snapshot(),
@@ -320,7 +360,8 @@ export default class AutomatedScanner {
 			),
 			messageCacheSize: this._messageCache.size,
 			deadLetters: DeadLetterStore.getSummary(),
-			recentDeadLetters: DeadLetterStore.getRecent(10)
+			recentDeadLetters: DeadLetterStore.getRecent(10),
+			prioritizedGuilds: this.getPrioritizedGuilds()
 		};
 	}
 
@@ -602,6 +643,7 @@ export default class AutomatedScanner {
 	} | null> {
 		if (!config.enabled || !config.webhook_url) return null;
 		if (this._isImmuneAuthor(message, config)) return null;
+		const isPrioritizedGuild = this.isGuildPrioritized(message.guildId);
 
 		const state = this.getOrInitChannelState(channel.id, channel.guildId);
 		this.cleanupOldTimestamps(state, now, CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL);
@@ -657,7 +699,7 @@ export default class AutomatedScanner {
 
 		const isPriorityUser = userEntry.score >= priorityThreshold;
 		const riskScore = effectiveRisk ?? 0.5;
-		let shouldScan = !!options?.force;
+		let shouldScan = !!options?.force || isPrioritizedGuild;
 
 		if (!shouldScan) {
 			if (isPriorityUser) {

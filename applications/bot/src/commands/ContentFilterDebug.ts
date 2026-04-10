@@ -45,9 +45,15 @@ export default class ContentFilterDebug extends Command {
 				const limit = Number.parseInt(args.getString() ?? "10", 10);
 				return ContentFilterDebug._deadLetters(Number.isFinite(limit) ? limit : 10);
 			}
+			case "prioritize":
+			case "priority": {
+				const action = (args.getString() ?? "status").toLowerCase();
+				const guildId = args.getString() ?? message.guild.id;
+				return ContentFilterDebug._prioritize(action, guildId, message.guild.id);
+			}
 			default:
 				return {
-					error: `Unknown subcommand \`${subcommand}\`. Available subcommands are: \`overview\`, \`channel\`, \`queue\`, \`dead\`.`
+					error: `Unknown subcommand \`${subcommand}\`. Available subcommands are: \`overview\`, \`channel\`, \`queue\`, \`dead\`, \`prioritize\`.`
 				};
 		}
 	}
@@ -245,6 +251,75 @@ export default class ContentFilterDebug extends Command {
 					)
 					.setTimestamp()
 			]
+		};
+	}
+
+	/**
+	 * Handles manual guild prioritization controls for low-activity scan tuning.
+	 *
+	 * @param action Requested prioritize action.
+	 * @param guildId Raw guild identifier argument.
+	 * @param defaultGuildId Current guild identifier for context.
+	 * @returns A message response describing the prioritization result.
+	 */
+	private static _prioritize(
+		action: string,
+		guildId: string,
+		defaultGuildId: string
+	): ResponseData<"message"> {
+		if (action === "list") {
+			const prioritized = AutomatedScanner.getPrioritizedGuilds();
+			if (prioritized.length === 0) {
+				return {
+					content: "No guilds are manually prioritized for content-filter scanning right now."
+				};
+			}
+
+			return {
+				content: [
+					`Prioritized guilds (${prioritized.length}):`,
+					...prioritized.map(id => `- \`${id}\``)
+				].join("\n")
+			};
+		}
+
+		if (action === "on" || action === "enable" || action === "add") {
+			AutomatedScanner.setGuildPrioritized(guildId as `${number}`, true);
+			return {
+				content:
+					guildId === defaultGuildId
+						? "Enabled manual CF prioritization for this guild. New messages will be scanned more aggressively."
+						: `Enabled manual CF prioritization for guild \`${guildId}\`.`
+			};
+		}
+
+		if (
+			action === "off" ||
+			action === "disable" ||
+			action === "remove" ||
+			action === "clear"
+		) {
+			AutomatedScanner.setGuildPrioritized(guildId as `${number}`, false);
+			return {
+				content:
+					guildId === defaultGuildId
+						? "Disabled manual CF prioritization for this guild."
+						: `Disabled manual CF prioritization for guild \`${guildId}\`.`
+			};
+		}
+
+		if (action === "status") {
+			const prioritized = AutomatedScanner.isGuildPrioritized(guildId as `${number}`);
+			return {
+				content:
+					guildId === defaultGuildId
+						? `Manual CF prioritization for this guild is currently **${prioritized ? "enabled" : "disabled"}**.`
+						: `Manual CF prioritization for guild \`${guildId}\` is currently **${prioritized ? "enabled" : "disabled"}**.`
+			};
+		}
+
+		return {
+			error: "Usage: `.cfd prioritize status [guild_id]`, `.cfd prioritize on [guild_id]`, `.cfd prioritize off [guild_id]`, or `.cfd prioritize list`."
 		};
 	}
 }
