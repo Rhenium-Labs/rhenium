@@ -96,7 +96,7 @@ export default class ContentFilterUtils {
 				? CF_CONSTANTS.HEURISTIC_LENIENT_SCORE
 				: config.detector_mode === DetectorMode.Medium
 					? CF_CONSTANTS.HEURISTIC_MEDIUM_SCORE
-					: 0;
+					: CF_CONSTANTS.HEURISTIC_STRICT_SCORE;
 
 		return Math.max(0, Math.min(0.99, base));
 	}

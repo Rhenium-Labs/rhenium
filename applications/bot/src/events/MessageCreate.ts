@@ -14,8 +14,8 @@ import ConfigManager from "#config/ConfigManager.js";
 import EventListener from "#events/EventListener.js";
 import MessageManager from "#database/Messages.js";
 import CommandManager from "#commands/CommandManager.js";
-import AutomatedScanner from "#cf/AutomatedScanner.js";
-import HeuristicScanner from "#cf/HeuristicScanner.js";
+import AutomatedScanner from "#managers/cf/AutomatedScanner.js";
+import HeuristicScanner from "#managers/cf/HeuristicScanner.js";
 
 export default class MessageCreate extends EventListener {
 	constructor() {
