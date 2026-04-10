@@ -95,12 +95,17 @@ export default class HeuristicScanner {
 		const now = Date.now();
 		const lastScan = this._lastScanTimestamps.get(channelId) ?? 0;
 		const timeSinceLastScan = now - lastScan;
+		const hardCooldownMs = CF_CONSTANTS.HEURISTIC_CHANNEL_SCAN_COOLDOWN_MS;
 
 		if (this._scanTimers.has(channelId)) return;
 
 		let delay = debounceMs;
 		if (timeSinceLastScan < debounceMs) {
 			delay = debounceMs - timeSinceLastScan;
+		}
+
+		if (timeSinceLastScan < hardCooldownMs) {
+			delay = Math.max(delay, hardCooldownMs - timeSinceLastScan);
 		}
 
 		const timer = setTimeout(() => {
@@ -162,9 +167,21 @@ export default class HeuristicScanner {
 	 * @returns Messages matching reaction-like patterns.
 	 */
 	static findReactionMessages(messages: Message[]): Message[] {
-		return messages.filter(
-			m => !!m.content && CF_CONSTANTS.HEURISTIC_REACTION_REGEX.test(m.content)
-		);
+		return messages.filter(message => {
+			if (!message.content) return false;
+
+			const normalized = message.content.trim();
+			if (!normalized) return false;
+			if (normalized.length > CF_CONSTANTS.HEURISTIC_REACTION_MAX_LENGTH) return false;
+			if (this._countWords(normalized) > CF_CONSTANTS.HEURISTIC_REACTION_MAX_WORDS) {
+				return false;
+			}
+
+			return (
+				CF_CONSTANTS.HEURISTIC_REACTION_REGEX.test(normalized) ||
+				/[!?]{2,}/.test(normalized)
+			);
+		});
 	}
 
 	/**
@@ -184,11 +201,18 @@ export default class HeuristicScanner {
 				continue;
 			}
 
+			if (
+				!this._isHeuristicComparableContent(current.content) ||
+				!this._isHeuristicComparableContent(next.content)
+			) {
+				continue;
+			}
+
 			const dist = distance(current.content.toLowerCase(), next.content.toLowerCase());
 			const maxLen = Math.max(current.content.length, next.content.length);
 			const similarity = maxLen > 0 ? 1 - dist / maxLen : 0;
 
-			if (similarity >= 0.8 || dist <= CF_CONSTANTS.MESSAGE_DISTANCE_THRESHOLD) {
+			if (similarity >= 0.9 || dist <= CF_CONSTANTS.MESSAGE_DISTANCE_THRESHOLD) {
 				matching.push(current);
 			}
 		}
@@ -233,7 +257,9 @@ export default class HeuristicScanner {
 			}
 		}
 
-		if (chatRateIncreased) {
+		const hasStrongSignal = reactionMessages.length >= 2 || matchingMessages.length >= 2;
+
+		if (chatRateIncreased && hasStrongSignal) {
 			standardScore++;
 			for (const reference of referenceData) {
 				reference.score++;
@@ -311,6 +337,17 @@ export default class HeuristicScanner {
 		const chatRateIncreased = this.calculateChatRateIncrease(serializedMessages);
 		const reactionMessages = this.findReactionMessages(serializedMessages);
 		const matchingMessages = this.findMatchingMessages(serializedMessages);
+
+		// Pace-only spikes are noisy; require at least one direct content signal.
+		if (reactionMessages.length === 0 && matchingMessages.length === 0) {
+			return;
+		}
+
+		const signalScore = reactionMessages.length * 2 + matchingMessages.length;
+		if (signalScore < CF_CONSTANTS.HEURISTIC_MIN_SIGNAL_SCORE) {
+			return;
+		}
+
 		const heuristic = await this.calculateHeuristics(
 			reactionMessages,
 			matchingMessages,
@@ -322,7 +359,9 @@ export default class HeuristicScanner {
 			serializedMessages,
 			heuristic,
 			dynamicThreshold,
-			traffic
+			traffic,
+			reactionMessages,
+			matchingMessages
 		);
 
 		if (candidates.size === 0) return;
@@ -397,17 +436,30 @@ export default class HeuristicScanner {
 		serializedMessages: Message[],
 		heuristic: HeuristicData,
 		dynamicThreshold: number,
-		traffic: number
+		traffic: number,
+		reactionMessages: Message[],
+		matchingMessages: Message[]
 	): Set<Snowflake> {
 		const candidates = new Set<Snowflake>();
+		const signalIds = new Set<Snowflake>([
+			...reactionMessages.map(message => message.id),
+			...matchingMessages.map(message => message.id)
+		]);
 
-		if (heuristic.standardScore >= dynamicThreshold) {
+		if (heuristic.standardScore >= dynamicThreshold && signalIds.size > 0) {
 			const count = Math.max(
 				CF_CONSTANTS.HEURISTIC_MIN_CANDIDATES,
 				Math.round(traffic / CF_CONSTANTS.HEURISTIC_CANDIDATE_TRAFFIC_DIVISOR)
 			);
-			for (const message of serializedMessages.slice(0, count)) {
+			const candidateLimit = Math.min(
+				signalIds.size,
+				count,
+				CF_CONSTANTS.HEURISTIC_MAX_CANDIDATES_PER_SCAN
+			);
+			for (const message of serializedMessages) {
+				if (!signalIds.has(message.id)) continue;
 				candidates.add(message.id);
+				if (candidates.size >= candidateLimit) break;
 			}
 		}
 
@@ -458,5 +510,33 @@ export default class HeuristicScanner {
 		const signalBoost = Math.min(0.35, signalCount * 0.12);
 		const thresholdBoost = Math.min(0.25, 1 / Math.max(1, threshold));
 		return Math.min(1, 0.6 + signalBoost + thresholdBoost);
+	}
+
+	/**
+	 * Checks whether a message content is suitable for similarity-based heuristic matching.
+	 *
+	 * @param content Message content to evaluate.
+	 * @returns True when content is short and reaction-like enough for matching checks.
+	 */
+	private static _isHeuristicComparableContent(content: string): boolean {
+		const normalized = content.trim();
+		if (!normalized) return false;
+		if (normalized.length > CF_CONSTANTS.HEURISTIC_MATCH_MAX_LENGTH) return false;
+		if (this._countWords(normalized) > CF_CONSTANTS.HEURISTIC_MATCH_MAX_WORDS) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Counts whitespace-separated words in a message content string.
+	 *
+	 * @param content Message content to evaluate.
+	 * @returns Word count for the provided content.
+	 */
+	private static _countWords(content: string): number {
+		const matches = content.match(/\S+/g);
+		return matches ? matches.length : 0;
 	}
 }
