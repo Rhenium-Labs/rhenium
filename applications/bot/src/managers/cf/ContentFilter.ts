@@ -486,6 +486,11 @@ export default class ContentFilter {
 			return false;
 		}
 
+		const memberFromMessage = message.member;
+		if (memberFromMessage?.roles.cache.hasAny(...config.immune_roles)) {
+			return true;
+		}
+
 		try {
 			const member = await message.guild.members
 				.fetch(message.author.id)

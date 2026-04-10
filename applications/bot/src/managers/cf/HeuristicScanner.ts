@@ -340,6 +340,12 @@ export default class HeuristicScanner {
 				(await channel.messages.fetch(messageId).catch(() => null));
 
 			if (!actualMessage || !actualMessage.inGuild()) continue;
+			if (
+				config.immune_roles.length > 0 &&
+				actualMessage.member?.roles.cache.hasAny(...config.immune_roles)
+			) {
+				continue;
+			}
 
 			const risk = this._estimateHeuristicRisk(heuristicSignals.length, dynamicThreshold);
 			AutomatedScanner.enqueueHeuristicCandidate(

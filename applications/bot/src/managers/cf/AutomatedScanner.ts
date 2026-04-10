@@ -184,6 +184,7 @@ export default class AutomatedScanner {
 
 		const scoping = parseChannelScoping(config.channel_scoping);
 		if (!channelInScope(message.channel, scoping)) return;
+		if (this._isImmuneAuthor(message, config)) return;
 
 		this.cacheMessage(message);
 
@@ -240,6 +241,7 @@ export default class AutomatedScanner {
 
 		const scoping = parseChannelScoping(config.channel_scoping);
 		if (!channelInScope(message.channel, scoping)) return;
+		if (this._isImmuneAuthor(message, config)) return;
 
 		this.cacheMessage(message);
 
@@ -599,6 +601,7 @@ export default class AutomatedScanner {
 		riskScore: number;
 	} | null> {
 		if (!config.enabled || !config.webhook_url) return null;
+		if (this._isImmuneAuthor(message, config)) return null;
 
 		const state = this.getOrInitChannelState(channel.id, channel.guildId);
 		this.cleanupOldTimestamps(state, now, CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL);
@@ -692,6 +695,24 @@ export default class AutomatedScanner {
 		}
 
 		return { state, shouldScan: true, smoothed, riskScore };
+	}
+
+	/**
+	 * Checks whether a message author has an immune role configured for CF.
+	 *
+	 * @param message Source message.
+	 * @param config Parsed content-filter configuration.
+	 * @returns True when author has any configured immune role.
+	 */
+	private static _isImmuneAuthor(
+		message: Message<true>,
+		config: ParsedContentFilterConfig
+	): boolean {
+		if (!config.immune_roles || config.immune_roles.length === 0) {
+			return false;
+		}
+
+		return !!message.member?.roles.cache.hasAny(...config.immune_roles);
 	}
 
 	/**
