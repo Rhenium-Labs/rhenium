@@ -185,13 +185,14 @@ export default class ContentFilterButton extends Component {
 
 		await this._updateSubmissionMessage(interaction, {
 			color: Colors.Green,
-			footerText: `Resolved by ${userMentionWithId(interaction.user.id)}`,
+			footerText: `Resolved by @${interaction.user.username} (${interaction.user.id})`,
+			footerIconURL: interaction.user.displayAvatarURL(),
 			componentsMode: "clear"
 		});
 
 		await interaction
 			.followUp({
-				content: "Alert marked as resolved.",
+				content: `Successfully resolved alert - ID \`${alert?.id}\``,
 				flags: MessageFlags.Ephemeral
 			})
 			.catch(() => null);
@@ -230,13 +231,14 @@ export default class ContentFilterButton extends Component {
 
 		await this._updateSubmissionMessage(interaction, {
 			color: Colors.NotQuiteBlack,
-			footerText: `Marked false-positive by ${userMentionWithId(interaction.user.id)}`,
+			footerText: `Marked false-positive by @${interaction.user.username} (${interaction.user.id})`,
+			footerIconURL: interaction.user.displayAvatarURL(),
 			componentsMode: "clear"
 		});
 
 		await interaction
 			.followUp({
-				content: "Alert marked as false positive. This feedback will help improve future scanning accuracy.",
+				content: `Successfully marked alert as false positive - ID \`${alert?.id}\``,
 				flags: MessageFlags.Ephemeral
 			})
 			.catch(() => null);
@@ -362,6 +364,7 @@ export default class ContentFilterButton extends Component {
 			color: number;
 			flag?: string;
 			footerText?: string;
+			footerIconURL?: string;
 			componentsMode?: "clear" | "disable-delete";
 		}
 	): Promise<void> {
@@ -392,7 +395,7 @@ export default class ContentFilterButton extends Component {
 		embed.setFields(updatedFields);
 
 		if (options.footerText) {
-			embed.setFooter({ text: options.footerText });
+			embed.setFooter({ text: options.footerText, iconURL: options.footerIconURL });
 		}
 
 		const components =

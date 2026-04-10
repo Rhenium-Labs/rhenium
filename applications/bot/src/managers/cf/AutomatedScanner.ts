@@ -56,6 +56,7 @@ export default class AutomatedScanner {
 		Snowflake,
 		{ integral: number; lastError: number; lastUpdate: number }
 	>();
+	private static _openAiRateLimitLogWindowUntil = 0;
 
 	/**
 	 * Starts scheduler processing, cache pruning, and heartbeat logging intervals.
@@ -480,6 +481,28 @@ export default class AutomatedScanner {
 			isRetry: true
 		});
 
+		if (this._isOpenAiRateLimitError(error)) {
+			const windowEndsAt = now + Math.max(1000, retryAfter);
+			const shouldLog = now >= this._openAiRateLimitLogWindowUntil;
+
+			this._openAiRateLimitLogWindowUntil = Math.max(
+				this._openAiRateLimitLogWindowUntil,
+				windowEndsAt
+			);
+
+			if (shouldLog) {
+				Logger.custom(
+					"CF",
+					JSON.stringify({
+						event: "openai_rate_limit_hit",
+						timestamp: new Date(now).toISOString()
+					})
+				);
+			}
+
+			return;
+		}
+
 		Logger.warn("CF scan job scheduled for retry", {
 			jobId: job.jobId,
 			source: job.source,
@@ -490,6 +513,31 @@ export default class AutomatedScanner {
 			nextRunAt,
 			reason
 		});
+	}
+
+	/**
+	 * Checks whether a failure originated from OpenAI rate limiting.
+	 *
+	 * @param error Failure value thrown during scan processing.
+	 * @returns True when error indicates OpenAI moderation rate limiting.
+	 */
+	private static _isOpenAiRateLimitError(error: unknown): boolean {
+		if ((error as { status?: number })?.status === 429) return true;
+
+		const code = (error as { code?: unknown })?.code;
+		if (typeof code === "string" && code.toLowerCase().includes("rate")) {
+			return true;
+		}
+
+		const message =
+			error instanceof Error ? error.message : typeof error === "string" ? error : "";
+		const normalizedMessage = message.toLowerCase();
+
+		return (
+			normalizedMessage.includes("openai") &&
+			(normalizedMessage.includes("rate limit") ||
+				normalizedMessage.includes("rate-limited"))
+		);
 	}
 
 	/**

@@ -155,6 +155,7 @@ export default class ContentFilter {
 		if (isImmune) return predictions;
 
 		const failures: string[] = [];
+		let openAiRateLimitRetryAfterMs: number | undefined;
 
 		const detectorResults = await Promise.allSettled(
 			config.detectors.map(async detector => {
@@ -168,10 +169,31 @@ export default class ContentFilter {
 				continue;
 			}
 
-			failures.push(toErrorString(result.reason));
+			if (isOpenAiRateLimitError(result.reason)) {
+				const retryAfter = getRetryAfterMs(result.reason);
+				if (
+					typeof retryAfter === "number" &&
+					(openAiRateLimitRetryAfterMs === undefined ||
+						retryAfter > openAiRateLimitRetryAfterMs)
+				) {
+					openAiRateLimitRetryAfterMs = retryAfter;
+				}
+
+				failures.push("OpenAI moderation rate-limited");
+				continue;
+			}
+
+			failures.push(toErrorMessage(result.reason));
 		}
 
 		if (failures.length > 0) {
+			if (openAiRateLimitRetryAfterMs !== undefined) {
+				throw new RetryableScanError(
+					"OpenAI moderation rate-limited",
+					openAiRateLimitRetryAfterMs
+				);
+			}
+
 			throw new RetryableScanError(
 				`One or more detectors failed: ${failures.join(" | ")}`
 			);
@@ -883,4 +905,60 @@ function toErrorString(error: unknown): string {
 	} catch {
 		return String(error);
 	}
+}
+
+/**
+ * Serializes unknown errors into concise, single-line text.
+ *
+ * @param error Unknown error value.
+ * @returns Minimal error description without stack traces.
+ */
+function toErrorMessage(error: unknown): string {
+	if (!error) return "unknown";
+	if (error instanceof Error) return error.message;
+	if (typeof error === "string") return error;
+
+	try {
+		return JSON.stringify(error);
+	} catch {
+		return String(error);
+	}
+}
+
+/**
+ * Checks whether an error represents an OpenAI moderation rate-limit event.
+ *
+ * @param error Unknown error value.
+ * @returns True when the error indicates OpenAI rate limiting.
+ */
+function isOpenAiRateLimitError(error: unknown): boolean {
+	if ((error as { status?: number })?.status === 429) return true;
+
+	const code = (error as { code?: unknown })?.code;
+	if (typeof code === "string" && code.toLowerCase().includes("rate")) {
+		return true;
+	}
+
+	const message =
+		error instanceof Error ? error.message : typeof error === "string" ? error : "";
+	const normalizedMessage = message.toLowerCase();
+
+	return (
+		normalizedMessage.includes("openai") &&
+		(normalizedMessage.includes("rate limit") || normalizedMessage.includes("rate-limited"))
+	);
+}
+
+/**
+ * Extracts a retry-after hint from retryable errors when available.
+ *
+ * @param error Unknown error value.
+ * @returns Retry delay in milliseconds, or undefined.
+ */
+function getRetryAfterMs(error: unknown): number | undefined {
+	if (!(error instanceof RetryableScanError)) return undefined;
+
+	if (typeof error.retryAfterMs !== "number") return undefined;
+
+	return Math.max(1000, error.retryAfterMs);
 }
