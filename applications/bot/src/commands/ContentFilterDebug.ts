@@ -33,14 +33,18 @@ export default class ContentFilterDebug extends Command {
 
 		switch (subcommand) {
 			case "overview":
-			case "summary":
-				return ContentFilterDebug._overview(message.guild.id);
+			case "summary": {
+				const guildId = args.getString() ?? message.guild.id;
+				return ContentFilterDebug._overview(guildId);
+			}
 			case "channel": {
 				const channelId = args.getString() ?? message.channel.id;
 				return ContentFilterDebug._channel(channelId);
 			}
-			case "queue":
-				return ContentFilterDebug._queue(message.guild.id);
+			case "queue": {
+				const guildId = args.getString() ?? message.guild.id;
+				return ContentFilterDebug._queue(guildId);
+			}
 			case "dead": {
 				const limit = Number.parseInt(args.getString() ?? "10", 10);
 				return ContentFilterDebug._deadLetters(Number.isFinite(limit) ? limit : 10);
@@ -49,6 +53,7 @@ export default class ContentFilterDebug extends Command {
 			case "priority": {
 				const action = (args.getString() ?? "status").toLowerCase();
 				const guildId = args.getString() ?? message.guild.id;
+
 				return ContentFilterDebug._prioritize(action, guildId, message.guild.id);
 			}
 			default:
