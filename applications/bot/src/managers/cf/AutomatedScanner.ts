@@ -32,6 +32,7 @@ const MESSAGE_CACHE_MAX_SIZE = 12_000;
 
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const METRICS_LOG_INTERVAL_MS = 60 * 1000;
+const HEARTBEAT_FORCED_LOG_INTERVAL_MS = 10 * 60 * 1000;
 
 const MAX_RETRIES = 4;
 const RETRY_BASE_DELAY_MS = 8_000;
@@ -57,6 +58,7 @@ export default class AutomatedScanner {
 		{ integral: number; lastError: number; lastUpdate: number }
 	>();
 	private static _openAiRateLimitLogWindowUntil = 0;
+	private static _lastHeartbeatLogAt = 0;
 
 	/**
 	 * Starts scheduler processing, cache pruning, and heartbeat logging intervals.
@@ -80,6 +82,17 @@ export default class AutomatedScanner {
 			this._metricsInterval = setInterval(() => {
 				const queue = this._scheduler.snapshot();
 				const deadLetters = DeadLetterStore.getSummary();
+				const now = Date.now();
+				const hasActiveSignal = queue.total > 0 || deadLetters.buffered > 0;
+
+				if (
+					!hasActiveSignal &&
+					now - this._lastHeartbeatLogAt < HEARTBEAT_FORCED_LOG_INTERVAL_MS
+				) {
+					return;
+				}
+
+				this._lastHeartbeatLogAt = now;
 
 				Logger.custom(
 					"CF",
