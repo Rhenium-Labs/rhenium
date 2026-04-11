@@ -112,6 +112,7 @@ export const CONTENT_FILTER_CONFIG_SCHEMA = z.object({
 	webhook_url: z.string().nullable().default(null),
 	webhook_channel: z.string().nullable().default(null),
 	use_native_automod: z.boolean().default(false),
+	use_heuristic_scanner: z.boolean().default(true),
 
 	detectors: z.array(z.enum(Detector)).default([]),
 	detector_mode: z.enum(DetectorMode).default(DetectorMode.Medium),
@@ -200,6 +201,7 @@ export const DEFAULT_GUILD_CONFIG: RawGuildConfig = {
 		webhook_url: null,
 		webhook_channel: null,
 		use_native_automod: false,
+		use_heuristic_scanner: true,
 
 		detectors: [],
 		detector_mode: DetectorMode.Medium,

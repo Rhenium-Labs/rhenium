@@ -75,6 +75,7 @@ export default class HeuristicScanner {
 	): Promise<void> {
 		const config = guildConfig.parseContentFilterConfig();
 		if (!config) return;
+		if (!config.use_heuristic_scanner) return;
 
 		const channel = message.channel as TextChannel;
 		const channelId = channel.id;

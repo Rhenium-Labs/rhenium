@@ -57,6 +57,7 @@
 	let enabled = $state(false);
 	let channelId = $state("");
 	let useNativeAutomod = $state(false);
+	let useHeuristicScanner = $state(true);
 	let detectors = $state<Detector[]>([]);
 	let detectorMode = $state(DetectorMode.Medium);
 	let verbosity = $state(ContentFilterVerbosity.Medium);
@@ -73,6 +74,7 @@
 		enabled = cfg.enabled;
 		channelId = cfg.webhook_channel ?? "";
 		useNativeAutomod = cfg.use_native_automod;
+		useHeuristicScanner = cfg.use_heuristic_scanner ?? true;
 		detectors = [...cfg.detectors];
 		detectorMode = cfg.detector_mode;
 		verbosity = cfg.verbosity;
@@ -114,6 +116,7 @@
 		enabled !== config.enabled ||
 			channelId !== (config.webhook_channel ?? "") ||
 			useNativeAutomod !== config.use_native_automod ||
+			useHeuristicScanner !== (config.use_heuristic_scanner ?? true) ||
 			JSON.stringify(normalizeDetectorSet(detectors)) !==
 				JSON.stringify(normalizeDetectorSet(config.detectors)) ||
 			detectorMode !== config.detector_mode ||
@@ -168,6 +171,7 @@
 		enabled = config.enabled;
 		channelId = config.webhook_channel ?? "";
 		useNativeAutomod = config.use_native_automod;
+		useHeuristicScanner = config.use_heuristic_scanner ?? true;
 		detectors = [...config.detectors];
 		detectorMode = config.detector_mode;
 		verbosity = config.verbosity;
@@ -202,6 +206,7 @@
 						enabled,
 						channelId: channelId || null,
 						useNativeAutomod,
+						useHeuristicScanner,
 						detectors,
 						detectorMode,
 						verbosity,
@@ -297,20 +302,39 @@
 						/>
 					</div>
 					<div class="flex items-end pb-1">
-						<div class="flex items-center justify-between gap-4">
-							<div>
-								<p class="text-sm font-medium text-zinc-300">
-									Native Automod
-								</p>
-								<p class="text-xs text-zinc-500">
-									Use Discord's built-in automod where possible.
-								</p>
+						<div class="space-y-4">
+							<div class="flex items-center justify-between gap-4">
+								<div>
+									<p class="text-sm font-medium text-zinc-300">
+										Native Automod
+									</p>
+									<p class="text-xs text-zinc-500">
+										Use Discord's built-in automod where possible.
+									</p>
+								</div>
+								<Toggle
+									checked={useNativeAutomod}
+									onToggle={() => (useNativeAutomod = !useNativeAutomod)}
+									label="Toggle native automod"
+								/>
 							</div>
-							<Toggle
-								checked={useNativeAutomod}
-								onToggle={() => (useNativeAutomod = !useNativeAutomod)}
-								label="Toggle native automod"
-							/>
+							<div class="flex items-center justify-between gap-4">
+								<div>
+									<p class="text-sm font-medium text-zinc-300">
+										Heuristic Scanner
+									</p>
+									<p class="text-xs text-zinc-500">
+										Use activity-based heuristic scans in addition to
+										automated scans.
+									</p>
+								</div>
+								<Toggle
+									checked={useHeuristicScanner}
+									onToggle={() =>
+										(useHeuristicScanner = !useHeuristicScanner)}
+									label="Toggle heuristic scanner"
+								/>
+							</div>
 						</div>
 					</div>
 				</div>
