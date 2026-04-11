@@ -97,9 +97,19 @@ export default class ContentFilterButton extends Component {
 			return null;
 		}
 
-		const message = await channel.messages.fetch(messageId).catch(() => null);
+		const deleteResult = await channel.messages
+			.delete(messageId)
+			.then(() => "deleted" as const)
+			.catch(error => {
+				const code = (error as { code?: number })?.code;
+				if (code === 10008) {
+					return "missing" as const;
+				}
 
-		if (!message) {
+				return "failed" as const;
+			});
+
+		if (deleteResult === "missing") {
 			// Message already deleted - update alert status
 			if (alert) {
 				await ContentFilterUtils.updateAlertDelStatus(
@@ -124,9 +134,7 @@ export default class ContentFilterButton extends Component {
 			return null;
 		}
 
-		const deleted = await message.delete().catch(() => null);
-
-		if (!deleted) {
+		if (deleteResult !== "deleted") {
 			await interaction
 				.followUp({
 					content: "Failed to delete the message. I may lack permissions.",
@@ -149,7 +157,7 @@ export default class ContentFilterButton extends Component {
 
 		await interaction
 			.followUp({
-				content: `Successfully deleted the flagged message from ${message.author}. You can still resolve or mark false-positive.`,
+				content: "Successfully deleted the flagged message. You can still resolve or mark false-positive.",
 				flags: MessageFlags.Ephemeral
 			})
 			.catch(() => null);
