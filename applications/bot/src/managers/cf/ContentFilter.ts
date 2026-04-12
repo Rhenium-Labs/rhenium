@@ -9,7 +9,7 @@ import { CF_CONSTANTS } from "#utils/Constants.js";
 import { client, openAi, kysely } from "#root/index.js";
 import { buildAlertPayload as renderAlertPayload } from "./AlertRenderer.js";
 import { Extensions } from "#utils/Media.js";
-import { userMentionWithId } from "#utils/index.js";
+
 import ModerationUtils from "#utils/Moderation.js";
 
 import type { Detector } from "@repo/db";
