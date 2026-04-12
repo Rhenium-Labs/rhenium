@@ -47,7 +47,11 @@ export function buildAlertPayload(
 	predictions: ContentPredictions[],
 	scanType: string,
 	message: Message<true>,
-	config: ParsedContentFilterConfig
+	config: ParsedContentFilterConfig,
+	options?: {
+		flags?: string[];
+		disableDeleteButton?: boolean;
+	}
 ): AlertRenderResult {
 	let highestScore = 0;
 	const detectorsUsed: Detector[] = [];
@@ -108,10 +112,18 @@ export function buildAlertPayload(
 		});
 	}
 
+	if (options?.flags && options.flags.length > 0) {
+		embed.addFields({
+			name: ContentFilterFieldNames.Flags,
+			value: options.flags.join("\n")
+		});
+	}
+
 	const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
 		new ButtonBuilder()
 			.setLabel(ContentFilterButtonNames.DelMessage)
 			.setStyle(ButtonStyle.Danger)
+			.setDisabled(Boolean(options?.disableDeleteButton))
 			.setCustomId(ContentFilterCustomIds.del(message.id, message.channelId)),
 		new ButtonBuilder()
 			.setLabel(ContentFilterButtonNames.Resolve)

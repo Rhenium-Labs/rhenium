@@ -18,12 +18,89 @@ import {
 } from "$lib/server/configApi";
 import type { RequestHandler } from "./$types";
 
+const CONTENT_FILTER_TIMEOUT_DURATION_MIN_MS = 60 * 1000;
+const CONTENT_FILTER_TIMEOUT_DURATION_MAX_MS = 28 * 24 * 60 * 60 * 1000;
+const CONTENT_FILTER_DURATION_REGEX =
+	/^(\d+)\s*(m|min|mins|minutes?|h|hr|hrs|hours?|d|day|days?|w|week|weeks?)$/i;
+
+const CONTENT_FILTER_DETECTOR_ACTION_UPDATE_SCHEMA = z
+	.object({
+		deleteMessage: z.boolean(),
+		timeoutUser: z.boolean(),
+		timeoutDuration: z
+			.string()
+			.trim()
+			.max(32)
+			.regex(CONTENT_FILTER_DURATION_REGEX)
+	})
+	.strict();
+
+function parseTimeoutDurationMs(input: string): number {
+	const trimmed = input.trim();
+	const match = trimmed.match(CONTENT_FILTER_DURATION_REGEX);
+
+	if (!match) {
+		throw new Error("Invalid duration format. Use values like 10m, 2h, 7d, 4w.");
+	}
+
+	const amount = Number.parseInt(match[1]!, 10);
+	if (!Number.isFinite(amount) || amount <= 0) {
+		throw new Error("Duration amount must be a positive integer.");
+	}
+
+	const unit = match[2]!.toLowerCase();
+	const multipliers: Record<string, bigint> = {
+		m: 60_000n,
+		min: 60_000n,
+		mins: 60_000n,
+		minute: 60_000n,
+		minutes: 60_000n,
+		h: 3_600_000n,
+		hr: 3_600_000n,
+		hrs: 3_600_000n,
+		hour: 3_600_000n,
+		hours: 3_600_000n,
+		d: 86_400_000n,
+		day: 86_400_000n,
+		days: 86_400_000n,
+		w: 604_800_000n,
+		week: 604_800_000n,
+		weeks: 604_800_000n
+	};
+
+	const multiplier = multipliers[unit];
+	if (!multiplier) {
+		throw new Error("Invalid duration unit. Use m, h, d, or w.");
+	}
+
+	const durationMs = BigInt(amount) * multiplier;
+
+	if (durationMs < BigInt(CONTENT_FILTER_TIMEOUT_DURATION_MIN_MS)) {
+		throw new Error("Timeout duration must be at least 1 minute.");
+	}
+
+	if (durationMs > BigInt(CONTENT_FILTER_TIMEOUT_DURATION_MAX_MS)) {
+		throw new Error("Timeout duration cannot exceed 28 days.");
+	}
+
+	return Number(durationMs);
+}
+
 const CONTENT_FILTER_UPDATE_SCHEMA = z
 	.object({
 		enabled: z.boolean(),
 		channelId: z.string().regex(DISCORD_ID_REGEX).nullable().optional(),
 		useNativeAutomod: z.boolean(),
 		useHeuristicScanner: z.boolean(),
+		detectorActions: z
+			.object({
+				NSFW: CONTENT_FILTER_DETECTOR_ACTION_UPDATE_SCHEMA.extend({
+					applyToTextNsfw: z.boolean()
+				}),
+				OCR: CONTENT_FILTER_DETECTOR_ACTION_UPDATE_SCHEMA,
+				TEXT: CONTENT_FILTER_DETECTOR_ACTION_UPDATE_SCHEMA
+			})
+			.strict(),
 		detectors: z.array(z.nativeEnum(Detector)).max(50),
 		detectorMode: z.nativeEnum(DetectorMode),
 		verbosity: z.nativeEnum(ContentFilterVerbosity),
@@ -64,6 +141,23 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 		);
 	}
 	const payload = payloadResult.data;
+
+	let detectorActionTimeouts: { NSFW: number; OCR: number; TEXT: number };
+	try {
+		detectorActionTimeouts = {
+			NSFW: parseTimeoutDurationMs(payload.detectorActions.NSFW.timeoutDuration),
+			OCR: parseTimeoutDurationMs(payload.detectorActions.OCR.timeoutDuration),
+			TEXT: parseTimeoutDurationMs(payload.detectorActions.TEXT.timeoutDuration)
+		};
+	} catch (error) {
+		return json(
+			{
+				success: false,
+				error: error instanceof Error ? error.message : "Invalid timeout duration."
+			},
+			{ status: 400 }
+		);
+	}
 
 	const trpc = createBotClient(params.id, access.session.userId);
 	const [channels, roles] = await Promise.all([
@@ -165,6 +259,24 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 		webhook_channel: webhookChannel,
 		use_native_automod: payload.useNativeAutomod,
 		use_heuristic_scanner: payload.useHeuristicScanner,
+		detector_actions: {
+			NSFW: {
+				delete_message: payload.detectorActions.NSFW.deleteMessage,
+				timeout_user: payload.detectorActions.NSFW.timeoutUser,
+				timeout_duration_ms: detectorActionTimeouts.NSFW,
+				apply_to_text_nsfw: payload.detectorActions.NSFW.applyToTextNsfw
+			},
+			OCR: {
+				delete_message: payload.detectorActions.OCR.deleteMessage,
+				timeout_user: payload.detectorActions.OCR.timeoutUser,
+				timeout_duration_ms: detectorActionTimeouts.OCR
+			},
+			TEXT: {
+				delete_message: payload.detectorActions.TEXT.deleteMessage,
+				timeout_user: payload.detectorActions.TEXT.timeoutUser,
+				timeout_duration_ms: detectorActionTimeouts.TEXT
+			}
+		},
 		detectors: [...new Set(payload.detectors)],
 		detector_mode: payload.detectorMode,
 		verbosity: payload.verbosity,

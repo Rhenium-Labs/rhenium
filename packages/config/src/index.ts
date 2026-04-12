@@ -107,6 +107,37 @@ export enum ContentFilterVerbosity {
 	Verbose = "Verbose"
 }
 
+const CONTENT_FILTER_TIMEOUT_DURATION_MIN_MS = 60 * 1000;
+const CONTENT_FILTER_TIMEOUT_DURATION_MAX_MS = 28 * 24 * 60 * 60 * 1000;
+const CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS = 10 * 60 * 1000;
+
+export const CONTENT_FILTER_DETECTOR_ACTION_SCHEMA = z.object({
+	delete_message: z.boolean().default(false),
+	timeout_user: z.boolean().default(false),
+	timeout_duration_ms: z
+		.number()
+		.int()
+		.min(CONTENT_FILTER_TIMEOUT_DURATION_MIN_MS)
+		.max(CONTENT_FILTER_TIMEOUT_DURATION_MAX_MS)
+		.default(CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS)
+});
+
+export const CONTENT_FILTER_DETECTOR_ACTIONS_SCHEMA = z.object({
+	[Detector.NSFW]: CONTENT_FILTER_DETECTOR_ACTION_SCHEMA.extend({
+		apply_to_text_nsfw: z.boolean().default(false)
+	}),
+	[Detector.OCR]: CONTENT_FILTER_DETECTOR_ACTION_SCHEMA,
+	[Detector.TEXT]: CONTENT_FILTER_DETECTOR_ACTION_SCHEMA
+});
+
+export type ContentFilterDetectorActionConfig = z.infer<
+	typeof CONTENT_FILTER_DETECTOR_ACTION_SCHEMA
+>;
+
+export type ContentFilterDetectorActionsConfig = z.infer<
+	typeof CONTENT_FILTER_DETECTOR_ACTIONS_SCHEMA
+>;
+
 export const CONTENT_FILTER_CONFIG_SCHEMA = z.object({
 	enabled: z.boolean().default(true),
 	webhook_url: z.string().nullable().default(null),
@@ -120,6 +151,24 @@ export const CONTENT_FILTER_CONFIG_SCHEMA = z.object({
 
 	immune_roles: z.array(z.string()).default([]),
 	notify_roles: z.array(z.string()).default([]),
+	detector_actions: CONTENT_FILTER_DETECTOR_ACTIONS_SCHEMA.default({
+		[Detector.NSFW]: {
+			delete_message: false,
+			timeout_user: false,
+			timeout_duration_ms: CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS,
+			apply_to_text_nsfw: false
+		},
+		[Detector.OCR]: {
+			delete_message: false,
+			timeout_user: false,
+			timeout_duration_ms: CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS
+		},
+		[Detector.TEXT]: {
+			delete_message: false,
+			timeout_user: false,
+			timeout_duration_ms: CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS
+		}
+	}),
 
 	channel_scoping: z.array(CHANNEL_SCOPING_SCHEMA).default([]),
 
@@ -208,6 +257,24 @@ export const DEFAULT_GUILD_CONFIG: RawGuildConfig = {
 		verbosity: ContentFilterVerbosity.Medium,
 		immune_roles: [],
 		notify_roles: [],
+		detector_actions: {
+			NSFW: {
+				delete_message: false,
+				timeout_user: false,
+				timeout_duration_ms: CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS,
+				apply_to_text_nsfw: false
+			},
+			OCR: {
+				delete_message: false,
+				timeout_user: false,
+				timeout_duration_ms: CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS
+			},
+			TEXT: {
+				delete_message: false,
+				timeout_user: false,
+				timeout_duration_ms: CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS
+			}
+		},
 		channel_scoping: [],
 		ocr_filter_keywords: [],
 		ocr_filter_regex: []

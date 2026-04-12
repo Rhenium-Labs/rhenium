@@ -54,6 +54,33 @@
 	});
 	const roles: RoleInfo[] = $derived(data.roles);
 
+	const CONTENT_FILTER_TIMEOUT_DURATION_MIN_MS = 60 * 1000;
+	const CONTENT_FILTER_TIMEOUT_DURATION_MAX_MS = 28 * 24 * 60 * 60 * 1000;
+	const CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS = 10 * 60 * 1000;
+	const CONTENT_FILTER_DURATION_REGEX =
+		/^(\d+)\s*(m|min|mins|minutes?|h|hr|hrs|hours?|d|day|days?|w|week|weeks?)$/i;
+	const CONTENT_FILTER_DURATION_PATTERN =
+		"^\\d+\\s*(m|min|mins|minutes?|h|hr|hrs|hours?|d|day|days?|w|week|weeks?)$";
+
+	type DetectorActionsForm = {
+		NSFW: {
+			deleteMessage: boolean;
+			timeoutUser: boolean;
+			timeoutDuration: string;
+			applyToTextNsfw: boolean;
+		};
+		OCR: {
+			deleteMessage: boolean;
+			timeoutUser: boolean;
+			timeoutDuration: string;
+		};
+		TEXT: {
+			deleteMessage: boolean;
+			timeoutUser: boolean;
+			timeoutDuration: string;
+		};
+	};
+
 	let enabled = $state(false);
 	let channelId = $state("");
 	let useNativeAutomod = $state(false);
@@ -68,6 +95,167 @@
 	);
 	let ocrKeywordsRaw = $state("");
 	let ocrRegexRaw = $state("");
+
+	let nsfwDeleteMessage = $state(false);
+	let nsfwTimeoutUser = $state(false);
+	let nsfwTimeoutDuration = $state("10m");
+	let nsfwApplyToTextNsfw = $state(false);
+
+	let ocrDeleteMessage = $state(false);
+	let ocrTimeoutUser = $state(false);
+	let ocrTimeoutDuration = $state("10m");
+
+	let textDeleteMessage = $state(false);
+	let textTimeoutUser = $state(false);
+	let textTimeoutDuration = $state("10m");
+
+	function formatTimeoutDuration(valueMs: number | undefined): string {
+		const numericValue =
+			typeof valueMs === "number" && Number.isFinite(valueMs)
+				? Math.round(valueMs)
+				: CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS;
+
+		const bounded = Math.max(
+			CONTENT_FILTER_TIMEOUT_DURATION_MIN_MS,
+			Math.min(CONTENT_FILTER_TIMEOUT_DURATION_MAX_MS, numericValue)
+		);
+
+		if (bounded % 604_800_000 === 0) return `${bounded / 604_800_000}w`;
+		if (bounded % 86_400_000 === 0) return `${bounded / 86_400_000}d`;
+		if (bounded % 3_600_000 === 0) return `${bounded / 3_600_000}h`;
+		if (bounded % 60_000 === 0) return `${bounded / 60_000}m`;
+
+		return `${Math.max(1, Math.round(bounded / 60_000))}m`;
+	}
+
+	function parseTimeoutDurationMs(input: string): number | null {
+		const match = input.trim().match(CONTENT_FILTER_DURATION_REGEX);
+		if (!match) return null;
+
+		const amount = Number.parseInt(match[1]!, 10);
+		if (!Number.isFinite(amount) || amount <= 0) return null;
+
+		const unit = match[2]!.toLowerCase();
+		const multipliers: Record<string, number> = {
+			m: 60_000,
+			min: 60_000,
+			mins: 60_000,
+			minute: 60_000,
+			minutes: 60_000,
+			h: 3_600_000,
+			hr: 3_600_000,
+			hrs: 3_600_000,
+			hour: 3_600_000,
+			hours: 3_600_000,
+			d: 86_400_000,
+			day: 86_400_000,
+			days: 86_400_000,
+			w: 604_800_000,
+			week: 604_800_000,
+			weeks: 604_800_000
+		};
+
+		const multiplier = multipliers[unit];
+		if (!multiplier) return null;
+
+		const durationMs = amount * multiplier;
+		if (!Number.isFinite(durationMs)) return null;
+
+		if (
+			durationMs < CONTENT_FILTER_TIMEOUT_DURATION_MIN_MS ||
+			durationMs > CONTENT_FILTER_TIMEOUT_DURATION_MAX_MS
+		) {
+			return null;
+		}
+
+		return durationMs;
+	}
+
+	function validateDetectorActionDurations(): string | null {
+		const durations = [
+			{ detector: "NSFW", enabled: nsfwTimeoutUser, value: nsfwTimeoutDuration },
+			{ detector: "TEXT", enabled: textTimeoutUser, value: textTimeoutDuration },
+			{ detector: "OCR", enabled: ocrTimeoutUser, value: ocrTimeoutDuration }
+		];
+
+		for (const item of durations) {
+			if (!item.enabled) continue;
+			if (parseTimeoutDurationMs(item.value) === null) {
+				return `${item.detector} timeout duration is invalid. Use formats like 10m, 2h, 7d, 4w (max 28d).`;
+			}
+		}
+
+		return null;
+	}
+
+	function getDetectorActionsFromConfig(
+		cfg: PageData["guild"]["config"]["content_filter"]
+	): DetectorActionsForm {
+		return {
+			NSFW: {
+				deleteMessage: cfg.detector_actions?.NSFW?.delete_message ?? false,
+				timeoutUser: cfg.detector_actions?.NSFW?.timeout_user ?? false,
+				timeoutDuration: formatTimeoutDuration(
+					cfg.detector_actions?.NSFW?.timeout_duration_ms
+				),
+				applyToTextNsfw: cfg.detector_actions?.NSFW?.apply_to_text_nsfw ?? false
+			},
+			OCR: {
+				deleteMessage: cfg.detector_actions?.OCR?.delete_message ?? false,
+				timeoutUser: cfg.detector_actions?.OCR?.timeout_user ?? false,
+				timeoutDuration: formatTimeoutDuration(
+					cfg.detector_actions?.OCR?.timeout_duration_ms
+				)
+			},
+			TEXT: {
+				deleteMessage: cfg.detector_actions?.TEXT?.delete_message ?? false,
+				timeoutUser: cfg.detector_actions?.TEXT?.timeout_user ?? false,
+				timeoutDuration: formatTimeoutDuration(
+					cfg.detector_actions?.TEXT?.timeout_duration_ms
+				)
+			}
+		};
+	}
+
+	function getDetectorActionsPayload(): DetectorActionsForm {
+		const nsfwDurationWhenDisabled = parseTimeoutDurationMs(nsfwTimeoutDuration);
+		const ocrDurationWhenDisabled = parseTimeoutDurationMs(ocrTimeoutDuration);
+		const textDurationWhenDisabled = parseTimeoutDurationMs(textTimeoutDuration);
+
+		return {
+			NSFW: {
+				deleteMessage: nsfwDeleteMessage,
+				timeoutUser: nsfwTimeoutUser,
+				timeoutDuration: nsfwTimeoutUser
+					? nsfwTimeoutDuration.trim()
+					: formatTimeoutDuration(
+							nsfwDurationWhenDisabled ??
+								CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS
+						),
+				applyToTextNsfw: nsfwApplyToTextNsfw
+			},
+			OCR: {
+				deleteMessage: ocrDeleteMessage,
+				timeoutUser: ocrTimeoutUser,
+				timeoutDuration: ocrTimeoutUser
+					? ocrTimeoutDuration.trim()
+					: formatTimeoutDuration(
+							ocrDurationWhenDisabled ??
+								CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS
+						)
+			},
+			TEXT: {
+				deleteMessage: textDeleteMessage,
+				timeoutUser: textTimeoutUser,
+				timeoutDuration: textTimeoutUser
+					? textTimeoutDuration.trim()
+					: formatTimeoutDuration(
+							textDurationWhenDisabled ??
+								CONTENT_FILTER_TIMEOUT_DURATION_DEFAULT_MS
+						)
+			}
+		};
+	}
 
 	$effect.pre(() => {
 		const cfg = data.guild.config.content_filter;
@@ -87,6 +275,20 @@
 		}));
 		ocrKeywordsRaw = cfg.ocr_filter_keywords.join("\n");
 		ocrRegexRaw = cfg.ocr_filter_regex.join("\n");
+
+		const detectorActions = getDetectorActionsFromConfig(cfg);
+		nsfwDeleteMessage = detectorActions.NSFW.deleteMessage;
+		nsfwTimeoutUser = detectorActions.NSFW.timeoutUser;
+		nsfwTimeoutDuration = detectorActions.NSFW.timeoutDuration;
+		nsfwApplyToTextNsfw = detectorActions.NSFW.applyToTextNsfw;
+
+		ocrDeleteMessage = detectorActions.OCR.deleteMessage;
+		ocrTimeoutUser = detectorActions.OCR.timeoutUser;
+		ocrTimeoutDuration = detectorActions.OCR.timeoutDuration;
+
+		textDeleteMessage = detectorActions.TEXT.deleteMessage;
+		textTimeoutUser = detectorActions.TEXT.timeoutUser;
+		textTimeoutDuration = detectorActions.TEXT.timeoutDuration;
 	});
 
 	const allDetectors = Object.values(Detector);
@@ -136,7 +338,10 @@
 				) ||
 			JSON.stringify(splitLines(ocrKeywordsRaw)) !==
 				JSON.stringify(config.ocr_filter_keywords) ||
-			JSON.stringify(splitLines(ocrRegexRaw)) !== JSON.stringify(config.ocr_filter_regex)
+			JSON.stringify(splitLines(ocrRegexRaw)) !==
+				JSON.stringify(config.ocr_filter_regex) ||
+			JSON.stringify(getDetectorActionsPayload()) !==
+				JSON.stringify(getDetectorActionsFromConfig(config))
 	);
 
 	function triggerShake() {
@@ -184,6 +389,20 @@
 		}));
 		ocrKeywordsRaw = config.ocr_filter_keywords.join("\n");
 		ocrRegexRaw = config.ocr_filter_regex.join("\n");
+
+		const detectorActions = getDetectorActionsFromConfig(config);
+		nsfwDeleteMessage = detectorActions.NSFW.deleteMessage;
+		nsfwTimeoutUser = detectorActions.NSFW.timeoutUser;
+		nsfwTimeoutDuration = detectorActions.NSFW.timeoutDuration;
+		nsfwApplyToTextNsfw = detectorActions.NSFW.applyToTextNsfw;
+
+		ocrDeleteMessage = detectorActions.OCR.deleteMessage;
+		ocrTimeoutUser = detectorActions.OCR.timeoutUser;
+		ocrTimeoutDuration = detectorActions.OCR.timeoutDuration;
+
+		textDeleteMessage = detectorActions.TEXT.deleteMessage;
+		textTimeoutUser = detectorActions.TEXT.timeoutUser;
+		textTimeoutDuration = detectorActions.TEXT.timeoutDuration;
 	}
 
 	function addScope() {
@@ -193,6 +412,14 @@
 	async function submitConfig(event: SubmitEvent) {
 		event.preventDefault();
 		if (saveStatus === "saving") return;
+
+		const durationError = validateDetectorActionDurations();
+		if (durationError) {
+			saveStatus = "error";
+			saveError = durationError;
+			scheduleStatusReset(5000);
+			return;
+		}
 
 		saveStatus = "saving";
 		saveError = "";
@@ -207,6 +434,7 @@
 						channelId: channelId || null,
 						useNativeAutomod,
 						useHeuristicScanner,
+						detectorActions: getDetectorActionsPayload(),
 						detectors,
 						detectorMode,
 						verbosity,
@@ -362,6 +590,214 @@
 						{detector}
 					</label>
 				{/each}
+			</div>
+		</ConfigSection>
+
+		<ConfigSection
+			title="Detector Actions"
+			description="Configure automatic actions to run when each detector is triggered."
+		>
+			<div class="space-y-6">
+				<div class="space-y-2">
+					<h3 class="text-sm font-semibold text-zinc-200">Actions Explained</h3>
+					<ul class="list-disc space-y-1 pl-5 text-sm text-zinc-400">
+						<li>
+							<span class="font-medium text-zinc-300">Delete Message</span> - Deletes
+							the offending message before the moderation alert is sent.
+						</li>
+						<li>
+							<span class="font-medium text-zinc-300">Timeout Offender</span> - Applies
+							a timeout to the message author for the configured duration.
+						</li>
+					</ul>
+				</div>
+
+				<div class="rounded-lg border border-zinc-700/60 bg-zinc-900/40 p-4">
+					<div class="flex items-center justify-between">
+						<h3 class="text-sm font-semibold text-zinc-200">NSFW Actions</h3>
+					</div>
+					<div class="my-4 border-t border-zinc-700/60"></div>
+					<div class="space-y-4">
+						<div class="flex items-center justify-between gap-4">
+							<p class="text-sm font-medium text-zinc-300">Delete Message</p>
+							<Toggle
+								checked={nsfwDeleteMessage}
+								onToggle={() => (nsfwDeleteMessage = !nsfwDeleteMessage)}
+								label="Toggle NSFW delete message"
+							/>
+						</div>
+						<div>
+							<div class="flex items-center justify-between gap-4">
+								<p class="text-sm font-medium text-zinc-300">
+									Timeout Offender
+								</p>
+								<Toggle
+									checked={nsfwTimeoutUser}
+									onToggle={() => (nsfwTimeoutUser = !nsfwTimeoutUser)}
+									label="Toggle NSFW timeout user"
+								/>
+							</div>
+							<div
+								style="display: grid; grid-template-rows: {nsfwTimeoutUser
+									? '1fr'
+									: '0fr'}; transition: grid-template-rows 220ms ease, opacity 220ms ease; opacity: {nsfwTimeoutUser
+									? '1'
+									: '0'};"
+							>
+								<div class="min-h-0 overflow-hidden">
+									<div class="pt-2">
+										<label
+											for="nsfw-timeout-duration"
+											class="text-sm font-medium text-zinc-300"
+											>Timeout Duration</label
+										>
+										<input
+											id="nsfw-timeout-duration"
+											type="text"
+											pattern={CONTENT_FILTER_DURATION_PATTERN}
+											placeholder="e.g. 10m, 2h, 7d, 4w"
+											bind:value={nsfwTimeoutDuration}
+											class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-3 text-sm text-white transition-colors outline-none"
+										/>
+										<p class="mt-1 text-xs text-zinc-600">
+											Supported units: m, h, d, w (max 28d)
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="flex items-center justify-between gap-4">
+							<p class="text-sm font-medium text-zinc-300">
+								Apply NSFW Actions To TEXT NSFW
+							</p>
+							<Toggle
+								checked={nsfwApplyToTextNsfw}
+								onToggle={() =>
+									(nsfwApplyToTextNsfw = !nsfwApplyToTextNsfw)}
+								label="Toggle NSFW actions on TEXT NSFW"
+							/>
+						</div>
+					</div>
+				</div>
+
+				<div class="grid gap-6 md:grid-cols-2">
+					<div class="rounded-lg border border-zinc-700/60 bg-zinc-900/40 p-4">
+						<h3 class="text-sm font-semibold text-zinc-200">TEXT Actions</h3>
+						<div class="my-4 border-t border-zinc-700/60"></div>
+						<div class="space-y-4">
+							<div class="flex items-center justify-between gap-4">
+								<p class="text-sm font-medium text-zinc-300">
+									Delete Message
+								</p>
+								<Toggle
+									checked={textDeleteMessage}
+									onToggle={() =>
+										(textDeleteMessage = !textDeleteMessage)}
+									label="Toggle TEXT delete message"
+								/>
+							</div>
+							<div>
+								<div class="flex items-center justify-between gap-4">
+									<p class="text-sm font-medium text-zinc-300">
+										Timeout Offender
+									</p>
+									<Toggle
+										checked={textTimeoutUser}
+										onToggle={() =>
+											(textTimeoutUser = !textTimeoutUser)}
+										label="Toggle TEXT timeout user"
+									/>
+								</div>
+								<div
+									style="display: grid; grid-template-rows: {textTimeoutUser
+										? '1fr'
+										: '0fr'}; transition: grid-template-rows 220ms ease, opacity 220ms ease; opacity: {textTimeoutUser
+										? '1'
+										: '0'};"
+								>
+									<div class="min-h-0 overflow-hidden">
+										<div class="pt-3">
+											<label
+												for="text-timeout-duration"
+												class="text-sm font-medium text-zinc-300"
+												>Timeout Duration</label
+											>
+											<input
+												id="text-timeout-duration"
+												type="text"
+												pattern={CONTENT_FILTER_DURATION_PATTERN}
+												placeholder="e.g. 10m, 2h, 7d, 4w"
+												bind:value={textTimeoutDuration}
+												class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none"
+											/>
+											<p class="mt-1 text-xs text-zinc-600">
+												Supported units: m, h, d, w (max 28d)
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="rounded-lg border border-zinc-700/60 bg-zinc-900/40 p-4">
+						<h3 class="text-sm font-semibold text-zinc-200">OCR Actions</h3>
+						<div class="my-4 border-t border-zinc-700/60"></div>
+						<div class="space-y-4">
+							<div class="flex items-center justify-between gap-4">
+								<p class="text-sm font-medium text-zinc-300">
+									Delete Message
+								</p>
+								<Toggle
+									checked={ocrDeleteMessage}
+									onToggle={() => (ocrDeleteMessage = !ocrDeleteMessage)}
+									label="Toggle OCR delete message"
+								/>
+							</div>
+							<div>
+								<div class="flex items-center justify-between gap-4">
+									<p class="text-sm font-medium text-zinc-300">
+										Timeout Offender
+									</p>
+									<Toggle
+										checked={ocrTimeoutUser}
+										onToggle={() =>
+											(ocrTimeoutUser = !ocrTimeoutUser)}
+										label="Toggle OCR timeout user"
+									/>
+								</div>
+								<div
+									style="display: grid; grid-template-rows: {ocrTimeoutUser
+										? '1fr'
+										: '0fr'}; transition: grid-template-rows 220ms ease, opacity 220ms ease; opacity: {ocrTimeoutUser
+										? '1'
+										: '0'};"
+								>
+									<div class="min-h-0 overflow-hidden">
+										<div class="pt-3">
+											<label
+												for="ocr-timeout-duration"
+												class="text-sm font-medium text-zinc-300"
+												>Timeout Duration</label
+											>
+											<input
+												id="ocr-timeout-duration"
+												type="text"
+												pattern={CONTENT_FILTER_DURATION_PATTERN}
+												placeholder="e.g. 10m, 2h, 7d, 4w"
+												bind:value={ocrTimeoutDuration}
+												class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white transition-colors outline-none"
+											/>
+											<p class="mt-1 text-xs text-zinc-600">
+												Supported units: m, h, d, w (max 28d)
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</ConfigSection>
 

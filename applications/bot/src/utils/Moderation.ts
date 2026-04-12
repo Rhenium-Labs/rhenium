@@ -48,6 +48,14 @@ export default class ModerationUtils {
 					message: `I cannot ${actionLower} a member with higher or equal roles than me.`
 				};
 			}
+
+			if (action === "Mute") {
+				if (target.permissions.has("Administrator"))
+					return {
+						ok: false,
+						message: `I cannot mute a member with Administrator permissions.`
+					};
+			}
 		}
 
 		return { ok: true };

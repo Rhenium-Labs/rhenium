@@ -1,13 +1,16 @@
 import type { ModerationMultiModalInput, Moderation } from "openai/resources/moderations";
 import { WebhookClient, type Message, type Snowflake, type TextBasedChannel } from "discord.js";
+import ms from "ms";
 
 import sharp from "sharp";
 import Tesseract from "node-tesseract-ocr";
 
 import { CF_CONSTANTS } from "#utils/Constants.js";
-import { openAi, kysely } from "#root/index.js";
+import { client, openAi, kysely } from "#root/index.js";
 import { buildAlertPayload as renderAlertPayload } from "./AlertRenderer.js";
 import { Extensions } from "#utils/Media.js";
+import { userMentionWithId } from "#utils/index.js";
+import ModerationUtils from "#utils/Moderation.js";
 
 import type { Detector } from "@repo/db";
 import type { ParsedContentFilterConfig } from "#config/GuildConfig.js";
@@ -22,6 +25,18 @@ const NSFW_MIN_SCORE_ADJUSTMENT = -0.12;
 const NSFW_STRICT_MAX_MIN_SCORE = 0.01;
 const NSFW_ALLOWED_CATEGORY_PREFIXES = ["sexual"];
 const MAX_MEDIA_FRAMES = 10;
+
+type PreAlertActionsResult = {
+	flags: string[];
+	disableDeleteButton: boolean;
+	deletedBeforeAlert: boolean;
+};
+
+type DetectorActionPlan = {
+	deleteMessage: boolean;
+	timeoutDurationMs: number | null;
+	triggeredDetectors: Detector[];
+};
 
 /**
  * Retryable error used to indicate scanner failures that should be requeued.
@@ -61,14 +76,18 @@ export default class ContentFilter {
 		predictions: ContentPredictions[],
 		scanType: string,
 		message: Message<true>,
-		config: ParsedContentFilterConfig
+		config: ParsedContentFilterConfig,
+		options?: {
+			flags?: string[];
+			disableDeleteButton?: boolean;
+		}
 	): {
 		payload: ReturnType<typeof renderAlertPayload>["payload"];
 		detectorsUsed: Detector[];
 		highestScore: number;
 		problematicContent: string[];
 	} {
-		return renderAlertPayload(predictions, scanType, message, config);
+		return renderAlertPayload(predictions, scanType, message, config, options);
 	}
 
 	/**
@@ -87,8 +106,13 @@ export default class ContentFilter {
 	): Promise<void> {
 		if (!config.enabled || !config.webhook_url) return;
 
+		const preAlertActions = await this._applyPreAlertActions(message, predictions, config);
+
 		const { payload, detectorsUsed, highestScore, problematicContent } =
-			this.buildAlertPayload(predictions, scanType, message, config);
+			this.buildAlertPayload(predictions, scanType, message, config, {
+				flags: preAlertActions.flags,
+				disableDeleteButton: preAlertActions.disableDeleteButton
+			});
 
 		const webhook = new WebhookClient({ url: config.webhook_url });
 		const alertMessage = await webhook.send(payload).catch(error => {
@@ -113,7 +137,7 @@ export default class ContentFilter {
 				detectors: detectorsUsed,
 				highest_score: highestScore,
 				mod_status: "Pending",
-				del_status: "Pending"
+				del_status: preAlertActions.deletedBeforeAlert ? "Deleted" : "Pending"
 			})
 			.returning(["id"])
 			.executeTakeFirst();
@@ -462,13 +486,253 @@ export default class ContentFilter {
 				if (passesCategoryGate && result.category_scores[idx] >= minScore) {
 					predictions.push({
 						content: `Flagged: ${category}`,
-						score: result.category_scores[idx].toFixed(2)
+						score: result.category_scores[idx].toFixed(2),
+						category
 					});
 				}
 			}
 		}
 
 		return predictions;
+	}
+
+	/**
+	 * Applies configured detector actions before sending a moderation alert.
+	 *
+	 * @param message Source message.
+	 * @param predictions Detector predictions generated for the message.
+	 * @param config Parsed content-filter configuration.
+	 * @returns Pre-alert action outcomes used by alert rendering and persistence.
+	 */
+	private static async _applyPreAlertActions(
+		message: Message<true>,
+		predictions: ContentPredictions[],
+		config: ParsedContentFilterConfig
+	): Promise<PreAlertActionsResult> {
+		const actionPlan = this._resolveDetectorActionPlan(predictions, config);
+		const flags: string[] = [];
+
+		let disableDeleteButton = false;
+		let deletedBeforeAlert = false;
+
+		if (actionPlan.timeoutDurationMs) {
+			const timeoutApplied = await this._applyTimeoutAction(
+				message,
+				actionPlan.timeoutDurationMs,
+				actionPlan.triggeredDetectors
+			);
+
+			if (timeoutApplied) {
+				flags.push(
+					`Offender Timed Out (${ms(actionPlan.timeoutDurationMs, { long: true })})`
+				);
+			}
+		}
+
+		if (actionPlan.deleteMessage) {
+			const deleteResult = await this._applyDeleteAction(message);
+			if (deleteResult === "deleted") {
+				flags.push(`Message Deleted (by ${client.user})`);
+				disableDeleteButton = true;
+				deletedBeforeAlert = true;
+			} else if (deleteResult === "missing") {
+				disableDeleteButton = true;
+				deletedBeforeAlert = true;
+			}
+		}
+
+		if (!deletedBeforeAlert) {
+			const stillExists = await message.channel.messages
+				.fetch(message.id)
+				.then(() => true)
+				.catch(error => {
+					const code = (error as { code?: number })?.code;
+					if (code === 10008) return false;
+					return true;
+				});
+
+			if (!stillExists) {
+				disableDeleteButton = true;
+				deletedBeforeAlert = true;
+			}
+		}
+
+		return {
+			flags,
+			disableDeleteButton,
+			deletedBeforeAlert
+		};
+	}
+
+	/**
+	 * Resolves aggregate detector action decisions for a prediction set.
+	 *
+	 * @param predictions Detector predictions generated for the message.
+	 * @param config Parsed content-filter configuration.
+	 * @returns Planned pre-alert actions.
+	 */
+	private static _resolveDetectorActionPlan(
+		predictions: ContentPredictions[],
+		config: ParsedContentFilterConfig
+	): DetectorActionPlan {
+		let deleteMessage = false;
+		let timeoutDurationMs = 0;
+		let applyNsfwActionsToText = false;
+
+		const triggeredDetectors = new Set<Detector>();
+
+		for (const prediction of predictions) {
+			if (!prediction.detector) continue;
+
+			triggeredDetectors.add(prediction.detector);
+
+			const detectorActions = config.detector_actions[prediction.detector];
+			if (detectorActions.delete_message) {
+				deleteMessage = true;
+			}
+
+			if (detectorActions.timeout_user) {
+				timeoutDurationMs = Math.max(
+					timeoutDurationMs,
+					detectorActions.timeout_duration_ms
+				);
+			}
+
+			if (
+				prediction.detector === "TEXT" &&
+				config.detector_actions.NSFW.apply_to_text_nsfw &&
+				this._predictionContainsTextNsfw(prediction)
+			) {
+				applyNsfwActionsToText = true;
+			}
+		}
+
+		if (applyNsfwActionsToText) {
+			const nsfwActions = config.detector_actions.NSFW;
+
+			if (nsfwActions.delete_message) {
+				deleteMessage = true;
+			}
+
+			if (nsfwActions.timeout_user) {
+				timeoutDurationMs = Math.max(
+					timeoutDurationMs,
+					nsfwActions.timeout_duration_ms
+				);
+			}
+		}
+
+		return {
+			deleteMessage,
+			timeoutDurationMs: timeoutDurationMs > 0 ? timeoutDurationMs : null,
+			triggeredDetectors: [...triggeredDetectors]
+		};
+	}
+
+	/**
+	 * Checks whether a TEXT detector prediction includes NSFW (sexual) categories.
+	 *
+	 * @param prediction The prediction to evaluate.
+	 * @returns True when at least one sexual category was detected.
+	 */
+	private static _predictionContainsTextNsfw(prediction: ContentPredictions): boolean {
+		return prediction.data.some(item => {
+			const normalizedCategory = item.category?.toLowerCase();
+			if (normalizedCategory) {
+				return (
+					normalizedCategory === "sexual" || normalizedCategory.startsWith("sexual/")
+				);
+			}
+
+			const normalizedContent = item.content.toLowerCase();
+			return normalizedContent.includes("flagged: sexual");
+		});
+	}
+
+	/**
+	 * Attempts to timeout the offending member using configured detector actions.
+	 *
+	 * @param message Source message.
+	 * @param timeoutDurationMs Timeout duration in milliseconds.
+	 * @param triggeredDetectors Detectors that triggered the scan result.
+	 * @returns True when timeout was applied successfully.
+	 */
+	private static async _applyTimeoutAction(
+		message: Message<true>,
+		timeoutDurationMs: number,
+		triggeredDetectors: Detector[]
+	): Promise<boolean> {
+		const botMember = message.guild.members.me;
+		if (!botMember) return false;
+
+		if (!message.channel.permissionsFor(botMember)?.has("ModerateMembers")) {
+			return false;
+		}
+
+		const target =
+			message.member ??
+			(await message.guild.members.fetch(message.author.id).catch(() => null));
+
+		if (!target || target.isCommunicationDisabled()) {
+			return false;
+		}
+
+		const validation = ModerationUtils.validateAction(target, botMember, "Mute");
+
+		if (!validation.ok) {
+			return false;
+		}
+
+		const detectorSummary =
+			triggeredDetectors.length > 0 ? triggeredDetectors.join(", ") : "unknown";
+
+		const reason = this._truncateReason(
+			`Automatic timeout from content filter (${detectorSummary})`
+		);
+
+		return target
+			.timeout(timeoutDurationMs, reason)
+			.then(() => true)
+			.catch(() => {
+				Logger.warn(`CF pre-alert timeout failed for user ${target.id}.`);
+				return false;
+			});
+	}
+
+	/**
+	 * Attempts to delete the offending message before sending an alert.
+	 *
+	 * @param message Source message.
+	 * @returns Delete outcome state.
+	 */
+	private static async _applyDeleteAction(
+		message: Message<true>
+	): Promise<"deleted" | "missing" | "failed"> {
+		return message
+			.delete()
+			.then(() => "deleted" as const)
+			.catch(error => {
+				const code = (error as { code?: number })?.code;
+				if (code === 10008) {
+					return "missing" as const;
+				}
+
+				Logger.warn(
+					`CF pre-alert delete failed for message ${message.id}: ${toErrorString(error)}`
+				);
+				return "failed" as const;
+			});
+	}
+
+	/**
+	 * Truncates moderation action reasons to Discord's 512-char limit.
+	 *
+	 * @param reason Raw reason text.
+	 * @returns Truncated reason.
+	 */
+	private static _truncateReason(reason: string): string {
+		if (reason.length <= 512) return reason;
+		return `${reason.slice(0, 509)}...`;
 	}
 
 	/**

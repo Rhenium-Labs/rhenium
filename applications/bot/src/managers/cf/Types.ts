@@ -14,6 +14,7 @@ export type HeuristicData = {
 export type ContentPredictionData = {
 	content: string;
 	score?: string;
+	category?: string;
 };
 
 export type ContentPredictions = {
