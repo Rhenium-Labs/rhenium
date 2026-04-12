@@ -25,6 +25,7 @@ const NSFW_MIN_SCORE_ADJUSTMENT = -0.12;
 const NSFW_STRICT_MAX_MIN_SCORE = 0.01;
 const NSFW_ALLOWED_CATEGORY_PREFIXES = ["sexual"];
 const MAX_MEDIA_FRAMES = 10;
+const OPENAI_MODERATION_MAX_IMAGES_PER_REQUEST = 1;
 
 type PreAlertActionsResult = {
 	flags: string[];
@@ -276,7 +277,7 @@ export default class ContentFilter {
 				const scanInputs = MediaUtils.serializeMultiModalInput(
 					mediaScan.frames.slice(0, MAX_MEDIA_FRAMES)
 				);
-				const chunks = chunkArray(scanInputs, 6);
+				const chunks = chunkArray(scanInputs, OPENAI_MODERATION_MAX_IMAGES_PER_REQUEST);
 				for (const [chunkIndex, chunk] of chunks.entries()) {
 					const results = await this.openAiScan(chunk, config, {
 						state,
