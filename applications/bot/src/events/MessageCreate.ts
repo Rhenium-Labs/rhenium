@@ -1,5 +1,5 @@
 import { Result } from "@sapphire/result";
-import { Events, Message } from "discord.js";
+import { Colors, Events, Message } from "discord.js";
 import { captureException, metrics } from "@sentry/node";
 
 import { reply } from "#utils/Messages.js";
@@ -97,7 +97,7 @@ export default class MessageCreate extends EventListener {
 			const { error, temporary, ...baseOptions } = response;
 
 			const embeds = error
-				? [{ description: error, color: 0xff0000 }, ...(baseOptions.embeds ?? [])]
+				? [{ description: error, color: Colors.Red }, ...(baseOptions.embeds ?? [])]
 				: baseOptions.embeds;
 
 			const options = { ...baseOptions, embeds };
