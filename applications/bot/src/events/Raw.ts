@@ -94,6 +94,10 @@ export default class Raw extends EventListener {
 	}
 
 	async execute(packet: GatewayDispatchPayload): Promise<void> {
+		void metrics.count(SENTRY_METRICS_COUNTERS.GatewayPayloadReceived, 1, {
+			attributes: { t: packet.t }
+		});
+
 		const { t: type, d: data } = packet;
 
 		if (type !== GatewayDispatchEvents.MessageReactionAdd) return;

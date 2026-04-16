@@ -116,6 +116,7 @@ export const EMPTY_MESSAGE_CONTENT: string = "Unknown message content.";
 
 /** Supported sentry metrics counters. */
 export const SENTRY_METRICS_COUNTERS = {
+	GatewayPayloadReceived: "gateway_payload_received",
 	BanRequestSubmitted: "ban_request_submitted",
 	BanRequestHandled: "ban_request_handled",
 	MessageReportSubmitted: "message_report_submitted",
