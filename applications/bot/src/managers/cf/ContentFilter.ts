@@ -26,6 +26,10 @@ const NSFW_STRICT_MAX_MIN_SCORE = 0.01;
 const NSFW_ALLOWED_CATEGORY_PREFIXES = ["sexual"];
 const MAX_MEDIA_FRAMES = 10;
 const OPENAI_MODERATION_MAX_IMAGES_PER_REQUEST = 1;
+const OPENAI_MODERATION_MAX_CONCURRENCY = 5;
+const OPENAI_REQUEST_MAX_RETRIES = 3;
+const OPENAI_RETRY_INITIAL_DELAY_MS = 500;
+const OPENAI_RETRY_MAX_DELAY_MS = 15_000;
 
 type PreAlertActionsResult = {
 	flags: string[];
@@ -63,6 +67,26 @@ export class RetryableScanError extends Error {
  */
 export default class ContentFilter {
 	private static _openAiRateLimitedUntil: number | null = null;
+	private static _openAiInFlightRequests = 0;
+	private static _openAiWaitQueue: Array<() => void> = [];
+
+	/**
+	 * Returns remaining global OpenAI moderation cooldown in milliseconds.
+	 *
+	 * @returns Remaining cooldown, or zero when moderation is not paused.
+	 */
+	static getOpenAiRateLimitCooldownMs(): number {
+		if (!this._openAiRateLimitedUntil) return 0;
+
+		const remaining = this._openAiRateLimitedUntil - Date.now();
+
+		if (remaining <= 0) {
+			this._openAiRateLimitedUntil = null;
+			return 0;
+		}
+
+		return remaining;
+	}
 
 	/**
 	 * Delegates alert rendering to the alert renderer module.
@@ -377,10 +401,11 @@ export default class ContentFilter {
 			) => void;
 		}
 	): Promise<ContentPredictionData[]> {
-		if (this._openAiRateLimitedUntil && Date.now() < this._openAiRateLimitedUntil) {
+		const cooldownMs = this.getOpenAiRateLimitCooldownMs();
+		if (cooldownMs > 0) {
 			throw new RetryableScanError(
 				"OpenAI moderation temporarily rate-limited",
-				Math.max(1000, this._openAiRateLimitedUntil - Date.now())
+				Math.max(1000, cooldownMs)
 			);
 		}
 
@@ -408,14 +433,38 @@ export default class ContentFilter {
 		try {
 			const results: Moderation[] = await ContentFilterUtils.retryWithBackoff(
 				async () => {
-					const res = await openAi.moderations.create({
-						model: "omni-moderation-latest",
-						input: content
-					});
-					return res.results;
+					const currentCooldown = this.getOpenAiRateLimitCooldownMs();
+					if (currentCooldown > 0) {
+						throw new RetryableScanError(
+							"OpenAI moderation temporarily rate-limited",
+							Math.max(1000, currentCooldown)
+						);
+					}
+
+					await this._acquireOpenAiRequestSlot();
+					try {
+						const res = await openAi.moderations.create({
+							model: "omni-moderation-latest",
+							input: content
+						});
+						return res.results;
+					} finally {
+						this._releaseOpenAiRequestSlot();
+					}
 				},
 				{
+					maxRetries: OPENAI_REQUEST_MAX_RETRIES,
+					initialDelay: OPENAI_RETRY_INITIAL_DELAY_MS,
+					backoffFactor: 2,
+					maxDelay: OPENAI_RETRY_MAX_DELAY_MS,
+					shouldRetry: isRetryableOpenAiError,
 					onRetry: (_, delay, error: unknown) => {
+						const retryAfter = getRetryAfterMs(error);
+						if (typeof retryAfter === "number") {
+							this._openAiRateLimitedUntil = Date.now() + retryAfter;
+							return;
+						}
+
 						if ((error as { status?: number })?.status === 429) {
 							this._openAiRateLimitedUntil = Date.now() + delay;
 						}
@@ -439,6 +488,10 @@ export default class ContentFilter {
 				allowedCategoryPrefixes
 			);
 		} catch (error: unknown) {
+			if (error instanceof RetryableScanError) {
+				throw error;
+			}
+
 			if ((error as { status?: number })?.status === 429) {
 				this._openAiRateLimitedUntil = Date.now() + CF_CONSTANTS.DEFAULT_FINAL_DELAY;
 				throw new RetryableScanError(
@@ -447,10 +500,39 @@ export default class ContentFilter {
 				);
 			}
 
-			throw new RetryableScanError(
-				`OpenAI moderation failed: ${toErrorString(error)}`,
-				20_000
-			);
+			if (isRetryableOpenAiError(error)) {
+				throw new RetryableScanError(
+					`OpenAI moderation failed: ${toErrorString(error)}`,
+					20_000
+				);
+			}
+
+			throw new Error(`OpenAI moderation failed: ${toErrorString(error)}`);
+		}
+	}
+
+	/**
+	 * Waits for an available OpenAI moderation concurrency slot.
+	 */
+	private static async _acquireOpenAiRequestSlot(): Promise<void> {
+		while (this._openAiInFlightRequests >= OPENAI_MODERATION_MAX_CONCURRENCY) {
+			await new Promise<void>(resolve => {
+				this._openAiWaitQueue.push(resolve);
+			});
+		}
+
+		this._openAiInFlightRequests++;
+	}
+
+	/**
+	 * Releases an OpenAI moderation concurrency slot.
+	 */
+	private static _releaseOpenAiRequestSlot(): void {
+		this._openAiInFlightRequests = Math.max(0, this._openAiInFlightRequests - 1);
+
+		const next = this._openAiWaitQueue.shift();
+		if (next) {
+			next();
 		}
 	}
 
@@ -1193,6 +1275,66 @@ function toErrorMessage(error: unknown): string {
 	} catch {
 		return String(error);
 	}
+}
+
+/**
+ * Determines whether an OpenAI moderation failure should be retried.
+ *
+ * @param error Unknown error value.
+ * @returns True when the failure is likely transient.
+ */
+function isRetryableOpenAiError(error: unknown): boolean {
+	if (error instanceof RetryableScanError) return true;
+
+	const status = (error as { status?: unknown })?.status;
+	if (typeof status === "number") {
+		if (status === 408 || status === 409 || status === 425 || status === 429) {
+			return true;
+		}
+
+		if (status >= 500 && status <= 599) {
+			return true;
+		}
+
+		if (status >= 400 && status <= 499) {
+			return false;
+		}
+	}
+
+	const code = (error as { code?: unknown })?.code;
+	if (typeof code === "string") {
+		const normalizedCode = code.toLowerCase();
+		if (
+			normalizedCode.includes("rate") ||
+			normalizedCode.includes("timeout") ||
+			normalizedCode.includes("abort") ||
+			normalizedCode.includes("econnreset") ||
+			normalizedCode.includes("eai_again") ||
+			normalizedCode.includes("enetunreach")
+		) {
+			return true;
+		}
+	}
+
+	const message =
+		error instanceof Error ? error.message : typeof error === "string" ? error : "";
+	const name = error instanceof Error ? error.name.toLowerCase() : "";
+	const normalizedMessage = message.toLowerCase();
+
+	if (name === "aborterror" || name === "timeouterror") {
+		return true;
+	}
+
+	return (
+		normalizedMessage.includes("rate limit") ||
+		normalizedMessage.includes("rate-limited") ||
+		normalizedMessage.includes("timed out") ||
+		normalizedMessage.includes("timeout") ||
+		normalizedMessage.includes("aborterror") ||
+		normalizedMessage.includes("network") ||
+		normalizedMessage.includes("socket hang up") ||
+		normalizedMessage.includes("temporarily unavailable")
+	);
 }
 
 /**

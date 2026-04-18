@@ -34,9 +34,13 @@ const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const METRICS_LOG_INTERVAL_MS = 60 * 1000;
 const HEARTBEAT_FORCED_LOG_INTERVAL_MS = 10 * 60 * 1000;
 
-const MAX_RETRIES = 4;
+const MAX_RETRIES = 3;
+const MAX_CONCURRENT_SCAN_JOBS = 4;
 const RETRY_BASE_DELAY_MS = 8_000;
 const RETRY_MAX_DELAY_MS = 5 * 60 * 1000;
+const LOW_PRIORITY_DROP_QUEUE_SIZE = 2_500;
+const LOW_PRIORITY_DROP_RISK_THRESHOLD = 0.6;
+const LOW_PRIORITY_DROP_LOG_WINDOW_MS = 30 * 1000;
 
 /**
  * Coordinates adaptive content-filter job scheduling, execution, and feedback loops.
@@ -60,6 +64,8 @@ export default class AutomatedScanner {
 	private static _openAiRateLimitLogWindowUntil = 0;
 	private static _lastHeartbeatLogAt = 0;
 	private static _prioritizedGuilds = new Set<Snowflake>();
+	private static _tickInFlight = false;
+	private static _lowPriorityDropLogWindowUntil = 0;
 
 	/**
 	 * Starts scheduler processing, cache pruning, and heartbeat logging intervals.
@@ -68,7 +74,16 @@ export default class AutomatedScanner {
 		if (this._tickInterval) return;
 
 		this._tickInterval = setInterval(() => {
-			void this._tick();
+			if (this._tickInFlight) return;
+
+			this._tickInFlight = true;
+			void this._tick()
+				.catch(error => {
+					Logger.error("CF tick loop failed:", error);
+				})
+				.finally(() => {
+					this._tickInFlight = false;
+				});
 		}, CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS);
 
 		if (!this._cleanupInterval) {
@@ -118,6 +133,8 @@ export default class AutomatedScanner {
 			clearInterval(this._tickInterval);
 			this._tickInterval = null;
 		}
+
+		this._tickInFlight = false;
 
 		if (this._cleanupInterval) {
 			clearInterval(this._cleanupInterval);
@@ -401,6 +418,11 @@ export default class AutomatedScanner {
 		const now = Date.now();
 		this._pruneMessageCache();
 
+		const openAiCooldownMs = ContentFilter.getOpenAiRateLimitCooldownMs();
+		if (openAiCooldownMs > 0) {
+			return;
+		}
+
 		const globalRate = Math.min(
 			CF_CONSTANTS.HEURISTIC_MAX_SCAN_RATE,
 			Math.max(
@@ -415,10 +437,16 @@ export default class AutomatedScanner {
 		const tickDuration = CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS;
 		const allowedScans = Math.max(1, Math.floor(scansPerSecond * (tickDuration / 1000)));
 
-		const jobs = this._scheduler.pullDue(now, allowedScans);
-		for (const job of jobs) {
-			await this._processJob(job, now);
+		const jobs = this._scheduler.pullDue(
+			now,
+			Math.min(allowedScans, MAX_CONCURRENT_SCAN_JOBS)
+		);
+
+		if (jobs.length === 0) {
+			return;
 		}
+
+		await Promise.allSettled(jobs.map(job => this._processJob(job, now)));
 	}
 
 	/**
@@ -540,11 +568,34 @@ export default class AutomatedScanner {
 		now: number
 	): Promise<void> {
 		const reason = error instanceof Error ? error.message : String(error ?? "unknown");
-		const isRetryable =
-			error instanceof RetryableScanError || job.attempts + 1 < job.maxAttempts;
+		const nextAttempt = job.attempts + 1;
+		const isRetryableError =
+			error instanceof RetryableScanError || this._isTransientRetryableError(error);
 
-		if (!isRetryable || job.attempts + 1 >= job.maxAttempts) {
-			await DeadLetterStore.record(job, "max-retries-exceeded", error);
+		if (this._shouldDropLowPriorityJob(job, error)) {
+			const shouldLog = now >= this._lowPriorityDropLogWindowUntil;
+			this._lowPriorityDropLogWindowUntil = now + LOW_PRIORITY_DROP_LOG_WINDOW_MS;
+
+			if (shouldLog) {
+				Logger.custom(
+					"CF",
+					JSON.stringify({
+						event: "dropped_low_priority_cf_jobs",
+						timestamp: new Date(now).toISOString(),
+						queueDepth: this._scheduler.size()
+					})
+				);
+			}
+
+			return;
+		}
+
+		if (!isRetryableError || nextAttempt >= job.maxAttempts) {
+			await DeadLetterStore.record(
+				job,
+				isRetryableError ? "max-retries-exceeded" : "non-retryable-failure",
+				error
+			);
 			return;
 		}
 
@@ -562,7 +613,7 @@ export default class AutomatedScanner {
 		this._scheduler.enqueue({
 			...job,
 			nextRunAt,
-			attempts: job.attempts + 1,
+			attempts: nextAttempt,
 			isRetry: true
 		});
 
@@ -593,11 +644,79 @@ export default class AutomatedScanner {
 			source: job.source,
 			messageId: job.messageId,
 			channelId: job.channelId,
-			attempts: job.attempts + 1,
+			attempts: nextAttempt,
 			maxAttempts: job.maxAttempts,
 			nextRunAt,
 			reason
 		});
+	}
+
+	/**
+	 * Checks whether an error should be retried due to transient transport/runtime conditions.
+	 *
+	 * @param error Failure value thrown during scan processing.
+	 * @returns True when the error is likely transient.
+	 */
+	private static _isTransientRetryableError(error: unknown): boolean {
+		const status = (error as { status?: unknown })?.status;
+		if (typeof status === "number") {
+			if (status === 408 || status === 409 || status === 425 || status === 429) {
+				return true;
+			}
+
+			if (status >= 500 && status <= 599) {
+				return true;
+			}
+		}
+
+		const code = (error as { code?: unknown })?.code;
+		if (typeof code === "string") {
+			const normalizedCode = code.toLowerCase();
+			if (
+				normalizedCode.includes("timeout") ||
+				normalizedCode.includes("abort") ||
+				normalizedCode.includes("reset") ||
+				normalizedCode.includes("econn") ||
+				normalizedCode.includes("eai_again") ||
+				normalizedCode.includes("network")
+			) {
+				return true;
+			}
+		}
+
+		const message =
+			error instanceof Error ? error.message : typeof error === "string" ? error : "";
+		const name = error instanceof Error ? error.name.toLowerCase() : "";
+		const normalizedMessage = message.toLowerCase();
+
+		if (name === "aborterror" || name === "timeouterror") {
+			return true;
+		}
+
+		return (
+			normalizedMessage.includes("aborterror") ||
+			normalizedMessage.includes("timed out") ||
+			normalizedMessage.includes("timeout") ||
+			normalizedMessage.includes("network") ||
+			normalizedMessage.includes("socket hang up") ||
+			normalizedMessage.includes("temporarily unavailable")
+		);
+	}
+
+	/**
+	 * Determines whether a low-priority automated job should be dropped under rate-limit pressure.
+	 *
+	 * @param job Failed job context.
+	 * @param error Failure value thrown during scan processing.
+	 * @returns True when dropping the job is preferable to retrying.
+	 */
+	private static _shouldDropLowPriorityJob(job: ScanJob, error: unknown): boolean {
+		if (!this._isOpenAiRateLimitError(error)) return false;
+		if (job.source !== "automated") return false;
+		if (job.force) return false;
+		if (job.risk >= LOW_PRIORITY_DROP_RISK_THRESHOLD) return false;
+
+		return this._scheduler.size() >= LOW_PRIORITY_DROP_QUEUE_SIZE;
 	}
 
 	/**

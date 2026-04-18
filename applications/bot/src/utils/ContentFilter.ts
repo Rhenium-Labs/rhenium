@@ -42,6 +42,7 @@ export default class ContentFilterUtils {
 			backoffFactor?: number;
 			maxDelay?: number;
 			jitter?: boolean;
+			shouldRetry?: (error: unknown) => boolean;
 			onRetry?: (attempt: number, delay: number, error: unknown) => void;
 		}
 	): Promise<T> {
@@ -51,6 +52,7 @@ export default class ContentFilterUtils {
 			backoffFactor = CF_CONSTANTS.DEFAULT_BACKOFF_FACTOR,
 			maxDelay = CF_CONSTANTS.DEFAULT_MAX_DELAY,
 			jitter = true,
+			shouldRetry,
 			onRetry
 		} = options || {};
 
@@ -63,6 +65,10 @@ export default class ContentFilterUtils {
 				return await fn();
 			} catch (error) {
 				lastError = error;
+
+				if (shouldRetry && !shouldRetry(error)) {
+					throw error;
+				}
 
 				if (onRetry) onRetry(attempt, delay, error);
 				if (attempt === maxRetries - 1) break;
