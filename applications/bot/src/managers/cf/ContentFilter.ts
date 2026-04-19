@@ -197,7 +197,8 @@ export default class ContentFilter {
 		message: Message<true>,
 		config: ParsedContentFilterConfig,
 		state: ChannelScanState | null,
-		prefetchedTextResult?: Moderation[]
+		prefetchedTextResult?: Moderation[],
+		bypassOpenAiCooldown = false
 	): Promise<ContentPredictions[]> {
 		const predictions: ContentPredictions[] = [];
 		if (message.author.bot) return predictions;
@@ -210,7 +211,14 @@ export default class ContentFilter {
 
 		const detectorResults = await Promise.allSettled(
 			config.detectors.map(async detector => {
-				return this.scanMessage(message, detector, config, state, prefetchedTextResult);
+				return this.scanMessage(
+					message,
+					detector,
+					config,
+					state,
+					prefetchedTextResult,
+					bypassOpenAiCooldown
+				);
 			})
 		);
 
@@ -358,7 +366,8 @@ export default class ContentFilter {
 		detector: Detector,
 		config: ParsedContentFilterConfig,
 		state: ChannelScanState | null,
-		prefetchedTextResult?: Moderation[]
+		prefetchedTextResult?: Moderation[],
+		bypassOpenAiCooldown = false
 	): Promise<ContentPredictions | null> {
 		const predictionData: ContentPredictionData[] = [];
 		const problematicContent: string[] = [];
@@ -382,7 +391,8 @@ export default class ContentFilter {
 					? this.parseOpenAiModerationResults(prefetchedTextResult, minScore)
 					: await this.openAiScan(message.content, config, {
 							state,
-							authorId: message.author.id
+							authorId: message.author.id,
+							ignoreCooldown: bypassOpenAiCooldown
 						});
 				predictionData.push(...results);
 
@@ -411,6 +421,7 @@ export default class ContentFilter {
 					const results = await this.openAiScan(chunk, config, {
 						state,
 						authorId: message.author.id,
+						ignoreCooldown: bypassOpenAiCooldown,
 						scoreAdjustment: NSFW_MIN_SCORE_ADJUSTMENT,
 						maxMinScore:
 							config.detector_mode === "Strict"
@@ -494,6 +505,7 @@ export default class ContentFilter {
 		options?: {
 			state?: ChannelScanState | null;
 			authorId?: Snowflake;
+			ignoreCooldown?: boolean;
 			scoreAdjustment?: number;
 			maxMinScore?: number;
 			allowedCategoryPrefixes?: string[];
@@ -507,7 +519,7 @@ export default class ContentFilter {
 		}
 	): Promise<ContentPredictionData[]> {
 		const cooldownMs = this.getOpenAiRateLimitCooldownMs();
-		if (cooldownMs > 0) {
+		if (!options?.ignoreCooldown && cooldownMs > 0) {
 			throw new RetryableScanError(
 				"OpenAI moderation temporarily rate-limited",
 				Math.max(1000, cooldownMs)
@@ -539,7 +551,7 @@ export default class ContentFilter {
 			const results: Moderation[] = await ContentFilterUtils.retryWithBackoff(
 				async () => {
 					const currentCooldown = this.getOpenAiRateLimitCooldownMs();
-					if (currentCooldown > 0) {
+					if (!options?.ignoreCooldown && currentCooldown > 0) {
 						throw new RetryableScanError(
 							"OpenAI moderation temporarily rate-limited",
 							Math.max(1000, currentCooldown)

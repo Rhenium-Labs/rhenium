@@ -2,6 +2,7 @@
 node_modules
 
 # output
+old-builds
 out
 dist
 *.tgz

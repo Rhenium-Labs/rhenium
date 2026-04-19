@@ -159,6 +159,24 @@ export default class ScanJobScheduler {
 	}
 
 	/**
+	 * Returns whether any forced/prioritized job is currently due.
+	 *
+	 * @param now Current timestamp in milliseconds.
+	 * @returns True when at least one forced job can be popped immediately.
+	 */
+	hasDueForcedJob(now: number): boolean {
+		for (const job of this._newJobs.values()) {
+			if (job.force && job.nextRunAt <= now) return true;
+		}
+
+		for (const job of this._retryJobs.values()) {
+			if (job.force && job.nextRunAt <= now) return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Produces a queue snapshot for diagnostics output.
 	 *
 	 * @returns Queue counts and oldest/next scheduling timestamps.
@@ -510,6 +528,10 @@ class BinaryHeap<T> {
  * @returns Negative value when a has higher priority than b.
  */
 function compareScanJobs(a: ScanJob, b: ScanJob): number {
+	if (a.force !== b.force) {
+		return a.force ? -1 : 1;
+	}
+
 	const timeDiff = a.nextRunAt - b.nextRunAt;
 	if (timeDiff !== 0) return timeDiff;
 

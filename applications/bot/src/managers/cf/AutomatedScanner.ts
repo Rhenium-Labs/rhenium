@@ -439,7 +439,7 @@ export default class AutomatedScanner {
 		this._pruneMessageCache();
 
 		const openAiCooldownMs = ContentFilter.getOpenAiRateLimitCooldownMs();
-		if (openAiCooldownMs > 0) {
+		if (openAiCooldownMs > 0 && !this._scheduler.hasDueForcedJob(now)) {
 			return;
 		}
 
@@ -456,11 +456,10 @@ export default class AutomatedScanner {
 		const scansPerSecond = globalRate / 60;
 		const tickDuration = CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS;
 		const allowedScans = Math.max(1, Math.floor(scansPerSecond * (tickDuration / 1000)));
+		const jobBudget =
+			openAiCooldownMs > 0 ? 1 : Math.min(allowedScans, MAX_CONCURRENT_SCAN_JOBS);
 
-		const jobs = this._scheduler.pullDue(
-			now,
-			Math.min(allowedScans, MAX_CONCURRENT_SCAN_JOBS)
-		);
+		const jobs = this._scheduler.pullDue(now, jobBudget);
 
 		if (jobs.length === 0) {
 			return;
@@ -480,7 +479,7 @@ export default class AutomatedScanner {
 			})
 			.filter((item): item is { jobIndex: number; text: string } => item !== null);
 
-		if (textBatch.length > 0) {
+		if (openAiCooldownMs <= 0 && textBatch.length > 0) {
 			try {
 				const batchResults = await ContentFilter.batchScanText(
 					textBatch.map(item => item.text)
@@ -546,7 +545,8 @@ export default class AutomatedScanner {
 				message,
 				config,
 				prep.state,
-				prefetchedTextResult
+				prefetchedTextResult,
+				job.force
 			);
 
 			if (job.source === "heuristic" && job.heuristicSignals.length > 0) {
