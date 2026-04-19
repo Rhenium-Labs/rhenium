@@ -189,13 +189,15 @@ export default class ContentFilter {
 	 * @param message Source message.
 	 * @param config Parsed content-filter configuration.
 	 * @param state Optional channel scan state used by adaptive scoring.
+	 * @param prefetchedTextResult Optional pre-fetched OpenAI moderation results for TEXT detector.
 	 * @returns Combined detector predictions.
 	 */
 	static async runDetectors(
 		_channel: TextBasedChannel,
 		message: Message<true>,
 		config: ParsedContentFilterConfig,
-		state: ChannelScanState | null
+		state: ChannelScanState | null,
+		prefetchedTextResult?: Moderation[]
 	): Promise<ContentPredictions[]> {
 		const predictions: ContentPredictions[] = [];
 		if (message.author.bot) return predictions;
@@ -208,7 +210,7 @@ export default class ContentFilter {
 
 		const detectorResults = await Promise.allSettled(
 			config.detectors.map(async detector => {
-				return this.scanMessage(message, detector, config, state);
+				return this.scanMessage(message, detector, config, state, prefetchedTextResult);
 			})
 		);
 
@@ -252,6 +254,99 @@ export default class ContentFilter {
 	}
 
 	/**
+	 * Executes a single batched OpenAI moderation request for many text inputs.
+	 *
+	 * @param inputs Text payloads ordered by caller-provided index.
+	 * @param _config Optional config placeholder for API parity.
+	 * @param _state Optional channel state placeholder for API parity.
+	 * @param _authorId Optional author identifier placeholder for API parity.
+	 * @returns Moderation results preserving input ordering.
+	 */
+	static async batchScanText(
+		inputs: string[],
+		_config?: ParsedContentFilterConfig,
+		_state?: ChannelScanState | null,
+		_authorId?: Snowflake
+	): Promise<Moderation[]> {
+		if (inputs.length === 0) return [];
+
+		const cooldownMs = this.getOpenAiRateLimitCooldownMs();
+		if (cooldownMs > 0) {
+			throw new RetryableScanError(
+				"OpenAI moderation temporarily rate-limited",
+				Math.max(1000, cooldownMs)
+			);
+		}
+
+		try {
+			const results = await ContentFilterUtils.retryWithBackoff(
+				async () => {
+					const currentCooldown = this.getOpenAiRateLimitCooldownMs();
+					if (currentCooldown > 0) {
+						throw new RetryableScanError(
+							"OpenAI moderation temporarily rate-limited",
+							Math.max(1000, currentCooldown)
+						);
+					}
+
+					await this._acquireOpenAiRequestSlot();
+					try {
+						const response = await openAi.moderations.create({
+							model: "omni-moderation-latest",
+							input: inputs
+						});
+
+						return response.results;
+					} finally {
+						this._releaseOpenAiRequestSlot();
+					}
+				},
+				{
+					maxRetries: OPENAI_REQUEST_MAX_RETRIES,
+					initialDelay: OPENAI_RETRY_INITIAL_DELAY_MS,
+					backoffFactor: 2,
+					maxDelay: OPENAI_RETRY_MAX_DELAY_MS,
+					shouldRetry: isRetryableOpenAiError,
+					onRetry: (_, delay, error: unknown) => {
+						const retryAfter = getRetryAfterMs(error);
+						if (typeof retryAfter === "number") {
+							this._openAiRateLimitedUntil = Date.now() + retryAfter;
+							return;
+						}
+
+						if ((error as { status?: number })?.status === 429) {
+							this._openAiRateLimitedUntil = Date.now() + delay;
+						}
+					}
+				}
+			);
+
+			return results;
+		} catch (error: unknown) {
+			if (error instanceof RetryableScanError) {
+				throw error;
+			}
+
+			if ((error as { status?: number })?.status === 429) {
+				this._openAiRateLimitedUntil = Date.now() + CF_CONSTANTS.DEFAULT_FINAL_DELAY;
+				throw new RetryableScanError(
+					"OpenAI moderation hard rate limit",
+					CF_CONSTANTS.DEFAULT_FINAL_DELAY
+				);
+			}
+
+			if (isRetryableOpenAiError(error)) {
+				throw new RetryableScanError(
+					`OpenAI moderation failed: ${toErrorString(error)}`,
+					20_000
+				);
+			}
+
+			throw new Error(`OpenAI moderation failed: ${toErrorString(error)}`);
+		}
+	}
+
+	/**
 	 * Runs a single detector for the provided message.
 	 *
 	 * @param message Source message.
@@ -264,7 +359,8 @@ export default class ContentFilter {
 		message: Message<true>,
 		detector: Detector,
 		config: ParsedContentFilterConfig,
-		state: ChannelScanState | null
+		state: ChannelScanState | null,
+		prefetchedTextResult?: Moderation[]
 	): Promise<ContentPredictions | null> {
 		const predictionData: ContentPredictionData[] = [];
 		const problematicContent: string[] = [];
@@ -275,10 +371,21 @@ export default class ContentFilter {
 					break;
 				}
 
-				const results = await this.openAiScan(message.content, config, {
-					state,
-					authorId: message.author.id
-				});
+				const minScore =
+					state && message.author.id
+						? ContentFilterUtils.getMinScoreWithState(
+								config,
+								state,
+								message.author.id
+							)
+						: ContentFilterUtils.getMinScore(config);
+
+				const results = prefetchedTextResult
+					? this.parseOpenAiModerationResults(prefetchedTextResult, minScore)
+					: await this.openAiScan(message.content, config, {
+							state,
+							authorId: message.author.id
+						});
 				predictionData.push(...results);
 
 				if (results.length > 0) {

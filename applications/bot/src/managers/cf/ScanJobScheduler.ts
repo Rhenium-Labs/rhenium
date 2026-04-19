@@ -21,6 +21,7 @@ export default class ScanJobScheduler {
 	private _newJobs = new Map<string, ScanJob>();
 	private _retryJobs = new Map<string, ScanJob>();
 	private _keyQueue = new Map<string, QueueType>();
+	private _guildDepth = new Map<string, number>();
 
 	private _lastCleanupAt = 0;
 	private _retryTurn = false;
@@ -44,10 +45,11 @@ export default class ScanJobScheduler {
 		const targetHeap = this._heapFor(targetQueue);
 
 		const existingQueue = this._keyQueue.get(dedupeKey);
-		if (existingQueue) {
-			const existingMap = this._mapFor(existingQueue);
-			const existing = existingMap.get(dedupeKey);
+		const existingMap = existingQueue ? this._mapFor(existingQueue) : null;
+		const existing = existingMap?.get(dedupeKey);
+		const hasExistingEntry = Boolean(existing);
 
+		if (existingQueue) {
 			if (existing) {
 				const shouldKeepExisting =
 					existing.nextRunAt <= fullJob.nextRunAt &&
@@ -59,13 +61,17 @@ export default class ScanJobScheduler {
 				}
 			}
 
-			existingMap.delete(dedupeKey);
+			existingMap?.delete(dedupeKey);
 			this._keyQueue.delete(dedupeKey);
 		}
 
 		targetMap.set(dedupeKey, fullJob);
 		targetHeap.push(fullJob);
 		this._keyQueue.set(dedupeKey, targetQueue);
+
+		if (!hasExistingEntry) {
+			this._incrementGuildDepth(fullJob.guildId);
+		}
 
 		this._trimIfNeeded();
 		this._compactIfNeeded();
@@ -140,6 +146,16 @@ export default class ScanJobScheduler {
 		}
 
 		return total;
+	}
+
+	/**
+	 * Returns queued job count for a specific guild.
+	 *
+	 * @param guildId The guild identifier.
+	 * @returns Number of jobs currently queued for the guild.
+	 */
+	getQueueDepthForGuild(guildId: string): number {
+		return this._guildDepth.get(guildId) ?? 0;
 	}
 
 	/**
@@ -225,6 +241,7 @@ export default class ScanJobScheduler {
 
 			map.delete(popped.dedupeKey);
 			this._keyQueue.delete(popped.dedupeKey);
+			this._decrementGuildDepth(popped.guildId);
 			return popped;
 		}
 
@@ -248,6 +265,7 @@ export default class ScanJobScheduler {
 			if (job.enqueuedAt < cutoff) {
 				this._newJobs.delete(key);
 				this._keyQueue.delete(key);
+				this._decrementGuildDepth(job.guildId);
 			}
 		}
 
@@ -255,6 +273,7 @@ export default class ScanJobScheduler {
 			if (job.enqueuedAt < cutoff) {
 				this._retryJobs.delete(key);
 				this._keyQueue.delete(key);
+				this._decrementGuildDepth(job.guildId);
 			}
 		}
 
@@ -300,6 +319,31 @@ export default class ScanJobScheduler {
 
 		map.delete(worst.dedupeKey);
 		this._keyQueue.delete(worst.dedupeKey);
+		this._decrementGuildDepth(worst.guildId);
+	}
+
+	/**
+	 * Increments queued depth for a guild.
+	 *
+	 * @param guildId Guild identifier.
+	 */
+	private _incrementGuildDepth(guildId: string): void {
+		this._guildDepth.set(guildId, (this._guildDepth.get(guildId) ?? 0) + 1);
+	}
+
+	/**
+	 * Decrements queued depth for a guild.
+	 *
+	 * @param guildId Guild identifier.
+	 */
+	private _decrementGuildDepth(guildId: string): void {
+		const current = this._guildDepth.get(guildId) ?? 0;
+		if (current <= 1) {
+			this._guildDepth.delete(guildId);
+			return;
+		}
+
+		this._guildDepth.set(guildId, current - 1);
 	}
 
 	/**

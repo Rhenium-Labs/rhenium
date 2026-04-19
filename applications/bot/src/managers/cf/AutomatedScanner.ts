@@ -6,6 +6,7 @@ import {
 	TextChannel,
 	WebhookClient
 } from "discord.js";
+import type { Moderation } from "openai/resources/moderations";
 
 import { client, kysely } from "#root/index.js";
 import { CF_CONSTANTS } from "#utils/Constants.js";
@@ -38,9 +39,10 @@ const MAX_RETRIES = 3;
 const MAX_CONCURRENT_SCAN_JOBS = 4;
 const RETRY_BASE_DELAY_MS = 8_000;
 const RETRY_MAX_DELAY_MS = 5 * 60 * 1000;
-const LOW_PRIORITY_DROP_QUEUE_SIZE = 2_500;
-const LOW_PRIORITY_DROP_RISK_THRESHOLD = 0.6;
+const LOW_PRIORITY_DROP_QUEUE_SIZE = 500;
+const LOW_PRIORITY_DROP_RISK_THRESHOLD = 0.4;
 const LOW_PRIORITY_DROP_LOG_WINDOW_MS = 30 * 1000;
+const MAX_GUILD_QUEUE_DEPTH = 50;
 
 /**
  * Coordinates adaptive content-filter job scheduling, execution, and feedback loops.
@@ -287,6 +289,24 @@ export default class AutomatedScanner {
 
 		const computedRisk = ContentFilterUtils.computeMessageRisk(config, serializedMessage);
 		const risk = isPrioritizedGuild ? Math.max(computedRisk, 0.85) : computedRisk;
+		const shouldBypassDropGuards =
+			isPrioritizedGuild || risk >= LOW_PRIORITY_DROP_RISK_THRESHOLD;
+
+		if (!shouldBypassDropGuards && ContentFilter.getOpenAiRateLimitCooldownMs() > 0) {
+			return;
+		}
+
+		if (!shouldBypassDropGuards && this._scheduler.size() >= LOW_PRIORITY_DROP_QUEUE_SIZE) {
+			return;
+		}
+
+		if (
+			!shouldBypassDropGuards &&
+			this._scheduler.getQueueDepthForGuild(message.guildId) >= MAX_GUILD_QUEUE_DEPTH
+		) {
+			return;
+		}
+
 		const nextRunAt = isPrioritizedGuild
 			? now
 			: this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
@@ -446,7 +466,44 @@ export default class AutomatedScanner {
 			return;
 		}
 
-		await Promise.allSettled(jobs.map(job => this._processJob(job, now)));
+		const prefetchedTextResultsByJobIndex = new Map<number, Moderation[]>();
+		const textBatch = jobs
+			.map((job, jobIndex) => {
+				const cachedMessage = this.getCachedMessage(job.messageId);
+				const text = cachedMessage?.content?.trim();
+
+				if (!text) {
+					return null;
+				}
+
+				return { jobIndex, text };
+			})
+			.filter((item): item is { jobIndex: number; text: string } => item !== null);
+
+		if (textBatch.length > 0) {
+			try {
+				const batchResults = await ContentFilter.batchScanText(
+					textBatch.map(item => item.text)
+				);
+
+				for (const [resultIndex, item] of textBatch.entries()) {
+					const moderationResult = batchResults[resultIndex];
+					if (!moderationResult) continue;
+
+					prefetchedTextResultsByJobIndex.set(item.jobIndex, [moderationResult]);
+				}
+			} catch (error) {
+				Logger.warn(
+					`CF text batch prefetch failed for ${textBatch.length} jobs: ${error instanceof Error ? error.message : String(error)}`
+				);
+			}
+		}
+
+		await Promise.allSettled(
+			jobs.map((job, jobIndex) =>
+				this._processJob(job, now, prefetchedTextResultsByJobIndex.get(jobIndex))
+			)
+		);
 	}
 
 	/**
@@ -454,8 +511,13 @@ export default class AutomatedScanner {
 	 *
 	 * @param job The job being processed.
 	 * @param now Tick timestamp.
+	 * @param prefetchedTextResult Optional pre-fetched moderation result for text detector.
 	 */
-	private static async _processJob(job: ScanJob, now: number): Promise<void> {
+	private static async _processJob(
+		job: ScanJob,
+		now: number,
+		prefetchedTextResult?: Moderation[]
+	): Promise<void> {
 		try {
 			const alertExists = await ContentFilterUtils.alertExistsForMessage(job.messageId);
 			if (alertExists) return;
@@ -483,7 +545,8 @@ export default class AutomatedScanner {
 				message.channel,
 				message,
 				config,
-				prep.state
+				prep.state,
+				prefetchedTextResult
 			);
 
 			if (job.source === "heuristic" && job.heuristicSignals.length > 0) {
