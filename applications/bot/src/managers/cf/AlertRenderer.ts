@@ -139,14 +139,16 @@ export function buildAlertPayload(
 			.setCustomId(ContentFilterCustomIds.content(message.id))
 	);
 
-	const notificationContent =
+	const content =
 		config.notify_roles.length > 0
-			? config.notify_roles.map(roleId => roleMention(roleId)).join(", ")
+			? config.notify_roles
+					.map(role => (role === "here" ? "@here" : roleMention(role)))
+					.join(", ")
 			: undefined;
 
 	return {
 		payload: {
-			content: notificationContent,
+			content,
 			embeds: [embed],
 			components: [buttons],
 			allowedMentions: { parse: ["roles"] }
