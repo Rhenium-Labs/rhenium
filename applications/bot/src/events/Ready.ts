@@ -12,7 +12,7 @@ export default class Ready extends EventListener {
 		super(Events.ClientReady);
 	}
 
-	execute(): Promise<unknown> {
+	async execute(): Promise<unknown> {
 		Logger.success(`Logged in as ${this.client.user?.tag}!`);
 
 		// Listen for rate limit events.
@@ -20,9 +20,10 @@ export default class Ready extends EventListener {
 			Logger.warn(`DJS rate limit occurred. Data:`, info);
 		});
 
+		await AutomatedScanner.loadPrioritizedGuilds();
+		AutomatedScanner.startTickLoop();
+
 		return Promise.all([
-			AutomatedScanner.startTickLoop(),
-			AutomatedScanner.loadPrioritizedGuilds(),
 			HeuristicScanner.startCleanupInterval(),
 			GlobalConfig.startMessageReportDisregardCronJob(),
 			GlobalConfig.startMessageRetentionCronJobs(),

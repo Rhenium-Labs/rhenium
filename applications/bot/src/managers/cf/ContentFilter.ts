@@ -5,7 +5,6 @@ import ms from "ms";
 import sharp from "sharp";
 import Tesseract from "node-tesseract-ocr";
 
-import { CF_CONSTANTS } from "#utils/Constants.js";
 import { client, openAi, kysely } from "#root/index.js";
 import { buildAlertPayload as renderAlertPayload } from "./AlertRenderer.js";
 import { Extensions } from "#utils/Media.js";
@@ -30,6 +29,7 @@ const OPENAI_MODERATION_MAX_CONCURRENCY = 5;
 const OPENAI_REQUEST_MAX_RETRIES = 3;
 const OPENAI_RETRY_INITIAL_DELAY_MS = 500;
 const OPENAI_RETRY_MAX_DELAY_MS = 15_000;
+const OPENAI_HARD_RATE_LIMIT_COOLDOWN_MS = 30_000;
 
 type PreAlertActionsResult = {
 	flags: string[];
@@ -328,11 +328,9 @@ export default class ContentFilter {
 			}
 
 			if ((error as { status?: number })?.status === 429) {
-				this._openAiRateLimitedUntil = Date.now() + CF_CONSTANTS.DEFAULT_FINAL_DELAY;
-				throw new RetryableScanError(
-					"OpenAI moderation hard rate limit",
-					CF_CONSTANTS.DEFAULT_FINAL_DELAY
-				);
+				const retryAfter = getRetryAfterMs(error) ?? OPENAI_HARD_RATE_LIMIT_COOLDOWN_MS;
+				this._openAiRateLimitedUntil = Date.now() + retryAfter;
+				throw new RetryableScanError("OpenAI moderation hard rate limit", retryAfter);
 			}
 
 			if (isRetryableOpenAiError(error)) {
@@ -600,11 +598,9 @@ export default class ContentFilter {
 			}
 
 			if ((error as { status?: number })?.status === 429) {
-				this._openAiRateLimitedUntil = Date.now() + CF_CONSTANTS.DEFAULT_FINAL_DELAY;
-				throw new RetryableScanError(
-					"OpenAI moderation hard rate limit",
-					CF_CONSTANTS.DEFAULT_FINAL_DELAY
-				);
+				const retryAfter = getRetryAfterMs(error) ?? OPENAI_HARD_RATE_LIMIT_COOLDOWN_MS;
+				this._openAiRateLimitedUntil = Date.now() + retryAfter;
+				throw new RetryableScanError("OpenAI moderation hard rate limit", retryAfter);
 			}
 
 			if (isRetryableOpenAiError(error)) {
@@ -1475,9 +1471,48 @@ function isOpenAiRateLimitError(error: unknown): boolean {
  * @returns Retry delay in milliseconds, or undefined.
  */
 function getRetryAfterMs(error: unknown): number | undefined {
-	if (!(error instanceof RetryableScanError)) return undefined;
+	if (error instanceof RetryableScanError && typeof error.retryAfterMs === "number") {
+		return Math.max(1000, error.retryAfterMs);
+	}
 
-	if (typeof error.retryAfterMs !== "number") return undefined;
+	const candidates: unknown[] = [
+		(error as { retryAfterMs?: unknown })?.retryAfterMs,
+		(error as { retry_after?: unknown })?.retry_after,
+		(error as { retryAfter?: unknown })?.retryAfter,
+		(error as { headers?: Record<string, unknown> })?.headers?.["retry-after"],
+		(error as { headers?: Record<string, unknown> })?.headers?.["x-ratelimit-reset-after"]
+	];
 
-	return Math.max(1000, error.retryAfterMs);
+	for (const candidate of candidates) {
+		if (typeof candidate === "number" && Number.isFinite(candidate) && candidate > 0) {
+			const ms = candidate > 1000 ? candidate : candidate * 1000;
+			return Math.max(1000, Math.round(ms));
+		}
+
+		if (typeof candidate === "string") {
+			const parsed = Number.parseFloat(candidate);
+			if (Number.isFinite(parsed) && parsed > 0) {
+				const ms = parsed > 1000 ? parsed : parsed * 1000;
+				return Math.max(1000, Math.round(ms));
+			}
+		}
+	}
+
+	const message =
+		error instanceof Error ? error.message : typeof error === "string" ? error : "";
+	const normalizedMessage = message.toLowerCase();
+	const retryAfterMatch = normalizedMessage.match(
+		/retry after\s+([0-9]+(?:\.[0-9]+)?)\s*(ms|s|sec|seconds)?/i
+	);
+
+	if (retryAfterMatch) {
+		const raw = Number.parseFloat(retryAfterMatch[1] ?? "0");
+		if (Number.isFinite(raw) && raw > 0) {
+			const unit = (retryAfterMatch[2] ?? "s").toLowerCase();
+			const multiplier = unit === "ms" ? 1 : 1000;
+			return Math.max(1000, Math.round(raw * multiplier));
+		}
+	}
+
+	return undefined;
 }
