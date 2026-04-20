@@ -47,6 +47,8 @@ const TEXT_PREFETCH_MIN_BATCH_SIZE = 2;
 const TEXT_PREFETCH_FALLBACK_PAUSE_MS = 15_000;
 const TEXT_PREFETCH_OPENAI_MAX_RETRIES = 1;
 const FORCE_COOLDOWN_BYPASS_WINDOW_MS = 5_000;
+const OPENAI_RATE_LIMIT_MIN_RETRY_MS = 15_000;
+const OPENAI_RATE_LIMIT_MIN_RETRY_MS_FORCED = 5_000;
 
 /**
  * Coordinates adaptive content-filter job scheduling, execution, and feedback loops.
@@ -674,6 +676,7 @@ export default class AutomatedScanner {
 		const nextAttempt = job.attempts + 1;
 		const isRetryableError =
 			error instanceof RetryableScanError || this._isTransientRetryableError(error);
+		const isOpenAiRateLimit = this._isOpenAiRateLimitError(error);
 
 		if (this._shouldDropLowPriorityJob(job, error)) {
 			const shouldLog = now >= this._lowPriorityDropLogWindowUntil;
@@ -685,6 +688,53 @@ export default class AutomatedScanner {
 					JSON.stringify({
 						event: "dropped_low_priority_cf_jobs",
 						timestamp: new Date(now).toISOString(),
+						queueDepth: this._scheduler.size()
+					})
+				);
+			}
+
+			return;
+		}
+
+		if (isOpenAiRateLimit) {
+			const hintedRetryAfter =
+				error instanceof RetryableScanError && typeof error.retryAfterMs === "number"
+					? error.retryAfterMs
+					: Math.min(
+							RETRY_MAX_DELAY_MS,
+							RETRY_BASE_DELAY_MS * Math.pow(2, Math.max(0, job.attempts))
+						);
+
+			const minRetryAfter = job.force
+				? OPENAI_RATE_LIMIT_MIN_RETRY_MS_FORCED
+				: OPENAI_RATE_LIMIT_MIN_RETRY_MS;
+			const retryAfter = Math.max(minRetryAfter, hintedRetryAfter);
+			const jitter = Math.floor(Math.random() * Math.max(1000, retryAfter * 0.2));
+			const nextRunAt = now + retryAfter + jitter;
+
+			this._scheduler.enqueue({
+				...job,
+				nextRunAt,
+				attempts: job.attempts,
+				isRetry: true
+			});
+
+			const windowEndsAt = now + Math.max(1000, retryAfter);
+			const shouldLog = now >= this._openAiRateLimitLogWindowUntil;
+
+			this._openAiRateLimitLogWindowUntil = Math.max(
+				this._openAiRateLimitLogWindowUntil,
+				windowEndsAt
+			);
+
+			if (shouldLog) {
+				Logger.custom(
+					"CF",
+					JSON.stringify({
+						event: "openai_rate_limit_hit",
+						timestamp: new Date(now).toISOString(),
+						deferred: true,
+						retryAfter,
 						queueDepth: this._scheduler.size()
 					})
 				);
@@ -719,28 +769,6 @@ export default class AutomatedScanner {
 			attempts: nextAttempt,
 			isRetry: true
 		});
-
-		if (this._isOpenAiRateLimitError(error)) {
-			const windowEndsAt = now + Math.max(1000, retryAfter);
-			const shouldLog = now >= this._openAiRateLimitLogWindowUntil;
-
-			this._openAiRateLimitLogWindowUntil = Math.max(
-				this._openAiRateLimitLogWindowUntil,
-				windowEndsAt
-			);
-
-			if (shouldLog) {
-				Logger.custom(
-					"CF",
-					JSON.stringify({
-						event: "openai_rate_limit_hit",
-						timestamp: new Date(now).toISOString()
-					})
-				);
-			}
-
-			return;
-		}
 
 		Logger.warn("CF scan job scheduled for retry", {
 			jobId: job.jobId,

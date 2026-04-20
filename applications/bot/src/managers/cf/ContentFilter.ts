@@ -29,6 +29,7 @@ const OPENAI_MODERATION_MAX_CONCURRENCY = 5;
 const OPENAI_REQUEST_MAX_RETRIES = 3;
 const OPENAI_RETRY_INITIAL_DELAY_MS = 500;
 const OPENAI_RETRY_MAX_DELAY_MS = 15_000;
+const OPENAI_SOFT_RATE_LIMIT_COOLDOWN_MS = 10_000;
 const OPENAI_HARD_RATE_LIMIT_COOLDOWN_MS = 30_000;
 
 type PreAlertActionsResult = {
@@ -319,13 +320,17 @@ export default class ContentFilter {
 					shouldRetry: isRetryableOpenAiError,
 					onRetry: (_, delay, error: unknown) => {
 						const retryAfter = getRetryAfterMs(error);
-						if (typeof retryAfter === "number") {
-							this._openAiRateLimitedUntil = Date.now() + retryAfter;
+						if (isOpenAiRateLimitError(error)) {
+							const cooldown = Math.max(
+								OPENAI_SOFT_RATE_LIMIT_COOLDOWN_MS,
+								typeof retryAfter === "number" ? retryAfter : delay
+							);
+							this._openAiRateLimitedUntil = Date.now() + cooldown;
 							return;
 						}
 
-						if ((error as { status?: number })?.status === 429) {
-							this._openAiRateLimitedUntil = Date.now() + delay;
+						if (typeof retryAfter === "number") {
+							this._openAiRateLimitedUntil = Date.now() + retryAfter;
 						}
 					}
 				}
@@ -579,13 +584,17 @@ export default class ContentFilter {
 					shouldRetry: isRetryableOpenAiError,
 					onRetry: (_, delay, error: unknown) => {
 						const retryAfter = getRetryAfterMs(error);
-						if (typeof retryAfter === "number") {
-							this._openAiRateLimitedUntil = Date.now() + retryAfter;
+						if (isOpenAiRateLimitError(error)) {
+							const cooldown = Math.max(
+								OPENAI_SOFT_RATE_LIMIT_COOLDOWN_MS,
+								typeof retryAfter === "number" ? retryAfter : delay
+							);
+							this._openAiRateLimitedUntil = Date.now() + cooldown;
 							return;
 						}
 
-						if ((error as { status?: number })?.status === 429) {
-							this._openAiRateLimitedUntil = Date.now() + delay;
+						if (typeof retryAfter === "number") {
+							this._openAiRateLimitedUntil = Date.now() + retryAfter;
 						}
 					}
 				}
