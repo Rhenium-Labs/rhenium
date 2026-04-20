@@ -8,6 +8,7 @@ services:
                - ./applications/bot/.env
           volumes:
                - ./applications/bot/cfg.global.yml:/rhenium/applications/bot/cfg.global.yml
+               - lmdb:/rhenium/applications/bot/.cache
 
      dashboard:
           container_name: rhenium_dashboard
@@ -18,3 +19,8 @@ services:
                - ./applications/dashboard/.env
           ports:
                - "${HOST_PORT:-3000}:3000"
+
+volumes:
+     lmdb:
+          name: rhenium_lmdb_data
+          driver: local
