@@ -268,13 +268,15 @@ export default class ContentFilter {
 	 * @param _config Optional config placeholder for API parity.
 	 * @param _state Optional channel state placeholder for API parity.
 	 * @param _authorId Optional author identifier placeholder for API parity.
+	 * @param options Optional retry controls for callers that prefer fast failure.
 	 * @returns Moderation results preserving input ordering.
 	 */
 	static async batchScanText(
 		inputs: string[],
 		_config?: ParsedContentFilterConfig,
 		_state?: ChannelScanState | null,
-		_authorId?: Snowflake
+		_authorId?: Snowflake,
+		options?: { maxRetries?: number }
 	): Promise<Moderation[]> {
 		if (inputs.length === 0) return [];
 
@@ -310,7 +312,7 @@ export default class ContentFilter {
 					}
 				},
 				{
-					maxRetries: OPENAI_REQUEST_MAX_RETRIES,
+					maxRetries: Math.max(1, options?.maxRetries ?? OPENAI_REQUEST_MAX_RETRIES),
 					initialDelay: OPENAI_RETRY_INITIAL_DELAY_MS,
 					backoffFactor: 2,
 					maxDelay: OPENAI_RETRY_MAX_DELAY_MS,
@@ -1487,12 +1489,36 @@ function getRetryAfterMs(error: unknown): number | undefined {
 		return Math.max(1000, error.retryAfterMs);
 	}
 
+	const readHeader = (headers: unknown, key: string): unknown => {
+		if (!headers || typeof headers !== "object") {
+			return undefined;
+		}
+
+		const maybeGetter = headers as { get?: unknown };
+		if (typeof maybeGetter.get === "function") {
+			return (
+				(maybeGetter.get as (header: string) => unknown)(key) ??
+				(maybeGetter.get as (header: string) => unknown)(key.toLowerCase())
+			);
+		}
+
+		const record = headers as Record<string, unknown>;
+		return record[key] ?? record[key.toLowerCase()];
+	};
+
+	const directHeaders = (error as { headers?: unknown })?.headers;
+	const responseHeaders = (error as { response?: { headers?: unknown } })?.response?.headers;
+
 	const candidates: unknown[] = [
 		(error as { retryAfterMs?: unknown })?.retryAfterMs,
 		(error as { retry_after?: unknown })?.retry_after,
 		(error as { retryAfter?: unknown })?.retryAfter,
-		(error as { headers?: Record<string, unknown> })?.headers?.["retry-after"],
-		(error as { headers?: Record<string, unknown> })?.headers?.["x-ratelimit-reset-after"]
+		(error as { error?: { retry_after?: unknown } })?.error?.retry_after,
+		(error as { error?: { retryAfter?: unknown } })?.error?.retryAfter,
+		readHeader(directHeaders, "retry-after"),
+		readHeader(directHeaders, "x-ratelimit-reset-after"),
+		readHeader(responseHeaders, "retry-after"),
+		readHeader(responseHeaders, "x-ratelimit-reset-after")
 	];
 
 	for (const candidate of candidates) {

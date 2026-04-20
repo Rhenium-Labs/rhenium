@@ -43,6 +43,10 @@ const LOW_PRIORITY_DROP_QUEUE_SIZE = 500;
 const LOW_PRIORITY_DROP_RISK_THRESHOLD = 0.4;
 const LOW_PRIORITY_DROP_LOG_WINDOW_MS = 30 * 1000;
 const MAX_GUILD_QUEUE_DEPTH = 50;
+const TEXT_PREFETCH_MIN_BATCH_SIZE = 2;
+const TEXT_PREFETCH_FALLBACK_PAUSE_MS = 15_000;
+const TEXT_PREFETCH_OPENAI_MAX_RETRIES = 1;
+const FORCE_COOLDOWN_BYPASS_WINDOW_MS = 5_000;
 
 /**
  * Coordinates adaptive content-filter job scheduling, execution, and feedback loops.
@@ -68,6 +72,8 @@ export default class AutomatedScanner {
 	private static _prioritizedGuilds = new Set<Snowflake>();
 	private static _tickInFlight = false;
 	private static _lowPriorityDropLogWindowUntil = 0;
+	private static _activeJobCount = 0;
+	private static _textPrefetchPausedUntil = 0;
 
 	/**
 	 * Starts scheduler processing, cache pruning, and heartbeat logging intervals.
@@ -118,6 +124,9 @@ export default class AutomatedScanner {
 						event: "heartbeat",
 						states: this._stateStore.count(),
 						messageCache: this._messageCache.size,
+						activeJobs: this._activeJobCount,
+						openAiCooldownMs: ContentFilter.getOpenAiRateLimitCooldownMs(),
+						textPrefetchPauseMs: Math.max(0, this._textPrefetchPausedUntil - now),
 						queue,
 						deadLetters
 					})
@@ -137,6 +146,7 @@ export default class AutomatedScanner {
 		}
 
 		this._tickInFlight = false;
+		this._activeJobCount = 0;
 
 		if (this._cleanupInterval) {
 			clearInterval(this._cleanupInterval);
@@ -309,7 +319,7 @@ export default class AutomatedScanner {
 
 		const nextRunAt = isPrioritizedGuild
 			? now
-			: this._scheduleNextScan(now, state.scanRate, risk, state.ewmaMpm);
+			: this._scheduleNextScan(now, state.scanRate, risk, measuredMpm);
 
 		this._scheduler.enqueue({
 			messageId: message.id,
@@ -327,7 +337,6 @@ export default class AutomatedScanner {
 			isRetry: false
 		});
 	}
-
 	/**
 	 * Enqueues a high-priority heuristic candidate for immediate sampling.
 	 *
@@ -438,6 +447,11 @@ export default class AutomatedScanner {
 		const now = Date.now();
 		this._pruneMessageCache();
 
+		const availableSlots = Math.max(0, MAX_CONCURRENT_SCAN_JOBS - this._activeJobCount);
+		if (availableSlots <= 0) {
+			return;
+		}
+
 		const openAiCooldownMs = ContentFilter.getOpenAiRateLimitCooldownMs();
 		if (openAiCooldownMs > 0 && !this._scheduler.hasDueForcedJob(now)) {
 			return;
@@ -457,7 +471,9 @@ export default class AutomatedScanner {
 		const tickDuration = CF_CONSTANTS.HEURISTIC_TICK_INTERVAL_MS;
 		const allowedScans = Math.max(1, Math.floor(scansPerSecond * (tickDuration / 1000)));
 		const jobBudget =
-			openAiCooldownMs > 0 ? 1 : Math.min(allowedScans, MAX_CONCURRENT_SCAN_JOBS);
+			openAiCooldownMs > 0
+				? Math.min(1, availableSlots)
+				: Math.min(allowedScans, availableSlots);
 
 		const jobs = this._scheduler.pullDue(now, jobBudget);
 
@@ -479,10 +495,19 @@ export default class AutomatedScanner {
 			})
 			.filter((item): item is { jobIndex: number; text: string } => item !== null);
 
-		if (openAiCooldownMs <= 0 && textBatch.length > 0) {
+		const canPrefetchText =
+			openAiCooldownMs <= 0 &&
+			textBatch.length >= TEXT_PREFETCH_MIN_BATCH_SIZE &&
+			now >= this._textPrefetchPausedUntil;
+
+		if (canPrefetchText) {
 			try {
 				const batchResults = await ContentFilter.batchScanText(
-					textBatch.map(item => item.text)
+					textBatch.map(item => item.text),
+					undefined,
+					undefined,
+					undefined,
+					{ maxRetries: TEXT_PREFETCH_OPENAI_MAX_RETRIES }
 				);
 
 				for (const [resultIndex, item] of textBatch.entries()) {
@@ -492,17 +517,30 @@ export default class AutomatedScanner {
 					prefetchedTextResultsByJobIndex.set(item.jobIndex, [moderationResult]);
 				}
 			} catch (error) {
+				const retryAfter =
+					error instanceof RetryableScanError &&
+					typeof error.retryAfterMs === "number"
+						? Math.max(TEXT_PREFETCH_FALLBACK_PAUSE_MS, error.retryAfterMs)
+						: TEXT_PREFETCH_FALLBACK_PAUSE_MS;
+
+				this._textPrefetchPausedUntil = now + retryAfter;
+
 				Logger.warn(
 					`CF text batch prefetch failed for ${textBatch.length} jobs: ${error instanceof Error ? error.message : String(error)}`
 				);
 			}
 		}
 
-		await Promise.allSettled(
-			jobs.map((job, jobIndex) =>
-				this._processJob(job, now, prefetchedTextResultsByJobIndex.get(jobIndex))
-			)
-		);
+		for (const [jobIndex, job] of jobs.entries()) {
+			this._activeJobCount++;
+			void this._processJob(job, now, prefetchedTextResultsByJobIndex.get(jobIndex))
+				.catch(error => {
+					Logger.error("CF job processing failed unexpectedly:", error);
+				})
+				.finally(() => {
+					this._activeJobCount = Math.max(0, this._activeJobCount - 1);
+				});
+		}
 	}
 
 	/**
@@ -546,7 +584,9 @@ export default class AutomatedScanner {
 				config,
 				prep.state,
 				prefetchedTextResult,
-				job.force
+				job.force &&
+					ContentFilter.getOpenAiRateLimitCooldownMs() <=
+						FORCE_COOLDOWN_BYPASS_WINDOW_MS
 			);
 
 			if (job.source === "heuristic" && job.heuristicSignals.length > 0) {
