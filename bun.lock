@@ -56,6 +56,8 @@
         "sharp": "^0.34.5",
         "stream": "^0.0.3",
         "yaml": "^2.8.2",
+        "zod": "^4.3.6",
+        "zod-validation-error": "^5.0.0",
       },
       "devDependencies": {
         "@types/cron": "2.4.3",
@@ -99,6 +101,7 @@
       "name": "@repo/config",
       "dependencies": {
         "@repo/db": "workspace:*",
+        "zod": "^4.3.6",
       },
     },
     "packages/database": {

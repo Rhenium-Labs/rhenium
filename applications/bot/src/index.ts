@@ -57,6 +57,7 @@ export const kysely = createKyselyClient(process.env.PG_URL, [new ConfigCacheInv
 
 /** LMDB KV. */
 export const kv = open<object, string>({
+	path: "./cache/kv",
 	encoding: "json",
 	compression: true
 });
