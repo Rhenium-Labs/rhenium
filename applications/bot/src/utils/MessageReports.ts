@@ -159,10 +159,14 @@ export default class MessageReportUtils {
 		});
 
 		const embed = new EmbedBuilder()
-			.setAuthor({ name: `Reported by ${reporter.globalName}` })
+			.setAuthor({ name: "New Message Report" })
 			.setColor(Colors.Blue)
 			.setThumbnail(message.author.displayAvatarURL())
 			.setFields([
+				{
+					name: "Reported By",
+					value: userMentionWithId(reporter.id)
+				},
 				{
 					name: "Report Reason",
 					value: reason ?? "No reason provided."
