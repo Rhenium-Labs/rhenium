@@ -112,7 +112,7 @@ export default class MessageReportUtils {
 			const primaryEmbed = EmbedBuilder.from(currentEmbed)
 				.spliceFields(0, 1, {
 					name: "Reported By",
-					value: `${currentValue}\n${userMentionWithId(reporter.id)}`
+					value: `${currentValue}\n${reporter.username} \`${reporter.id}\``
 				})
 				.setTimestamp();
 
@@ -159,10 +159,14 @@ export default class MessageReportUtils {
 		});
 
 		const embed = new EmbedBuilder()
-			.setAuthor({ name: `Reported by ${reporter.globalName}` })
+			.setAuthor({ name: `A new report was submitted by ${reporter.username}`, iconURL: reporter.displayAvatarURL()})
 			.setColor(Colors.Blue)
 			.setThumbnail(message.author.displayAvatarURL())
 			.setFields([
+				{
+					name: "Reported By",
+					value: `${reporter.username} \`${reporter.id}\``
+				},
 				{
 					name: "Report Reason",
 					value: reason ?? "No reason provided."
