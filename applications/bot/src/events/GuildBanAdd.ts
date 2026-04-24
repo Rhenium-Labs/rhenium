@@ -5,7 +5,8 @@ import {
 	Colors,
 	EmbedBuilder,
 	Events,
-	messageLink
+	messageLink,
+	WebhookClient
 } from "discord.js";
 
 import ms from "ms";
@@ -64,11 +65,8 @@ export default class GuildBanAdd extends EventListener {
 		ban: GuildBan,
 		config: GuildConfig
 	): Promise<void> {
-		if (
-			!config.parseReportsConfig() ||
-			!config.canLogEvent(LoggingEvent.MessageReportReviewed)
-		)
-			return;
+		const reportsConfig = config.parseReportsConfig();
+		if (!reportsConfig) return;
 
 		const reports = await kysely
 			.updateTable("MessageReport")
@@ -130,7 +128,10 @@ export default class GuildBanAdd extends EventListener {
 						value: formattedContent
 					}
 				])
-				.setFooter({ text: `Reviewed by @${client.user.username} (${client.user.id})` })
+				.setFooter({
+					text: `Reviewed by @${client.user.username} (${client.user.id})`,
+					iconURL: client.user.displayAvatarURL()
+				})
 				.setTimestamp();
 
 			embeds.push(primaryEmbed);
@@ -170,20 +171,38 @@ export default class GuildBanAdd extends EventListener {
 		const allEmbeds = await Promise.all(embedPromises);
 
 		// Log all reports in parallel.
-		await Promise.all(
+		void Promise.all(
 			allEmbeds.map(embeds => config.log(LoggingEvent.MessageReportReviewed, { embeds }))
 		);
 
-		if (!config.data.message_reports.webhook_channel) return;
+		if (!reportsConfig.delete_submission_on_handle) {
+			const webhook = new WebhookClient({ url: reportsConfig.webhook_url });
+
+			void Promise.all(
+				reports.map((report, index) =>
+					webhook
+						.editMessage(report.id, {
+							embeds: allEmbeds[index],
+							components: []
+						})
+						.catch(() => null)
+				)
+			);
+
+			webhook.destroy();
+			return;
+		}
+
+		if (!reportsConfig.webhook_channel) return;
 
 		const reportsChannel = (await client.channels
-			.fetch(config.data.message_reports.webhook_channel)
+			.fetch(reportsConfig.webhook_channel)
 			.catch(() => null)) as GuildTextBasedChannel | null;
 
 		if (!reportsChannel) return;
 
 		// prettier-ignore
-		await reportsChannel
+		void reportsChannel
 			.bulkDelete(reports.map(r => r.id), true)
 			.catch(() => null);
 	}
