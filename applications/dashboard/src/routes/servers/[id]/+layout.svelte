@@ -22,57 +22,69 @@
 
 	let sidebarOpen = $state(false);
 
-	const modules = $derived([
-		{ id: "home", name: "Home", icon: Home, href: `/servers/${data.guild.id}` },
-		{
-			id: "message-reports",
-			name: "Message Reports",
-			icon: Flag,
-			href: `/servers/${data.guild.id}/message-reports`
-		},
-		{
-			id: "ban-requests",
-			name: "Ban Requests",
-			icon: Ban,
-			href: `/servers/${data.guild.id}/ban-requests`
-		},
-		{
-			id: "content-filter",
-			name: "Content Filter",
-			icon: Shield,
-			href: `/servers/${data.guild.id}/content-filter`
-		},
-		{
-			id: "highlights",
-			name: "Highlights",
-			icon: Sparkles,
-			href: `/servers/${data.guild.id}/highlights`
-		},
-		{
-			id: "quick-mutes",
-			name: "Quick Mutes",
-			icon: VolumeOff,
-			href: `/servers/${data.guild.id}/quick-mutes`
-		},
-		{
-			id: "quick-purges",
-			name: "Quick Purges",
-			icon: Trash2,
-			href: `/servers/${data.guild.id}/quick-purges`
-		},
-		{
-			id: "logging",
-			name: "Logging",
-			icon: PencilIcon,
-			href: `/servers/${data.guild.id}/logging`
-		},
-		{
-			id: "permissions",
-			name: "Permissions",
-			icon: KeyRound,
-			href: `/servers/${data.guild.id}/permissions`
-		}
-	]);
+	type GuildWithWhitelist = LayoutData["guild"] & { contentFilterWhitelisted?: boolean };
+
+	const contentFilterWhitelisted = $derived(
+		Boolean((data.guild as GuildWithWhitelist).contentFilterWhitelisted)
+	);
+
+	const modules = $derived.by(() => {
+		const allModules = [
+			{ id: "home", name: "Home", icon: Home, href: `/servers/${data.guild.id}` },
+			{
+				id: "message-reports",
+				name: "Message Reports",
+				icon: Flag,
+				href: `/servers/${data.guild.id}/message-reports`
+			},
+			{
+				id: "ban-requests",
+				name: "Ban Requests",
+				icon: Ban,
+				href: `/servers/${data.guild.id}/ban-requests`
+			},
+			{
+				id: "content-filter",
+				name: "Content Filter",
+				icon: Shield,
+				href: `/servers/${data.guild.id}/content-filter`
+			},
+			{
+				id: "highlights",
+				name: "Highlights",
+				icon: Sparkles,
+				href: `/servers/${data.guild.id}/highlights`
+			},
+			{
+				id: "quick-mutes",
+				name: "Quick Mutes",
+				icon: VolumeOff,
+				href: `/servers/${data.guild.id}/quick-mutes`
+			},
+			{
+				id: "quick-purges",
+				name: "Quick Purges",
+				icon: Trash2,
+				href: `/servers/${data.guild.id}/quick-purges`
+			},
+			{
+				id: "logging",
+				name: "Logging",
+				icon: PencilIcon,
+				href: `/servers/${data.guild.id}/logging`
+			},
+			{
+				id: "permissions",
+				name: "Permissions",
+				icon: KeyRound,
+				href: `/servers/${data.guild.id}/permissions`
+			}
+		];
+
+		return contentFilterWhitelisted
+			? allModules
+			: allModules.filter(module => module.id !== "content-filter");
+	});
 
 	function isActiveModule(href: string): boolean {
 		const homeHref = `/servers/${data.guild.id}`;

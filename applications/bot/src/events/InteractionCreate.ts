@@ -10,7 +10,6 @@ import {
 } from "discord.js";
 import { captureException, metrics } from "@sentry/node";
 
-import { getWhitelistStatus } from "#utils/index.js";
 import { SENTRY_METRICS_COUNTERS } from "#utils/Constants.js";
 
 import type { ResponseData } from "#commands/Command.js";
@@ -18,7 +17,6 @@ import type { ComponentInteraction } from "#components/Component.js";
 
 import Logger from "#utils/Logger.js";
 import GuildConfig from "#config/GuildConfig.js";
-import GlobalConfig from "#config/GlobalConfig.js";
 import EventListener from "#events/EventListener.js";
 import ConfigManager from "#config/ConfigManager.js";
 import CommandManager from "#commands/CommandManager.js";
@@ -31,9 +29,6 @@ export default class InteractionCreate extends EventListener {
 
 	async execute(interaction: Interaction): Promise<void> {
 		if (!interaction.inCachedGuild()) return;
-
-		const whitelisted = await getWhitelistStatus(interaction.guild.id);
-		if (!whitelisted && !GlobalConfig.isDeveloper(interaction.user.id)) return;
 
 		const config = await ConfigManager.getGuildConfig(interaction.guild.id);
 		const identifier =

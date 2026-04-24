@@ -9,7 +9,6 @@ import { SENTRY_METRICS_COUNTERS } from "#utils/Constants.js";
 import Logger from "#utils/Logger.js";
 import Highlights from "#root/commands/Highlights.js";
 import GuildConfig from "#config/GuildConfig.js";
-import GlobalConfig from "#config/GlobalConfig.js";
 import ConfigManager from "#config/ConfigManager.js";
 import EventListener from "#events/EventListener.js";
 import MessageManager from "#database/Messages.js";
@@ -27,25 +26,33 @@ export default class MessageCreate extends EventListener {
 		if (message.author.bot || message.webhookId || message.system) return;
 
 		const serializedMessage = MessageManager.serialize(message);
-		const whitelisted = await getWhitelistStatus(message.guild.id);
-		const config = await ConfigManager.getGuildConfig(message.guild.id);
+		const [isContentFilterWhitelisted, config] = await Promise.all([
+			getWhitelistStatus(message.guild.id),
+			ConfigManager.getGuildConfig(message.guild.id)
+		]);
 
-		if (!whitelisted) {
-			if (!GlobalConfig.isDeveloper(message.author.id)) return;
-			// Developers can run commands regardless of whitelist status.
-			return MessageCreate._handleCommand(message, config);
+		if (isContentFilterWhitelisted) {
+			// Cache the message for content filter scanners to avoid API fetches later.
+			AutomatedScanner.cacheMessage(message);
 		}
 
-		// Cache the message for content filter scanners to avoid API fetches later.
-		AutomatedScanner.cacheMessage(message);
-
-		return Promise.all([
+		const tasks = [
 			Highlights.highlightMessage(message),
-			AutomatedScanner.enqueueForScan(message, config, serializedMessage),
-			HeuristicScanner.triggerScan(message, config),
 			MessageManager.queue(message),
 			MessageCreate._handleCommand(message, config)
-		]);
+		];
+
+		if (isContentFilterWhitelisted) {
+			return Promise.all([
+				...tasks,
+				Promise.resolve(
+					AutomatedScanner.enqueueForScan(message, config, serializedMessage)
+				),
+				Promise.resolve(HeuristicScanner.triggerScan(message, config))
+			]);
+		}
+
+		return Promise.all(tasks);
 	}
 
 	/**

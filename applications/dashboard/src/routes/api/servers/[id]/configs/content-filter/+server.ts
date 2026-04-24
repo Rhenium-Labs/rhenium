@@ -14,7 +14,7 @@ import {
 	DISCORD_ID_REGEX,
 	ensureSafeJsonRequest,
 	invalidateBotConfigCache,
-	requireGuildConfigAccess
+	requireContentFilterConfigAccess
 } from "$lib/server/configApi";
 import type { RequestHandler } from "./$types";
 
@@ -123,7 +123,7 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 	const safetyError = ensureSafeJsonRequest(request, url.origin);
 	if (safetyError) return json({ success: false, error: safetyError }, { status: 403 });
 
-	const access = await requireGuildConfigAccess({ locals }, params.id);
+	const access = await requireContentFilterConfigAccess({ locals }, params.id);
 	if (!access.ok) return access.response;
 
 	let payloadUnknown: unknown;

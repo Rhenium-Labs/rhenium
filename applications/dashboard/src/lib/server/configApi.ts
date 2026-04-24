@@ -37,6 +37,16 @@ type AccessContext = {
 	locals: App.Locals;
 };
 
+export async function isGuildContentFilterWhitelisted(guildId: string): Promise<boolean> {
+	const whitelistEntry = await kysely
+		.selectFrom("Whitelist")
+		.select(["id"])
+		.where("id", "=", guildId)
+		.executeTakeFirst();
+
+	return whitelistEntry !== undefined;
+}
+
 export async function requireGuildConfigAccess(context: AccessContext, guildId: string) {
 	if (!context.locals.session) {
 		return {
@@ -104,6 +114,27 @@ export async function requireGuildConfigAccess(context: AccessContext, guildId: 
 		session: context.locals.session,
 		currentConfig: guild.config
 	};
+}
+
+export async function requireContentFilterConfigAccess(
+	context: AccessContext,
+	guildId: string
+) {
+	const access = await requireGuildConfigAccess(context, guildId);
+	if (!access.ok) return access;
+
+	const whitelisted = await isGuildContentFilterWhitelisted(guildId);
+	if (!whitelisted) {
+		return {
+			ok: false as const,
+			response: json(
+				{ success: false, error: "Content filter is unavailable for this server." },
+				{ status: 403 }
+			)
+		};
+	}
+
+	return access;
 }
 
 export async function invalidateBotConfigCache(guildId: string, userId: string): Promise<void> {

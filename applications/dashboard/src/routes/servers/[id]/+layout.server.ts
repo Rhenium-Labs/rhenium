@@ -8,6 +8,7 @@ import Logger from "$utils/Logger";
 import { isDeveloperUser } from "$utils/server/Authz";
 import DiscordUtils from "$utils/server/Discord";
 import SessionManager from "$utils/server/Session";
+import { isGuildContentFilterWhitelisted } from "$lib/server/configApi";
 
 export const load: LayoutServerLoad = async ({ locals, params }) => {
 	if (!locals.session) redirect(302, "/");
@@ -60,6 +61,8 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 			});
 		}
 
+		const contentFilterWhitelisted = await isGuildContentFilterWhitelisted(guild.id);
+
 		return {
 			session: {
 				userId: session.userId,
@@ -73,7 +76,8 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 				icon: userGuild
 					? DiscordUtils.generateGuildIconURL(userGuild.id, userGuild.icon, 256)
 					: "",
-				config: guild.config
+				config: guild.config,
+				contentFilterWhitelisted
 			}
 		};
 	} catch (err) {

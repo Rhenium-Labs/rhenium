@@ -4,64 +4,76 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const modules = [
-		{
-			id: "message-reports",
-			name: "Message Reports",
-			description: "Let members report problematic messages to moderators.",
-			path: "message-reports",
-			icon: Flag
-		},
-		{
-			id: "ban-requests",
-			name: "Ban Requests",
-			description: "Require approval before bans are executed.",
-			path: "ban-requests",
-			icon: Ban
-		},
-		{
-			id: "content-filter",
-			name: "Content Filter",
-			description: "Automatically moderate unsafe content.",
-			path: "content-filter",
-			icon: Filter
-		},
-		{
-			id: "highlights",
-			name: "Highlights",
-			description: "Allow users to subscribe to keyword alerts.",
-			path: "highlights",
-			icon: Bell
-		},
-		{
-			id: "quick-mutes",
-			name: "Quick Mutes",
-			description: "Mute members quickly through a reaction flow.",
-			path: "quick-mutes",
-			icon: VolumeX
-		},
-		{
-			id: "quick-purges",
-			name: "Quick Purges",
-			description: "Bulk-remove messages in a few clicks.",
-			path: "quick-purges",
-			icon: Trash2
-		},
-		{
-			id: "logging",
-			name: "Logging Webhooks",
-			description: "Route moderation events to webhook channels.",
-			path: "logging",
-			icon: FileText
-		},
-		{
-			id: "permissions",
-			name: "Permission Scopes",
-			description: "Control which roles can use each capability.",
-			path: "permissions",
-			icon: KeyRound
-		}
-	];
+	type GuildWithWhitelist = PageData["guild"] & { contentFilterWhitelisted?: boolean };
+
+	const contentFilterWhitelisted = $derived(
+		Boolean((data.guild as GuildWithWhitelist).contentFilterWhitelisted)
+	);
+
+	const modules = $derived.by(() => {
+		const allModules = [
+			{
+				id: "message-reports",
+				name: "Message Reports",
+				description: "Let members report problematic messages to moderators.",
+				path: "message-reports",
+				icon: Flag
+			},
+			{
+				id: "ban-requests",
+				name: "Ban Requests",
+				description: "Require approval before bans are executed.",
+				path: "ban-requests",
+				icon: Ban
+			},
+			{
+				id: "content-filter",
+				name: "Content Filter",
+				description: "Automatically moderate unsafe content.",
+				path: "content-filter",
+				icon: Filter
+			},
+			{
+				id: "highlights",
+				name: "Highlights",
+				description: "Allow users to subscribe to keyword alerts.",
+				path: "highlights",
+				icon: Bell
+			},
+			{
+				id: "quick-mutes",
+				name: "Quick Mutes",
+				description: "Mute members quickly through a reaction flow.",
+				path: "quick-mutes",
+				icon: VolumeX
+			},
+			{
+				id: "quick-purges",
+				name: "Quick Purges",
+				description: "Bulk-remove messages in a few clicks.",
+				path: "quick-purges",
+				icon: Trash2
+			},
+			{
+				id: "logging",
+				name: "Logging Webhooks",
+				description: "Route moderation events to webhook channels.",
+				path: "logging",
+				icon: FileText
+			},
+			{
+				id: "permissions",
+				name: "Permission Scopes",
+				description: "Control which roles can use each capability.",
+				path: "permissions",
+				icon: KeyRound
+			}
+		];
+
+		return contentFilterWhitelisted
+			? allModules
+			: allModules.filter(module => module.id !== "content-filter");
+	});
 
 	function getDisplayName(session: typeof data.session) {
 		return session.globalName ?? session.username ?? "User";

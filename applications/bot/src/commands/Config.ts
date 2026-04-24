@@ -17,6 +17,7 @@ import ms from "ms";
 
 import { Detector } from "@repo/db";
 import { kysely, client } from "#root/index.js";
+import { getWhitelistStatus } from "#utils/index.js";
 import { ContentFilterVerbosity, DetectorMode, UserPermission } from "@repo/config";
 
 import Command, {
@@ -841,6 +842,15 @@ export default class Config extends Command {
 		const subcommand = interaction.options.getSubcommand() as ConfigSubcommand;
 
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+		if (subcommandGroup === ConfigSubcommandGroup.ContentFilter) {
+			const whitelisted = await getWhitelistStatus(interaction.guild.id);
+			if (!whitelisted) {
+				return {
+					error: "This server is not whitelisted for the AI content filter system."
+				};
+			}
+		}
 
 		switch (subcommandGroup) {
 			case ConfigSubcommandGroup.Permissions:

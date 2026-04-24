@@ -23,7 +23,7 @@ export default class Whitelist extends Command {
 			name: "whitelist",
 			aliases: ["wl"],
 			category: CommandCategory.Developer,
-			description: "Manage the guild whitelists."
+			description: "Manage guilds whitelisted for the AI content filter system."
 		});
 	}
 
@@ -36,7 +36,9 @@ export default class Whitelist extends Command {
 		}
 
 		if (args.finished) {
-			return { error: "You must specify a subcommand: create, delete, check, list." };
+			return {
+				error: "You must specify a subcommand: create, delete, check, list (for content-filter whitelist entries)."
+			};
 		}
 
 		const subcommand = args.getString()!.toLowerCase() as WhitelistSubcommand;
@@ -79,7 +81,9 @@ export default class Whitelist extends Command {
 			.executeTakeFirst();
 
 		if (exists) {
-			return { error: `Guild with ID \`${guildId}\` is already whitelisted.` };
+			return {
+				error: `Guild with ID \`${guildId}\` is already whitelisted for the AI content filter system.`
+			};
 		}
 
 		await kysely.insertInto("Whitelist").values({ id: guildId }).execute();
@@ -88,7 +92,7 @@ export default class Whitelist extends Command {
 		return {
 			embeds: [
 				{
-					description: `Successfully whitelisted guild with ID \`${guildId}\`.`,
+					description: `Successfully whitelisted guild with ID \`${guildId}\` for the AI content filter system.`,
 					color: Colors.Green
 				}
 			]
@@ -104,7 +108,9 @@ export default class Whitelist extends Command {
 			.executeTakeFirst();
 
 		if (!exists) {
-			return { error: `Guild with ID \`${guildId}\` is not whitelisted.` };
+			return {
+				error: `Guild with ID \`${guildId}\` is not whitelisted for the AI content filter system.`
+			};
 		}
 
 		await kysely.deleteFrom("Whitelist").where("id", "=", guildId).execute();
@@ -113,7 +119,7 @@ export default class Whitelist extends Command {
 		return {
 			embeds: [
 				{
-					description: `Successfully removed guild with ID \`${guildId}\` from the whitelist.`,
+					description: `Successfully removed guild with ID \`${guildId}\` from the AI content filter whitelist.`,
 					color: Colors.Green
 				}
 			]
@@ -142,7 +148,7 @@ export default class Whitelist extends Command {
 		return {
 			embeds: [
 				{
-					description: `Guild with ID \`${guildId}\` is ${isWhitelisted ? "" : "not "}whitelisted.`,
+					description: `Guild with ID \`${guildId}\` is ${isWhitelisted ? "" : "not "}whitelisted for the AI content filter system.`,
 					color: isWhitelisted ? Colors.Green : Colors.Blue
 				}
 			]
@@ -160,7 +166,8 @@ export default class Whitelist extends Command {
 			return {
 				embeds: [
 					{
-						description: "There are no entries in the whitelist.",
+						description:
+							"There are no entries in the AI content filter whitelist.",
 						color: Colors.Blue
 					}
 				]
@@ -181,14 +188,14 @@ export default class Whitelist extends Command {
 				.setURL(uploadUrl);
 
 			return {
-				content: "Below contains a list of each entry in the whitelist.",
+				content: "Below contains every entry in the AI content filter whitelist.",
 				files: [attachment],
 				components: [new ActionRowBuilder<ButtonBuilder>().addComponents(button)]
 			};
 		}
 
 		return {
-			content: "Below contains a list of each entry in the whitelist.",
+			content: "Below contains every entry in the AI content filter whitelist.",
 			files: [attachment]
 		};
 	}

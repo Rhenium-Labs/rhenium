@@ -8,7 +8,7 @@ import {
 
 import { ContentFilterStatus } from "@repo/db";
 import { ContentFilterFieldNames, parseContentFilterCustomId } from "#managers/cf/Enums.js";
-import { hastebin, userMentionWithId } from "#utils/index.js";
+import { getWhitelistStatus, hastebin, userMentionWithId } from "#utils/index.js";
 
 import type { ParsedContentFilterCustomId } from "#managers/cf/Enums.js";
 import type { ResponseData } from "#commands/Command.js";
@@ -40,6 +40,11 @@ export default class ContentFilterButton extends Component {
 		interaction,
 		config
 	}: ComponentExecutionContext<"button">): Promise<ResponseData<"interaction"> | null> {
+		const whitelisted = await getWhitelistStatus(interaction.guild.id);
+		if (!whitelisted) {
+			return { error: "This server is not whitelisted for the AI content filter system." };
+		}
+
 		const contentFilterConfig = config.parseContentFilterConfig();
 
 		if (!contentFilterConfig) {
