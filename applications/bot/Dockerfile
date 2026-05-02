@@ -29,5 +29,5 @@ EXPOSE 3000
 ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2
 ENV MALLOC_CONF="dirty_decay_ms:5000,muzzy_decay_ms:5000,background_thread:true"
 
-# Use Node.js (V8) for --max-old-space-size and --optimize-for-size flag support.
-ENTRYPOINT ["node", "--max-old-space-size=512", "--optimize-for-size", "dist/index.js"]
+# Use Node.js (V8) for --optimize-for-size flag support.
+ENTRYPOINT ["node", "--optimize-for-size", "dist/index.js"]
