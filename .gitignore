@@ -45,3 +45,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Configs
 cfg.global.yml
+
+# Git worktrees
+.worktrees
