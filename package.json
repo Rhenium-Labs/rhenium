@@ -32,18 +32,18 @@
 		"typescript": "5.9.3"
 	},
 	"dependencies": {
-		"@trpc/client": "^11.16.0",
-		"@trpc/server": "^11.16.0",
-		"dotenv": "^17.4.1",
-		"kysely": "^0.28.15",
+		"@trpc/client": "^11.17.0",
+		"@trpc/server": "^11.17.0",
+		"dotenv": "^17.4.2",
+		"kysely": "^0.28.16",
 		"kysely-postgres-js": "^3.0.0",
 		"postgres": "^3.4.9",
 		"prettier-plugin-svelte": "^3.5.1",
-		"prettier-plugin-tailwindcss": "^0.7.2",
-		"prisma": "^7.7.0",
+		"prettier-plugin-tailwindcss": "^0.7.4",
+		"prisma": "^7.8.0",
 		"prisma-kysely": "^3.1.0",
 		"superjson": "^2.2.6",
-		"zod": "^4.3.6",
+		"zod": "^4.4.2",
 		"zod-validation-error": "^5.0.0"
 	}
 }
