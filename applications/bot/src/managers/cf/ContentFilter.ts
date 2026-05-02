@@ -2,9 +2,6 @@ import type { ModerationMultiModalInput, Moderation } from "openai/resources/mod
 import { WebhookClient, type Message, type Snowflake, type TextBasedChannel } from "discord.js";
 import ms from "ms";
 
-import sharp from "sharp";
-import Tesseract from "node-tesseract-ocr";
-
 import { client, openAi, kysely } from "#root/index.js";
 import { buildAlertPayload as renderAlertPayload } from "./AlertRenderer.js";
 import { Extensions } from "#utils/Media.js";
@@ -19,6 +16,7 @@ import type { MessageMediaMetadata } from "#utils/Media.js";
 import ContentFilterUtils from "#utils/ContentFilter.js";
 import Logger from "#utils/Logger.js";
 import MediaUtils from "#utils/Media.js";
+import OcrWorkerManager from "./OcrWorkerManager.js";
 
 const NSFW_MIN_SCORE_ADJUSTMENT = -0.12;
 const NSFW_STRICT_MAX_MIN_SCORE = 0.01;
@@ -1043,20 +1041,10 @@ export default class ContentFilter {
 					}
 				}
 
-				const pngBuffer = await sharp(buffer)
-					.png()
-					.resize({
-						width: 512,
-						height: 512,
-						fit: "inside",
-						withoutEnlargement: true
-					})
-					.toBuffer();
-
-				frames.push({
-					base64: pngBuffer.toString("base64"),
-					extension: Extensions.PNG
-				});
+				const base64 = await OcrWorkerManager.convertImage(buffer);
+				if (base64) {
+					frames.push({ base64, extension: Extensions.PNG });
+				}
 			} catch (error) {
 				Logger.warn("CF media fallback conversion failed:", toErrorString(error));
 			}
@@ -1095,8 +1083,11 @@ export default class ContentFilter {
 			if (!metadata.base64) continue;
 
 			try {
-				const buffer = Buffer.from(metadata.base64, "base64");
-				const text = await Tesseract.recognize(buffer, { lang: "eng" });
+				const text = await OcrWorkerManager.runOcr(metadata.base64, "eng");
+				if (text === null) {
+					frameFailures++;
+					continue;
+				}
 				const lower = text.toLowerCase();
 
 				for (const keyword of keywords) {

@@ -541,6 +541,7 @@ export default class AutomatedScanner {
 				})
 				.finally(() => {
 					this._activeJobCount = Math.max(0, this._activeJobCount - 1);
+					this._scheduler.releaseJob(job);
 				});
 		}
 	}
@@ -928,7 +929,7 @@ export default class AutomatedScanner {
 		this.cleanupOldTimestamps(state, now, CF_CONSTANTS.CONTENT_FILTER_ALERT_TTL);
 
 		let effectiveRisk = options?.risk;
-		let trafficEstimate = CF_CONSTANTS.HEURISTIC_DEFAULT_TRAFFIC_ESTIMATE;
+		let trafficEstimate: number = CF_CONSTANTS.HEURISTIC_DEFAULT_TRAFFIC_ESTIMATE;
 		let falsePositiveRatio = 0;
 
 		try {
@@ -1421,7 +1422,7 @@ export default class AutomatedScanner {
 	private static _ewma(
 		prev: number,
 		value: number,
-		alpha = CF_CONSTANTS.HEURISTIC_EWMA_ALPHA
+		alpha: number = CF_CONSTANTS.HEURISTIC_EWMA_ALPHA
 	): number {
 		return prev * (1 - alpha) + value * alpha;
 	}

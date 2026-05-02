@@ -1,4 +1,5 @@
 import { GatewayIntentBits, Options, Partials } from "discord.js";
+import type { GuildMember } from "discord.js";
 import { z } from "zod";
 
 /**
@@ -257,7 +258,7 @@ const DEFAULT_FINAL_DELAY = 10 * 60 * 1000;
 const CONTENT_FILTER_ALERT_TTL = 24 * 60 * 60 * 1000;
 const CONTENT_FILTER_LOG_TTL = 7 * 24 * 60 * 60 * 1000;
 
-export const CF_CONSTANTS = {
+export const CF_CONSTANTS = Object.freeze({
 	HEURISTIC_LOGGING_SMOOTH_ALPHA,
 	HEURISTIC_WINDOW_SIZE,
 	MESSAGE_QUEUE_TIME_RANGE,
@@ -378,4 +379,4 @@ export const CF_CONSTANTS = {
 	DEFAULT_FINAL_DELAY,
 	CONTENT_FILTER_ALERT_TTL,
 	CONTENT_FILTER_LOG_TTL
-};
+});

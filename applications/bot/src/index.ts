@@ -2,6 +2,7 @@ import "dotenv/config";
 import "./env.js";
 
 import OpenAI from "openai";
+import sharp from "sharp";
 
 import {
 	init,
@@ -31,6 +32,7 @@ import CommandManager from "#commands/CommandManager.js";
 import ComponentManager from "#components/ComponentManager.js";
 import EventListenerManager from "#events/EventListenerManager.js";
 import ConfigCacheInvalidatorPlugin from "#managers/database/Invalidator.js";
+import OcrWorkerManager from "#managers/cf/OcrWorkerManager.js";
 
 /** The Discord client instance. */
 export const client = new Client<true>({
@@ -45,7 +47,7 @@ export const client = new Client<true>({
 		guildMembers: {
 			interval: 3600, // 1 hour
 			filter: Sweepers.filterByLifetime({
-				lifetime: 1800 // 30 minutes
+				lifetime: 600 // 10 minutes inactive (was 30)
 			})
 		}
 	},
@@ -66,6 +68,10 @@ export const kv = open<object, string>({
 export const openAi = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY
 });
+
+// Disable libvips cache and limit to one thread to minimize native RSS.
+sharp.cache(false);
+sharp.concurrency(1);
 
 async function main(): Promise<void> {
 	// Cache global configuration.
@@ -125,6 +131,7 @@ void main();
 /** Handles storing messages on process exit events. */
 PROCESS_EXIT_EVENTS.forEach(event => {
 	process.on(event, async () => {
+		OcrWorkerManager.shutdown();
 		await MessageManager.insert(event)
 			.catch(error => {
 				Logger.error("Error when storing messages on process exit:", error);
