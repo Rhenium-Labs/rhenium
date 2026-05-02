@@ -1,5 +1,4 @@
 import { GatewayIntentBits, Options, Partials } from "discord.js";
-import type { GuildMember } from "discord.js";
 import { z } from "zod";
 
 /**
