@@ -541,6 +541,7 @@ export default class AutomatedScanner {
 				})
 				.finally(() => {
 					this._activeJobCount = Math.max(0, this._activeJobCount - 1);
+					this._scheduler.releaseJob(job);
 				});
 		}
 	}

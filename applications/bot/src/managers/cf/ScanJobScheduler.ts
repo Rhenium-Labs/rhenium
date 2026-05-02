@@ -25,6 +25,7 @@ export default class ScanJobScheduler {
 
 	private _lastCleanupAt = 0;
 	private _retryTurn = false;
+	private _pool = new ScanJobPool();
 
 	/**
 	 * Enqueues a scan job, replacing weaker duplicates for the same dedupe key.
@@ -34,11 +35,7 @@ export default class ScanJobScheduler {
 	 */
 	enqueue(job: EnqueueJob): ScanJob {
 		const dedupeKey = `${job.guildId}:${job.channelId}:${job.messageId}:${job.source}`;
-		const fullJob: ScanJob = {
-			...job,
-			jobId: randomUUID(),
-			dedupeKey
-		};
+		const fullJob = this._pool.acquire(job, randomUUID(), dedupeKey);
 
 		const targetQueue: QueueType = fullJob.isRetry ? "retry" : "new";
 		const targetMap = this._mapFor(targetQueue);
@@ -57,8 +54,11 @@ export default class ScanJobScheduler {
 					existing.risk >= fullJob.risk;
 
 				if (shouldKeepExisting) {
+					this._pool.release(fullJob); // newly acquired job not needed
 					return existing;
 				}
+
+				this._pool.release(existing); // replaced by the stronger incoming job
 			}
 
 			existingMap?.delete(dedupeKey);
@@ -176,6 +176,10 @@ export default class ScanJobScheduler {
 		return false;
 	}
 
+	releaseJob(job: ScanJob): void {
+		this._pool.release(job);
+	}
+
 	/**
 	 * Produces a queue snapshot for diagnostics output.
 	 *
@@ -284,6 +288,7 @@ export default class ScanJobScheduler {
 				this._newJobs.delete(key);
 				this._keyQueue.delete(key);
 				this._decrementGuildDepth(job.guildId);
+				this._pool.release(job);
 			}
 		}
 
@@ -292,6 +297,7 @@ export default class ScanJobScheduler {
 				this._retryJobs.delete(key);
 				this._keyQueue.delete(key);
 				this._decrementGuildDepth(job.guildId);
+				this._pool.release(job);
 			}
 		}
 
@@ -338,6 +344,7 @@ export default class ScanJobScheduler {
 		map.delete(worst.dedupeKey);
 		this._keyQueue.delete(worst.dedupeKey);
 		this._decrementGuildDepth(worst.guildId);
+		this._pool.release(worst);
 	}
 
 	/**
@@ -396,6 +403,63 @@ export default class ScanJobScheduler {
 	private _heapFor(queue: QueueType): BinaryHeap<ScanJob> {
 		return queue === "new" ? this._newHeap : this._retryHeap;
 	}
+}
+
+class ScanJobPool {
+    private readonly _available: ScanJob[] = [];
+    private static readonly MAX_SIZE = 200;
+
+    acquire(source: EnqueueJob, jobId: string, dedupeKey: string): ScanJob {
+        const job = this._available.pop() ?? ScanJobPool._makeBlank();
+
+        job.jobId = jobId;
+        job.dedupeKey = dedupeKey;
+        job.messageId = source.messageId;
+        job.channelId = source.channelId;
+        job.guildId = source.guildId;
+        job.authorId = source.authorId;
+        job.risk = source.risk;
+        job.nextRunAt = source.nextRunAt;
+        job.enqueuedAt = source.enqueuedAt;
+        job.attempts = source.attempts;
+        job.maxAttempts = source.maxAttempts;
+        job.source = source.source;
+        job.force = source.force;
+        job.isRetry = source.isRetry;
+
+        job.heuristicSignals.length = 0;
+        for (const signal of source.heuristicSignals) {
+            job.heuristicSignals.push(signal);
+        }
+
+        return job;
+    }
+
+    release(job: ScanJob): void {
+        if (this._available.length < ScanJobPool.MAX_SIZE) {
+            this._available.push(job);
+        }
+    }
+
+    private static _makeBlank(): ScanJob {
+        return {
+            jobId: "",
+            dedupeKey: "",
+            messageId: "",
+            channelId: "",
+            guildId: "",
+            authorId: "",
+            risk: 0,
+            nextRunAt: 0,
+            enqueuedAt: 0,
+            attempts: 0,
+            maxAttempts: 0,
+            source: "automated",
+            force: false,
+            heuristicSignals: [],
+            isRetry: false
+        };
+    }
 }
 
 /**
