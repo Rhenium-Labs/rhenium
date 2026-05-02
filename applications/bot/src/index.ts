@@ -2,6 +2,7 @@ import "dotenv/config";
 import "./env.js";
 
 import OpenAI from "openai";
+import sharp from "sharp";
 
 import {
 	init,
@@ -66,6 +67,10 @@ export const kv = open<object, string>({
 export const openAi = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY
 });
+
+// Disable libvips cache and limit to one thread to minimize native RSS.
+sharp.cache(false);
+sharp.concurrency(1);
 
 async function main(): Promise<void> {
 	// Cache global configuration.
