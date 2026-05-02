@@ -406,60 +406,60 @@ export default class ScanJobScheduler {
 }
 
 class ScanJobPool {
-    private readonly _available: ScanJob[] = [];
-    private static readonly MAX_SIZE = 200;
+	private readonly _available: ScanJob[] = [];
+	private static readonly MAX_SIZE = 200;
 
-    acquire(source: EnqueueJob, jobId: string, dedupeKey: string): ScanJob {
-        const job = this._available.pop() ?? ScanJobPool._makeBlank();
+	acquire(source: EnqueueJob, jobId: string, dedupeKey: string): ScanJob {
+		const job = this._available.pop() ?? ScanJobPool._makeBlank();
 
-        job.jobId = jobId;
-        job.dedupeKey = dedupeKey;
-        job.messageId = source.messageId;
-        job.channelId = source.channelId;
-        job.guildId = source.guildId;
-        job.authorId = source.authorId;
-        job.risk = source.risk;
-        job.nextRunAt = source.nextRunAt;
-        job.enqueuedAt = source.enqueuedAt;
-        job.attempts = source.attempts;
-        job.maxAttempts = source.maxAttempts;
-        job.source = source.source;
-        job.force = source.force;
-        job.isRetry = source.isRetry;
+		job.jobId = jobId;
+		job.dedupeKey = dedupeKey;
+		job.messageId = source.messageId;
+		job.channelId = source.channelId;
+		job.guildId = source.guildId;
+		job.authorId = source.authorId;
+		job.risk = source.risk;
+		job.nextRunAt = source.nextRunAt;
+		job.enqueuedAt = source.enqueuedAt;
+		job.attempts = source.attempts;
+		job.maxAttempts = source.maxAttempts;
+		job.source = source.source;
+		job.force = source.force;
+		job.isRetry = source.isRetry;
 
-        job.heuristicSignals.length = 0;
-        for (const signal of source.heuristicSignals) {
-            job.heuristicSignals.push(signal);
-        }
+		job.heuristicSignals.length = 0;
+		for (const signal of source.heuristicSignals) {
+			job.heuristicSignals.push(signal);
+		}
 
-        return job;
-    }
+		return job;
+	}
 
-    release(job: ScanJob): void {
-        if (this._available.length < ScanJobPool.MAX_SIZE) {
-            this._available.push(job);
-        }
-    }
+	release(job: ScanJob): void {
+		if (this._available.length < ScanJobPool.MAX_SIZE) {
+			this._available.push(job);
+		}
+	}
 
-    private static _makeBlank(): ScanJob {
-        return {
-            jobId: "",
-            dedupeKey: "",
-            messageId: "",
-            channelId: "",
-            guildId: "",
-            authorId: "",
-            risk: 0,
-            nextRunAt: 0,
-            enqueuedAt: 0,
-            attempts: 0,
-            maxAttempts: 0,
-            source: "automated",
-            force: false,
-            heuristicSignals: [],
-            isRetry: false
-        };
-    }
+	private static _makeBlank(): ScanJob {
+		return {
+			jobId: "",
+			dedupeKey: "",
+			messageId: "",
+			channelId: "",
+			guildId: "",
+			authorId: "",
+			risk: 0,
+			nextRunAt: 0,
+			enqueuedAt: 0,
+			attempts: 0,
+			maxAttempts: 0,
+			source: "automated",
+			force: false,
+			heuristicSignals: [],
+			isRetry: false
+		};
+	}
 }
 
 /**

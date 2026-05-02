@@ -85,16 +85,18 @@ export default class OcrWorkerManager {
 
 		worker.on("error", err => {
 			Logger.error("OCR worker error:", err);
-			this._rejectAll(err instanceof Error ? err : new Error(String(err)));
-			this._worker = null;
+			if (this._worker === worker) {
+				this._rejectAll(err instanceof Error ? err : new Error(String(err)));
+				this._worker = null;
+			}
 		});
 
 		worker.on("exit", code => {
 			if (code !== 0) {
 				Logger.warn(`OCR worker exited with code ${code}`);
-				this._rejectAll(new Error(`OCR worker exited with code ${code}`));
+				if (this._worker === worker) this._rejectAll(new Error(`OCR worker exited with code ${code}`));
 			}
-			this._worker = null;
+			if (this._worker === worker) this._worker = null;
 		});
 
 		return worker;
