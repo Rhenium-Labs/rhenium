@@ -1,4 +1,5 @@
 import { GatewayIntentBits, Options, Partials } from "discord.js";
+import type { GuildMember } from "discord.js";
 import { z } from "zod";
 
 /**
@@ -38,7 +39,10 @@ export const CLIENT_CACHE_OPTIONS = Options.cacheWithLimits({
 	GuildBanManager: 0,
 	GuildEmojiManager: Infinity,
 	GuildStickerManager: 0,
-	GuildMemberManager: Infinity,
+	GuildMemberManager: {
+		maxSize: 500,
+		keepOverLimit: (member: GuildMember) => member.id === member.client.user?.id
+	},
 	GuildTextThreadManager: 0,
 	GuildForumThreadManager: 0,
 	GuildInviteManager: 0,

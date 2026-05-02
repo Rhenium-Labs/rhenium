@@ -46,7 +46,7 @@ export const client = new Client<true>({
 		guildMembers: {
 			interval: 3600, // 1 hour
 			filter: Sweepers.filterByLifetime({
-				lifetime: 1800 // 30 minutes
+				lifetime: 600 // 10 minutes inactive (was 30)
 			})
 		}
 	},
