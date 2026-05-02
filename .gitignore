@@ -17,6 +17,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # code coverage
+docs
 coverage
 *.lcov
 
