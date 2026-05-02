@@ -32,6 +32,7 @@ import CommandManager from "#commands/CommandManager.js";
 import ComponentManager from "#components/ComponentManager.js";
 import EventListenerManager from "#events/EventListenerManager.js";
 import ConfigCacheInvalidatorPlugin from "#managers/database/Invalidator.js";
+import OcrWorkerManager from "#managers/cf/OcrWorkerManager.js";
 
 /** The Discord client instance. */
 export const client = new Client<true>({
@@ -130,6 +131,7 @@ void main();
 /** Handles storing messages on process exit events. */
 PROCESS_EXIT_EVENTS.forEach(event => {
 	process.on(event, async () => {
+		OcrWorkerManager.shutdown();
 		await MessageManager.insert(event)
 			.catch(error => {
 				Logger.error("Error when storing messages on process exit:", error);
