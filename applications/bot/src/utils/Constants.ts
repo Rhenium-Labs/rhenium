@@ -39,10 +39,7 @@ export const CLIENT_CACHE_OPTIONS = Options.cacheWithLimits({
 	GuildBanManager: 0,
 	GuildEmojiManager: Infinity,
 	GuildStickerManager: 0,
-	GuildMemberManager: {
-		maxSize: 500,
-		keepOverLimit: (member: GuildMember) => member.id === member.client.user?.id
-	},
+	GuildMemberManager: Infinity,
 	GuildTextThreadManager: 0,
 	GuildForumThreadManager: 0,
 	GuildInviteManager: 0,
