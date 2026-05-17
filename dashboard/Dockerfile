@@ -14,7 +14,7 @@ COPY dashboard ./dashboard
 COPY packages/database ./packages/database
 COPY packages/config ./packages/config
 
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Compile shared TS packages.
 RUN bun x turbo run compile
