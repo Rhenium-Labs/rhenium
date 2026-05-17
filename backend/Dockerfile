@@ -9,8 +9,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/Cargo.toml backend/Cargo.lock ./
-COPY backend/src ./src
 
+# Build dependencies with a stub binary.
+# This layer is cached until Cargo.toml or Cargo.lock changes —
+# so a source-only change skips straight to the final cargo build.
+RUN mkdir -p src && echo 'fn main() {}' > src/main.rs \
+    && cargo build --release --locked \
+    && rm -f target/release/deps/rhenium*
+
+COPY backend/src ./src
 RUN cargo build --release --locked
 
 FROM debian:bookworm-slim AS runtime
