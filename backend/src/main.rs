@@ -18,6 +18,7 @@ use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
 use sea_orm::ConnectOptions;
 use tracing::{error, info};
+use serenity::{cache::Settings as CacheSettings};
 
 use crate::lib::config::env::EnvConfig;
 use crate::lib::config::global::GlobalConfig;
@@ -146,9 +147,15 @@ async fn main() -> anyhow::Result<()> {
         .default_allowed_mentions(default_allowed_mentions)
         .build();
 
+    let mut cache_settings = CacheSettings::default();
+
+    cache_settings.max_messages = 0;
+    cache_settings.time_to_live = Duration::from_secs(60 * 60);
+
     // Build the serenity client.
     let mut client = serenity::ClientBuilder::new_with_http(http, intents)
         .framework(framework)
+        .cache_settings(cache_settings)
         .await
         .context("Failed to create Discord client")?;
 
