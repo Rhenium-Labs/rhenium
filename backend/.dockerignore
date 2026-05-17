@@ -1,0 +1,15 @@
+.git
+.cache
+.claude
+.idea
+target
+
+.env
+.env.*
+!.env.example
+
+*.log
+cargo_output.txt
+error.log
+
+docker-compose*.yml
