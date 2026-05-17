@@ -61,7 +61,8 @@ pub fn validate_action(
 
         if let Some(bot_member) = bot_member {
             let bot_highest = highest_role_position(bot_member, guild_roles);
-            let bot_is_owner = guild_owner_id.is_some_and(|owner_id| owner_id == bot_member.user.id);
+            let bot_is_owner =
+                guild_owner_id.is_some_and(|owner_id| owner_id == bot_member.user.id);
 
             if !bot_is_owner && target_highest >= bot_highest {
                 return ModerationResult {
@@ -80,9 +81,7 @@ pub fn validate_action(
         {
             return ModerationResult {
                 ok: false,
-                message: Some(
-                    "I cannot mute a member with Administrator permissions.".to_string(),
-                ),
+                message: Some("I cannot mute a member with Administrator permissions.".to_string()),
             };
         }
     }

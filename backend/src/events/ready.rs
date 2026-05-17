@@ -1,7 +1,7 @@
+use crate::Data;
 use poise::serenity_prelude as serenity;
 use std::time::Instant;
 use tracing::info;
-use crate::Data;
 
 static CLIENT_READY_AT: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
 
@@ -13,21 +13,14 @@ pub fn client_uptime_ms() -> u64 {
 }
 
 /// Handles the Ready event.
-pub async fn handle(
-    ctx: &serenity::Context,
-    data_about_bot: &serenity::Ready,
-    data: &Data,
-) {
+pub async fn handle(ctx: &serenity::Context, data_about_bot: &serenity::Ready, data: &Data) {
     let _ = CLIENT_READY_AT.set(Instant::now());
 
     info!(
         "Ready! Logged in as {} ({})",
         data_about_bot.user.name, data_about_bot.user.id
     );
-    info!(
-        "Connected to {} guilds.",
-        data_about_bot.guilds.len()
-    );
+    info!("Connected to {} guilds.", data_about_bot.guilds.len());
 
     // 1) Load prioritized guilds
     // 2) Start automated scanner loop

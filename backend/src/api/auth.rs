@@ -41,5 +41,3 @@ pub async fn auth_middleware(
 
     Ok(next.run(request).await)
 }
-
-

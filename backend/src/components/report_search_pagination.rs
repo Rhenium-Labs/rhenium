@@ -15,7 +15,12 @@ pub async fn handle(
     // report-search-{direction}-{controller_id}
     let parts: Vec<&str> = custom_id.split('-').collect();
     if parts.len() != 4 {
-        ia::respond_error(ctx, interaction,"Pagination failed. Invalid pagination payload.").await;
+        ia::respond_error(
+            ctx,
+            interaction,
+            "Pagination failed. Invalid pagination payload.",
+        )
+        .await;
         return;
     }
 
@@ -23,7 +28,12 @@ pub async fn handle(
     let controller_id = parts[3];
 
     if controller_id != interaction.user.id.to_string() {
-        ia::respond_error(ctx, interaction,"Only the user who initiated the search can use these buttons.").await;
+        ia::respond_error(
+            ctx,
+            interaction,
+            "Only the user who initiated the search can use these buttons.",
+        )
+        .await;
         return;
     }
 
@@ -40,7 +50,12 @@ pub async fn handle(
         .await;
 
     if interaction.message.embeds.is_empty() {
-        ia::followup_error(ctx, interaction, "Pagination failed. No embed found in the message.").await;
+        ia::followup_error(
+            ctx,
+            interaction,
+            "Pagination failed. No embed found in the message.",
+        )
+        .await;
         return;
     }
 
@@ -54,7 +69,12 @@ pub async fn handle(
     }
 
     if page_buttons.is_empty() {
-        ia::followup_error(ctx, interaction, "Pagination failed. No buttons found in the message.").await;
+        ia::followup_error(
+            ctx,
+            interaction,
+            "Pagination failed. No buttons found in the message.",
+        )
+        .await;
         return;
     }
 
@@ -107,11 +127,14 @@ pub async fn handle(
     .await
     {
         Ok((embed, components)) => {
-            let _ = interaction.edit_response(ctx,
-                serenity::EditInteractionResponse::new()
-                    .embed(embed)
-                    .components(components),
-            ).await;
+            let _ = interaction
+                .edit_response(
+                    ctx,
+                    serenity::EditInteractionResponse::new()
+                        .embed(embed)
+                        .components(components),
+                )
+                .await;
         }
         Err(message) => {
             if message == "No message reports found." {
@@ -130,4 +153,3 @@ pub async fn handle(
         }
     }
 }
-

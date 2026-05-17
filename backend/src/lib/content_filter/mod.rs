@@ -14,16 +14,16 @@ pub mod alert;
 pub mod automated;
 pub mod dead_letter;
 pub mod heuristic;
-pub mod scheduler;
 pub mod scanner;
+pub mod scheduler;
 pub mod state;
 pub mod types;
 
 use dashmap::DashSet;
 use std::sync::LazyLock;
 
-use sea_orm::{ColumnTrait, DbErr, EntityTrait, QueryFilter, Set};
 use sea_orm::sea_query::OnConflict;
+use sea_orm::{ColumnTrait, DbErr, EntityTrait, QueryFilter, Set};
 use tracing::warn;
 
 use crate::lib::entities::content_filter_priority;
@@ -63,7 +63,10 @@ pub async fn set_guild_priority(db: &sea_orm::DatabaseConnection, guild_id: &str
             .await
         {
             Ok(_) | Err(DbErr::RecordNotInserted) => {}
-            Err(err) => warn!(guild_id, "Failed to persist content-filter guild priority: {err}"),
+            Err(err) => warn!(
+                guild_id,
+                "Failed to persist content-filter guild priority: {err}"
+            ),
         }
     } else {
         if let Err(err) = content_filter_priority::Entity::delete_many()
@@ -71,7 +74,10 @@ pub async fn set_guild_priority(db: &sea_orm::DatabaseConnection, guild_id: &str
             .exec(db)
             .await
         {
-            warn!(guild_id, "Failed to delete content-filter guild priority: {err}");
+            warn!(
+                guild_id,
+                "Failed to delete content-filter guild priority: {err}"
+            );
         }
     }
 }
@@ -105,7 +111,10 @@ pub async fn scan_message(
     }
 
     // 2. Guild config check.
-    let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id)
+        .await;
     let cf_config = match config.parse_content_filter_config() {
         Some(c) => c,
         None => return,
@@ -118,29 +127,17 @@ pub async fn scan_message(
     // Cache the message for content filter scanners.
     automated::cache_message(message);
 
-    let serialized = crate::lib::repository::messages::MessageManager::serialize(message, &ctx.cache);
+    let serialized =
+        crate::lib::repository::messages::MessageManager::serialize(message, &ctx.cache);
 
-    automated::enqueue_for_scan(
-        ctx,
-        message,
-        &config,
-        &serialized,
-    ).await;
+    automated::enqueue_for_scan(ctx, message, &config, &serialized).await;
 
     if cf_config.config.use_heuristic_scanner {
-        heuristic::trigger_scan(
-            message,
-            &config,
-            data.clone(),
-            ctx.clone(),
-        ).await;
+        heuristic::trigger_scan(message, &config, data.clone(), ctx.clone()).await;
     }
 }
 
 /// Starts the automated scanner background task.
-pub fn start_automated_scanner(
-    data: crate::Data,
-    ctx: poise::serenity_prelude::Context,
-) {
+pub fn start_automated_scanner(data: crate::Data, ctx: poise::serenity_prelude::Context) {
     automated::start(data, ctx);
 }

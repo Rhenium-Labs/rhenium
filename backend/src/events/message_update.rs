@@ -1,14 +1,10 @@
-use poise::serenity_prelude as serenity;
 use crate::Data;
+use poise::serenity_prelude as serenity;
 
 /// Handles the MessageUpdate event.
 ///
 /// - Updates message content in the database when edited.
-pub async fn handle(
-    ctx: &serenity::Context,
-    event: &serenity::MessageUpdateEvent,
-    data: &Data,
-) {
+pub async fn handle(ctx: &serenity::Context, event: &serenity::MessageUpdateEvent, data: &Data) {
     if event.author.as_ref().is_some_and(|author| author.bot) {
         return;
     }
@@ -27,12 +23,8 @@ pub async fn handle(
         }
 
         let mentions = event.mentions.as_deref().unwrap_or(&[]);
-        let cleaned = crate::utils::messages::clean_content(
-            content,
-            &ctx.cache,
-            event.guild_id,
-            mentions,
-        );
+        let cleaned =
+            crate::utils::messages::clean_content(content, &ctx.cache, event.guild_id, mentions);
         let msg_id = event.id.to_string();
         let _old = data
             .message_manager

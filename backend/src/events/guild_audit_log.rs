@@ -29,7 +29,10 @@ pub async fn handle(
     };
     let target_webhook_id = target_id.get().to_string();
 
-    let config = data.config_manager.get_guild_config(&data.db, *guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, *guild_id)
+        .await;
     if !config
         .data
         .logging_webhooks
@@ -59,7 +62,10 @@ pub async fn handle(
         id: Set(guild_id.to_string()),
         config: Set(config_json),
     };
-    if let Err(e) = crate::lib::entities::guild::Entity::update(active).exec(&data.db).await {
+    if let Err(e) = crate::lib::entities::guild::Entity::update(active)
+        .exec(&data.db)
+        .await
+    {
         error!(
             "Failed to persist webhook cleanup for guild {} and webhook {}: {e}",
             guild_id, target_webhook_id

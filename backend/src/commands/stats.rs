@@ -1,6 +1,6 @@
-use poise::serenity_prelude::{self as serenity, CreateEmbed};
-use sea_orm::{ConnectionTrait, EntityTrait, PaginatorTrait, Statement, DatabaseBackend};
 use crate::{Context, Error};
+use poise::serenity_prelude::{self as serenity, CreateEmbed};
+use sea_orm::{ConnectionTrait, DatabaseBackend, EntityTrait, PaginatorTrait, Statement};
 
 /// Developer-only command: show process and database stats.
 ///
@@ -9,7 +9,10 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
     let data = ctx.data();
 
     // Developer check.
-    if !data.global_config.is_developer(&ctx.author().id.to_string()) {
+    if !data
+        .global_config
+        .is_developer(&ctx.author().id.to_string())
+    {
         return Ok(());
     }
 
@@ -58,7 +61,9 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
     let memory_info = {
         #[cfg(target_os = "linux")]
         {
-            let status = tokio::fs::read_to_string("/proc/self/status").await.unwrap_or_default();
+            let status = tokio::fs::read_to_string("/proc/self/status")
+                .await
+                .unwrap_or_default();
             let parse_kb = |prefix: &str| -> u64 {
                 status
                     .lines()
@@ -70,7 +75,7 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
             };
             let vm_data = parse_kb("VmData:");
             let vm_size = parse_kb("VmSize:");
-            let vm_rss  = parse_kb("VmRSS:");
+            let vm_rss = parse_kb("VmRSS:");
             format!("{vm_data} MB / {vm_size} MB / {vm_rss} MB")
         }
         #[cfg(target_os = "windows")]
@@ -116,17 +121,8 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
     let embed = CreateEmbed::new()
         .color(0x23272a) // Colors.NotQuiteBlack
         .author(
-            serenity::CreateEmbedAuthor::new(
-                cache
-                    .current_user()
-                    .name
-                    .clone(),
-            )
-            .icon_url(
-                cache
-                    .current_user()
-                    .face(),
-            ),
+            serenity::CreateEmbedAuthor::new(cache.current_user().name.clone())
+                .icon_url(cache.current_user().face()),
         )
         .fields(vec![
             ("Heartbeat", shard_latency, true),

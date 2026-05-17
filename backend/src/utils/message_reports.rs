@@ -1,12 +1,12 @@
-use std::sync::LazyLock;
+use crate::Data;
+use crate::lib::config::guild::GuildConfig;
 use poise::serenity_prelude as serenity;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
 use tracing::warn;
-use crate::lib::config::guild::GuildConfig;
-use crate::Data;
 
 static REPORT_TARGET_KV: LazyLock<RwLock<HashMap<String, serenity::Message>>> =
     LazyLock::new(|| RwLock::new(HashMap::new()));
@@ -154,7 +154,11 @@ pub async fn upsert_report(
             return Ok(());
         };
 
-        let embed_idx = if webhook_message.embeds.len() > 1 { 1 } else { 0 };
+        let embed_idx = if webhook_message.embeds.len() > 1 {
+            1
+        } else {
+            0
+        };
         let Some(current_embed) = webhook_message.embeds.get(embed_idx) else {
             return Ok(());
         };
@@ -211,7 +215,9 @@ pub async fn upsert_report(
         if let Some(thumbnail) = &current_embed.thumbnail {
             updated_embed = updated_embed.thumbnail(&thumbnail.url);
         }
-        updated_embed = updated_embed.fields(fields).timestamp(serenity::Timestamp::now());
+        updated_embed = updated_embed
+            .fields(fields)
+            .timestamp(serenity::Timestamp::now());
 
         let embeds = if embed_idx == 1 {
             vec![webhook_message.embeds[0].clone().into(), updated_embed]
@@ -232,7 +238,10 @@ pub async fn upsert_report(
         let mut active: crate::lib::entities::message_report::ActiveModel = existing.into();
         active.additional_reporters = Set(new_additional);
         if let Err(err) = active.update(&data.db).await {
-            warn!(report_id, reporter_id, "Failed to append additional message reporter: {err}");
+            warn!(
+                report_id,
+                reporter_id, "Failed to append additional message reporter: {err}"
+            );
         }
         return Ok(());
     }
@@ -524,7 +533,10 @@ async fn format_message_block(
     }
     if let Some(sticker_id) = sticker_id {
         if let Ok(id) = sticker_id.parse::<u64>() {
-            if let Ok(sticker) = serenity::StickerId::new(id).to_sticker(ctx.http.clone()).await {
+            if let Ok(sticker) = serenity::StickerId::new(id)
+                .to_sticker(ctx.http.clone())
+                .await
+            {
                 if sticker.format_type == serenity::StickerFormatType::Lottie {
                     prefix_parts.push(format!("Lottie Sticker: {}", sticker.name));
                 } else if let Some(sticker_url) = sticker.image_url() {

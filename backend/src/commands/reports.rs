@@ -1,6 +1,11 @@
-use poise::serenity_prelude::{self as serenity, ButtonStyle, CreateActionRow, CreateButton, CreateEmbed};
-use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseBackend, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set, Statement, TryGetable};
+use poise::serenity_prelude::{
+    self as serenity, ButtonStyle, CreateActionRow, CreateButton, CreateEmbed,
+};
 use sea_orm::sea_query::OnConflict;
+use sea_orm::{
+    ColumnTrait, ConnectionTrait, DatabaseBackend, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set, Statement, TryGetable,
+};
 
 use crate::lib::config::guild::GuildConfig;
 use crate::lib::config::schema::RawGuildConfig;
@@ -21,7 +26,7 @@ async fn reply_error(ctx: Context<'_>, message: impl Into<String>) -> Result<(),
     slash_command,
     guild_only,
     default_member_permissions = "MODERATE_MEMBERS",
-    subcommands("blacklist", "unblacklist", "search", "leaderboard"),
+    subcommands("blacklist", "unblacklist", "search", "leaderboard")
 )]
 pub async fn reports(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -44,12 +49,20 @@ pub async fn blacklist(
     let reports_config = match config.parse_reports_config() {
         Some(cfg) => cfg,
         None => {
-            return reply_error(ctx, "Message reports have not been configured on this server.").await;
+            return reply_error(
+                ctx,
+                "Message reports have not been configured on this server.",
+            )
+            .await;
         }
     };
 
     if user.id == ctx.author().id {
-        return reply_error(ctx, "You cannot blacklist yourself from using the report system.").await;
+        return reply_error(
+            ctx,
+            "You cannot blacklist yourself from using the report system.",
+        )
+        .await;
     }
 
     if reports_config
@@ -57,7 +70,11 @@ pub async fn blacklist(
         .iter()
         .any(|id| id == &user.id.to_string())
     {
-        return reply_error(ctx, "This user is already blacklisted from using the report system.").await;
+        return reply_error(
+            ctx,
+            "This user is already blacklisted from using the report system.",
+        )
+        .await;
     }
 
     let mut updated_config: RawGuildConfig = config.data.clone();
@@ -93,7 +110,11 @@ pub async fn unblacklist(
     let reports_config = match config.parse_reports_config() {
         Some(cfg) => cfg,
         None => {
-            return reply_error(ctx, "Message reports have not been configured on this server.").await;
+            return reply_error(
+                ctx,
+                "Message reports have not been configured on this server.",
+            )
+            .await;
         }
     };
 
@@ -102,7 +123,11 @@ pub async fn unblacklist(
         .iter()
         .any(|id| id == &user.id.to_string())
     {
-        return reply_error(ctx, "This user is not blacklisted from using the report system.").await;
+        return reply_error(
+            ctx,
+            "This user is not blacklisted from using the report system.",
+        )
+        .await;
     }
 
     let mut updated_config: RawGuildConfig = config.data.clone();
@@ -136,7 +161,11 @@ pub async fn search(
         .get_guild_config(&data.db, guild_id)
         .await;
     if config.parse_reports_config().is_none() {
-        return reply_error(ctx, "Message reports have not been configured on this server.").await;
+        return reply_error(
+            ctx,
+            "Message reports have not been configured on this server.",
+        )
+        .await;
     }
 
     let page = 1i64;
@@ -233,7 +262,8 @@ pub async fn build_search_page(
         let report_url = webhook_channel
             .as_deref()
             .map(|channel_id| format!("https://discord.com/channels/{guild_id}/{channel_id}/{id}"));
-        let truncated_reason = crate::utils::messages::escape_code_block(&crate::utils::truncate(&reason, 256));
+        let truncated_reason =
+            crate::utils::messages::escape_code_block(&crate::utils::truncate(&reason, 256));
         let value = format!(
             "Created On <t:{timestamp}:f>{}\n`{truncated_reason}`",
             report_url
@@ -267,7 +297,10 @@ pub async fn build_search_page(
         .timestamp(serenity::Timestamp::now());
 
     if let Some(target) = target {
-        embed = embed.footer(serenity::CreateEmbedFooter::new(format!("User ID: {}", target.id)));
+        embed = embed.footer(serenity::CreateEmbedFooter::new(format!(
+            "User ID: {}",
+            target.id
+        )));
     }
 
     let total_pages = ((total_count as f64) / 5.0).ceil().max(1.0) as i64;
@@ -336,7 +369,11 @@ pub async fn leaderboard(
         .get_guild_config(&data.db, guild_id_obj)
         .await;
     if config.parse_reports_config().is_none() {
-        return reply_error(ctx, "Message reports have not been configured on this server.").await;
+        return reply_error(
+            ctx,
+            "Message reports have not been configured on this server.",
+        )
+        .await;
     }
 
     let (group_by_column, title, status_filter) = match query {
@@ -372,11 +409,7 @@ pub async fn leaderboard(
             [guild_id.clone().into(), status.into()],
         )
     } else {
-        Statement::from_sql_and_values(
-            DatabaseBackend::Postgres,
-            &sql,
-            [guild_id.clone().into()],
-        )
+        Statement::from_sql_and_values(DatabaseBackend::Postgres, &sql, [guild_id.clone().into()])
     };
     let rows = data.db.query_all(stmt).await?;
 
@@ -387,7 +420,8 @@ pub async fn leaderboard(
                 title.to_lowercase()
             ))
             .color(0xED4245); // Colors.Red
-        ctx.send(poise::CreateReply::default().embed(error_embed)).await?;
+        ctx.send(poise::CreateReply::default().embed(error_embed))
+            .await?;
         return Ok(());
     }
 
@@ -402,7 +436,10 @@ pub async fn leaderboard(
         ));
     }
 
-    let guild = guild_id_obj.to_partial_guild(ctx.serenity_context()).await.ok();
+    let guild = guild_id_obj
+        .to_partial_guild(ctx.serenity_context())
+        .await
+        .ok();
     let author_name = guild
         .as_ref()
         .map(|g| format!("{} - {}", g.name, title))

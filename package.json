@@ -19,9 +19,10 @@
 		"dashboard"
 	],
 	"scripts": {
-		"format": "turbo run format",
-		"typecheck": "turbo run typecheck",
-		"compile": "turbo run compile",
+		"fmt": "turbo run format && cargo fmt --manifest-path backend/Cargo.toml",
+		"check": "turbo run typecheck && cargo check --manifest-path backend/Cargo.toml",
+		"lint": "cargo clippy --manifest-path backend/Cargo.toml -- -D warnings",
+		"build": "turbo run compile && cargo build --release --manifest-path backend/Cargo.toml",
 		"db:generate": "prisma generate",
 		"db:migrate": "prisma migrate deploy"
 	},

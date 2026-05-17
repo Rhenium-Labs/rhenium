@@ -23,11 +23,7 @@ use crate::Data;
 /// Instead we use `tokio::task::spawn` which runs the future in a new task.
 /// A panicking task produces a `JoinError` with `is_panic() == true`, which we
 /// detect and report just like the TS `try/catch` around the handler call.
-pub async fn handle(
-    ctx: &serenity::Context,
-    interaction: &serenity::Interaction,
-    data: &Data,
-) {
+pub async fn handle(ctx: &serenity::Context, interaction: &serenity::Interaction, data: &Data) {
     match interaction {
         serenity::Interaction::Component(component) => {
             let ctx2 = ctx.clone();
@@ -46,11 +42,7 @@ pub async fn handle(
                     let msg = panic_payload
                         .downcast_ref::<&str>()
                         .copied()
-                        .or_else(|| {
-                            panic_payload
-                                .downcast_ref::<String>()
-                                .map(String::as_str)
-                        })
+                        .or_else(|| panic_payload.downcast_ref::<String>().map(String::as_str))
                         .unwrap_or("unknown panic");
 
                     let sentry_id = sentry::capture_message(
@@ -100,24 +92,14 @@ pub async fn handle(
                     let msg = panic_payload
                         .downcast_ref::<&str>()
                         .copied()
-                        .or_else(|| {
-                            panic_payload
-                                .downcast_ref::<String>()
-                                .map(String::as_str)
-                        })
+                        .or_else(|| panic_payload.downcast_ref::<String>().map(String::as_str))
                         .unwrap_or("unknown panic");
 
                     let sentry_id = sentry::capture_message(
-                        &format!(
-                            "Modal '{}' handler panicked: {}",
-                            modal.data.custom_id, msg
-                        ),
+                        &format!("Modal '{}' handler panicked: {}", modal.data.custom_id, msg),
                         sentry::Level::Error,
                     );
-                    error!(
-                        "Modal '{}' handler panicked: {}",
-                        modal.data.custom_id, msg
-                    );
+                    error!("Modal '{}' handler panicked: {}", modal.data.custom_id, msg);
                     send_error_reply_modal(ctx, modal, sentry_id).await;
                 }
                 Err(_) => {

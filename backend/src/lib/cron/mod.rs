@@ -6,8 +6,8 @@
 //! - Content filter alert cleanup
 //! - Channel state pruning
 
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use sea_orm::sea_query::Expr;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::{error, info};
 
@@ -19,7 +19,8 @@ pub fn start(data: crate::Data, ctx: poise::serenity_prelude::Context) {
     let resolved_by = ctx.cache.current_user().id;
     let insert_cron = normalize_cron_expression(&data.global_config.database.messages.insert_cron);
     let delete_cron = normalize_cron_expression(&data.global_config.database.messages.delete_cron);
-    let disregard_cron = normalize_cron_expression(&data.global_config.database.reports.disregard_cron);
+    let disregard_cron =
+        normalize_cron_expression(&data.global_config.database.reports.disregard_cron);
 
     tokio::spawn(async move {
         let scheduler = match JobScheduler::new().await {
@@ -117,8 +118,8 @@ async fn cleanup_old_messages(data: &crate::Data) {
     }
 
     let threshold_ms = chrono::Utc::now().timestamp_millis() - ttl_ms as i64;
-    let threshold = chrono::DateTime::from_timestamp_millis(threshold_ms)
-        .unwrap_or(chrono::Utc::now());
+    let threshold =
+        chrono::DateTime::from_timestamp_millis(threshold_ms).unwrap_or(chrono::Utc::now());
 
     match crate::lib::entities::message::Entity::delete_many()
         .filter(crate::lib::entities::message::Column::CreatedAt.lte(threshold.naive_utc()))
@@ -136,10 +137,7 @@ async fn cleanup_old_messages(data: &crate::Data) {
 
 /// Automatically disregards stale pending message reports.
 /// For each guild, reads auto_disregard_after from the JSON config and applies it.
-async fn auto_disregard_reports(
-    data: &crate::Data,
-    resolved_by: poise::serenity_prelude::UserId,
-) {
+async fn auto_disregard_reports(data: &crate::Data, resolved_by: poise::serenity_prelude::UserId) {
     use crate::lib::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
 
     // Fetch all pending reports, deduplicate guild IDs in memory.
@@ -157,7 +155,8 @@ async fn auto_disregard_reports(
 
     let guild_ids: Vec<String> = {
         let mut seen = std::collections::HashSet::new();
-        pending.iter()
+        pending
+            .iter()
             .filter(|r| seen.insert(r.guild_id.clone()))
             .map(|r| r.guild_id.clone())
             .collect()
@@ -174,7 +173,10 @@ async fn auto_disregard_reports(
             Err(_) => continue,
         };
 
-        let config = data.config_manager.get_guild_config(&data.db, guild_id_parsed).await;
+        let config = data
+            .config_manager
+            .get_guild_config(&data.db, guild_id_parsed)
+            .await;
         let reports_config = match config.parse_reports_config() {
             Some(c) => c,
             None => continue,

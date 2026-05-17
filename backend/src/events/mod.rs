@@ -2,20 +2,20 @@
 //!
 //! Each event type has its own submodule matching the TS source structure:
 
-pub mod ready;
+pub mod guild_audit_log;
+pub mod guild_ban_add;
+pub mod guild_create;
+pub mod interaction_create;
+pub mod message_bulk_delete;
 pub mod message_create;
 pub mod message_delete;
-pub mod message_bulk_delete;
 pub mod message_update;
-pub mod guild_create;
-pub mod guild_ban_add;
-pub mod guild_audit_log;
-pub mod interaction_create;
 pub mod reaction_add;
+pub mod ready;
 
+use crate::{Data, Error};
 use poise::serenity_prelude as serenity;
 use tracing::warn;
-use crate::{Data, Error};
 
 /// Central event handler dispatching all gateway events to individual modules.
 pub async fn handle_event(
@@ -62,7 +62,10 @@ pub async fn handle_event(
             guild_create::handle(guild, is_new, data).await;
         }
 
-        serenity::FullEvent::GuildBanAddition { banned_user, guild_id } => {
+        serenity::FullEvent::GuildBanAddition {
+            banned_user,
+            guild_id,
+        } => {
             guild_ban_add::handle(ctx, guild_id, banned_user, data).await;
         }
 
@@ -78,7 +81,9 @@ pub async fn handle_event(
             reaction_add::handle(ctx, add_reaction, data).await;
         }
 
-        serenity::FullEvent::Ratelimit { data: ratelimit_info } => {
+        serenity::FullEvent::Ratelimit {
+            data: ratelimit_info,
+        } => {
             warn!(
                 "Discord rate limit hit: timeout={}ms method={:?} path='{}' global={}",
                 ratelimit_info.timeout.as_millis(),

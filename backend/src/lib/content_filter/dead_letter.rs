@@ -9,11 +9,12 @@ const DEAD_LETTER_PREFIX: &str = "cf:dlq";
 const MAX_RECENT_ENTRIES: usize = 200;
 
 static RECENT: Mutex<Vec<DeadLetterEntry>> = Mutex::new(Vec::new());
-static TOTAL_RECORDED: std::sync::atomic::AtomicUsize =
-    std::sync::atomic::AtomicUsize::new(0);
+static TOTAL_RECORDED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 fn recent_entries() -> MutexGuard<'static, Vec<DeadLetterEntry>> {
-    RECENT.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    RECENT
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 /// Records a permanently failed scan job in memory and KV storage.
@@ -69,7 +70,11 @@ pub async fn record(kv: &crate::lib::kv::KvStore, job: &ScanJob, reason: &str, e
 
 /// Returns the most recent dead-letter entries.
 pub fn get_recent(limit: usize) -> Vec<DeadLetterEntry> {
-    recent_entries().iter().take(limit.max(1)).cloned().collect()
+    recent_entries()
+        .iter()
+        .take(limit.max(1))
+        .cloned()
+        .collect()
 }
 
 /// Returns aggregate dead-letter counters.

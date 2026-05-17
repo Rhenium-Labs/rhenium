@@ -1,0 +1,30 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+[*.rs]
+indent_style = space
+indent_size = 4
+
+[*.{ts,svelte,js,mjs,cjs}]
+indent_style = tab
+tab_width = 5
+
+[*.{json,jsonc}]
+indent_style = tab
+tab_width = 5
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.toml]
+indent_style = space
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false

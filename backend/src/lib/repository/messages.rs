@@ -3,7 +3,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use chrono::{DateTime, Utc};
 use poise::serenity_prelude as serenity;
-use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseBackend, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Statement, TryGetable, Value};
+use sea_orm::{
+    ColumnTrait, ConnectionTrait, DatabaseBackend, DatabaseConnection, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect, Statement, TryGetable, Value,
+};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
@@ -108,11 +111,7 @@ impl MessageManager {
             reference_id,
             created_at: *message.timestamp,
             content,
-            attachments: message
-                .attachments
-                .iter()
-                .map(|a| a.url.clone())
-                .collect(),
+            attachments: message.attachments.iter().map(|a| a.url.clone()).collect(),
             deleted: false,
         }
     }
@@ -170,7 +169,12 @@ impl MessageManager {
         let model = crate::lib::entities::message::Entity::find_by_id(id)
             .one(db)
             .await
-            .map_err(|err| warn!(message_id = id, "Failed to fetch message from database: {err}"))
+            .map_err(|err| {
+                warn!(
+                    message_id = id,
+                    "Failed to fetch message from database: {err}"
+                )
+            })
             .ok()??;
         Some(Self::from_model(model))
     }
@@ -231,7 +235,10 @@ impl MessageManager {
         let row = match db.query_one(stmt).await {
             Ok(row) => row,
             Err(err) => {
-                warn!(message_id = id, "Failed to mark message deleted in database: {err}");
+                warn!(
+                    message_id = id,
+                    "Failed to mark message deleted in database: {err}"
+                );
                 None
             }
         }?;
@@ -315,7 +322,10 @@ impl MessageManager {
                     map.insert(msg.id.clone(), msg);
                 }
             }
-            Err(err) => warn!(channel_id, "Failed to fetch channel messages from database: {err}"),
+            Err(err) => warn!(
+                channel_id,
+                "Failed to fetch channel messages from database: {err}"
+            ),
         }
 
         for msg in cached {
@@ -356,7 +366,10 @@ impl MessageManager {
             .query_one(old_stmt)
             .await
             .map_err(|err| {
-                warn!(message_id = id, "Failed to fetch old message content: {err}");
+                warn!(
+                    message_id = id,
+                    "Failed to fetch old message content: {err}"
+                );
                 err
             })
             .ok()
@@ -369,7 +382,10 @@ impl MessageManager {
             [id.to_string().into(), new_content.to_string().into()],
         );
         if let Err(err) = db.execute(update_stmt).await {
-            warn!(message_id = id, "Failed to update message content in database: {err}");
+            warn!(
+                message_id = id,
+                "Failed to update message content in database: {err}"
+            );
         }
         old.unwrap_or_else(|| EMPTY_MESSAGE_CONTENT.to_string())
     }
@@ -440,7 +456,8 @@ impl MessageManager {
             let cache = self.cache.read().await;
             cache.values().cloned().collect()
         };
-        let flushed_ids: HashSet<String> = messages.iter().map(|message| message.id.clone()).collect();
+        let flushed_ids: HashSet<String> =
+            messages.iter().map(|message| message.id.clone()).collect();
 
         let mut placeholders = Vec::with_capacity(messages.len());
         let mut values: Vec<Value> = Vec::with_capacity(messages.len() * 10);
@@ -508,7 +525,8 @@ impl MessageManager {
         let author_id: String = String::try_get_by(row, "author_id").ok()?;
         let channel_id: String = String::try_get_by(row, "channel_id").ok()?;
         let sticker_id: Option<String> = Option::<String>::try_get_by(row, "sticker_id").ok()?;
-        let reference_id: Option<String> = Option::<String>::try_get_by(row, "reference_id").ok()?;
+        let reference_id: Option<String> =
+            Option::<String>::try_get_by(row, "reference_id").ok()?;
         let created_at: DateTime<Utc> = DateTime::<Utc>::try_get_by(row, "created_at").ok()?;
         let content: Option<String> = Option::<String>::try_get_by(row, "content").ok()?;
         let attachments: Vec<String> = Vec::<String>::try_get_by(row, "attachments").ok()?;

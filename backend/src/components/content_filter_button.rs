@@ -23,7 +23,12 @@ pub async fn handle(
     // - cfb1:content:{messageId}
     let parts: Vec<&str> = custom_id.split(':').collect();
     if parts.len() < 3 || parts.first().copied() != Some("cfb1") {
-        ia::respond_error(ctx, interaction, "Unsupported content filter action payload.").await;
+        ia::respond_error(
+            ctx,
+            interaction,
+            "Unsupported content filter action payload.",
+        )
+        .await;
         return;
     }
 
@@ -34,22 +39,41 @@ pub async fn handle(
         "fp" if parts.len() == 4 => (parts[2], parts[3]),
         "content" if parts.len() == 3 => ("", parts[2]),
         _ => {
-            ia::respond_error(ctx, interaction, "Unsupported content filter action payload.").await;
+            ia::respond_error(
+                ctx,
+                interaction,
+                "Unsupported content filter action payload.",
+            )
+            .await;
             return;
         }
     };
 
     // Check whitelist.
     if let Some(guild_id) = interaction.guild_id {
-        let status = crate::utils::is_guild_whitelisted(&data.db, &data.kv, &guild_id.to_string()).await;
+        let status =
+            crate::utils::is_guild_whitelisted(&data.db, &data.kv, &guild_id.to_string()).await;
         if !status {
-            ia::respond_error(ctx, interaction, "This server is not whitelisted for the AI content filter system.").await;
+            ia::respond_error(
+                ctx,
+                interaction,
+                "This server is not whitelisted for the AI content filter system.",
+            )
+            .await;
             return;
         }
 
-        let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+        let config = data
+            .config_manager
+            .get_guild_config(&data.db, guild_id)
+            .await;
         if config.parse_content_filter_config().is_none() {
-            ia::respond_error(ctx, interaction, "Content filter is not configured for this server.").await;
+            ia::respond_error(
+                ctx,
+                interaction,
+                "Content filter is not configured for this server.",
+            )
+            .await;
             return;
         }
     }
@@ -114,11 +138,14 @@ async fn handle_delete(
     let channel = match channel_id.to_channel(ctx).await {
         Ok(channel) => channel,
         Err(_) => {
-            let _ = interaction.create_followup(ctx,
-                serenity::CreateInteractionResponseFollowup::new()
-                    .content("Could not find the channel containing the flagged message.")
-                    .ephemeral(true),
-            ).await;
+            let _ = interaction
+                .create_followup(
+                    ctx,
+                    serenity::CreateInteractionResponseFollowup::new()
+                        .content("Could not find the channel containing the flagged message.")
+                        .ephemeral(true),
+                )
+                .await;
             return;
         }
     };
@@ -129,11 +156,14 @@ async fn handle_delete(
     };
 
     if !is_text_based {
-        let _ = interaction.create_followup(ctx,
-            serenity::CreateInteractionResponseFollowup::new()
-                .content("Could not find the channel containing the flagged message.")
-                .ephemeral(true),
-        ).await;
+        let _ = interaction
+            .create_followup(
+                ctx,
+                serenity::CreateInteractionResponseFollowup::new()
+                    .content("Could not find the channel containing the flagged message.")
+                    .ephemeral(true),
+            )
+            .await;
         return;
     }
 
@@ -179,11 +209,14 @@ async fn handle_delete(
                         .ephemeral(true),
                 ).await;
             } else {
-                let _ = interaction.create_followup(ctx,
-                    serenity::CreateInteractionResponseFollowup::new()
-                        .content("Failed to delete the message. I may lack permissions.")
-                        .ephemeral(true),
-                ).await;
+                let _ = interaction
+                    .create_followup(
+                        ctx,
+                        serenity::CreateInteractionResponseFollowup::new()
+                            .content("Failed to delete the message. I may lack permissions.")
+                            .ephemeral(true),
+                    )
+                    .await;
             }
         }
     }
@@ -201,9 +234,9 @@ async fn update_submission_message(
     if let Some(embed_data) = interaction.message.embeds.first() {
         let color = match (action, status) {
             ("delete", "succeeded") | ("delete", "missing") => 0x3498DB, // Colors.Blue
-            ("resolve", _) => 0x57F287,                                   // Colors.Green
-            ("false", _) => 0x23272A,                                     // Colors.NotQuiteBlack
-            _ => 0x3498DB,                                                 // Colors.Blue
+            ("resolve", _) => 0x57F287,                                  // Colors.Green
+            ("false", _) => 0x23272A,                                    // Colors.NotQuiteBlack
+            _ => 0x3498DB,                                               // Colors.Blue
         };
 
         let mut fields = embed_data
@@ -241,8 +274,12 @@ async fn update_submission_message(
 
         if let Some(ref author) = embed_data.author {
             let mut ea = serenity::CreateEmbedAuthor::new(author.name.clone());
-            if let Some(ref icon) = author.icon_url { ea = ea.icon_url(icon); }
-            if let Some(ref url) = author.url { ea = ea.url(url); }
+            if let Some(ref icon) = author.icon_url {
+                ea = ea.icon_url(icon);
+            }
+            if let Some(ref url) = author.url {
+                ea = ea.url(url);
+            }
             new_embed = new_embed.author(ea);
         }
         if let Some(ref desc) = embed_data.description {
@@ -276,11 +313,14 @@ async fn update_submission_message(
         vec![]
     };
 
-    let _ = interaction.edit_response(ctx,
-        serenity::EditInteractionResponse::new()
-            .embeds(embeds)
-            .components(components),
-    ).await;
+    let _ = interaction
+        .edit_response(
+            ctx,
+            serenity::EditInteractionResponse::new()
+                .embeds(embeds)
+                .components(components),
+        )
+        .await;
 }
 
 /// Disable only the delete button while preserving other buttons.
@@ -308,12 +348,9 @@ async fn handle_resolve(
             alert.mod_status,
             crate::lib::content_filter::types::ContentFilterStatus::Resolved,
         );
-        let _ = crate::utils::content_filter::update_alert_mod_status(
-            &data.db,
-            &alert.id,
-            new_status,
-        )
-        .await;
+        let _ =
+            crate::utils::content_filter::update_alert_mod_status(&data.db, &alert.id, new_status)
+                .await;
     }
 
     update_submission_message(
@@ -329,11 +366,14 @@ async fn handle_resolve(
     .await;
 
     let id_text = alert_id.unwrap_or_else(|| "undefined".to_string());
-    let _ = interaction.create_followup(ctx,
-        serenity::CreateInteractionResponseFollowup::new()
-            .content(format!("Successfully resolved alert - ID `{id_text}`"))
-            .ephemeral(true),
-    ).await;
+    let _ = interaction
+        .create_followup(
+            ctx,
+            serenity::CreateInteractionResponseFollowup::new()
+                .content(format!("Successfully resolved alert - ID `{id_text}`"))
+                .ephemeral(true),
+        )
+        .await;
 }
 
 /// Handle the false positive action.
@@ -357,12 +397,9 @@ async fn handle_false_positive(
             alert.mod_status,
             crate::lib::content_filter::types::ContentFilterStatus::False,
         );
-        let _ = crate::utils::content_filter::update_alert_mod_status(
-            &data.db,
-            &alert.id,
-            new_status,
-        )
-        .await;
+        let _ =
+            crate::utils::content_filter::update_alert_mod_status(&data.db, &alert.id, new_status)
+                .await;
     }
 
     // Feed back to the automated scanner for ML learning.
@@ -381,11 +418,16 @@ async fn handle_false_positive(
     .await;
 
     let id_text = alert_id.unwrap_or_else(|| "undefined".to_string());
-    let _ = interaction.create_followup(ctx,
-        serenity::CreateInteractionResponseFollowup::new()
-            .content(format!("Successfully marked alert as false positive - ID `{id_text}`"))
-            .ephemeral(true),
-    ).await;
+    let _ = interaction
+        .create_followup(
+            ctx,
+            serenity::CreateInteractionResponseFollowup::new()
+                .content(format!(
+                    "Successfully marked alert as false positive - ID `{id_text}`"
+                ))
+                .ephemeral(true),
+        )
+        .await;
 }
 
 /// Handle viewing the message content.
@@ -395,14 +437,22 @@ async fn handle_view_content(
     data: &Data,
     message_id_str: &str,
 ) {
-    let _ = interaction.create_response(ctx, serenity::CreateInteractionResponse::Defer(
-        serenity::CreateInteractionResponseMessage::new().ephemeral(true),
-    )).await;
+    let _ = interaction
+        .create_response(
+            ctx,
+            serenity::CreateInteractionResponse::Defer(
+                serenity::CreateInteractionResponseMessage::new().ephemeral(true),
+            ),
+        )
+        .await;
 
     let mut embed = serenity::CreateEmbed::new()
         .color(0x3498DB) // Colors.Blue
         .title("Content Filter Details")
-        .footer(serenity::CreateEmbedFooter::new(format!("Message ID: {}", message_id_str)))
+        .footer(serenity::CreateEmbedFooter::new(format!(
+            "Message ID: {}",
+            message_id_str
+        )))
         .timestamp(serenity::Timestamp::now());
 
     let mut has_detector_log = false;
@@ -411,7 +461,11 @@ async fn handle_view_content(
     {
         embed = embed
             .field("Alert ID", &alert.id, true)
-            .field("Offender", crate::utils::user_mention_with_id(&alert.offender_id), true)
+            .field(
+                "Offender",
+                crate::utils::user_mention_with_id(&alert.offender_id),
+                true,
+            )
             .field(
                 "Detected By",
                 if alert.detectors.is_empty() {
@@ -457,15 +511,25 @@ async fn handle_view_content(
 
             let preview_block = truncate_block(preview, 900);
             let safe_preview_raw = preview_block.replace("```", "'''");
-            let safe_preview = if safe_preview_raw.is_empty() { "[No content]".to_string() } else { safe_preview_raw };
+            let safe_preview = if safe_preview_raw.is_empty() {
+                "[No content]".to_string()
+            } else {
+                safe_preview_raw
+            };
 
-            embed = embed
-                .field("Flagged Segments", summary_value, false)
-                .field("Preview", format!("```txt\n{}\n```", safe_preview), false);
+            embed = embed.field("Flagged Segments", summary_value, false).field(
+                "Preview",
+                format!("```txt\n{}\n```", safe_preview),
+                false,
+            );
 
             if content.len() > 900 {
                 if let Some(url) = crate::utils::hastebin(&content, "txt").await {
-                    embed = embed.field("Full Content", format!("[Open full detector content]({url})"), false);
+                    embed = embed.field(
+                        "Full Content",
+                        format!("[Open full detector content]({url})"),
+                        false,
+                    );
                 }
             }
 
@@ -476,9 +540,9 @@ async fn handle_view_content(
     if has_detector_log {
         // TS: deferReply → editReply edits the deferred message in place (one message).
         // Rust must use edit_response, not create_followup, to match that behaviour.
-        let _ = interaction.edit_response(ctx,
-            serenity::EditInteractionResponse::new().embed(embed),
-        ).await;
+        let _ = interaction
+            .edit_response(ctx, serenity::EditInteractionResponse::new().embed(embed))
+            .await;
         return;
     }
 
@@ -488,19 +552,33 @@ async fn handle_view_content(
         if !content.is_empty() {
             let preview = truncate_block(&content, 900);
             let safe_raw = preview.replace("```", "'''");
-            let safe_content = if safe_raw.is_empty() { "[No content]".to_string() } else { safe_raw };
-            embed = embed.field("Stored Message Content", format!("```txt\n{safe_content}\n```"), false);
+            let safe_content = if safe_raw.is_empty() {
+                "[No content]".to_string()
+            } else {
+                safe_raw
+            };
+            embed = embed.field(
+                "Stored Message Content",
+                format!("```txt\n{safe_content}\n```"),
+                false,
+            );
 
             if content.len() > 900 {
                 if let Some(url) = crate::utils::hastebin(&content, "txt").await {
-                    embed = embed.field("Full Content", format!("[Open full message content]({url})"), false);
+                    embed = embed.field(
+                        "Full Content",
+                        format!("[Open full message content]({url})"),
+                        false,
+                    );
                 }
             }
         }
 
         // Show attachment URLs when there is no text content (image-only messages).
         if !msg.attachments.is_empty() {
-            let attachment_list = msg.attachments.iter()
+            let attachment_list = msg
+                .attachments
+                .iter()
                 .enumerate()
                 .map(|(i, url)| format!("{}. {}", i + 1, url))
                 .collect::<Vec<_>>()
@@ -518,13 +596,18 @@ async fn handle_view_content(
             embed = embed.field("Stored Message Content", "[No text content]", false);
         }
     } else {
-        cf_error_edit(ctx, interaction, "Could not find the message content in the database.").await;
+        cf_error_edit(
+            ctx,
+            interaction,
+            "Could not find the message content in the database.",
+        )
+        .await;
         return;
     }
 
-    let _ = interaction.edit_response(ctx,
-        serenity::EditInteractionResponse::new().embed(embed),
-    ).await;
+    let _ = interaction
+        .edit_response(ctx, serenity::EditInteractionResponse::new().embed(embed))
+        .await;
 }
 
 fn rebuild_action_rows(
@@ -608,11 +691,23 @@ fn truncate_block(value: &str, max: usize) -> String {
     format!("{cropped}...")
 }
 
-async fn cf_error_edit(ctx: &serenity::Context, interaction: &serenity::ComponentInteraction, msg: &str) {
-    if interaction.edit_response(ctx,
-        serenity::EditInteractionResponse::new()
-            .embed(serenity::CreateEmbed::new().description(msg).color(0xED4245u32)),
-    ).await.is_ok() {
+async fn cf_error_edit(
+    ctx: &serenity::Context,
+    interaction: &serenity::ComponentInteraction,
+    msg: &str,
+) {
+    if interaction
+        .edit_response(
+            ctx,
+            serenity::EditInteractionResponse::new().embed(
+                serenity::CreateEmbed::new()
+                    .description(msg)
+                    .color(0xED4245u32),
+            ),
+        )
+        .await
+        .is_ok()
+    {
         let http = ctx.http.clone();
         let token = interaction.token.clone();
         tokio::spawn(async move {

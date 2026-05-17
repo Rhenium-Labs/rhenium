@@ -114,8 +114,12 @@ const SUPPORTED_MIME_TYPES: &[MimeSignature] = &[
     MimeSignature {
         mime: "image/jpeg",
         extension: MediaExtension::Jfif,
-        pattern: &[0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00],
-        mask: &[0xff, 0xff, 0xff, 0xff, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+        pattern: &[
+            0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00,
+        ],
+        mask: &[
+            0xff, 0xff, 0xff, 0xff, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        ],
     },
     MimeSignature {
         mime: "image/png",
@@ -138,8 +142,12 @@ const SUPPORTED_MIME_TYPES: &[MimeSignature] = &[
     MimeSignature {
         mime: "image/webp",
         extension: MediaExtension::Webp,
-        pattern: &[0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50],
-        mask: &[0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff],
+        pattern: &[
+            0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+        ],
+        mask: &[
+            0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+        ],
     },
     MimeSignature {
         mime: "video/webm",
@@ -151,8 +159,12 @@ const SUPPORTED_MIME_TYPES: &[MimeSignature] = &[
     MimeSignature {
         mime: "video/x-msvideo",
         extension: MediaExtension::Avi,
-        pattern: &[0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x41, 0x56, 0x49, 0x20],
-        mask: &[0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff],
+        pattern: &[
+            0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x41, 0x56, 0x49, 0x20,
+        ],
+        mask: &[
+            0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+        ],
     },
     MimeSignature {
         mime: "video/mp4",
@@ -213,7 +225,10 @@ fn matches_signature(sig: &[u8], mime: &MimeSignature) -> bool {
 }
 
 /// Fetch media from a URL, validate its type, and return metadata.
-pub async fn fetch_media_metadata(http_client: &reqwest::Client, url: &str) -> Option<MediaMetadata> {
+pub async fn fetch_media_metadata(
+    http_client: &reqwest::Client,
+    url: &str,
+) -> Option<MediaMetadata> {
     let response = http_client.get(url).send().await.ok()?;
     if !response.status().is_success() {
         return None;
@@ -272,9 +287,7 @@ pub fn resize_and_compress_png(data: &[u8], max_size: u32) -> Option<Vec<u8>> {
 
     let mut buf = Vec::new();
     let encoder = image::codecs::png::PngEncoder::new(&mut buf);
-    resized
-        .write_with_encoder(encoder)
-        .ok()?;
+    resized.write_with_encoder(encoder).ok()?;
 
     Some(buf)
 }
@@ -292,7 +305,10 @@ pub async fn process_media_for_scan(items: Vec<MediaMetadata>) -> Vec<MediaMetad
         };
 
         match ext {
-            MediaExtension::Mp4 | MediaExtension::Avi | MediaExtension::Mov | MediaExtension::Webm => {
+            MediaExtension::Mp4
+            | MediaExtension::Avi
+            | MediaExtension::Mov
+            | MediaExtension::Webm => {
                 if let Some(frames) = extract_video_frames(buffer, ext.as_str()).await {
                     result.extend(frames);
                 }
@@ -375,7 +391,11 @@ fn extract_animated_image_frames(data: &[u8]) -> Vec<MediaMetadata> {
             .filter_map(|idx| frames.get(idx).and_then(frame_to_metadata))
             .collect();
 
-        if result.is_empty() { None } else { Some(result) }
+        if result.is_empty() {
+            None
+        } else {
+            Some(result)
+        }
     })();
 
     if let Some(frames) = gif_result {
@@ -428,10 +448,14 @@ async fn extract_video_frames(data: &[u8], format: &str) -> Option<Vec<MediaMeta
 async fn get_video_duration(data: &[u8]) -> Option<f64> {
     let mut child = Command::new("ffprobe")
         .args([
-            "-v", "error",
-            "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1",
-            "-i", "pipe:0",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            "-i",
+            "pipe:0",
         ])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -468,11 +492,16 @@ async fn get_video_duration(data: &[u8]) -> Option<f64> {
 async fn extract_single_frame(data: &[u8], _format: &str, timestamp: f64) -> Option<Vec<u8>> {
     let mut child = Command::new("ffmpeg")
         .args([
-            "-ss", &format!("{timestamp}"),
-            "-i", "pipe:0",
-            "-frames:v", "1",
-            "-f", "image2pipe",
-            "-vcodec", "png",
+            "-ss",
+            &format!("{timestamp}"),
+            "-i",
+            "pipe:0",
+            "-frames:v",
+            "1",
+            "-f",
+            "image2pipe",
+            "-vcodec",
+            "png",
             "pipe:1",
         ])
         .stdin(Stdio::piped())
@@ -551,9 +580,7 @@ pub async fn run_ocr(image_data: &[u8]) -> Result<Option<String>, ()> {
 }
 
 /// Serialize media metadata for OpenAI multi-modal input.
-pub fn serialize_multimodal_input(
-    items: &[MediaMetadata],
-) -> Vec<serde_json::Value> {
+pub fn serialize_multimodal_input(items: &[MediaMetadata]) -> Vec<serde_json::Value> {
     items
         .iter()
         .filter_map(|item| {

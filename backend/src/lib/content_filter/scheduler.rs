@@ -45,7 +45,9 @@ impl QueueState {
 static QUEUE: Mutex<Option<QueueState>> = Mutex::new(None);
 
 fn recover_queue_lock() -> MutexGuard<'static, Option<QueueState>> {
-    QUEUE.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    QUEUE
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn with_queue<F, R>(f: F) -> R
@@ -61,7 +63,11 @@ where
 pub fn enqueue(job: ScanJob) -> bool {
     with_queue(|q| {
         let dedupe_key = job.dedupe_key.clone();
-        let target_queue = if job.is_retry { QueueType::Retry } else { QueueType::New };
+        let target_queue = if job.is_retry {
+            QueueType::Retry
+        } else {
+            QueueType::New
+        };
 
         let existing_queue = q.key_queue.get(&dedupe_key).copied();
         let has_existing_entry = existing_queue
@@ -120,14 +126,19 @@ pub fn pull_due(now: u64, max_jobs: usize) -> Vec<ScanJob> {
             let preferred = if has_due_new && has_due_retry {
                 let pick_retry = q.retry_turn;
                 q.retry_turn = !q.retry_turn;
-                if pick_retry { QueueType::Retry } else { QueueType::New }
+                if pick_retry {
+                    QueueType::Retry
+                } else {
+                    QueueType::New
+                }
             } else if has_due_new {
                 QueueType::New
             } else {
                 QueueType::Retry
             };
 
-            let popped = pop_due(q, preferred, now).or_else(|| pop_due(q, other_queue(preferred), now));
+            let popped =
+                pop_due(q, preferred, now).or_else(|| pop_due(q, other_queue(preferred), now));
             if let Some(job) = popped {
                 jobs.push(job);
             } else {
@@ -170,8 +181,12 @@ pub fn queue_depth_for_guild(guild_id: &str) -> usize {
 /// Returns whether any forced job is currently due.
 pub fn has_due_forced_job(now: u64) -> bool {
     with_queue(|q| {
-        q.new_jobs.values().any(|job| job.force && job.next_run_at <= now)
-            || q.retry_jobs.values().any(|job| job.force && job.next_run_at <= now)
+        q.new_jobs
+            .values()
+            .any(|job| job.force && job.next_run_at <= now)
+            || q.retry_jobs
+                .values()
+                .any(|job| job.force && job.next_run_at <= now)
     })
 }
 
@@ -296,8 +311,10 @@ fn evict_worst(q: &mut QueueState, queue: QueueType) {
     for job in map.values() {
         let is_worse = match &worst {
             None => true,
-            Some(w) => job.next_run_at > w.next_run_at
-                || (job.next_run_at == w.next_run_at && job.risk < w.risk),
+            Some(w) => {
+                job.next_run_at > w.next_run_at
+                    || (job.next_run_at == w.next_run_at && job.risk < w.risk)
+            }
         };
         if is_worse {
             worst = Some(job.clone());

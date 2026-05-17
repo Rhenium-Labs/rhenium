@@ -1,7 +1,7 @@
-pub mod roles;
 pub mod channels;
-pub mod members;
 pub mod config;
+pub mod members;
+pub mod roles;
 pub mod webhooks;
 
 use axum::Router;

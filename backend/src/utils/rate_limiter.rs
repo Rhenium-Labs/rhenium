@@ -147,7 +147,8 @@ impl RateLimiter {
     }
 
     fn reset_at(&self, start: Instant) -> u64 {
-        start.elapsed()
+        start
+            .elapsed()
             .as_millis()
             .try_into()
             .ok()

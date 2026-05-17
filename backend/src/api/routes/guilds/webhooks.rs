@@ -1,6 +1,9 @@
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use axum::{Json, Router, routing::{delete, post}};
+use axum::{
+    Json, Router,
+    routing::{delete, post},
+};
 use poise::serenity_prelude::{self as serenity, ChannelId, GuildId};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
@@ -147,7 +150,10 @@ async fn delete_webhook(
 ) -> StatusCode {
     let Some((id, token)) = parse_webhook_url(&body.webhook_url) else {
         // Malformed URL — nothing to delete, log and return success (matching TS behavior).
-        warn!("Webhook deletion skipped — could not parse URL: {}", body.webhook_url);
+        warn!(
+            "Webhook deletion skipped — could not parse URL: {}",
+            body.webhook_url
+        );
         return StatusCode::NO_CONTENT;
     };
 

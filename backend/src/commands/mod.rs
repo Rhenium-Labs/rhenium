@@ -1,14 +1,14 @@
-mod ping;
-mod stats;
-mod whitelist;
+mod content_filter_debug;
+mod eval;
 pub mod highlights;
-pub mod reports;
-mod request_action;
+mod logging;
+mod ping;
 mod quick_actions;
 pub mod report_message_ctx;
-mod content_filter_debug;
-mod logging;
-mod eval;
+pub mod reports;
+mod request_action;
+mod stats;
+mod whitelist;
 
 use crate::{Data, Error};
 

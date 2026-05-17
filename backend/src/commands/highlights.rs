@@ -1,10 +1,10 @@
 use poise::serenity_prelude::{self as serenity, CreateEmbed};
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use sea_orm::sea_query::OnConflict;
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use std::sync::{LazyLock, Mutex};
 
-use crate::{Context, Error};
 use crate::lib::config::schema::UserPermission;
+use crate::{Context, Error};
 
 /// Send an ephemeral red-embed error response, matching the TS `{ error: "..." }` pattern.
 async fn reply_error(ctx: Context<'_>, message: impl Into<String>) -> Result<(), Error> {
@@ -18,7 +18,9 @@ async fn reply_error(ctx: Context<'_>, message: impl Into<String>) -> Result<(),
 /// LRU regex cache for compiled highlight patterns.
 static REGEX_CACHE: LazyLock<Mutex<lru::LruCache<String, fancy_regex::Regex>>> =
     LazyLock::new(|| {
-        Mutex::new(lru::LruCache::new(std::num::NonZeroUsize::new(100).unwrap()))
+        Mutex::new(lru::LruCache::new(
+            std::num::NonZeroUsize::new(100).unwrap(),
+        ))
     });
 
 /// Rate limiter for highlight DMs (1 per 15 seconds per user:author pair).
@@ -31,7 +33,7 @@ static HIGHLIGHT_RATE_LIMITER: LazyLock<crate::utils::RateLimiter> =
     slash_command,
     guild_only,
     default_member_permissions = "MANAGE_MESSAGES",
-    subcommands("pattern", "channel_scoping", "user_blacklist", "list", "clear"),
+    subcommands("pattern", "channel_scoping", "user_blacklist", "list", "clear")
 )]
 pub async fn highlights(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -41,7 +43,7 @@ pub async fn highlights(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     slash_command,
     rename = "pattern",
-    subcommands("pattern_add", "pattern_remove", "pattern_clear"),
+    subcommands("pattern_add", "pattern_remove", "pattern_clear")
 )]
 pub async fn pattern(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -51,7 +53,7 @@ pub async fn pattern(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     slash_command,
     rename = "channel-scoping",
-    subcommands("channel_add", "channel_remove", "channel_clear"),
+    subcommands("channel_add", "channel_remove", "channel_clear")
 )]
 pub async fn channel_scoping(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -61,7 +63,7 @@ pub async fn channel_scoping(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     slash_command,
     rename = "user-blacklist",
-    subcommands("blacklist_add", "blacklist_remove", "blacklist_clear"),
+    subcommands("blacklist_add", "blacklist_remove", "blacklist_clear")
 )]
 pub async fn user_blacklist(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -71,7 +73,9 @@ pub async fn user_blacklist(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(slash_command, rename = "add", ephemeral)]
 pub async fn pattern_add(
     ctx: Context<'_>,
-    #[description = "The pattern to add"] #[max_length = 45] pattern: String,
+    #[description = "The pattern to add"]
+    #[max_length = 45]
+    pattern: String,
 ) -> Result<(), Error> {
     let data = ctx.data();
     let Some(guild_id_obj) = ctx.guild_id() else {
@@ -112,11 +116,18 @@ pub async fn pattern_add(
     };
 
     // Get max patterns from config.
-    let config = data.config_manager.get_guild_config(&data.db, guild_id_obj).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id_obj)
+        .await;
     let max_patterns = config.data.highlights.max_patterns as usize;
 
     if patterns.len() >= max_patterns {
-        return reply_error(ctx, format!("You have reached the maximum number of highlight patterns ({max_patterns}).")).await;
+        return reply_error(
+            ctx,
+            format!("You have reached the maximum number of highlight patterns ({max_patterns})."),
+        )
+        .await;
     }
 
     if !is_safe_highlight_pattern(&pattern) {
@@ -124,7 +135,11 @@ pub async fn pattern_add(
     }
 
     if patterns.contains(&pattern) {
-        return reply_error(ctx, format!("The pattern `{pattern}` already exists in your highlight patterns.")).await;
+        return reply_error(
+            ctx,
+            format!("The pattern `{pattern}` already exists in your highlight patterns."),
+        )
+        .await;
     }
 
     // Add pattern by fetching fresh row, pushing, then updating.
@@ -141,7 +156,10 @@ pub async fn pattern_add(
         active.update(&data.db).await?;
     }
 
-    ctx.say(format!("Successfully added `{pattern}` to your highlights.")).await?;
+    ctx.say(format!(
+        "Successfully added `{pattern}` to your highlights."
+    ))
+    .await?;
     Ok(())
 }
 
@@ -171,7 +189,11 @@ pub async fn pattern_remove(
     };
 
     if !patterns.contains(&pattern) {
-        return reply_error(ctx, format!("The pattern `{pattern}` does not exist in your highlight patterns.")).await;
+        return reply_error(
+            ctx,
+            format!("The pattern `{pattern}` does not exist in your highlight patterns."),
+        )
+        .await;
     }
 
     if let Some(mut active) = row.map(crate::lib::entities::highlight::ActiveModel::from) {
@@ -180,7 +202,10 @@ pub async fn pattern_remove(
         active.update(&data.db).await?;
     }
 
-    ctx.say(format!("Successfully removed `{pattern}` from your highlights.")).await?;
+    ctx.say(format!(
+        "Successfully removed `{pattern}` from your highlights."
+    ))
+    .await?;
     Ok(())
 }
 
@@ -265,13 +290,22 @@ pub async fn channel_add(
     // Check if scoping already exists for this channel.
     let existing = crate::lib::entities::highlight_channel_scoping::Entity::find()
         .filter(crate::lib::entities::highlight_channel_scoping::Column::UserId.eq(user_id.clone()))
-        .filter(crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()))
-        .filter(crate::lib::entities::highlight_channel_scoping::Column::ChannelId.eq(channel_id.clone()))
+        .filter(
+            crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()),
+        )
+        .filter(
+            crate::lib::entities::highlight_channel_scoping::Column::ChannelId
+                .eq(channel_id.clone()),
+        )
         .one(&data.db)
         .await?;
 
     if existing.is_some() {
-        return reply_error(ctx, format!("<#{channel_id}> is already in your highlight scoping.")).await;
+        return reply_error(
+            ctx,
+            format!("<#{channel_id}> is already in your highlight scoping."),
+        )
+        .await;
     }
 
     crate::lib::entities::highlight_channel_scoping::Entity::insert(
@@ -285,8 +319,16 @@ pub async fn channel_add(
     .exec(&data.db)
     .await?;
 
-    let action = if scope_type == ScopeType::Include { "include" } else { "exclude" };
-    ctx.say(format!("Successfully {}d <#{channel_id}> for your highlights.", action)).await?;
+    let action = if scope_type == ScopeType::Include {
+        "include"
+    } else {
+        "exclude"
+    };
+    ctx.say(format!(
+        "Successfully {}d <#{channel_id}> for your highlights.",
+        action
+    ))
+    .await?;
     Ok(())
 }
 
@@ -306,23 +348,38 @@ pub async fn channel_remove(
 
     let existing = crate::lib::entities::highlight_channel_scoping::Entity::find()
         .filter(crate::lib::entities::highlight_channel_scoping::Column::UserId.eq(user_id.clone()))
-        .filter(crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()))
-        .filter(crate::lib::entities::highlight_channel_scoping::Column::ChannelId.eq(channel_id.clone()))
+        .filter(
+            crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()),
+        )
+        .filter(
+            crate::lib::entities::highlight_channel_scoping::Column::ChannelId
+                .eq(channel_id.clone()),
+        )
         .one(&data.db)
         .await?;
 
     if existing.is_none() {
-        return reply_error(ctx, format!("<#{channel_id}> is not in your highlight scoping.")).await;
+        return reply_error(
+            ctx,
+            format!("<#{channel_id}> is not in your highlight scoping."),
+        )
+        .await;
     }
 
     crate::lib::entities::highlight_channel_scoping::Entity::delete_many()
         .filter(crate::lib::entities::highlight_channel_scoping::Column::UserId.eq(user_id))
         .filter(crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id))
-        .filter(crate::lib::entities::highlight_channel_scoping::Column::ChannelId.eq(channel_id.clone()))
+        .filter(
+            crate::lib::entities::highlight_channel_scoping::Column::ChannelId
+                .eq(channel_id.clone()),
+        )
         .exec(&data.db)
         .await?;
 
-    ctx.say(format!("Successfully removed <#{channel_id}> from your highlight scoping.")).await?;
+    ctx.say(format!(
+        "Successfully removed <#{channel_id}> from your highlight scoping."
+    ))
+    .await?;
     Ok(())
 }
 
@@ -339,12 +396,15 @@ pub async fn channel_clear(ctx: Context<'_>) -> Result<(), Error> {
     use sea_orm::PaginatorTrait;
     let count = crate::lib::entities::highlight_channel_scoping::Entity::find()
         .filter(crate::lib::entities::highlight_channel_scoping::Column::UserId.eq(user_id.clone()))
-        .filter(crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()))
+        .filter(
+            crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()),
+        )
         .count(&data.db)
         .await?;
 
     if count == 0 {
-        ctx.say("You have no highlight channel scoping to clear.").await?;
+        ctx.say("You have no highlight channel scoping to clear.")
+            .await?;
         return Ok(());
     }
 
@@ -394,7 +454,11 @@ pub async fn blacklist_add(
     };
 
     if user_blacklist.contains(&target_id) {
-        return reply_error(ctx, format!("<@{target_id}> is already blacklisted from triggering your highlights.")).await;
+        return reply_error(
+            ctx,
+            format!("<@{target_id}> is already blacklisted from triggering your highlights."),
+        )
+        .await;
     }
     user_blacklist.push(target_id.clone());
 
@@ -416,7 +480,10 @@ pub async fn blacklist_add(
         .exec(&data.db)
         .await?;
 
-    ctx.say(format!("Successfully blacklisted <@{target_id}> from triggering your highlights.")).await?;
+    ctx.say(format!(
+        "Successfully blacklisted <@{target_id}> from triggering your highlights."
+    ))
+    .await?;
     Ok(())
 }
 
@@ -447,16 +514,26 @@ pub async fn blacklist_remove(
     };
 
     if !user_blacklist.contains(&target_id) {
-        return reply_error(ctx, format!("<@{target_id}> is not in your highlight blacklist.")).await;
+        return reply_error(
+            ctx,
+            format!("<@{target_id}> is not in your highlight blacklist."),
+        )
+        .await;
     }
 
     if let Some(mut active) = row.map(crate::lib::entities::highlight::ActiveModel::from) {
-        let updated: Vec<String> = user_blacklist.into_iter().filter(|u| u != &target_id).collect();
+        let updated: Vec<String> = user_blacklist
+            .into_iter()
+            .filter(|u| u != &target_id)
+            .collect();
         active.user_blacklist = Set(updated);
         active.update(&data.db).await?;
     }
 
-    ctx.say(format!("Successfully removed <@{target_id}> from your highlight blacklist.")).await?;
+    ctx.say(format!(
+        "Successfully removed <@{target_id}> from your highlight blacklist."
+    ))
+    .await?;
     Ok(())
 }
 
@@ -483,7 +560,8 @@ pub async fn blacklist_clear(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     if user_blacklist.is_empty() {
-        ctx.say("You have no highlight user blacklist to clear.").await?;
+        ctx.say("You have no highlight user blacklist to clear.")
+            .await?;
         return Ok(());
     }
 
@@ -495,7 +573,10 @@ pub async fn blacklist_clear(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say(format!(
         "Successfully cleared `{}` {}.",
         user_blacklist.len(),
-        crate::utils::inflect(user_blacklist.len() as u64, "highlight user blacklist entry")
+        crate::utils::inflect(
+            user_blacklist.len() as u64,
+            "highlight user blacklist entry"
+        )
     ))
     .await?;
     Ok(())
@@ -637,13 +718,17 @@ pub async fn clear(ctx: Context<'_>) -> Result<(), Error> {
     use sea_orm::PaginatorTrait;
     let scoping_count = crate::lib::entities::highlight_channel_scoping::Entity::find()
         .filter(crate::lib::entities::highlight_channel_scoping::Column::UserId.eq(user_id.clone()))
-        .filter(crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()))
+        .filter(
+            crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()),
+        )
         .count(&data.db)
         .await?;
 
     crate::lib::entities::highlight_channel_scoping::Entity::delete_many()
         .filter(crate::lib::entities::highlight_channel_scoping::Column::UserId.eq(user_id.clone()))
-        .filter(crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()))
+        .filter(
+            crate::lib::entities::highlight_channel_scoping::Column::GuildId.eq(guild_id.clone()),
+        )
         .exec(&data.db)
         .await?;
 
@@ -690,7 +775,10 @@ pub async fn scan_message_for_highlights(
     let author_id_str = message.author.id.to_string();
 
     // Check if highlights are enabled.
-    let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id)
+        .await;
     if !config.data.highlights.enabled {
         return;
     }
@@ -754,10 +842,7 @@ pub async fn scan_message_for_highlights(
             .map(|s| s.channel_id.clone())
             .collect();
 
-        let scoping = crate::utils::ChannelScoping {
-            included,
-            excluded,
-        };
+        let scoping = crate::utils::ChannelScoping { included, excluded };
 
         if !crate::utils::channel_in_scope_resolved(
             &scope_channel_id,
@@ -878,7 +963,9 @@ fn get_highlight_regex(pattern: &str) -> Option<fancy_regex::Regex> {
     }
 
     // Build pattern: word-boundary for ASCII words, raw otherwise.
-    let is_ascii_word = pattern.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '*');
+    let is_ascii_word = pattern
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '*');
     let regex_pattern = pattern.replace('*', r"(\n|\r|.)*");
     let parsed = if is_ascii_word {
         format!(r"(?i)\b({regex_pattern})\b")
@@ -942,14 +1029,15 @@ async fn resolve_highlight_scope_ids(
         return (guild_channel.id.to_string(), Some(thread_id), None);
     };
 
-    let category_id = match parent_channel_id.to_channel(ctx).await.ok().and_then(|c| c.guild()) {
+    let category_id = match parent_channel_id
+        .to_channel(ctx)
+        .await
+        .ok()
+        .and_then(|c| c.guild())
+    {
         Some(parent_channel) => parent_channel.parent_id.map(|id| id.to_string()),
         None => None,
     };
 
-    (
-        parent_channel_id.to_string(),
-        Some(thread_id),
-        category_id,
-    )
+    (parent_channel_id.to_string(), Some(thread_id), category_id)
 }

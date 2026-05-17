@@ -19,7 +19,7 @@ async fn reply_error(ctx: Context<'_>, message: impl Into<String>) -> Result<(),
     slash_command,
     guild_only,
     default_member_permissions = "MODERATE_MEMBERS",
-    subcommands("mutes", "purges"),
+    subcommands("mutes", "purges")
 )]
 pub async fn quick(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -29,7 +29,7 @@ pub async fn quick(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     slash_command,
     rename = "mutes",
-    subcommands("mutes_add", "mutes_remove", "mutes_list", "mutes_clear"),
+    subcommands("mutes_add", "mutes_remove", "mutes_list", "mutes_clear")
 )]
 pub async fn mutes(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -39,7 +39,7 @@ pub async fn mutes(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     slash_command,
     rename = "purges",
-    subcommands("purges_add", "purges_remove", "purges_list", "purges_clear"),
+    subcommands("purges_add", "purges_remove", "purges_list", "purges_clear")
 )]
 pub async fn purges(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -51,9 +51,12 @@ pub async fn mutes_add(
     ctx: Context<'_>,
     #[description = "The emoji to use as a reaction trigger"] reaction: String,
     #[description = "The duration for the mute (e.g., 10m, 1h, 1d)"] duration: String,
-    #[description = "The reason for the mute"] #[max_length = 1024] reason: String,
+    #[description = "The reason for the mute"]
+    #[max_length = 1024]
+    reason: String,
     #[description = "Number of messages to purge (0 = none, default: 0)"]
-    #[min = 0] #[max = 100]
+    #[min = 0]
+    #[max = 100]
     purge_amount: Option<i32>,
 ) -> Result<(), Error> {
     let data = ctx.data();
@@ -84,7 +87,8 @@ pub async fn mutes_add(
         return reply_error(ctx, "You have reached the maximum of 10 quick mutes. Please remove an existing one before adding a new one.").await;
     }
 
-    let validated_emoji = validate_quick_action_emoji(ctx.serenity_context(), guild_id_obj, &reaction).await;
+    let validated_emoji =
+        validate_quick_action_emoji(ctx.serenity_context(), guild_id_obj, &reaction).await;
     let Some(validated_emoji) = validated_emoji else {
         return reply_error(ctx, "Invalid emoji. Please provide a valid unicode emoji or a custom emoji from this server.").await;
     };
@@ -105,7 +109,11 @@ pub async fn mutes_add(
     // Parse and validate duration.
     let duration_ms = crate::utils::parse_duration_string(&duration);
     let Some(duration_ms) = duration_ms else {
-        return reply_error(ctx, "Invalid duration format. Please use formats like `10m`, `1h`, `1d`.").await;
+        return reply_error(
+            ctx,
+            "Invalid duration format. Please use formats like `10m`, `1h`, `1d`.",
+        )
+        .await;
     };
 
     if let Err(msg) = crate::utils::validate_duration(duration_ms, "5s", "28d") {
@@ -113,21 +121,27 @@ pub async fn mutes_add(
     }
 
     if purge_amount > guild_config.data.quick_purges.max_limit as i32 {
-        return reply_error(ctx, format!(
-            "The maximum purge amount for this server is `{}` messages.",
-            guild_config.data.quick_purges.max_limit
-        )).await;
+        return reply_error(
+            ctx,
+            format!(
+                "The maximum purge amount for this server is `{}` messages.",
+                guild_config.data.quick_purges.max_limit
+            ),
+        )
+        .await;
     }
 
     // Insert.
-    crate::lib::entities::quick_mute::Entity::insert(crate::lib::entities::quick_mute::ActiveModel {
-        user_id: Set(user_id.into()),
-        guild_id: Set(guild_id.into()),
-        reaction: Set(emoji_id.into()),
-        duration: Set(duration_ms as i64),
-        reason: Set(reason.clone()),
-        purge_amount: Set(purge_amount),
-    })
+    crate::lib::entities::quick_mute::Entity::insert(
+        crate::lib::entities::quick_mute::ActiveModel {
+            user_id: Set(user_id),
+            guild_id: Set(guild_id),
+            reaction: Set(emoji_id),
+            duration: Set(duration_ms as i64),
+            reason: Set(reason.clone()),
+            purge_amount: Set(purge_amount),
+        },
+    )
     .exec(&data.db)
     .await?;
 
@@ -140,7 +154,8 @@ pub async fn mutes_add(
         } else {
             String::new()
         }
-    )).await?;
+    ))
+    .await?;
     Ok(())
 }
 
@@ -156,7 +171,8 @@ pub async fn mutes_remove(
     };
     let guild_id = guild_id_obj.to_string();
     let user_id = ctx.author().id.to_string();
-    let validated_emoji = validate_quick_action_emoji(ctx.serenity_context(), guild_id_obj, &reaction).await;
+    let validated_emoji =
+        validate_quick_action_emoji(ctx.serenity_context(), guild_id_obj, &reaction).await;
     let Some(validated_emoji) = validated_emoji else {
         return reply_error(ctx, "Invalid emoji. Please provide a valid unicode emoji or a custom emoji from this server.").await;
     };
@@ -171,13 +187,17 @@ pub async fn mutes_remove(
         .await?;
 
     if result.rows_affected == 0 {
-        return reply_error(ctx, "You don't have a quick mute configured for this reaction.").await;
+        return reply_error(
+            ctx,
+            "You don't have a quick mute configured for this reaction.",
+        )
+        .await;
     } else {
         ctx.say(format!(
             "Successfully removed quick mute for {}.",
             validated_emoji.display()
         ))
-            .await?;
+        .await?;
     }
     Ok(())
 }
@@ -200,7 +220,8 @@ pub async fn mutes_list(ctx: Context<'_>) -> Result<(), Error> {
         .await?;
 
     if rows.is_empty() {
-        ctx.say("You don't have any quick mutes configured.").await?;
+        ctx.say("You don't have any quick mutes configured.")
+            .await?;
         return Ok(());
     }
 
@@ -208,7 +229,13 @@ pub async fn mutes_list(ctx: Context<'_>) -> Result<(), Error> {
         let cached_emojis = cached_emoji_map(ctx.guild().as_deref());
         let mut fields = Vec::new();
         for row in rows.iter() {
-            let reaction_display = display_emoji(ctx.serenity_context(), guild_id_obj, &row.reaction, &cached_emojis).await;
+            let reaction_display = display_emoji(
+                ctx.serenity_context(),
+                guild_id_obj,
+                &row.reaction,
+                &cached_emojis,
+            )
+            .await;
 
             let formatted = crate::utils::format_duration_ms(row.duration as u64);
             let safe_reason = crate::utils::messages::escape_code_block(&row.reason);
@@ -283,7 +310,10 @@ pub async fn mutes_clear(ctx: Context<'_>) -> Result<(), Error> {
 pub async fn purges_add(
     ctx: Context<'_>,
     #[description = "The emoji to use as a reaction trigger"] reaction: String,
-    #[description = "Number of messages to purge"] #[min = 1] #[max = 100] amount: i32,
+    #[description = "Number of messages to purge"]
+    #[min = 1]
+    #[max = 100]
+    amount: i32,
 ) -> Result<(), Error> {
     let data = ctx.data();
     let Some(guild_id_obj) = ctx.guild_id() else {
@@ -311,7 +341,8 @@ pub async fn purges_add(
         return reply_error(ctx, "You have reached the maximum of 10 quick purges. Please remove an existing one before adding a new one.").await;
     }
 
-    let validated_emoji = validate_quick_action_emoji(ctx.serenity_context(), guild_id_obj, &reaction).await;
+    let validated_emoji =
+        validate_quick_action_emoji(ctx.serenity_context(), guild_id_obj, &reaction).await;
     let Some(validated_emoji) = validated_emoji else {
         return reply_error(ctx, "Invalid emoji. Please provide a valid unicode emoji or a custom emoji from this server.").await;
     };
@@ -330,18 +361,24 @@ pub async fn purges_add(
     }
 
     if amount > purge_cfg.max_limit as i32 {
-        return reply_error(ctx, format!(
-            "The maximum purge amount for this server is `{}` messages.",
-            purge_cfg.max_limit
-        )).await;
+        return reply_error(
+            ctx,
+            format!(
+                "The maximum purge amount for this server is `{}` messages.",
+                purge_cfg.max_limit
+            ),
+        )
+        .await;
     }
 
-    crate::lib::entities::quick_purge::Entity::insert(crate::lib::entities::quick_purge::ActiveModel {
-        user_id: Set(user_id.into()),
-        guild_id: Set(guild_id.into()),
-        reaction: Set(emoji_id.into()),
-        purge_amount: Set(amount),
-    })
+    crate::lib::entities::quick_purge::Entity::insert(
+        crate::lib::entities::quick_purge::ActiveModel {
+            user_id: Set(user_id),
+            guild_id: Set(guild_id),
+            reaction: Set(emoji_id),
+            purge_amount: Set(amount),
+        },
+    )
     .exec(&data.db)
     .await?;
 
@@ -349,7 +386,8 @@ pub async fn purges_add(
         "Successfully added quick purge: {} → purge **{amount}** {}",
         validated_emoji.display(),
         crate::utils::inflect(amount as u64, "message")
-    )).await?;
+    ))
+    .await?;
     Ok(())
 }
 
@@ -365,7 +403,8 @@ pub async fn purges_remove(
     };
     let guild_id = guild_id_obj.to_string();
     let user_id = ctx.author().id.to_string();
-    let validated_emoji = validate_quick_action_emoji(ctx.serenity_context(), guild_id_obj, &reaction).await;
+    let validated_emoji =
+        validate_quick_action_emoji(ctx.serenity_context(), guild_id_obj, &reaction).await;
     let Some(validated_emoji) = validated_emoji else {
         return reply_error(ctx, "Invalid emoji. Please provide a valid unicode emoji or a custom emoji from this server.").await;
     };
@@ -380,13 +419,17 @@ pub async fn purges_remove(
         .await?;
 
     if result.rows_affected == 0 {
-        return reply_error(ctx, "You don't have a quick purge configured for this reaction.").await;
+        return reply_error(
+            ctx,
+            "You don't have a quick purge configured for this reaction.",
+        )
+        .await;
     } else {
         ctx.say(format!(
             "Successfully removed quick purge for {}.",
             validated_emoji.display()
         ))
-            .await?;
+        .await?;
     }
     Ok(())
 }
@@ -409,7 +452,8 @@ pub async fn purges_list(ctx: Context<'_>) -> Result<(), Error> {
         .await?;
 
     if rows.is_empty() {
-        ctx.say("You don't have any quick purges configured.").await?;
+        ctx.say("You don't have any quick purges configured.")
+            .await?;
         return Ok(());
     }
 
@@ -417,7 +461,13 @@ pub async fn purges_list(ctx: Context<'_>) -> Result<(), Error> {
         let cached_emojis = cached_emoji_map(ctx.guild().as_deref());
         let mut fields = Vec::new();
         for row in rows.iter() {
-            let reaction_display = display_emoji(ctx.serenity_context(), guild_id_obj, &row.reaction, &cached_emojis).await;
+            let reaction_display = display_emoji(
+                ctx.serenity_context(),
+                guild_id_obj,
+                &row.reaction,
+                &cached_emojis,
+            )
+            .await;
             fields.push((
                 reaction_display,
                 format!(
@@ -488,7 +538,12 @@ async fn display_emoji(
     let unicode_re = Regex::new(
         r"(?:\p{Extended_Pictographic}(?:\u{FE0F}|\u{FE0E})?(?:\u{200D}(?:\p{Extended_Pictographic}(?:\u{FE0F}|\u{FE0E})?))*)",
     );
-    if unicode_re.as_ref().ok().and_then(|re| re.find(reaction)).is_some() {
+    if unicode_re
+        .as_ref()
+        .ok()
+        .and_then(|re| re.find(reaction))
+        .is_some()
+    {
         return reaction.to_string();
     }
 

@@ -1,6 +1,6 @@
 use poise::serenity_prelude::{self as serenity, CreateEmbed};
-use sea_orm::{EntityTrait, Set};
 use sea_orm::sea_query::OnConflict;
+use sea_orm::{EntityTrait, Set};
 
 use crate::lib::config::schema::{LoggingEvent, LoggingWebhook, RawGuildConfig};
 use crate::{Context, Data, Error};
@@ -11,7 +11,7 @@ use crate::{Context, Data, Error};
     slash_command,
     guild_only,
     default_member_permissions = "MANAGE_GUILD",
-    subcommands("webhooks", "events"),
+    subcommands("webhooks", "events")
 )]
 pub async fn logging(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -21,7 +21,7 @@ pub async fn logging(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     slash_command,
     rename = "webhooks",
-    subcommands("webhooks_create", "webhooks_delete", "webhooks_list"),
+    subcommands("webhooks_create", "webhooks_delete", "webhooks_list")
 )]
 pub async fn webhooks(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -31,7 +31,7 @@ pub async fn webhooks(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     slash_command,
     rename = "events",
-    subcommands("events_add", "events_remove", "events_view"),
+    subcommands("events_add", "events_remove", "events_view")
 )]
 pub async fn events(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -50,7 +50,8 @@ pub async fn webhooks_create(
     let channel_id = match validate_guild_text_channel(&channel) {
         Some(id) => id,
         None => {
-            ctx.say("The selected channel must be a guild text channel.").await?;
+            ctx.say("The selected channel must be a guild text channel.")
+                .await?;
             return Ok(());
         }
     };
@@ -139,7 +140,8 @@ pub async fn webhooks_delete(
     let channel_id = match validate_guild_text_channel(&channel) {
         Some(id) => id.to_string(),
         None => {
-            ctx.say("The selected channel must be a guild text channel.").await?;
+            ctx.say("The selected channel must be a guild text channel.")
+                .await?;
             return Ok(());
         }
     };
@@ -215,7 +217,8 @@ pub async fn webhooks_list(ctx: Context<'_>) -> Result<(), Error> {
         lines.push(format!("<#{}>\n└ {}", webhook.channel_id, events));
     }
 
-    let mut author = serenity::CreateEmbedAuthor::new(format!("Logging Webhooks in {}", guild_name(ctx)));
+    let mut author =
+        serenity::CreateEmbedAuthor::new(format!("Logging Webhooks in {}", guild_name(ctx)));
     if let Some(icon_url) = guild_icon_url(ctx) {
         author = author.icon_url(icon_url);
     }
@@ -248,7 +251,8 @@ pub async fn events_add(
     let channel_id = match validate_guild_text_channel(&channel) {
         Some(id) => id.to_string(),
         None => {
-            ctx.say("The selected channel must be a guild text channel.").await?;
+            ctx.say("The selected channel must be a guild text channel.")
+                .await?;
             return Ok(());
         }
     };
@@ -308,7 +312,8 @@ pub async fn events_remove(
     let channel_id = match validate_guild_text_channel(&channel) {
         Some(id) => id.to_string(),
         None => {
-            ctx.say("The selected channel must be a guild text channel.").await?;
+            ctx.say("The selected channel must be a guild text channel.")
+                .await?;
             return Ok(());
         }
     };
@@ -371,7 +376,8 @@ pub async fn events_view(
     let channel_id = match validate_guild_text_channel(&channel) {
         Some(id) => id.to_string(),
         None => {
-            ctx.say("The selected channel must be a guild text channel.").await?;
+            ctx.say("The selected channel must be a guild text channel.")
+                .await?;
             return Ok(());
         }
     };
@@ -417,7 +423,10 @@ pub async fn events_view(
             ("Webhook ID", format!("`{}`", webhook.id), true),
             ("Events", events, false),
         ])
-        .footer(serenity::CreateEmbedFooter::new(format!("Guild ID: {}", guild_id)))
+        .footer(serenity::CreateEmbedFooter::new(format!(
+            "Guild ID: {}",
+            guild_id
+        )))
         .timestamp(serenity::Timestamp::now());
 
     ctx.send(poise::CreateReply::default().embed(embed)).await?;

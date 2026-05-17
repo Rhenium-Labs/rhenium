@@ -1,5 +1,5 @@
-use poise::serenity_prelude::{self as serenity, CreateEmbed};
 use crate::{Context, Error};
+use poise::serenity_prelude::{self as serenity, CreateEmbed};
 
 /// Send an ephemeral red-embed error response, matching the TS `{ error: "..." }` pattern.
 async fn reply_error(ctx: Context<'_>, message: impl Into<String>) -> Result<(), Error> {
@@ -13,10 +13,7 @@ async fn reply_error(ctx: Context<'_>, message: impl Into<String>) -> Result<(),
 /// Report a message to the server moderators (context menu command).
 ///
 #[poise::command(context_menu_command = "Report Message", guild_only, ephemeral)]
-pub async fn report_message(
-    ctx: Context<'_>,
-    message: serenity::Message,
-) -> Result<(), Error> {
+pub async fn report_message(ctx: Context<'_>, message: serenity::Message) -> Result<(), Error> {
     let data = ctx.data();
     let Some(guild_id) = ctx.guild_id().or(message.guild_id) else {
         ctx.say("This command can only be used in a guild.").await?;
@@ -24,10 +21,17 @@ pub async fn report_message(
     };
 
     // Get config and check if reports are configured.
-    let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id)
+        .await;
 
     if config.parse_reports_config().is_none() {
-        return reply_error(ctx, "Message reports have not been configured on this server.").await;
+        return reply_error(
+            ctx,
+            "Message reports have not been configured on this server.",
+        )
+        .await;
     }
 
     // Cannot report yourself.
@@ -39,14 +43,11 @@ pub async fn report_message(
     let channel_id = message.channel_id.to_string();
 
     if config.data.message_reports.enforce_report_reason {
-        let mut reason_input = serenity::CreateInputText::new(
-            serenity::InputTextStyle::Paragraph,
-            "Reason",
-            "reason",
-        )
-        .required(true)
-        .max_length(1024)
-        .min_length(1);
+        let mut reason_input =
+            serenity::CreateInputText::new(serenity::InputTextStyle::Paragraph, "Reason", "reason")
+                .required(true)
+                .max_length(1024)
+                .min_length(1);
 
         if let Some(ref placeholder) = config.data.message_reports.placeholder_reason {
             reason_input = reason_input.value(placeholder);
@@ -63,7 +64,10 @@ pub async fn report_message(
         if let poise::Context::Application(app_ctx) = ctx {
             let _ = app_ctx
                 .interaction
-                .create_response(app_ctx.serenity_context, serenity::CreateInteractionResponse::Modal(modal))
+                .create_response(
+                    app_ctx.serenity_context,
+                    serenity::CreateInteractionResponse::Modal(modal),
+                )
                 .await;
         }
         return Ok(());
@@ -85,7 +89,11 @@ pub async fn report_message(
 
     match result {
         Ok(_) => {
-            ctx.say(format!("Successfully reported <@{}>'s message, thank you for your report!", message.author.id)).await?;
+            ctx.say(format!(
+                "Successfully reported <@{}>'s message, thank you for your report!",
+                message.author.id
+            ))
+            .await?;
         }
         Err(msg) => {
             reply_error(ctx, msg).await?;

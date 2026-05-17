@@ -2,8 +2,7 @@ use poise::serenity_prelude::{self as serenity, GuildId, Member};
 use tracing::{error, warn};
 
 use super::schema::{
-    LoggingEvent, LoggingWebhook, RawGuildConfig, UserPermission,
-    ContentFilterConfig,
+    ContentFilterConfig, LoggingEvent, LoggingWebhook, RawGuildConfig, UserPermission,
 };
 
 /// A guild configuration instance with logging capabilities.
@@ -102,9 +101,7 @@ impl GuildConfig {
                 Err(_) => continue,
             };
 
-            if member.roles.contains(&role_id)
-                && scope.allowed_permissions.contains(&permission)
-            {
+            if member.roles.contains(&role_id) && scope.allowed_permissions.contains(&permission) {
                 return true;
             }
         }

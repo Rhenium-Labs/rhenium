@@ -41,7 +41,11 @@ async fn verify_member(
     let is_member = if in_cache {
         true
     } else {
-        state.discord_http.get_member(guild_id, user_id).await.is_ok()
+        state
+            .discord_http
+            .get_member(guild_id, user_id)
+            .await
+            .is_ok()
     };
 
     Ok(Json(VerifyResult { is_member }))

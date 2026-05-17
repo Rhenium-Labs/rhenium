@@ -2,8 +2,8 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::lib::config::schema::{ContentFilterConfig, DetectorMode};
 use crate::lib::content_filter::types::ContentFilterStatus;
-use crate::lib::repository::messages::SerializedMessage;
 use crate::lib::entities::{content_filter_alert, content_filter_log};
+use crate::lib::repository::messages::SerializedMessage;
 use crate::utils::constants::cf;
 
 /// Computes the risk score for a message based on its properties.
@@ -51,10 +51,7 @@ pub async fn get_recent_alerts_and_false_positive_ratio(
         0.0
     };
 
-    let highest_score = alerts
-        .iter()
-        .map(|a| a.highest_score)
-        .fold(0.0, f64::max);
+    let highest_score = alerts.iter().map(|a| a.highest_score).fold(0.0, f64::max);
 
     Ok((alerts, ratio, highest_score))
 }
@@ -79,8 +76,8 @@ pub async fn delete_old_alerts(
     ttl_ms: u64,
 ) -> Result<u64, sea_orm::DbErr> {
     let threshold_ms = chrono::Utc::now().timestamp_millis() - ttl_ms as i64;
-    let threshold = chrono::DateTime::from_timestamp_millis(threshold_ms)
-        .unwrap_or_else(chrono::Utc::now);
+    let threshold =
+        chrono::DateTime::from_timestamp_millis(threshold_ms).unwrap_or_else(chrono::Utc::now);
 
     let result = content_filter_alert::Entity::delete_many()
         .filter(content_filter_alert::Column::CreatedAt.lt(threshold.naive_utc()))
@@ -97,8 +94,8 @@ pub async fn delete_old_content_logs(
     ttl_ms: u64,
 ) -> Result<u64, sea_orm::DbErr> {
     let threshold_ms = chrono::Utc::now().timestamp_millis() - ttl_ms as i64;
-    let threshold = chrono::DateTime::from_timestamp_millis(threshold_ms)
-        .unwrap_or_else(chrono::Utc::now);
+    let threshold =
+        chrono::DateTime::from_timestamp_millis(threshold_ms).unwrap_or_else(chrono::Utc::now);
 
     let result = content_filter_log::Entity::delete_many()
         .filter(content_filter_log::Column::CreatedAt.lt(threshold.naive_utc()))
@@ -115,12 +112,16 @@ pub fn handle_alert_mod_status(
 ) -> ContentFilterStatus {
     if target == ContentFilterStatus::Resolved {
         match original {
-            ContentFilterStatus::Pending | ContentFilterStatus::False => ContentFilterStatus::Resolved,
+            ContentFilterStatus::Pending | ContentFilterStatus::False => {
+                ContentFilterStatus::Resolved
+            }
             _ => ContentFilterStatus::Pending,
         }
     } else if target == ContentFilterStatus::False {
         match original {
-            ContentFilterStatus::Pending | ContentFilterStatus::Resolved => ContentFilterStatus::False,
+            ContentFilterStatus::Pending | ContentFilterStatus::Resolved => {
+                ContentFilterStatus::False
+            }
             _ => ContentFilterStatus::Pending,
         }
     } else {
@@ -138,7 +139,8 @@ pub async fn update_alert_mod_status(
 
     if let Some(model) = content_filter_alert::Entity::find_by_id(alert_id)
         .one(db)
-        .await? {
+        .await?
+    {
         let mut active: content_filter_alert::ActiveModel = model.into();
         active.mod_status = Set(new_status);
         let updated = active.update(db).await?;
@@ -158,7 +160,8 @@ pub async fn update_alert_del_status(
 
     if let Some(model) = content_filter_alert::Entity::find_by_id(alert_id)
         .one(db)
-        .await? {
+        .await?
+    {
         let mut active: content_filter_alert::ActiveModel = model.into();
         active.del_status = Set(new_status);
         let updated = active.update(db).await?;
@@ -191,4 +194,3 @@ pub async fn get_content_log_by_alert_id(
 
     Ok(log.map(|row| row.content))
 }
-

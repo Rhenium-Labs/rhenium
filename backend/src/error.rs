@@ -14,9 +14,15 @@ pub enum ConfigError {
     #[error("Configuration file not found: {0}")]
     FileMissing(String),
     #[error("Failed to read configuration file '{path}': {source}")]
-    FileRead { path: String, source: std::io::Error },
+    FileRead {
+        path: String,
+        source: std::io::Error,
+    },
     #[error("Failed to parse configuration file '{path}': {source}")]
-    YamlParse { path: String, source: serde_yaml::Error },
+    YamlParse {
+        path: String,
+        source: serde_yaml::Error,
+    },
 }
 
 /// Errors from the LMDB key-value store.

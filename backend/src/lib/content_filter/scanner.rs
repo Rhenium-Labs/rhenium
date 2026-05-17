@@ -10,9 +10,12 @@ use serde_json::json;
 use tracing::warn;
 
 use super::alert::{self, MessageAlertData};
-use super::types::{ChannelScanState, ContentFilterStatus, ContentPredictionData, ContentPredictions, Detector, PreAlertActionsResult};
-use crate::lib::entities::{content_filter_alert, content_filter_log};
+use super::types::{
+    ChannelScanState, ContentFilterStatus, ContentPredictionData, ContentPredictions, Detector,
+    PreAlertActionsResult,
+};
 use crate::lib::config::schema::{ContentFilterConfig, DetectorMode};
+use crate::lib::entities::{content_filter_alert, content_filter_log};
 use crate::utils::constants::cf;
 
 const NSFW_MIN_SCORE_ADJUSTMENT: f64 = -0.12;
@@ -66,7 +69,10 @@ async fn acquire_openai_slot() {
     loop {
         let current = OPENAI_IN_FLIGHT.load(Ordering::Relaxed);
         if current < OPENAI_MAX_CONCURRENCY {
-            if OPENAI_IN_FLIGHT.compare_exchange(current, current + 1, Ordering::Relaxed, Ordering::Relaxed).is_ok() {
+            if OPENAI_IN_FLIGHT
+                .compare_exchange(current, current + 1, Ordering::Relaxed, Ordering::Relaxed)
+                .is_ok()
+            {
                 return;
             }
         } else {
@@ -109,7 +115,11 @@ pub fn get_min_score_with_state(
     let smoothed_fp = state.false_positive_ratio;
     base += smoothed_fp * cf::HEURISTIC_SCORE_FP_INFLUENCE;
     let now = now_ms();
-    let user_alerts = state.flagged_users.get(author_id).cloned().unwrap_or_default();
+    let user_alerts = state
+        .flagged_users
+        .get(author_id)
+        .cloned()
+        .unwrap_or_default();
     let recent_alerts = user_alerts
         .iter()
         .filter(|&&ts| now.saturating_sub(ts) <= cf::HEURISTIC_USER_RECENT_ALERT_WINDOW_MS)
@@ -128,7 +138,9 @@ async fn is_immune_author(
     if config.immune_roles.is_empty() {
         return false;
     }
-    let Some(guild_id) = message.guild_id else { return false };
+    let Some(guild_id) = message.guild_id else {
+        return false;
+    };
     let member = match guild_id.member(ctx, message.author.id).await {
         Ok(m) => m,
         Err(_) => return false,
@@ -158,7 +170,10 @@ fn parse_moderation_response(
     };
 
     for result in results {
-        let flagged = result.get("flagged").and_then(|f| f.as_bool()).unwrap_or(false);
+        let flagged = result
+            .get("flagged")
+            .and_then(|f| f.as_bool())
+            .unwrap_or(false);
         if require_flagged && !flagged {
             continue;
         }
@@ -205,7 +220,9 @@ fn is_category_allowed(category: &str, allowed_prefixes: Option<&[String]>) -> b
     match allowed_prefixes {
         None => true,
         Some([]) => true,
-        Some(prefixes) => prefixes.iter().any(|p| category == p || category.starts_with(&format!("{p}/"))),
+        Some(prefixes) => prefixes
+            .iter()
+            .any(|p| category == p || category.starts_with(&format!("{p}/"))),
     }
 }
 
@@ -214,7 +231,11 @@ fn parse_retry_after_candidate(value: &str) -> Option<u64> {
     if !parsed.is_finite() || parsed <= 0.0 {
         return None;
     }
-    let ms = if parsed > 1000.0 { parsed } else { parsed * 1000.0 };
+    let ms = if parsed > 1000.0 {
+        parsed
+    } else {
+        parsed * 1000.0
+    };
     Some(ms.round().max(1000.0) as u64)
 }
 
@@ -236,10 +257,7 @@ fn get_retry_after_ms_from_headers(headers: &reqwest::header::HeaderMap) -> Opti
 }
 
 fn is_retryable_http_status(status: reqwest::StatusCode) -> bool {
-    matches!(
-        status.as_u16(),
-        408 | 409 | 425 | 429 | 500..=599
-    )
+    matches!(status.as_u16(), 408 | 409 | 425 | 429 | 500..=599)
 }
 
 fn is_retryable_transport_error(err: &reqwest::Error) -> bool {
@@ -279,10 +297,7 @@ fn get_retry_after_ms_from_error_message(message: &str) -> Option<u64> {
     let normalized = message.to_lowercase();
 
     if let Some(caps) = OPENAI_FOR_RE.captures(&normalized) {
-        if let Some(ms) = caps
-            .get(1)
-            .and_then(|m| m.as_str().parse::<u64>().ok())
-        {
+        if let Some(ms) = caps.get(1).and_then(|m| m.as_str().parse::<u64>().ok()) {
             return Some(ms.max(1000));
         }
     }
@@ -485,7 +500,9 @@ async fn scan_text(
         let response = serde_json::json!({ "results": prefetched });
         parse_moderation_response(&response, min_score, true, None)
     } else {
-        let response = call_openai_moderation_text(http_client, api_key, &message.content, bypass_cooldown).await?;
+        let response =
+            call_openai_moderation_text(http_client, api_key, &message.content, bypass_cooldown)
+                .await?;
         parse_moderation_response(&response, min_score, true, None)
     };
 
@@ -513,7 +530,10 @@ async fn scan_nsfw(
     let media_scan = prepare_media_for_scan(http_client, ctx, message).await;
     if media_scan.frames.is_empty() {
         if media_scan.media_found {
-            return Err("Media was found but no NSFW frames could be prepared; retry after 15000ms".to_string());
+            return Err(
+                "Media was found but no NSFW frames could be prepared; retry after 15000ms"
+                    .to_string(),
+            );
         }
         return Ok(None);
     }
@@ -531,7 +551,11 @@ async fn scan_nsfw(
     let allowed_prefixes = Some(vec!["sexual".to_string()]);
 
     let mut all_predictions = Vec::new();
-    let frames: Vec<_> = media_scan.frames.into_iter().take(MAX_MEDIA_FRAMES).collect();
+    let frames: Vec<_> = media_scan
+        .frames
+        .into_iter()
+        .take(MAX_MEDIA_FRAMES)
+        .collect();
     let scan_inputs = crate::utils::media::serialize_multimodal_input(&frames);
 
     for chunk in scan_inputs.chunks(OPENAI_MODERATION_MAX_IMAGES_PER_REQUEST) {
@@ -546,19 +570,11 @@ async fn scan_nsfw(
                 .next()
                 .and_then(|head| head.strip_prefix("data:image/"))
                 .unwrap_or("png");
-            let base64 = image_url
-                .split(',')
-                .nth(1)
-                .unwrap_or_default();
+            let base64 = image_url.split(',').nth(1).unwrap_or_default();
 
-            let response = call_openai_moderation_image(
-                http_client,
-                api_key,
-                base64,
-                ext,
-                bypass_cooldown,
-            )
-            .await?;
+            let response =
+                call_openai_moderation_image(http_client, api_key, base64, ext, bypass_cooldown)
+                    .await?;
 
             let preds = parse_moderation_response(
                 &response,
@@ -613,7 +629,10 @@ async fn scan_ocr(
             use base64::Engine;
             match base64::engine::general_purpose::STANDARD.decode(b64) {
                 Ok(bytes) => bytes,
-                Err(_) => { frame_failures += 1; continue; }
+                Err(_) => {
+                    frame_failures += 1;
+                    continue;
+                }
             }
         } else {
             frame_failures += 1;
@@ -621,9 +640,17 @@ async fn scan_ocr(
         };
 
         match crate::utils::media::run_ocr(&image_data).await {
-            Ok(Some(text)) => process_ocr_text(&text, keywords, regex_patterns, &mut predictions, &mut matched_content),
+            Ok(Some(text)) => process_ocr_text(
+                &text,
+                keywords,
+                regex_patterns,
+                &mut predictions,
+                &mut matched_content,
+            ),
             Ok(None) => {} // OCR ran but image had no text — not a failure
-            Err(()) => { frame_failures += 1; }
+            Err(()) => {
+                frame_failures += 1;
+            }
         }
     }
 
@@ -701,7 +728,9 @@ async fn prepare_media_for_scan(
 
     // Attachments.
     for attachment in &message.attachments {
-        if let Some(meta) = crate::utils::media::fetch_media_metadata(http_client, &attachment.url).await {
+        if let Some(meta) =
+            crate::utils::media::fetch_media_metadata(http_client, &attachment.url).await
+        {
             all_media.push(meta);
         }
     }
@@ -785,7 +814,8 @@ async fn fallback_media_conversion(
         }
 
         if let (Some(buffer), Some(_extension)) = (metadata.buffer.as_ref(), metadata.extension) {
-            let converted = crate::utils::media::process_media_for_scan(vec![metadata.clone()]).await;
+            let converted =
+                crate::utils::media::process_media_for_scan(vec![metadata.clone()]).await;
             if !converted.is_empty() {
                 frames.extend(converted);
                 continue;
@@ -889,8 +919,7 @@ pub async fn run_detectors(
                 if matches!(detector, crate::lib::config::schema::Detector::Ocr) {
                     warn!(
                         "CF OCR detector unavailable for message {}; skipping OCR this scan: {}",
-                        message.id,
-                        e
+                        message.id, e
                     );
                     continue;
                 }
@@ -1025,7 +1054,10 @@ pub async fn apply_pre_alert_actions(
 
     if let Some(dur_ms) = action_plan.timeout_duration_ms {
         if apply_timeout(ctx, message, dur_ms, &action_plan.triggered_detectors).await {
-            flags.push(format!("Offender Timed Out ({})", crate::utils::format_duration_ms(dur_ms)));
+            flags.push(format!(
+                "Offender Timed Out ({})",
+                crate::utils::format_duration_ms(dur_ms)
+            ));
         }
     }
 
@@ -1054,7 +1086,11 @@ pub async fn apply_pre_alert_actions(
         }
     }
 
-    PreAlertActionsResult { flags, disable_delete_button, deleted_before_alert }
+    PreAlertActionsResult {
+        flags,
+        disable_delete_button,
+        deleted_before_alert,
+    }
 }
 
 async fn apply_timeout(
@@ -1067,7 +1103,13 @@ async fn apply_timeout(
         Some(id) => id,
         None => return false,
     };
-    let channel = match message.channel_id.to_channel(ctx).await.ok().and_then(|c| c.guild()) {
+    let channel = match message
+        .channel_id
+        .to_channel(ctx)
+        .await
+        .ok()
+        .and_then(|c| c.guild())
+    {
         Some(c) => c,
         None => return false,
     };
@@ -1083,13 +1125,21 @@ async fn apply_timeout(
     let (guild_owner_id, guild_roles) = if let Some(guild) = guild_id.to_guild_cached(ctx) {
         (Some(guild.owner_id), Some(guild.roles.clone()))
     } else {
-        let owner_id = guild_id.to_partial_guild(ctx).await.ok().map(|g| g.owner_id);
+        let owner_id = guild_id
+            .to_partial_guild(ctx)
+            .await
+            .ok()
+            .map(|g| g.owner_id);
         (owner_id, None)
     };
 
     let has_moderate_permission = guild_id
         .to_guild_cached(ctx)
-        .map(|guild| guild.user_permissions_in(&channel, &bot_member).moderate_members())
+        .map(|guild| {
+            guild
+                .user_permissions_in(&channel, &bot_member)
+                .moderate_members()
+        })
         .unwrap_or(false);
     if !has_moderate_permission {
         return false;
@@ -1100,7 +1150,10 @@ async fn apply_timeout(
         Err(_) => return false,
     };
     // TS: target.isCommunicationDisabled() — only true when timeout is still active (in the future).
-    if target.communication_disabled_until.is_some_and(|until| until > serenity::Timestamp::now()) {
+    if target
+        .communication_disabled_until
+        .is_some_and(|until| until > serenity::Timestamp::now())
+    {
         return false;
     }
 
@@ -1167,7 +1220,9 @@ fn resolve_detector_action_plan(
     let mut triggered_detectors = Vec::<Detector>::new();
 
     for prediction in predictions {
-        let Some(detector) = prediction.detector else { continue };
+        let Some(detector) = prediction.detector else {
+            continue;
+        };
         if !triggered_detectors.contains(&detector) {
             triggered_detectors.push(detector);
         }
@@ -1260,9 +1315,10 @@ pub async fn create_alert(
 
     // send_webhook returns (alert_message_id, alert_channel_id) — matching TS where
     // alertMessage.id and alertMessage.channel_id come from the webhook response.
-    let (alert_message_id, alert_channel_id) = alert::send_webhook(http_client, &webhook_url, &payload)
-        .await
-        .map_err(|e| format!("Webhook dispatch failed: {e}; retry after 20000ms"))?;
+    let (alert_message_id, alert_channel_id) =
+        alert::send_webhook(http_client, &webhook_url, &payload)
+            .await
+            .map_err(|e| format!("Webhook dispatch failed: {e}; retry after 20000ms"))?;
 
     let alert = content_filter_alert::ActiveModel {
         id: Set(alert_message_id.clone()),

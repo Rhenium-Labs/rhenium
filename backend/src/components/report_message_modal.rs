@@ -1,34 +1,40 @@
-use poise::serenity_prelude as serenity;
 use crate::Data;
 use crate::utils::interaction as ia;
+use poise::serenity_prelude as serenity;
 
 /// Handles the report message modal submission.
 ///
 /// - Validates the report reason.
 /// - Creates or updates the message report via the upsert logic.
-pub async fn handle(
-    ctx: &serenity::Context,
-    modal: &serenity::ModalInteraction,
-    data: &Data,
-) {
+pub async fn handle(ctx: &serenity::Context, modal: &serenity::ModalInteraction, data: &Data) {
     let guild_id = match modal.guild_id {
         Some(id) => id,
         None => return,
     };
 
-    let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id)
+        .await;
 
     if config.parse_reports_config().is_none() {
-        ia::modal_respond_error(ctx, modal, "Message reports have not been configured on this server.").await;
+        ia::modal_respond_error(
+            ctx,
+            modal,
+            "Message reports have not been configured on this server.",
+        )
+        .await;
         return;
     }
 
-    let _ = modal.create_response(
-        ctx,
-        serenity::CreateInteractionResponse::Defer(
-            serenity::CreateInteractionResponseMessage::new().ephemeral(true),
-        ),
-    ).await;
+    let _ = modal
+        .create_response(
+            ctx,
+            serenity::CreateInteractionResponse::Defer(
+                serenity::CreateInteractionResponseMessage::new().ephemeral(true),
+            ),
+        )
+        .await;
 
     // Parse message_id from custom_id: "report-message-{channel_id}-{message_id}"
     let parts: Vec<&str> = modal.data.custom_id.split('-').collect();
@@ -42,7 +48,12 @@ pub async fn handle(
     // TS checks cache BEFORE validating reason, matching this order.
     let cached = crate::utils::message_reports::get_cached_target_message(message_id_str).await;
     let Some(message) = cached else {
-        ia::modal_followup_error(ctx, modal, &format!("Failed to get the message with ID {}.", message_id_str)).await;
+        ia::modal_followup_error(
+            ctx,
+            modal,
+            &format!("Failed to get the message with ID {}.", message_id_str),
+        )
+        .await;
         return;
     };
 
@@ -58,8 +69,16 @@ pub async fn handle(
         })
         .unwrap_or_default();
 
-    if !report_reason.chars().any(|c| c.is_alphanumeric() || c == '_') {
-        ia::modal_followup_error(ctx, modal, "You must provide a valid reason for reporting this message.").await;
+    if !report_reason
+        .chars()
+        .any(|c| c.is_alphanumeric() || c == '_')
+    {
+        ia::modal_followup_error(
+            ctx,
+            modal,
+            "You must provide a valid reason for reporting this message.",
+        )
+        .await;
         return;
     }
 
@@ -86,22 +105,25 @@ async fn handle_report_with_message(
         &message,
         guild_id.or(modal.guild_id),
         Some(&report_reason),
-    ).await;
+    )
+    .await;
 
     match result {
         Ok(_) => {
-            let _ = modal.create_followup(ctx,
-                serenity::CreateInteractionResponseFollowup::new()
-                    .content(format!(
-                        "Successfully reported <@{}>'s message, thank you for your report!",
-                        message.author.id,
-                    ))
-                    .ephemeral(true),
-            ).await;
+            let _ = modal
+                .create_followup(
+                    ctx,
+                    serenity::CreateInteractionResponseFollowup::new()
+                        .content(format!(
+                            "Successfully reported <@{}>'s message, thank you for your report!",
+                            message.author.id,
+                        ))
+                        .ephemeral(true),
+                )
+                .await;
         }
         Err(msg) => {
             ia::modal_followup_error(ctx, modal, &msg).await;
         }
     }
 }
-

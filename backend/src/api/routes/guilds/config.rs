@@ -23,7 +23,11 @@ async fn invalidate_config(
         .map_err(|_| ApiError::BadRequest("Invalid guild ID".into()))?;
     let guild_id = GuildId::new(gid);
 
-    state.app.config_manager.reload(&state.app.db, guild_id).await;
+    state
+        .app
+        .config_manager
+        .reload(&state.app.db, guild_id)
+        .await;
 
     Ok(Json(InvalidateResult { success: true }))
 }

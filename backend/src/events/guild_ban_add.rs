@@ -1,10 +1,10 @@
 use poise::serenity_prelude as serenity;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use sea_orm::sea_query::Expr;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use tracing::{error, info};
 
-use crate::lib::config::schema::LoggingEvent;
 use crate::Data;
+use crate::lib::config::schema::LoggingEvent;
 
 /// Maximum age for Discord bulk delete in milliseconds (14 days).
 const BULK_DELETE_MAX_AGE_MS: i64 = 14 * 24 * 60 * 60 * 1000;
@@ -26,7 +26,10 @@ pub async fn handle(
 ) {
     let guild_id_str = guild_id.to_string();
     let user_id_str = banned_user.id.to_string();
-    let config = data.config_manager.get_guild_config(&data.db, *guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, *guild_id)
+        .await;
 
     // Run both resolve tasks in parallel.
     let (reports_result, requests_result) = tokio::join!(
@@ -35,10 +38,16 @@ pub async fn handle(
     );
 
     if let Err(e) = reports_result {
-        error!("Failed to resolve pending reports for {} in {}: {e}", user_id_str, guild_id_str);
+        error!(
+            "Failed to resolve pending reports for {} in {}: {e}",
+            user_id_str, guild_id_str
+        );
     }
     if let Err(e) = requests_result {
-        error!("Failed to resolve pending ban requests for {} in {}: {e}", user_id_str, guild_id_str);
+        error!(
+            "Failed to resolve pending ban requests for {} in {}: {e}",
+            user_id_str, guild_id_str
+        );
     }
 }
 
@@ -58,7 +67,11 @@ async fn resolve_pending_reports(
 
     let (bot_id, bot_name, bot_avatar_url) = {
         let bot_user = ctx.cache.current_user();
-        (bot_user.id.to_string(), bot_user.name.clone(), bot_user.face())
+        (
+            bot_user.id.to_string(),
+            bot_user.name.clone(),
+            bot_user.face(),
+        )
     };
 
     use crate::lib::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
@@ -78,14 +91,18 @@ async fn resolve_pending_reports(
     MREntity::update_many()
         .col_expr(MRCol::Status, Expr::value(ReportStatus::AutoResolved))
         .col_expr(MRCol::ResolvedBy, Expr::value(bot_id.clone()))
-        .col_expr(MRCol::ResolvedAt, Expr::value(chrono::Utc::now().naive_utc()))
+        .col_expr(
+            MRCol::ResolvedAt,
+            Expr::value(chrono::Utc::now().naive_utc()),
+        )
         .filter(MRCol::AuthorId.eq(user_id))
         .filter(MRCol::GuildId.eq(guild_id))
         .filter(MRCol::Status.eq(ReportStatus::Pending))
         .exec(&data.db)
         .await?;
 
-    let mut rendered_reports: Vec<(String, Vec<serenity::CreateEmbed>)> = Vec::with_capacity(results.len());
+    let mut rendered_reports: Vec<(String, Vec<serenity::CreateEmbed>)> =
+        Vec::with_capacity(results.len());
     for report in &results {
         let report_id = report.id.clone();
         let reported_by = report.reported_by.clone();
@@ -129,28 +146,40 @@ async fn resolve_pending_reports(
                 .join("\n")
         };
 
-        let mut embeds = vec![serenity::CreateEmbed::new()
-            .author(serenity::CreateEmbedAuthor::new("Message Report AutoResolved"))
-            .color(0x57F287) // Green
-            .thumbnail(banned_user.face())
-            .fields(vec![
-                (
-                    "Reported By",
-                    format!("{}{}", crate::utils::user_mention_with_id(&reported_by), additional),
-                    false,
-                ),
-                ("Report Reason", report_reason, false),
-                ("Message Author", crate::utils::user_mention_with_id(user_id), false),
-                ("Message Content", formatted_content, false),
-            ])
-            .footer(
-                serenity::CreateEmbedFooter::new(format!(
-                    "Reviewed by @{} ({})",
-                    bot_name, bot_id
+        let mut embeds = vec![
+            serenity::CreateEmbed::new()
+                .author(serenity::CreateEmbedAuthor::new(
+                    "Message Report AutoResolved",
                 ))
-                .icon_url(bot_avatar_url.clone()),
-            )
-            .timestamp(serenity::Timestamp::now())];
+                .color(0x57F287) // Green
+                .thumbnail(banned_user.face())
+                .fields(vec![
+                    (
+                        "Reported By",
+                        format!(
+                            "{}{}",
+                            crate::utils::user_mention_with_id(&reported_by),
+                            additional
+                        ),
+                        false,
+                    ),
+                    ("Report Reason", report_reason, false),
+                    (
+                        "Message Author",
+                        crate::utils::user_mention_with_id(user_id),
+                        false,
+                    ),
+                    ("Message Content", formatted_content, false),
+                ])
+                .footer(
+                    serenity::CreateEmbedFooter::new(format!(
+                        "Reviewed by @{} ({})",
+                        bot_name, bot_id
+                    ))
+                    .icon_url(bot_avatar_url.clone()),
+                )
+                .timestamp(serenity::Timestamp::now()),
+        ];
 
         if let Some(reference_id) = reference_id {
             if let Some(reference) = data.message_manager.get(&data.db, &reference_id).await {
@@ -251,7 +280,12 @@ async fn resolve_pending_reports(
         }
     }
 
-    info!("Auto-resolved {} pending reports for {} in guild {}", results.len(), user_id, guild_id);
+    info!(
+        "Auto-resolved {} pending reports for {} in guild {}",
+        results.len(),
+        user_id,
+        guild_id
+    );
     Ok(())
 }
 
@@ -293,7 +327,10 @@ async fn resolve_pending_ban_requests(
     BREntity::update_many()
         .col_expr(BRCol::Status, Expr::value(RequestStatus::AutoResolved))
         .col_expr(BRCol::ResolvedBy, Expr::value(bot_id.clone()))
-        .col_expr(BRCol::ResolvedAt, Expr::value(chrono::Utc::now().naive_utc()))
+        .col_expr(
+            BRCol::ResolvedAt,
+            Expr::value(chrono::Utc::now().naive_utc()),
+        )
         .filter(BRCol::TargetId.eq(user_id))
         .filter(BRCol::GuildId.eq(guild_id))
         .filter(BRCol::Status.eq(RequestStatus::Pending))
@@ -368,7 +405,12 @@ async fn resolve_pending_ban_requests(
         }
     }
 
-    info!("Auto-resolved {} pending ban requests for {} in guild {}", results.len(), user_id, guild_id);
+    info!(
+        "Auto-resolved {} pending ban requests for {} in guild {}",
+        results.len(),
+        user_id,
+        guild_id
+    );
     Ok(())
 }
 

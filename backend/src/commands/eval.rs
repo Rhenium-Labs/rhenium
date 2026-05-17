@@ -12,25 +12,27 @@ use crate::{Context, Error};
     hide_in_help,
     aliases("e", "ev", "evaluate", "exec", "run")
 )]
-pub async fn eval(
-    ctx: Context<'_>,
-    #[rest] input: Option<String>,
-) -> Result<(), Error> {
+pub async fn eval(ctx: Context<'_>, #[rest] input: Option<String>) -> Result<(), Error> {
     let data = ctx.data();
 
     // Keep TS behavior: silently ignore non-developers.
-    if !data.global_config.is_developer(&ctx.author().id.to_string()) {
+    if !data
+        .global_config
+        .is_developer(&ctx.author().id.to_string())
+    {
         return Ok(());
     }
 
     let Some(input) = input else {
-        ctx.say("You must provide a string of code to evaluate.").await?;
+        ctx.say("You must provide a string of code to evaluate.")
+            .await?;
         return Ok(());
     };
 
     let parsed = parse_eval_input(&input);
     if parsed.code.trim().is_empty() {
-        ctx.say("You must provide a string of code to evaluate.").await?;
+        ctx.say("You must provide a string of code to evaluate.")
+            .await?;
         return Ok(());
     }
 
@@ -65,13 +67,15 @@ pub async fn eval(
                 return_type,
                 format_execution_time(elapsed)
             ));
-            let row = CreateActionRow::Buttons(vec![CreateButton::new_link(url).label("View Output")]);
+            let row =
+                CreateActionRow::Buttons(vec![CreateButton::new_link(url).label("View Output")]);
             reply = reply.components(vec![row]);
             ctx.send(reply).await?;
             return Ok(());
         }
 
-        ctx.say("Output too large and failed to upload to hastebin.").await?;
+        ctx.say("Output too large and failed to upload to hastebin.")
+            .await?;
         return Ok(());
     }
 

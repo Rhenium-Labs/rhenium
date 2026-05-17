@@ -8,20 +8,24 @@ use crate::utils::interaction as ia;
 
 /// Handles ban request deny modal submissions.
 ///
-pub async fn handle(
-    ctx: &serenity::Context,
-    modal: &serenity::ModalInteraction,
-    data: &Data,
-) {
+pub async fn handle(ctx: &serenity::Context, modal: &serenity::ModalInteraction, data: &Data) {
     let guild_id = match modal.guild_id {
         Some(id) => id,
         None => return,
     };
 
-    let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id)
+        .await;
 
     if config.parse_ban_requests_config().is_none() {
-        ia::modal_respond_error(ctx, modal, "Ban requests have not been configured on this server.").await;
+        ia::modal_respond_error(
+            ctx,
+            modal,
+            "Ban requests have not been configured on this server.",
+        )
+        .await;
         return;
     }
 
@@ -31,7 +35,12 @@ pub async fn handle(
         return;
     };
     if !config.has_permission(member, UserPermission::ReviewBanRequests) {
-        ia::modal_respond_error(ctx, modal, "You don't have permission to review ban requests.").await;
+        ia::modal_respond_error(
+            ctx,
+            modal,
+            "You don't have permission to review ban requests.",
+        )
+        .await;
         return;
     }
 
@@ -56,7 +65,9 @@ pub async fn handle(
         });
 
     // Parse the request ID from the custom_id: "ban-request-deny-{message_id}"
-    let request_id = modal.data.custom_id
+    let request_id = modal
+        .data
+        .custom_id
         .strip_prefix("ban-request-deny-")
         .unwrap_or("")
         .to_string();
@@ -75,7 +86,12 @@ pub async fn handle(
             if let Some(ref message) = modal.message {
                 let _ = message.delete(ctx).await;
             }
-            ia::modal_followup_error(ctx, modal, "Ban request could not be found. It may have been deleted.").await;
+            ia::modal_followup_error(
+                ctx,
+                modal,
+                "Ban request could not be found. It may have been deleted.",
+            )
+            .await;
             return;
         }
     };
@@ -84,13 +100,20 @@ pub async fn handle(
         if let Some(ref message) = modal.message {
             let _ = message.delete(ctx).await;
         }
-        let when = request.resolved_at
+        let when = request
+            .resolved_at
             .map(|dt| format!("<t:{}:F>", dt.and_utc().timestamp()))
             .unwrap_or_else(|| "an unknown time".to_string());
-        ia::modal_followup_error(ctx, modal, &format!(
-            "This request was resolved by {} on {}.",
-            crate::utils::user_mention_with_id(resolved_by), when
-        )).await;
+        ia::modal_followup_error(
+            ctx,
+            modal,
+            &format!(
+                "This request was resolved by {} on {}.",
+                crate::utils::user_mention_with_id(resolved_by),
+                when
+            ),
+        )
+        .await;
         return;
     }
 
@@ -100,7 +123,10 @@ pub async fn handle(
     // If target was auto-muted, remove timeout.
     if target_muted {
         if let Ok(target_user_id) = target_id.parse::<u64>() {
-            if let Ok(mut member) = guild_id.member(ctx, serenity::UserId::new(target_user_id)).await {
+            if let Ok(mut member) = guild_id
+                .member(ctx, serenity::UserId::new(target_user_id))
+                .await
+            {
                 let reason = format!(
                     "Automatic unmute after ban request denial - ID {}",
                     request_id
@@ -123,7 +149,11 @@ pub async fn handle(
     active.resolved_by = Set(Some(modal.user.id.to_string()));
     active.resolved_at = Set(Some(chrono::Utc::now().naive_utc()));
     if let Err(err) = active.update(&data.db).await {
-        warn!(request_id, action = "deny", "Failed to update ban request status from deny modal: {err}");
+        warn!(
+            request_id,
+            action = "deny",
+            "Failed to update ban request status from deny modal: {err}"
+        );
     }
 
     if let Some(ref message) = modal.message {
@@ -199,6 +229,10 @@ pub async fn handle(
         });
     }
 
-    ia::modal_followup_success(ctx, modal, &format!("Successfully denied ban request - ID `{}`", request_id)).await;
+    ia::modal_followup_success(
+        ctx,
+        modal,
+        &format!("Successfully denied ban request - ID `{}`", request_id),
+    )
+    .await;
 }
-

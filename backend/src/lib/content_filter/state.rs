@@ -14,7 +14,9 @@ static ACTIVITY: Mutex<Option<HashMap<String, u64>>> = Mutex::new(None);
 static SMOOTHED_FP: Mutex<Option<HashMap<String, f64>>> = Mutex::new(None);
 
 fn recover_lock<T>(mutex: &'static Mutex<T>) -> MutexGuard<'static, T> {
-    mutex.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    mutex
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn now_ms() -> u64 {
@@ -103,9 +105,9 @@ where
     let now = now_ms();
     with_states(|states, activity| {
         activity.insert(channel_id.to_string(), now);
-        let state = states
-            .entry(channel_id.to_string())
-            .or_insert_with(|| ChannelScanState::new(channel_id.to_string(), guild_id.map(str::to_string)));
+        let state = states.entry(channel_id.to_string()).or_insert_with(|| {
+            ChannelScanState::new(channel_id.to_string(), guild_id.map(str::to_string))
+        });
         state.last_activity = now;
         f(state);
     });
@@ -207,12 +209,16 @@ pub fn list() -> Vec<ChannelScanState> {
 }
 
 /// Enforces capacity and returns the list of evicted channel IDs.
-fn enforce_capacity_collecting(states: &mut HashMap<String, ChannelScanState>, activity: &mut HashMap<String, u64>) -> Vec<String> {
+fn enforce_capacity_collecting(
+    states: &mut HashMap<String, ChannelScanState>,
+    activity: &mut HashMap<String, u64>,
+) -> Vec<String> {
     if states.len() <= MAX_CHANNEL_STATES {
         return Vec::new();
     }
 
-    let mut by_least_recent: Vec<(String, u64)> = activity.iter().map(|(k, &v)| (k.clone(), v)).collect();
+    let mut by_least_recent: Vec<(String, u64)> =
+        activity.iter().map(|(k, &v)| (k.clone(), v)).collect();
     by_least_recent.sort_by_key(|&(_, ts)| ts);
 
     let excess = states.len() - MAX_CHANNEL_STATES;

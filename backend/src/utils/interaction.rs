@@ -74,7 +74,11 @@ pub async fn followup_error(
         )
         .await
     {
-        schedule_delete(ctx.http.clone(), interaction.token.clone(), Some(msg_obj.id));
+        schedule_delete(
+            ctx.http.clone(),
+            interaction.token.clone(),
+            Some(msg_obj.id),
+        );
     }
 }
 
@@ -94,7 +98,11 @@ pub async fn followup_success(
         )
         .await
     {
-        schedule_delete(ctx.http.clone(), interaction.token.clone(), Some(msg_obj.id));
+        schedule_delete(
+            ctx.http.clone(),
+            interaction.token.clone(),
+            Some(msg_obj.id),
+        );
     }
 }
 

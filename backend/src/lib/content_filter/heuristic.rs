@@ -3,8 +3,8 @@
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Mutex, MutexGuard,
+    atomic::{AtomicBool, Ordering},
 };
 use tracing::error;
 
@@ -32,7 +32,9 @@ fn now_ms() -> u64 {
 }
 
 fn recover_lock<T>(mutex: &'static Mutex<T>) -> MutexGuard<'static, T> {
-    mutex.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    mutex
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 /// Returns timer and channel counters for debug output.
@@ -93,7 +95,8 @@ fn prune_stale_entries() {
 
     // Enforce max channels by removing least recent.
     if last.len() > MAX_TIMER_CHANNELS {
-        let mut by_least_recent: Vec<(String, u64)> = last.iter().map(|(k, &v)| (k.clone(), v)).collect();
+        let mut by_least_recent: Vec<(String, u64)> =
+            last.iter().map(|(k, &v)| (k.clone(), v)).collect();
         by_least_recent.sort_by_key(|&(_, ts)| ts);
         let excess = last.len() - MAX_TIMER_CHANNELS;
         for (id, _) in by_least_recent.into_iter().take(excess) {
@@ -122,7 +125,10 @@ pub async fn trigger_scan(
     }
 
     let channel_id = message.channel_id.to_string();
-    let guild_id = message.guild_id.map(|id| id.to_string()).unwrap_or_default();
+    let guild_id = message
+        .guild_id
+        .map(|id| id.to_string())
+        .unwrap_or_default();
 
     if !config.channel_scoping.is_empty() {
         let Some(guild_channel) = message
@@ -170,13 +176,17 @@ pub async fn trigger_scan(
             included: config
                 .channel_scoping
                 .iter()
-                .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Include)
+                .filter(|s| {
+                    s.scoping_type == crate::lib::config::schema::ChannelScopingType::Include
+                })
                 .map(|s| s.channel_id.clone())
                 .collect(),
             excluded: config
                 .channel_scoping
                 .iter()
-                .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Exclude)
+                .filter(|s| {
+                    s.scoping_type == crate::lib::config::schema::ChannelScopingType::Exclude
+                })
                 .map(|s| s.channel_id.clone())
                 .collect(),
         };
@@ -229,8 +239,12 @@ pub async fn trigger_scan(
         set_last_scan(&channel_id_clone, now_ms());
         remove_timer(&channel_id_clone);
 
-        if let Err(e) = execute_scan(&channel_id_clone, &guild_id_clone, &data, &ctx, &config).await {
-            error!("CF heuristic scan failed for channel {}: {e}", channel_id_clone);
+        if let Err(e) = execute_scan(&channel_id_clone, &guild_id_clone, &data, &ctx, &config).await
+        {
+            error!(
+                "CF heuristic scan failed for channel {}: {e}",
+                channel_id_clone
+            );
         }
     });
 
@@ -377,7 +391,9 @@ async fn execute_scan(
                             rid.parse::<u64>()
                                 .ok()
                                 .map(|id| {
-                                    member.roles.contains(&poise::serenity_prelude::RoleId::new(id))
+                                    member
+                                        .roles
+                                        .contains(&poise::serenity_prelude::RoleId::new(id))
                                 })
                                 .unwrap_or(false)
                         })
@@ -387,7 +403,14 @@ async fn execute_scan(
                     continue;
                 }
             }
-            automated::enqueue_heuristic_candidate(ctx, &actual_message, config, signals.clone(), risk).await;
+            automated::enqueue_heuristic_candidate(
+                ctx,
+                &actual_message,
+                config,
+                signals.clone(),
+                risk,
+            )
+            .await;
             queued += 1;
         }
     }
@@ -408,7 +431,9 @@ fn compute_dynamic_threshold(scan_rate: f64, ewma_mpm: f64) -> f64 {
     // TS: const traffic = Math.max(1, Math.round(ewmaMpm))
     let traffic = ewma_mpm.round().max(1.0);
     let ratio = traffic / scan_rate.max(1.0);
-    (cf::HEURISTIC_SCORE_THRESHOLD as f64 * ratio.sqrt()).max(1.0).round()
+    (cf::HEURISTIC_SCORE_THRESHOLD as f64 * ratio.sqrt())
+        .max(1.0)
+        .round()
 }
 
 #[derive(Clone)]
@@ -487,7 +512,8 @@ fn collect_candidate_messages(
 
     if heuristic.standard_score as f64 >= dynamic_threshold && !signal_ids.is_empty() {
         // TS: Math.max(HEURISTIC_MIN_CANDIDATES, Math.round(traffic / DIVISOR))
-        let count = ((traffic as f64 / cf::HEURISTIC_CANDIDATE_TRAFFIC_DIVISOR as f64).round() as usize)
+        let count = ((traffic as f64 / cf::HEURISTIC_CANDIDATE_TRAFFIC_DIVISOR as f64).round()
+            as usize)
             .max(cf::HEURISTIC_MIN_CANDIDATES);
         let candidate_limit = signal_ids
             .len()
@@ -508,7 +534,8 @@ fn collect_candidate_messages(
     }
 
     for reference in &heuristic.reference_data {
-        if reference.score as f64 >= dynamic_threshold && seen.insert(reference.message_id.clone()) {
+        if reference.score as f64 >= dynamic_threshold && seen.insert(reference.message_id.clone())
+        {
             candidates.push(reference.message_id.clone());
         }
     }
@@ -548,7 +575,9 @@ fn estimate_heuristic_risk(signal_count: usize, threshold: f64) -> f64 {
 }
 
 /// Detects if the recent message pace increased.
-fn calculate_chat_rate_increase(messages: &[crate::lib::repository::messages::SerializedMessage]) -> bool {
+fn calculate_chat_rate_increase(
+    messages: &[crate::lib::repository::messages::SerializedMessage],
+) -> bool {
     let now = now_ms();
     let recent_start = now.saturating_sub(cf::MESSAGE_QUEUE_TIME_RANGE);
     let previous_start = now.saturating_sub(cf::MESSAGE_QUEUE_TIME_RANGE * 2);
@@ -568,7 +597,9 @@ fn calculate_chat_rate_increase(messages: &[crate::lib::repository::messages::Se
 }
 
 /// Finds reaction-like short messages.
-fn find_reaction_messages(messages: &[crate::lib::repository::messages::SerializedMessage]) -> Vec<&crate::lib::repository::messages::SerializedMessage> {
+fn find_reaction_messages(
+    messages: &[crate::lib::repository::messages::SerializedMessage],
+) -> Vec<&crate::lib::repository::messages::SerializedMessage> {
     static REACTION_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
         regex::Regex::new(r"(?:^|\s)\p{Lu}{4,11}(?:$|\s)").expect("valid reaction regex")
     });
@@ -576,22 +607,29 @@ fn find_reaction_messages(messages: &[crate::lib::repository::messages::Serializ
         regex::Regex::new(r"[!?]{2,}").expect("valid punctuation regex")
     });
 
-    messages.iter().filter(|m| {
-        let content_str = m.content.as_deref().unwrap_or("").trim().to_string();
-        if content_str.is_empty() || content_str.chars().count() > cf::HEURISTIC_REACTION_MAX_LENGTH {
-            return false;
-        }
-        let word_count = count_words(&content_str);
-        if word_count > cf::HEURISTIC_REACTION_MAX_WORDS {
-            return false;
-        }
+    messages
+        .iter()
+        .filter(|m| {
+            let content_str = m.content.as_deref().unwrap_or("").trim().to_string();
+            if content_str.is_empty()
+                || content_str.chars().count() > cf::HEURISTIC_REACTION_MAX_LENGTH
+            {
+                return false;
+            }
+            let word_count = count_words(&content_str);
+            if word_count > cf::HEURISTIC_REACTION_MAX_WORDS {
+                return false;
+            }
 
-        REACTION_RE.is_match(&content_str) || PUNCT_RE.is_match(&content_str)
-    }).collect()
+            REACTION_RE.is_match(&content_str) || PUNCT_RE.is_match(&content_str)
+        })
+        .collect()
 }
 
 /// Finds near-duplicate adjacent messages from different users.
-fn find_matching_messages(messages: &[crate::lib::repository::messages::SerializedMessage]) -> Vec<&crate::lib::repository::messages::SerializedMessage> {
+fn find_matching_messages(
+    messages: &[crate::lib::repository::messages::SerializedMessage],
+) -> Vec<&crate::lib::repository::messages::SerializedMessage> {
     let mut matching = Vec::new();
     for i in 0..messages.len().saturating_sub(1) {
         let current = &messages[i];
@@ -614,7 +652,11 @@ fn find_matching_messages(messages: &[crate::lib::repository::messages::Serializ
         let nxt_lower = nxt_content.to_lowercase();
         let dist = levenshtein_distance(&cur_lower, &nxt_lower);
         let max_len = cur_lower.chars().count().max(nxt_lower.chars().count());
-        let similarity = if max_len > 0 { 1.0 - dist as f64 / max_len as f64 } else { 0.0 };
+        let similarity = if max_len > 0 {
+            1.0 - dist as f64 / max_len as f64
+        } else {
+            0.0
+        };
 
         if similarity >= 0.9 || dist <= cf::MESSAGE_DISTANCE_THRESHOLD {
             matching.push(current);

@@ -38,11 +38,7 @@ struct QuickPurgeResult {
 /// - Checks if the reaction is a quick mute trigger.
 /// - Checks if the reaction is a quick purge trigger.
 /// - Executes the appropriate action with logging.
-pub async fn handle(
-    ctx: &serenity::Context,
-    reaction: &serenity::Reaction,
-    data: &Data,
-) {
+pub async fn handle(ctx: &serenity::Context, reaction: &serenity::Reaction, data: &Data) {
     let guild_id = match reaction.guild_id {
         Some(id) => id,
         None => return,
@@ -63,7 +59,10 @@ pub async fn handle(
     let guild_id_str = guild_id.to_string();
     let reactor_id_str = reactor_id.to_string();
 
-    let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id)
+        .await;
 
     let ctx_mute = ctx.clone();
     let reaction_mute = reaction.clone();
@@ -174,11 +173,15 @@ async fn handle_quick_mute(
 
     // Channel scoping check.
     let parsed_scoping = crate::utils::ChannelScoping {
-        included: quick_mute_config.channel_scoping.iter()
+        included: quick_mute_config
+            .channel_scoping
+            .iter()
             .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Include)
             .map(|s| s.channel_id.clone())
             .collect(),
-        excluded: quick_mute_config.channel_scoping.iter()
+        excluded: quick_mute_config
+            .channel_scoping
+            .iter()
             .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Exclude)
             .map(|s| s.channel_id.clone())
             .collect(),
@@ -205,13 +208,14 @@ async fn handle_quick_mute(
         .communication_disabled_until
         .is_some_and(|until| until > serenity::Timestamp::now())
     {
-        config.log(
-            ctx.http.as_ref(),
-            LoggingEvent::QuickMuteResult,
-            serenity::ExecuteWebhook::new().content(
-                format!("{}, {} is already muted.", executor, target),
-            ),
-        ).await;
+        config
+            .log(
+                ctx.http.as_ref(),
+                LoggingEvent::QuickMuteResult,
+                serenity::ExecuteWebhook::new()
+                    .content(format!("{}, {} is already muted.", executor, target)),
+            )
+            .await;
         return;
     }
 
@@ -228,9 +232,11 @@ async fn handle_quick_mute(
         .and_then(|c| c.guild())
         .and_then(|gc| {
             bot_member.as_ref().and_then(|bot_member| {
-                guild_id
-                    .to_guild_cached(ctx)
-                    .map(|guild| guild.user_permissions_in(&gc, bot_member).moderate_members())
+                guild_id.to_guild_cached(ctx).map(|guild| {
+                    guild
+                        .user_permissions_in(&gc, bot_member)
+                        .moderate_members()
+                })
             })
         })
         .unwrap_or(false);
@@ -266,11 +272,17 @@ async fn handle_quick_mute(
         guild_roles.as_ref(),
     );
     if !validation.ok {
-        config.log(
-            ctx.http.as_ref(),
-            LoggingEvent::QuickMuteResult,
-            serenity::ExecuteWebhook::new().content(format!("{}, {}", executor, validation.message.as_deref().unwrap_or("Unknown error"))),
-        ).await;
+        config
+            .log(
+                ctx.http.as_ref(),
+                LoggingEvent::QuickMuteResult,
+                serenity::ExecuteWebhook::new().content(format!(
+                    "{}, {}",
+                    executor,
+                    validation.message.as_deref().unwrap_or("Unknown error")
+                )),
+            )
+            .await;
         return;
     }
 
@@ -327,89 +339,124 @@ async fn handle_quick_mute(
             .await,
         )
     } else {
-        let _ = reaction.channel_id.delete_message(ctx, reaction.message_id).await;
+        let _ = reaction
+            .channel_id
+            .delete_message(ctx, reaction.message_id)
+            .await;
         None
     };
 
     // Build log embed.
     let mut embed = serenity::CreateEmbed::new()
-        .author(serenity::CreateEmbedAuthor::new(format!("Quick Mute Executed ({})", formatted_duration)))
+        .author(serenity::CreateEmbedAuthor::new(format!(
+            "Quick Mute Executed ({})",
+            formatted_duration
+        )))
         .thumbnail(target.user.face())
         .color(0x3498DB) // Colors.Blue
         .fields(vec![
-            ("Target", crate::utils::user_mention_with_id(&target_id.to_string()), false),
-            ("Executor", crate::utils::user_mention_with_id(&reactor_id.to_string()), false),
+            (
+                "Target",
+                crate::utils::user_mention_with_id(&target_id.to_string()),
+                false,
+            ),
+            (
+                "Executor",
+                crate::utils::user_mention_with_id(&reactor_id.to_string()),
+                false,
+            ),
             ("Reason", reason.clone(), false),
         ])
         .timestamp(serenity::Timestamp::now());
 
     if let Some(purge_result) = &purge_result {
         if purge_result.deleted > 0 {
-        embed = embed.field(
-            "Messages Purged",
-            format!(
-                "{} {}{}{}",
-                purge_result.deleted,
-                if purge_result.deleted == 1 { "message" } else { "messages" },
-                if purge_result.failed > 0 {
-                    format!(" ({} failed)", purge_result.failed)
-                } else {
-                    String::new()
-                },
-                purge_result
-                    .log_url
-                    .as_ref()
-                    .map(|url| format!("- [View Deleted Messages]({url})"))
-                    .unwrap_or_default()
-            ),
-            false,
-        );
+            embed = embed.field(
+                "Messages Purged",
+                format!(
+                    "{} {}{}{}",
+                    purge_result.deleted,
+                    if purge_result.deleted == 1 {
+                        "message"
+                    } else {
+                        "messages"
+                    },
+                    if purge_result.failed > 0 {
+                        format!(" ({} failed)", purge_result.failed)
+                    } else {
+                        String::new()
+                    },
+                    purge_result
+                        .log_url
+                        .as_ref()
+                        .map(|url| format!("- [View Deleted Messages]({url})"))
+                        .unwrap_or_default()
+                ),
+                false,
+            );
         }
     }
 
     let content = if let Some(purge_result) = &purge_result {
         if purge_result.deleted > 0 {
-        format!(
-            "{}, successfully quick muted {} for `{}` and purged `{}`/`{}` {} in <#{}>.",
-            executor, target, formatted_duration, purge_result.deleted, purge_limit,
-            if purge_result.deleted == 1 { "message" } else { "messages" },
-            reaction.channel_id,
-        )
+            format!(
+                "{}, successfully quick muted {} for `{}` and purged `{}`/`{}` {} in <#{}>.",
+                executor,
+                target,
+                formatted_duration,
+                purge_result.deleted,
+                purge_limit,
+                if purge_result.deleted == 1 {
+                    "message"
+                } else {
+                    "messages"
+                },
+                reaction.channel_id,
+            )
         } else {
-            format!("{}, successfully quick muted {} for `{}`.", executor, target, formatted_duration)
+            format!(
+                "{}, successfully quick muted {} for `{}`.",
+                executor, target, formatted_duration
+            )
         }
     } else {
-        format!("{}, successfully quick muted {} for `{}`.", executor, target, formatted_duration)
+        format!(
+            "{}, successfully quick muted {} for `{}`.",
+            executor, target, formatted_duration
+        )
     };
 
     let mut result_payload = serenity::ExecuteWebhook::new().content(&content);
     let mut result_files: Vec<serenity::CreateAttachment> = Vec::new();
     if let Some(purge_result) = &purge_result {
         if purge_result.deleted > 0 {
-        result_files.push(serenity::CreateAttachment::bytes(
-            purge_result.entries.join("\n\n").into_bytes(),
-            "log-data.txt",
-        ));
-        if let Some(url) = &purge_result.log_url {
-            let button = serenity::CreateButton::new_link(url).label("Open In Browser");
-            result_payload =
-                result_payload.components(vec![serenity::CreateActionRow::Buttons(vec![button])]);
-        }
+            result_files.push(serenity::CreateAttachment::bytes(
+                purge_result.entries.join("\n\n").into_bytes(),
+                "log-data.txt",
+            ));
+            if let Some(url) = &purge_result.log_url {
+                let button = serenity::CreateButton::new_link(url).label("Open In Browser");
+                result_payload = result_payload
+                    .components(vec![serenity::CreateActionRow::Buttons(vec![button])]);
+            }
         }
     }
 
-    config.log(
-        ctx.http.as_ref(),
-        LoggingEvent::QuickMuteExecuted,
-        serenity::ExecuteWebhook::new().embed(embed),
-    ).await;
-    config.log_with_files(
-        ctx.http.as_ref(),
-        LoggingEvent::QuickMuteResult,
-        result_payload,
-        result_files,
-    ).await;
-
+    config
+        .log(
+            ctx.http.as_ref(),
+            LoggingEvent::QuickMuteExecuted,
+            serenity::ExecuteWebhook::new().embed(embed),
+        )
+        .await;
+    config
+        .log_with_files(
+            ctx.http.as_ref(),
+            LoggingEvent::QuickMuteResult,
+            result_payload,
+            result_files,
+        )
+        .await;
 }
 
 /// Handles quick purge reactions.
@@ -479,11 +526,15 @@ async fn handle_quick_purge(
 
     // Channel scoping check.
     let parsed_scoping = crate::utils::ChannelScoping {
-        included: quick_purge_config.channel_scoping.iter()
+        included: quick_purge_config
+            .channel_scoping
+            .iter()
             .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Include)
             .map(|s| s.channel_id.clone())
             .collect(),
-        excluded: quick_purge_config.channel_scoping.iter()
+        excluded: quick_purge_config
+            .channel_scoping
+            .iter()
             .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Exclude)
             .map(|s| s.channel_id.clone())
             .collect(),
@@ -510,10 +561,16 @@ async fn handle_quick_purge(
     // member cache, which is not populated by HTTP fetches. We use `user_permissions_in` with
     // the Member structs we already hold instead.
     #[allow(deprecated)]
-    let gc = reaction.channel_id.to_channel(ctx).await.ok().and_then(|c| c.guild());
+    let gc = reaction
+        .channel_id
+        .to_channel(ctx)
+        .await
+        .ok()
+        .and_then(|c| c.guild());
 
     // Executor must have Manage Messages in this channel.
-    let executor_has_manage_messages = gc.as_ref()
+    let executor_has_manage_messages = gc
+        .as_ref()
         .and_then(|gc| {
             guild_id
                 .to_guild_cached(ctx)
@@ -521,17 +578,16 @@ async fn handle_quick_purge(
         })
         .unwrap_or(false);
     if !executor_has_manage_messages {
-        config.log(
-            ctx.http.as_ref(),
-            LoggingEvent::QuickPurgeResult,
-            serenity::ExecuteWebhook::new().content(
-                format!(
+        config
+            .log(
+                ctx.http.as_ref(),
+                LoggingEvent::QuickPurgeResult,
+                serenity::ExecuteWebhook::new().content(format!(
                     "{}, you do not have permission to manage messages in <#{}>.",
                     executor, reaction.channel_id
-                ),
-            ),
-        )
-        .await;
+                )),
+            )
+            .await;
         return;
     }
 
@@ -572,20 +628,18 @@ async fn handle_quick_purge(
     .await;
 
     if !purge_result.ok || purge_result.deleted == 0 {
-        config.log(
-            ctx.http.as_ref(),
-            LoggingEvent::QuickPurgeResult,
-            serenity::ExecuteWebhook::new().content(format!(
-                "{}, failed to quick purge messages for {}: {}",
-                executor,
-                target,
-                purge_result
-                    .message
-                    .as_deref()
-                    .unwrap_or("Unknown error")
-            )),
-        )
-        .await;
+        config
+            .log(
+                ctx.http.as_ref(),
+                LoggingEvent::QuickPurgeResult,
+                serenity::ExecuteWebhook::new().content(format!(
+                    "{}, failed to quick purge messages for {}: {}",
+                    executor,
+                    target,
+                    purge_result.message.as_deref().unwrap_or("Unknown error")
+                )),
+            )
+            .await;
         return;
     }
 
@@ -595,15 +649,27 @@ async fn handle_quick_purge(
         .thumbnail(target.user.face())
         .color(0x3498DB) // Colors.Blue
         .fields(vec![
-            ("Target", crate::utils::user_mention_with_id(&target_id.to_string()), false),
-            ("Executor", crate::utils::user_mention_with_id(&reactor_id.to_string()), false),
+            (
+                "Target",
+                crate::utils::user_mention_with_id(&target_id.to_string()),
+                false,
+            ),
+            (
+                "Executor",
+                crate::utils::user_mention_with_id(&reactor_id.to_string()),
+                false,
+            ),
             ("Channel", format!("<#{}>", reaction.channel_id), false),
             (
                 "Purge Result",
                 format!(
                     "{} {}{}{}",
                     purge_result.deleted,
-                    if purge_result.deleted == 1 { "message" } else { "messages" },
+                    if purge_result.deleted == 1 {
+                        "message"
+                    } else {
+                        "messages"
+                    },
                     if purge_result.failed > 0 {
                         format!(" ({} failed)", purge_result.failed)
                     } else {
@@ -622,32 +688,44 @@ async fn handle_quick_purge(
 
     let content = format!(
         "{}, successfully purged `{}`/`{}` {} from {} in <#{}>.",
-        executor, purge_result.deleted, max_limit,
-        if purge_result.deleted == 1 { "message" } else { "messages" },
-        target, reaction.channel_id,
+        executor,
+        purge_result.deleted,
+        max_limit,
+        if purge_result.deleted == 1 {
+            "message"
+        } else {
+            "messages"
+        },
+        target,
+        reaction.channel_id,
     );
 
     let mut result_payload = serenity::ExecuteWebhook::new().content(&content);
-    let attachment =
-        serenity::CreateAttachment::bytes(purge_result.entries.join("\n\n").into_bytes(), "log-data.txt");
+    let attachment = serenity::CreateAttachment::bytes(
+        purge_result.entries.join("\n\n").into_bytes(),
+        "log-data.txt",
+    );
     if let Some(url) = &purge_result.log_url {
         let button = serenity::CreateButton::new_link(url).label("Open In Browser");
         result_payload =
             result_payload.components(vec![serenity::CreateActionRow::Buttons(vec![button])]);
     }
 
-    config.log(
-        ctx.http.as_ref(),
-        LoggingEvent::QuickPurgeExecuted,
-        serenity::ExecuteWebhook::new().embed(embed),
-    ).await;
-    config.log_with_files(
-        ctx.http.as_ref(),
-        LoggingEvent::QuickPurgeResult,
-        result_payload,
-        vec![attachment],
-    ).await;
-
+    config
+        .log(
+            ctx.http.as_ref(),
+            LoggingEvent::QuickPurgeExecuted,
+            serenity::ExecuteWebhook::new().embed(embed),
+        )
+        .await;
+    config
+        .log_with_files(
+            ctx.http.as_ref(),
+            LoggingEvent::QuickPurgeResult,
+            result_payload,
+            vec![attachment],
+        )
+        .await;
 }
 
 /// Executes a purge of messages from a specific author in a channel.
@@ -661,13 +739,8 @@ async fn execute_purge(
     trigger_message_id: serenity::MessageId,
     amount: u32,
 ) -> QuickPurgeResult {
-    let message_ids = fetch_purgeable_message_ids(
-        data,
-        channel_id,
-        target_id,
-        amount as usize,
-    )
-    .await;
+    let message_ids =
+        fetch_purgeable_message_ids(data, channel_id, target_id, amount as usize).await;
 
     if message_ids.is_empty() {
         return QuickPurgeResult {
@@ -699,13 +772,16 @@ async fn execute_purge(
     ids_to_delete.retain(|id| *id != trigger_message_id);
 
     let now = chrono::Utc::now().timestamp_millis();
-    let (bulk, individual): (Vec<serenity::MessageId>, Vec<serenity::MessageId>) =
-        ids_to_delete
-            .into_iter()
-            .partition(|id| (now - snowflake_to_timestamp_ms(*id)) < BULK_DELETE_MAX_AGE_MS);
+    let (bulk, individual): (Vec<serenity::MessageId>, Vec<serenity::MessageId>) = ids_to_delete
+        .into_iter()
+        .partition(|id| (now - snowflake_to_timestamp_ms(*id)) < BULK_DELETE_MAX_AGE_MS);
 
     let delete_trigger = async {
-        if channel_id.delete_message(ctx, trigger_message_id).await.is_ok() {
+        if channel_id
+            .delete_message(ctx, trigger_message_id)
+            .await
+            .is_ok()
+        {
             (1, 0)
         } else {
             (0, 1)
@@ -785,7 +861,8 @@ async fn individual_delete_messages(
         for id in batch {
             let ctx = ctx.clone();
             let message_id = *id;
-            join_set.spawn(async move { channel_id.delete_message(&ctx, message_id).await.is_ok() });
+            join_set
+                .spawn(async move { channel_id.delete_message(&ctx, message_id).await.is_ok() });
         }
 
         while let Some(result) = join_set.join_next().await {
@@ -834,16 +911,17 @@ async fn resolve_channel_scope_ids(
         return (guild_channel.id.to_string(), Some(thread_id), None);
     };
 
-    let category_id = match parent_channel_id.to_channel(ctx).await.ok().and_then(|c| c.guild()) {
+    let category_id = match parent_channel_id
+        .to_channel(ctx)
+        .await
+        .ok()
+        .and_then(|c| c.guild())
+    {
         Some(parent_channel) => parent_channel.parent_id.map(|id| id.to_string()),
         None => None,
     };
 
-    (
-        parent_channel_id.to_string(),
-        Some(thread_id),
-        category_id,
-    )
+    (parent_channel_id.to_string(), Some(thread_id), category_id)
 }
 
 async fn fetch_purgeable_message_ids(
@@ -874,7 +952,8 @@ async fn fetch_purgeable_message_ids(
 
     if !cached_set.is_empty() {
         db_query = db_query.filter(
-            crate::lib::entities::message::Column::Id.is_not_in(cached_set.iter().cloned().collect::<Vec<_>>())
+            crate::lib::entities::message::Column::Id
+                .is_not_in(cached_set.iter().cloned().collect::<Vec<_>>()),
         );
     }
 
@@ -926,7 +1005,10 @@ async fn build_message_log_entries(
         .iter()
         .filter_map(|m| m.reference_id.clone())
         .collect::<Vec<_>>();
-    let references = data.message_manager.get_many(&data.db, &reference_ids).await;
+    let references = data
+        .message_manager
+        .get_many(&data.db, &reference_ids)
+        .await;
     let mut reference_map = HashMap::new();
     for msg in references {
         if !author_cache.contains_key(&msg.author_id) {

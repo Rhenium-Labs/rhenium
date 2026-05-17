@@ -1,6 +1,6 @@
 use poise::serenity_prelude as serenity;
-use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use sea_orm::sea_query::OnConflict;
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use tracing::{error, warn};
 use urlencoding::encode;
 
@@ -21,10 +21,18 @@ pub async fn handle(
         None => return,
     };
 
-    let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id)
+        .await;
 
     if config.parse_ban_requests_config().is_none() {
-        ia::respond_error(ctx, interaction, "Ban requests have not been configured on this server.").await;
+        ia::respond_error(
+            ctx,
+            interaction,
+            "Ban requests have not been configured on this server.",
+        )
+        .await;
         return;
     }
 
@@ -34,7 +42,12 @@ pub async fn handle(
         return;
     };
     if !config.has_permission(member, UserPermission::ReviewBanRequests) {
-        ia::respond_error(ctx, interaction, "You don't have permission to review ban requests.").await;
+        ia::respond_error(
+            ctx,
+            interaction,
+            "You don't have permission to review ban requests.",
+        )
+        .await;
         return;
     }
 
@@ -55,16 +68,16 @@ pub async fn handle(
             format!("ban-request-deny-{}", interaction.message.id),
             "Deny Ban Request",
         )
-        .components(vec![
-            serenity::CreateActionRow::InputText(
-                serenity::CreateInputText::new(serenity::InputTextStyle::Paragraph, "Reason", "reason")
-                    .required(true)
-                    .max_length(1024)
-                    .min_length(1),
-            ),
-        ]);
+        .components(vec![serenity::CreateActionRow::InputText(
+            serenity::CreateInputText::new(serenity::InputTextStyle::Paragraph, "Reason", "reason")
+                .required(true)
+                .max_length(1024)
+                .min_length(1),
+        )]);
 
-        let _ = interaction.create_response(ctx, serenity::CreateInteractionResponse::Modal(modal)).await;
+        let _ = interaction
+            .create_response(ctx, serenity::CreateInteractionResponse::Modal(modal))
+            .await;
         return;
     }
 
@@ -90,11 +103,19 @@ pub async fn process_ban_request(
     };
 
     // Fetch ban request.
-    let request = match crate::lib::entities::ban_request::Entity::find_by_id(message_id.clone()).one(&data.db).await {
+    let request = match crate::lib::entities::ban_request::Entity::find_by_id(message_id.clone())
+        .one(&data.db)
+        .await
+    {
         Ok(Some(r)) => r,
         _ => {
             let _ = interaction.message.delete(ctx).await;
-            ia::followup_error(ctx, interaction, "Ban request could not be found. It may have been deleted.").await;
+            ia::followup_error(
+                ctx,
+                interaction,
+                "Ban request could not be found. It may have been deleted.",
+            )
+            .await;
             return;
         }
     };
@@ -110,10 +131,16 @@ pub async fn process_ban_request(
         let when = resolved_at
             .map(|dt| format!("<t:{}:F>", dt.and_utc().timestamp()))
             .unwrap_or_else(|| "an unknown time".to_string());
-        ia::followup_error(ctx, interaction, &format!(
-            "This request was resolved by {} on {}.",
-            crate::utils::user_mention_with_id(&resolved_by), when
-        )).await;
+        ia::followup_error(
+            ctx,
+            interaction,
+            &format!(
+                "This request was resolved by {} on {}.",
+                crate::utils::user_mention_with_id(&resolved_by),
+                when
+            ),
+        )
+        .await;
         return;
     }
 
@@ -122,7 +149,10 @@ pub async fn process_ban_request(
             // If target was auto-muted, remove timeout.
             if target_muted {
                 if let Ok(target_user_id) = target_id.parse::<u64>() {
-                    if let Ok(mut member) = guild_id.member(ctx, serenity::UserId::new(target_user_id)).await {
+                    if let Ok(mut member) = guild_id
+                        .member(ctx, serenity::UserId::new(target_user_id))
+                        .await
+                    {
                         let reason = format!(
                             "Automatic unmute after ban request disregard - ID {}",
                             message_id
@@ -167,15 +197,28 @@ pub async fn process_ban_request(
             let target_user = match target_user_id.to_user(ctx).await {
                 Ok(u) => u,
                 Err(_) => {
-                    ia::followup_error(ctx, interaction, "Failed to fetch the target user, cannot proceed with ban.").await;
+                    ia::followup_error(
+                        ctx,
+                        interaction,
+                        "Failed to fetch the target user, cannot proceed with ban.",
+                    )
+                    .await;
                     return;
                 }
             };
 
             // Check if already banned.
             // get_ban returns Ok(Some(ban)) if banned, Ok(None) if not banned, Err if API error.
-            if matches!(ctx.http.get_ban(guild_id, target_user_id).await, Ok(Some(_))) {
-                ia::followup_error(ctx, interaction, "The target user is already banned. Unban them before accepting this request.").await;
+            if matches!(
+                ctx.http.get_ban(guild_id, target_user_id).await,
+                Ok(Some(_))
+            ) {
+                ia::followup_error(
+                    ctx,
+                    interaction,
+                    "The target user is already banned. Unban them before accepting this request.",
+                )
+                .await;
                 return;
             }
 
@@ -198,7 +241,10 @@ pub async fn process_ban_request(
                     .color(0xED4245)
                     .author(author)
                     .title(format!("You've been banned from {}", guild_name))
-                    .footer(serenity::CreateEmbedFooter::new(format!("Case ID: #{}", interaction.message.id)))
+                    .footer(serenity::CreateEmbedFooter::new(format!(
+                        "Case ID: #{}",
+                        interaction.message.id
+                    )))
                     .timestamp(serenity::Timestamp::now());
 
                 let mut notify_embed = notify_embed;
@@ -225,8 +271,13 @@ pub async fn process_ban_request(
             }
 
             // Ban the user.
-            let ban_reason = format!("[{}] Ban request accepted by {} ({}) - {}",
-                interaction.message.id, interaction.user.tag(), interaction.user.id, reason);
+            let ban_reason = format!(
+                "[{}] Ban request accepted by {} ({}) - {}",
+                interaction.message.id,
+                interaction.user.tag(),
+                interaction.user.id,
+                reason
+            );
 
             let delete_seconds = config
                 .data
@@ -235,7 +286,9 @@ pub async fn process_ban_request(
                 .unwrap_or(0)
                 .max(0) as u32;
 
-            match ban_user_with_seconds(data, guild_id, target_user_id, delete_seconds, &ban_reason).await {
+            match ban_user_with_seconds(data, guild_id, target_user_id, delete_seconds, &ban_reason)
+                .await
+            {
                 Ok(_) => {
                     // Insert temp ban if has expiry.
                     if let Some(exp) = request.expires_at {
@@ -250,10 +303,13 @@ pub async fn process_ban_request(
                                     crate::lib::entities::temporary_ban::Column::GuildId,
                                     crate::lib::entities::temporary_ban::Column::TargetId,
                                 ])
-                                .update_column(crate::lib::entities::temporary_ban::Column::ExpiresAt)
-                                .to_owned()
+                                .update_column(
+                                    crate::lib::entities::temporary_ban::Column::ExpiresAt,
+                                )
+                                .to_owned(),
                             )
-                            .exec(&data.db).await
+                            .exec(&data.db)
+                            .await
                         {
                             warn!(
                                 request_id = %message_id,
@@ -265,7 +321,8 @@ pub async fn process_ban_request(
                     }
 
                     // Notify requester.
-                    spawn_notify_ban_request_result(ctx, config, action, &request, review_reason).await;
+                    spawn_notify_ban_request_result(ctx, config, action, &request, review_reason)
+                        .await;
                 }
                 Err(e) => {
                     error!("Failed to ban user {}: {e}", target_id);
@@ -281,15 +338,24 @@ pub async fn process_ban_request(
                             id: Set(request_id.clone()),
                             ..Default::default()
                         };
-                        active.status = Set(crate::lib::entities::ban_request::RequestStatus::Pending);
+                        active.status =
+                            Set(crate::lib::entities::ban_request::RequestStatus::Pending);
                         active.resolved_by = Set(None);
                         active.resolved_at = Set(None);
-                        if let Err(err) = crate::lib::entities::ban_request::Entity::update(active).exec(&db).await {
+                        if let Err(err) = crate::lib::entities::ban_request::Entity::update(active)
+                            .exec(&db)
+                            .await
+                        {
                             warn!(request_id = %request_id, "Failed to revert ban request status after failed ban: {err}");
                         }
                     });
 
-                    ia::followup_error(ctx, interaction, "Failed to ban the target user. Do I have the necessary permissions?").await;
+                    ia::followup_error(
+                        ctx,
+                        interaction,
+                        "Failed to ban the target user. Do I have the necessary permissions?",
+                    )
+                    .await;
                     return;
                 }
             }
@@ -301,7 +367,10 @@ pub async fn process_ban_request(
             // If target was auto-muted, remove timeout.
             if target_muted {
                 if let Ok(target_user_id) = target_id.parse::<u64>() {
-                    if let Ok(mut member) = guild_id.member(ctx, serenity::UserId::new(target_user_id)).await {
+                    if let Ok(mut member) = guild_id
+                        .member(ctx, serenity::UserId::new(target_user_id))
+                        .await
+                    {
                         let reason = format!(
                             "Automatic unmute after ban request denial - ID {}",
                             message_id
@@ -340,7 +409,15 @@ pub async fn process_ban_request(
         _ => action,
     };
 
-    ia::followup_success(ctx, interaction, &format!("Successfully {} ban request - ID `{}`", past_tense, interaction.message.id)).await;
+    ia::followup_success(
+        ctx,
+        interaction,
+        &format!(
+            "Successfully {} ban request - ID `{}`",
+            past_tense, interaction.message.id
+        ),
+    )
+    .await;
 }
 
 async fn spawn_review_log_then_delete(
@@ -472,10 +549,10 @@ async fn log_ban_request_reviewed(
     }
 
     let color = match action {
-        "accept" => 0x57F287,   // Green
-        "deny" => 0xED4245,     // Red
+        "accept" => 0x57F287,    // Green
+        "deny" => 0xED4245,      // Red
         "disregard" => 0x5865F2, // Blurple
-        _ => 0x23272a, // Colors.NotQuiteBlack (unreachable in practice)
+        _ => 0x23272a,           // Colors.NotQuiteBlack (unreachable in practice)
     };
 
     let past_tense = match action {
@@ -488,21 +565,29 @@ async fn log_ban_request_reviewed(
     if let Some(current_embed) = interaction.message.embeds.first() {
         let mut embed = serenity::CreateEmbed::from(current_embed.clone())
             .color(color)
-            .author(serenity::CreateEmbedAuthor::new(format!("Ban Request {}", past_tense)))
-            .footer(serenity::CreateEmbedFooter::new(
-                format!("Reviewed by @{} ({})", interaction.user.name, interaction.user.id),
-            ).icon_url(interaction.user.face()))
+            .author(serenity::CreateEmbedAuthor::new(format!(
+                "Ban Request {}",
+                past_tense
+            )))
+            .footer(
+                serenity::CreateEmbedFooter::new(format!(
+                    "Reviewed by @{} ({})",
+                    interaction.user.name, interaction.user.id
+                ))
+                .icon_url(interaction.user.face()),
+            )
             .timestamp(serenity::Timestamp::now());
 
         if let Some(reason) = review_reason {
             embed = embed.field("Reviewer Reason", reason, false);
         }
 
-        config.log(
-            ctx.http.as_ref(),
-            LoggingEvent::BanRequestReviewed,
-            serenity::ExecuteWebhook::new().embed(embed),
-        ).await;
+        config
+            .log(
+                ctx.http.as_ref(),
+                LoggingEvent::BanRequestReviewed,
+                serenity::ExecuteWebhook::new().embed(embed),
+            )
+            .await;
     }
 }
-

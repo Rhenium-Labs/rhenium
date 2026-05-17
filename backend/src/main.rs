@@ -1,9 +1,9 @@
 #![allow(special_module_name)]
 
 mod api;
-mod error;
 mod commands;
 mod components;
+mod error;
 mod events;
 mod lib;
 mod state;
@@ -22,8 +22,8 @@ use tracing::{error, info};
 use crate::lib::config::env::EnvConfig;
 use crate::lib::config::global::GlobalConfig;
 use crate::lib::config::manager::ConfigManager;
-use crate::lib::repository::messages::MessageManager;
 use crate::lib::kv::KvStore;
+use crate::lib::repository::messages::MessageManager;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

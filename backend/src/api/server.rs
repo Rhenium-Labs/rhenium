@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use axum::Router;
-use axum::middleware;
 use axum::http::HeaderValue;
+use axum::middleware;
 use poise::serenity_prelude as serenity;
 use tower_http::cors::CorsLayer;
 use tracing::{info, warn};
@@ -13,10 +13,7 @@ use super::auth::{self, ApiState};
 use super::routes;
 
 /// Starts the REST API server alongside the Discord gateway.
-pub async fn start(
-    state: Arc<AppState>,
-    ctx: serenity::Context,
-) -> std::io::Result<()> {
+pub async fn start(state: Arc<AppState>, ctx: serenity::Context) -> std::io::Result<()> {
     let port = state.env.api_port;
     let dashboard_origin = state.env.dashboard_origin.clone();
 

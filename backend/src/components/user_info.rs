@@ -48,23 +48,36 @@ pub async fn handle(
     let created_at = user.created_at().unix_timestamp();
     let mut embed = serenity::CreateEmbed::new()
         .color(0x23272a) // Colors.NotQuiteBlack
-        .author(serenity::CreateEmbedAuthor::new(format!("@{}", user.name))
-            .icon_url(user.face())
-            .url(user.face()))
+        .author(
+            serenity::CreateEmbedAuthor::new(format!("@{}", user.name))
+                .icon_url(user.face())
+                .url(user.face()),
+        )
         .field("Account Created", format!("<t:{}:R>", created_at), true)
-        .footer(serenity::CreateEmbedFooter::new(format!("User ID: {}", user.id)));
+        .footer(serenity::CreateEmbedFooter::new(format!(
+            "User ID: {}",
+            user.id
+        )));
 
     // Add member-specific fields.
     if let Ok(ref member) = member_result {
         if let Some(joined_at) = member.joined_at {
-            embed = embed.field("Joined Server", format!("<t:{}:R>", joined_at.unix_timestamp()), true);
+            embed = embed.field(
+                "Joined Server",
+                format!("<t:{}:R>", joined_at.unix_timestamp()),
+                true,
+            );
         }
 
         if let Some(disabled_until) = member.communication_disabled_until {
             // Only show if the timeout is still active (mirrors isCommunicationDisabled() in djs).
             let now_unix = chrono::Utc::now().timestamp();
             if disabled_until.unix_timestamp() > now_unix {
-                embed = embed.field("Timeout Expires", format!("<t:{}:R>", disabled_until.unix_timestamp()), true);
+                embed = embed.field(
+                    "Timeout Expires",
+                    format!("<t:{}:R>", disabled_until.unix_timestamp()),
+                    true,
+                );
             }
         }
     }
@@ -87,12 +100,18 @@ pub async fn handle(
         crate::lib::entities::message_report::Entity::find()
             .filter(crate::lib::entities::message_report::Column::AuthorId.eq(user_id_str))
             .filter(crate::lib::entities::message_report::Column::GuildId.eq(guild_id_str.clone()))
-            .filter(crate::lib::entities::message_report::Column::Status.eq(crate::lib::entities::message_report::ReportStatus::Pending))
+            .filter(
+                crate::lib::entities::message_report::Column::Status
+                    .eq(crate::lib::entities::message_report::ReportStatus::Pending)
+            )
             .count(&data.db),
         crate::lib::entities::message_report::Entity::find()
             .filter(crate::lib::entities::message_report::Column::AuthorId.eq(user_id_str2))
             .filter(crate::lib::entities::message_report::Column::GuildId.eq(guild_id_str2))
-            .filter(crate::lib::entities::message_report::Column::Status.ne(crate::lib::entities::message_report::ReportStatus::Pending))
+            .filter(
+                crate::lib::entities::message_report::Column::Status
+                    .ne(crate::lib::entities::message_report::ReportStatus::Pending)
+            )
             .count(&data.db),
     );
 
@@ -104,14 +123,22 @@ pub async fn handle(
         let report_word = if total == 1 { "report" } else { "reports" };
         embed = embed.field(
             "Existing Reports",
-            format!("{} {} ({} pending, {} resolved).", total, report_word, pending, resolved),
+            format!(
+                "{} {} ({} pending, {} resolved).",
+                total, report_word, pending, resolved
+            ),
             true,
         );
     }
 
-    let _ = interaction.create_response(ctx, serenity::CreateInteractionResponse::Message(
-        serenity::CreateInteractionResponseMessage::new()
-            .embed(embed)
-            .ephemeral(true),
-    )).await;
+    let _ = interaction
+        .create_response(
+            ctx,
+            serenity::CreateInteractionResponse::Message(
+                serenity::CreateInteractionResponseMessage::new()
+                    .embed(embed)
+                    .ephemeral(true),
+            ),
+        )
+        .await;
 }

@@ -41,11 +41,14 @@ pub async fn handle(
     let channel_id = match channel_id_str.parse::<u64>() {
         Ok(id) => serenity::ChannelId::new(id),
         Err(_) => {
-            let _ = interaction.create_followup(ctx,
-                serenity::CreateInteractionResponseFollowup::new()
-                    .content(format!("Failed to fetch channel `{}`.", channel_id_str))
-                    .ephemeral(true),
-            ).await;
+            let _ = interaction
+                .create_followup(
+                    ctx,
+                    serenity::CreateInteractionResponseFollowup::new()
+                        .content(format!("Failed to fetch channel `{}`.", channel_id_str))
+                        .ephemeral(true),
+                )
+                .await;
             return;
         }
     };
@@ -53,11 +56,14 @@ pub async fn handle(
     let message_id = match message_id_str.parse::<u64>() {
         Ok(id) => serenity::MessageId::new(id),
         Err(_) => {
-            let _ = interaction.create_followup(ctx,
-                serenity::CreateInteractionResponseFollowup::new()
-                    .content("Invalid delete-report payload.")
-                    .ephemeral(true),
-            ).await;
+            let _ = interaction
+                .create_followup(
+                    ctx,
+                    serenity::CreateInteractionResponseFollowup::new()
+                        .content("Invalid delete-report payload.")
+                        .ephemeral(true),
+                )
+                .await;
             return;
         }
     };
@@ -66,27 +72,38 @@ pub async fn handle(
     let updated_components_on_graceful =
         rebuild_action_rows(&interaction.message.components, &disable_prefix);
 
-    let channel = match channel_id.to_channel(ctx).await.ok().and_then(|c| c.guild()) {
+    let channel = match channel_id
+        .to_channel(ctx)
+        .await
+        .ok()
+        .and_then(|c| c.guild())
+    {
         Some(c) => c,
         None => {
-            let _ = interaction.edit_response(ctx,
-                serenity::EditInteractionResponse::new()
-                    .embeds(
-                        interaction
-                            .message
-                            .embeds
-                            .iter()
-                            .cloned()
-                            .map(serenity::CreateEmbed::from)
-                            .collect::<Vec<_>>(),
-                    )
-                    .components(updated_components_on_graceful),
-            ).await;
-            let _ = interaction.create_followup(ctx,
-                serenity::CreateInteractionResponseFollowup::new()
-                    .content(format!("Failed to fetch channel `{}`.", channel_id_str))
-                    .ephemeral(true),
-            ).await;
+            let _ = interaction
+                .edit_response(
+                    ctx,
+                    serenity::EditInteractionResponse::new()
+                        .embeds(
+                            interaction
+                                .message
+                                .embeds
+                                .iter()
+                                .cloned()
+                                .map(serenity::CreateEmbed::from)
+                                .collect::<Vec<_>>(),
+                        )
+                        .components(updated_components_on_graceful),
+                )
+                .await;
+            let _ = interaction
+                .create_followup(
+                    ctx,
+                    serenity::CreateInteractionResponseFollowup::new()
+                        .content(format!("Failed to fetch channel `{}`.", channel_id_str))
+                        .ephemeral(true),
+                )
+                .await;
             return;
         }
     };
@@ -102,20 +119,25 @@ pub async fn handle(
     let bot_can_manage = bot_member
         .as_ref()
         .and_then(|bot_member| {
-            guild_id
-                .to_guild_cached(ctx)
-                .map(|guild| guild.user_permissions_in(&channel, bot_member).manage_messages())
+            guild_id.to_guild_cached(ctx).map(|guild| {
+                guild
+                    .user_permissions_in(&channel, bot_member)
+                    .manage_messages()
+            })
         })
         .unwrap_or(false);
     if !bot_can_manage {
-        let _ = interaction.create_followup(ctx,
-            serenity::CreateInteractionResponseFollowup::new()
-                .content(format!(
-                    "I do not have permission to manage messages in <#{}>.",
-                    channel.id
-                ))
-                .ephemeral(true),
-        ).await;
+        let _ = interaction
+            .create_followup(
+                ctx,
+                serenity::CreateInteractionResponseFollowup::new()
+                    .content(format!(
+                        "I do not have permission to manage messages in <#{}>.",
+                        channel.id
+                    ))
+                    .ephemeral(true),
+            )
+            .await;
         return;
     }
 
@@ -124,20 +146,25 @@ pub async fn handle(
     let executor_can_manage = executor_member
         .as_ref()
         .and_then(|executor_member| {
-            guild_id
-                .to_guild_cached(ctx)
-                .map(|guild| guild.user_permissions_in(&channel, executor_member).manage_messages())
+            guild_id.to_guild_cached(ctx).map(|guild| {
+                guild
+                    .user_permissions_in(&channel, executor_member)
+                    .manage_messages()
+            })
         })
         .unwrap_or(false);
     if !executor_can_manage {
-        let _ = interaction.create_followup(ctx,
-            serenity::CreateInteractionResponseFollowup::new()
-                .content(format!(
-                    "You do not have permission to manage messages in <#{}>.",
-                    channel.id
-                ))
-                .ephemeral(true),
-        ).await;
+        let _ = interaction
+            .create_followup(
+                ctx,
+                serenity::CreateInteractionResponseFollowup::new()
+                    .content(format!(
+                        "You do not have permission to manage messages in <#{}>.",
+                        channel.id
+                    ))
+                    .ephemeral(true),
+            )
+            .await;
         return;
     }
 
@@ -147,18 +174,31 @@ pub async fn handle(
             // Update the embed to add a deletion flag.
             let deletion_note = format!(
                 "{} Deleted (by <@{}>)",
-                if msg_type == "reference" { "Reference" } else { "Message" },
+                if msg_type == "reference" {
+                    "Reference"
+                } else {
+                    "Message"
+                },
                 interaction.user.id,
             );
 
             // Rebuild components from the original message and disable only delete-{type} buttons.
-            let updated_components = rebuild_action_rows(&interaction.message.components, &disable_prefix);
+            let updated_components =
+                rebuild_action_rows(&interaction.message.components, &disable_prefix);
 
             // Update embeds to append/update the "Flags" field.
             let mut updated_embeds = Vec::new();
             for embed in &interaction.message.embeds {
-                let target_author = if msg_type == "reference" { "Message Reference" } else { "New Message Report" };
-                let is_target = embed.author.as_ref().map(|a| a.name == target_author).unwrap_or(false);
+                let target_author = if msg_type == "reference" {
+                    "Message Reference"
+                } else {
+                    "New Message Report"
+                };
+                let is_target = embed
+                    .author
+                    .as_ref()
+                    .map(|a| a.name == target_author)
+                    .unwrap_or(false);
 
                 if !is_target {
                     // Non-target embeds are passed through unchanged.
@@ -229,25 +269,40 @@ pub async fn handle(
                 updated_embeds.push(new_embed);
             }
 
-            let _ = interaction.edit_response(ctx,
-                serenity::EditInteractionResponse::new()
-                    .embeds(updated_embeds)
-                    .components(updated_components),
-            ).await;
+            let _ = interaction
+                .edit_response(
+                    ctx,
+                    serenity::EditInteractionResponse::new()
+                        .embeds(updated_embeds)
+                        .components(updated_components),
+                )
+                .await;
 
-            let _ = interaction.create_followup(ctx,
-                serenity::CreateInteractionResponseFollowup::new()
-                    .content(format!("Successfully deleted message `{}` in <#{}>.", message_id_str, channel_id_str))
-                    .ephemeral(true),
-            ).await;
+            let _ = interaction
+                .create_followup(
+                    ctx,
+                    serenity::CreateInteractionResponseFollowup::new()
+                        .content(format!(
+                            "Successfully deleted message `{}` in <#{}>.",
+                            message_id_str, channel_id_str
+                        ))
+                        .ephemeral(true),
+                )
+                .await;
         }
         Err(e) => {
             error!("Failed to delete message {}: {e}", message_id_str);
-            let _ = interaction.create_followup(ctx,
-                serenity::CreateInteractionResponseFollowup::new()
-                    .content(format!("Failed to delete message `{}` in <#{}>.", message_id_str, channel_id_str))
-                    .ephemeral(true),
-            ).await;
+            let _ = interaction
+                .create_followup(
+                    ctx,
+                    serenity::CreateInteractionResponseFollowup::new()
+                        .content(format!(
+                            "Failed to delete message `{}` in <#{}>.",
+                            message_id_str, channel_id_str
+                        ))
+                        .ephemeral(true),
+                )
+                .await;
         }
     }
 }

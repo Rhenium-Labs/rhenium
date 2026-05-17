@@ -61,8 +61,7 @@ impl EnvConfig {
 }
 
 fn required_env(key: &str) -> Result<String, ConfigError> {
-    let value =
-        std::env::var(key).map_err(|_| ConfigError::MissingEnvVar(key.to_string()))?;
+    let value = std::env::var(key).map_err(|_| ConfigError::MissingEnvVar(key.to_string()))?;
     if value.is_empty() {
         return Err(ConfigError::EmptyEnvVar(key.to_string()));
     }

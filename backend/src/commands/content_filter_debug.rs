@@ -1,10 +1,15 @@
+use crate::utils::{hastebin, inflect};
 use crate::{Context, Error};
 use poise::serenity_prelude::{self as serenity, CreateEmbed, CreateEmbedAuthor};
-use crate::utils::{hastebin, inflect};
 
 /// Developer-only command: inspect content filter internal state.
 ///
-#[poise::command(prefix_command, hide_in_help, rename = "content-filter-debug", aliases("cfd", "cfstate", "cfstats"))]
+#[poise::command(
+    prefix_command,
+    hide_in_help,
+    rename = "content-filter-debug",
+    aliases("cfd", "cfstate", "cfstats")
+)]
 pub async fn content_filter_debug(
     ctx: Context<'_>,
     #[description = "Subcommand"] subcommand: Option<String>,
@@ -13,11 +18,16 @@ pub async fn content_filter_debug(
 ) -> Result<(), Error> {
     let data = ctx.data();
 
-    if !data.global_config.is_developer(&ctx.author().id.to_string()) {
+    if !data
+        .global_config
+        .is_developer(&ctx.author().id.to_string())
+    {
         return Ok(());
     }
 
-    let subcommand = subcommand.unwrap_or_else(|| "overview".to_string()).to_lowercase();
+    let subcommand = subcommand
+        .unwrap_or_else(|| "overview".to_string())
+        .to_lowercase();
     let guild_id = ctx.guild_id().map(|g| g.to_string()).unwrap_or_default();
 
     match subcommand.as_str() {
@@ -78,7 +88,9 @@ async fn overview(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
             .take(6)
             .enumerate()
             .map(|(idx, state)| {
-                let queue_depth = crate::lib::content_filter::scheduler::queue_depth_for_channel(&state.channel_id);
+                let queue_depth = crate::lib::content_filter::scheduler::queue_depth_for_channel(
+                    &state.channel_id,
+                );
                 let channel_display = format_channel_display(ctx, &state.channel_id);
 
                 format!(
@@ -107,18 +119,17 @@ async fn overview(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
     };
 
     let embed = CreateEmbed::new()
-        .author(CreateEmbedAuthor::new("Content Filter Diagnostics").icon_url(cache.current_user().face()))
+        .author(
+            CreateEmbedAuthor::new("Content Filter Diagnostics")
+                .icon_url(cache.current_user().face()),
+        )
         .color(0x23272a) // Colors.NotQuiteBlack
         .fields(vec![
             (
                 "Queue",
                 format!(
                     "{} total ({} new, {} {}){}",
-                    queue.total,
-                    queue.new_jobs,
-                    queue.retry_jobs,
-                    retry_label,
-                    next_suffix,
+                    queue.total, queue.new_jobs, queue.retry_jobs, retry_label, next_suffix,
                 ),
                 true,
             ),
@@ -126,8 +137,7 @@ async fn overview(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
                 "Dead Letters",
                 format!(
                     "{} total ({} buffered)",
-                    diagnostics.dead_letters.total_recorded,
-                    diagnostics.dead_letters.buffered
+                    diagnostics.dead_letters.total_recorded, diagnostics.dead_letters.buffered
                 ),
                 true,
             ),
@@ -141,11 +151,7 @@ async fn overview(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
                 ),
                 true,
             ),
-            (
-                "Most Active Channels",
-                most_active,
-                false,
-            ),
+            ("Most Active Channels", most_active, false),
         ])
         .timestamp(serenity::Timestamp::now());
 
@@ -161,7 +167,10 @@ async fn channel(ctx: Context<'_>, channel_id: &str) -> Result<(), Error> {
         },
     ));
     let Some(state) = diagnostics.states.first() else {
-        ctx.say(format!("No state information available for channel with ID `{channel_id}`.")).await?;
+        ctx.say(format!(
+            "No state information available for channel with ID `{channel_id}`."
+        ))
+        .await?;
         return Ok(());
     };
 
@@ -172,11 +181,7 @@ async fn channel(ctx: Context<'_>, channel_id: &str) -> Result<(), Error> {
         )
         .color(0x23272a) // Colors.NotQuiteBlack
         .fields(vec![
-            (
-                "Queue Depth",
-                state.queue_depth.to_string(),
-                true,
-            ),
+            ("Queue Depth", state.queue_depth.to_string(), true),
             ("Scan Rate", format!("{} / min", state.scan_rate), true),
             ("EWMA MPM", format!("{:.2}", state.ewma_mpm), true),
             (
@@ -186,10 +191,19 @@ async fn channel(ctx: Context<'_>, channel_id: &str) -> Result<(), Error> {
             ),
             (
                 "Tracked Users",
-                format!("{} {} ({} priority)", state.tracked_users, inflect(state.tracked_users as u64, "user"), state.priority_users),
+                format!(
+                    "{} {} ({} priority)",
+                    state.tracked_users,
+                    inflect(state.tracked_users as u64, "user"),
+                    state.priority_users
+                ),
                 true,
             ),
-            ("Last Activity", format!("<t:{}:R>", state.last_activity / 1000), true),
+            (
+                "Last Activity",
+                format!("<t:{}:R>", state.last_activity / 1000),
+                true,
+            ),
         ])
         .timestamp(serenity::Timestamp::now());
 
@@ -220,9 +234,10 @@ async fn queue(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
     );
 
     let embed = CreateEmbed::new()
-        .author(CreateEmbedAuthor::new("Content Filter Queue Snapshot").icon_url(
-            ctx.serenity_context().cache.current_user().face(),
-        ))
+        .author(
+            CreateEmbedAuthor::new("Content Filter Queue Snapshot")
+                .icon_url(ctx.serenity_context().cache.current_user().face()),
+        )
         .color(0x23272a) // Colors.NotQuiteBlack
         .description(format!("```ini\n{lines}\n```"))
         .timestamp(serenity::Timestamp::now());
@@ -241,16 +256,18 @@ async fn dead_letters(ctx: Context<'_>, limit: usize) -> Result<(), Error> {
         .collect::<Vec<_>>();
 
     if entries.is_empty() {
-        ctx.say("Found no dead-letter entries recorded in memory.").await?;
+        ctx.say("Found no dead-letter entries recorded in memory.")
+            .await?;
         return Ok(());
     }
 
     let body = entries
         .iter()
         .map(|entry| {
-            let timestamp = chrono::DateTime::<chrono::Utc>::from_timestamp_millis(entry.created_at as i64)
-                .map(|dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Millis, true))
-                .unwrap_or_else(|| entry.created_at.to_string());
+            let timestamp =
+                chrono::DateTime::<chrono::Utc>::from_timestamp_millis(entry.created_at as i64)
+                    .map(|dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Millis, true))
+                    .unwrap_or_else(|| entry.created_at.to_string());
             format!(
                 "{} | {} | Source: {}\nMessage: {}\nAttempts: {}/{}",
                 timestamp,
@@ -341,10 +358,21 @@ async fn prioritize(
         "list" => {
             let prioritized = crate::lib::content_filter::get_prioritized_guilds();
             if prioritized.is_empty() {
-                ctx.say("No guilds are manually prioritized for content-filter scanning right now.").await?;
+                ctx.say(
+                    "No guilds are manually prioritized for content-filter scanning right now.",
+                )
+                .await?;
             } else {
-                let list = prioritized.iter().map(|id| format!("- `{id}`")).collect::<Vec<_>>().join("\n");
-                ctx.say(format!("Prioritized guilds ({}):\n{list}", prioritized.len())).await?;
+                let list = prioritized
+                    .iter()
+                    .map(|id| format!("- `{id}`"))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                ctx.say(format!(
+                    "Prioritized guilds ({}):\n{list}",
+                    prioritized.len()
+                ))
+                .await?;
             }
         }
         "on" | "enable" | "add" => {
@@ -353,22 +381,31 @@ async fn prioritize(
                 ctx.say("Enabled manual CF prioritization for this guild. New messages will be scanned more aggressively.")
                     .await?;
             } else {
-                ctx.say(format!("Enabled manual CF prioritization for guild `{guild_id}`."))
-                    .await?;
+                ctx.say(format!(
+                    "Enabled manual CF prioritization for guild `{guild_id}`."
+                ))
+                .await?;
             }
         }
         "off" | "disable" | "remove" | "clear" => {
             crate::lib::content_filter::set_guild_priority(&data.db, guild_id, false).await;
             if guild_id == default_guild_id {
-                ctx.say("Disabled manual CF prioritization for this guild.").await?;
-            } else {
-                ctx.say(format!("Disabled manual CF prioritization for guild `{guild_id}`."))
+                ctx.say("Disabled manual CF prioritization for this guild.")
                     .await?;
+            } else {
+                ctx.say(format!(
+                    "Disabled manual CF prioritization for guild `{guild_id}`."
+                ))
+                .await?;
             }
         }
         "status" => {
             let is_prioritized = crate::lib::content_filter::is_guild_prioritized(guild_id);
-            let status = if is_prioritized { "enabled" } else { "disabled" };
+            let status = if is_prioritized {
+                "enabled"
+            } else {
+                "disabled"
+            };
             if guild_id == default_guild_id {
                 ctx.say(format!(
                     "Manual CF prioritization for this guild is currently **{status}**."

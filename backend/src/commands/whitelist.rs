@@ -1,6 +1,6 @@
-use poise::serenity_prelude::{CreateEmbed, CreateAttachment, CreateActionRow, CreateButton};
-use sea_orm::{EntityTrait, Set};
 use crate::{Context, Error};
+use poise::serenity_prelude::{CreateActionRow, CreateAttachment, CreateButton, CreateEmbed};
+use sea_orm::{EntityTrait, Set};
 
 /// Developer-only command: manage AI content filter whitelist.
 ///
@@ -13,7 +13,10 @@ pub async fn whitelist(
     let data = ctx.data();
 
     // Developer check.
-    if !data.global_config.is_developer(&ctx.author().id.to_string()) {
+    if !data
+        .global_config
+        .is_developer(&ctx.author().id.to_string())
+    {
         ctx.say("You do not have permission to use this command.")
             .await?;
         return Ok(());
@@ -63,7 +66,7 @@ pub async fn whitelist(
                 "Invalid subcommand `{}`. Valid subcommands are: create, delete, check, list.",
                 subcommand
             ))
-                .await?;
+            .await?;
             Ok(())
         }
     }
@@ -80,9 +83,10 @@ async fn whitelist_create(ctx: Context<'_>, guild_id: &str) -> Result<(), Error>
 
     if exists {
         // Ensure KV reflects the DB truth (may be stale false from a prior delete).
-        let _ = data
-            .kv
-            .put(&format!("whitelists:{guild_id}"), &crate::utils::WhitelistCacheEntry { status: true });
+        let _ = data.kv.put(
+            &format!("whitelists:{guild_id}"),
+            &crate::utils::WhitelistCacheEntry { status: true },
+        );
         ctx.say(format!(
             "Guild with ID `{guild_id}` is already whitelisted for the AI content filter system."
         ))
@@ -99,9 +103,10 @@ async fn whitelist_create(ctx: Context<'_>, guild_id: &str) -> Result<(), Error>
     .await?;
 
     // Update KV cache.
-    let _ = data
-        .kv
-        .put(&format!("whitelists:{guild_id}"), &crate::utils::WhitelistCacheEntry { status: true });
+    let _ = data.kv.put(
+        &format!("whitelists:{guild_id}"),
+        &crate::utils::WhitelistCacheEntry { status: true },
+    );
 
     let embed = CreateEmbed::new()
         .description(format!(
@@ -133,9 +138,7 @@ async fn whitelist_delete(ctx: Context<'_>, guild_id: &str) -> Result<(), Error>
         .exec(&data.db)
         .await?;
 
-    let _ = data
-        .kv
-        .delete(&format!("whitelists:{guild_id}"));
+    let _ = data.kv.delete(&format!("whitelists:{guild_id}"));
 
     let embed = CreateEmbed::new()
         .description(format!(
@@ -159,7 +162,9 @@ async fn whitelist_check(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> 
         )
     } else {
         (
-            format!("Guild with ID `{guild_id}` is not whitelisted for the AI content filter system."),
+            format!(
+                "Guild with ID `{guild_id}` is not whitelisted for the AI content filter system."
+            ),
             0x3498DBu32, // Colors.Blue
         )
     };
@@ -200,8 +205,7 @@ async fn whitelist_list(ctx: Context<'_>) -> Result<(), Error> {
         .attachment(attachment);
 
     if let Some(url) = hastebin_url {
-        let button = CreateButton::new_link(url)
-            .label("Open In Browser");
+        let button = CreateButton::new_link(url).label("Open In Browser");
         reply = reply.components(vec![CreateActionRow::Buttons(vec![button])]);
     }
 

@@ -2,17 +2,17 @@
 
 use std::collections::HashMap;
 use std::sync::{
-    atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
     Mutex, MutexGuard,
+    atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 };
 
-use std::sync::LazyLock;
 use poise::serenity_prelude as serenity;
 use regex::Regex;
+use std::sync::LazyLock;
 use tracing::{error, info, warn};
 
-use super::{dead_letter, scheduler, scanner, state};
 use super::types::{ContentPredictionData, ContentPredictions, ScanJob, ScanSource};
+use super::{dead_letter, scanner, scheduler, state};
 use crate::lib::config::guild::GuildConfig;
 use crate::lib::repository::messages::SerializedMessage;
 use crate::utils::{constants::cf, content_filter as cf_utils};
@@ -53,7 +53,8 @@ pub struct AutomatedDiagnostics {
     pub recent_dead_letters: Vec<super::types::DeadLetterEntry>,
 }
 
-static MESSAGE_CACHE: LazyLock<Mutex<HashMap<String, CachedMessage>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+static MESSAGE_CACHE: LazyLock<Mutex<HashMap<String, CachedMessage>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 static ACTIVE_JOB_COUNT: AtomicUsize = AtomicUsize::new(0);
 static TICK_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
 static LAST_HEARTBEAT_LOG_AT: AtomicU64 = AtomicU64::new(0);
@@ -62,7 +63,9 @@ static OPENAI_RATE_LIMIT_LOG_WINDOW_UNTIL: AtomicU64 = AtomicU64::new(0);
 static TEXT_PREFETCH_PAUSED_UNTIL: AtomicU64 = AtomicU64::new(0);
 
 fn recover_lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
-    mutex.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    mutex
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn now_ms() -> u64 {
@@ -79,7 +82,10 @@ pub fn start(data: crate::Data, ctx: serenity::Context) {
     tokio::spawn(async move {
         info!("CF automated scanner started.");
         loop {
-            tokio::time::sleep(tokio::time::Duration::from_millis(cf::HEURISTIC_TICK_INTERVAL_MS)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(
+                cf::HEURISTIC_TICK_INTERVAL_MS,
+            ))
+            .await;
             tick(&tick_data, &tick_ctx).await;
         }
     });
@@ -87,7 +93,10 @@ pub fn start(data: crate::Data, ctx: serenity::Context) {
     let cleanup_data = data.clone();
     tokio::spawn(async move {
         loop {
-            tokio::time::sleep(tokio::time::Duration::from_millis(cf::AUTOMATED_CLEANUP_INTERVAL_MS)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(
+                cf::AUTOMATED_CLEANUP_INTERVAL_MS,
+            ))
+            .await;
             state::prune();
             prune_message_cache();
             let _ = &cleanup_data; // keep ownership for future hooks
@@ -96,7 +105,10 @@ pub fn start(data: crate::Data, ctx: serenity::Context) {
 
     tokio::spawn(async move {
         loop {
-            tokio::time::sleep(tokio::time::Duration::from_millis(cf::AUTOMATED_METRICS_LOG_INTERVAL_MS)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(
+                cf::AUTOMATED_METRICS_LOG_INTERVAL_MS,
+            ))
+            .await;
             let queue = scheduler::diagnostics();
             let (dead_total, dead_buffered) = dead_letter::get_summary();
             let states = state::count();
@@ -104,7 +116,9 @@ pub fn start(data: crate::Data, ctx: serenity::Context) {
             let now = now_ms();
             let has_signal = queue.total > 0 || dead_buffered > 0;
             let last_log = LAST_HEARTBEAT_LOG_AT.load(Ordering::Relaxed);
-            if !has_signal && now.saturating_sub(last_log) < cf::AUTOMATED_HEARTBEAT_FORCED_LOG_INTERVAL_MS {
+            if !has_signal
+                && now.saturating_sub(last_log) < cf::AUTOMATED_HEARTBEAT_FORCED_LOG_INTERVAL_MS
+            {
                 continue;
             }
             LAST_HEARTBEAT_LOG_AT.store(now, Ordering::Relaxed);
@@ -153,8 +167,8 @@ pub fn handle_moderator_feedback(channel_id: &str, was_false: bool) {
     if let Some(state) = state_opt {
         let mean = beta_mean(&state);
         let prev = state::get_smoothed_false_positive(&channel_id);
-        let smoothed = prev * (1.0 - cf::HEURISTIC_SMOOTHED_FP_ALPHA)
-            + mean * cf::HEURISTIC_SMOOTHED_FP_ALPHA;
+        let smoothed =
+            prev * (1.0 - cf::HEURISTIC_SMOOTHED_FP_ALPHA) + mean * cf::HEURISTIC_SMOOTHED_FP_ALPHA;
         state::set_smoothed_false_positive(&channel_id, smoothed);
     }
 }
@@ -222,9 +236,14 @@ fn prune_message_cache() {
     let mut cache = recover_lock(&MESSAGE_CACHE);
     cache.retain(|_, entry| entry.cached_at >= cutoff);
     if cache.len() > cf::AUTOMATED_MESSAGE_CACHE_MAX_SIZE {
-        let mut entries: Vec<_> = cache.iter().map(|(k, v)| (k.clone(), v.cached_at)).collect();
+        let mut entries: Vec<_> = cache
+            .iter()
+            .map(|(k, v)| (k.clone(), v.cached_at))
+            .collect();
         entries.sort_by_key(|(_, ts)| *ts);
-        let to_remove = entries.len().saturating_sub(cf::AUTOMATED_MESSAGE_CACHE_MAX_SIZE);
+        let to_remove = entries
+            .len()
+            .saturating_sub(cf::AUTOMATED_MESSAGE_CACHE_MAX_SIZE);
         for (key, _) in entries.into_iter().take(to_remove) {
             cache.remove(&key);
         }
@@ -260,20 +279,33 @@ pub async fn enqueue_for_scan(
 
     let now = now_ms();
     let channel_id = message.channel_id.to_string();
-    let guild_id = message.guild_id.map(|id| id.to_string()).unwrap_or_default();
+    let guild_id = message
+        .guild_id
+        .map(|id| id.to_string())
+        .unwrap_or_default();
     let is_prioritized = super::is_guild_prioritized(&guild_id);
 
     let mut measured_mpm = 0usize;
     state::update(&channel_id, Some(&guild_id), |s| {
         s.message_timestamps.push(now);
-        s.message_timestamps.retain(|&ts| now.saturating_sub(ts) <= cf::HEURISTIC_SCAN_WINDOW);
+        s.message_timestamps
+            .retain(|&ts| now.saturating_sub(ts) <= cf::HEURISTIC_SCAN_WINDOW);
         measured_mpm = s.message_timestamps.len();
-        s.ewma_mpm = ewma(s.ewma_mpm, measured_mpm as f64, cf::HEURISTIC_EWMA_MPM_ALPHA);
+        s.ewma_mpm = ewma(
+            s.ewma_mpm,
+            measured_mpm as f64,
+            cf::HEURISTIC_EWMA_MPM_ALPHA,
+        );
     });
 
     let computed_risk = cf_utils::compute_message_risk(config, serialized_message);
-    let risk = if is_prioritized { computed_risk.max(0.85) } else { computed_risk };
-    let should_bypass_drop = is_prioritized || risk >= cf::AUTOMATED_LOW_PRIORITY_DROP_RISK_THRESHOLD;
+    let risk = if is_prioritized {
+        computed_risk.max(0.85)
+    } else {
+        computed_risk
+    };
+    let should_bypass_drop =
+        is_prioritized || risk >= cf::AUTOMATED_LOW_PRIORITY_DROP_RISK_THRESHOLD;
 
     if !should_bypass_drop && scanner::openai_cooldown_remaining() > 0 {
         return;
@@ -281,14 +313,23 @@ pub async fn enqueue_for_scan(
     if !should_bypass_drop && scheduler::size() >= cf::AUTOMATED_LOW_PRIORITY_DROP_QUEUE_SIZE {
         return;
     }
-    if !should_bypass_drop && scheduler::queue_depth_for_guild(&guild_id) >= cf::AUTOMATED_MAX_GUILD_QUEUE_DEPTH {
+    if !should_bypass_drop
+        && scheduler::queue_depth_for_guild(&guild_id) >= cf::AUTOMATED_MAX_GUILD_QUEUE_DEPTH
+    {
         return;
     }
 
     let next_run_at = if is_prioritized {
         now
     } else {
-        schedule_next_scan(now, state::get(&channel_id).map(|s| s.scan_rate).unwrap_or(cf::HEURISTIC_BASE_SCAN_RATE as f64), risk, measured_mpm as f64)
+        schedule_next_scan(
+            now,
+            state::get(&channel_id)
+                .map(|s| s.scan_rate)
+                .unwrap_or(cf::HEURISTIC_BASE_SCAN_RATE as f64),
+            risk,
+            measured_mpm as f64,
+        )
     };
 
     let job = ScanJob {
@@ -336,7 +377,10 @@ pub async fn enqueue_heuristic_candidate(
 
     let now = now_ms();
     let channel_id = message.channel_id.to_string();
-    let guild_id = message.guild_id.map(|id| id.to_string()).unwrap_or_default();
+    let guild_id = message
+        .guild_id
+        .map(|id| id.to_string())
+        .unwrap_or_default();
 
     let job = ScanJob {
         job_id: uuid::Uuid::new_v4().to_string(),
@@ -367,7 +411,8 @@ async fn tick(data: &crate::Data, ctx: &serenity::Context) {
     let now = now_ms();
     prune_message_cache();
 
-    let available_slots = cf::AUTOMATED_MAX_CONCURRENT_JOBS.saturating_sub(ACTIVE_JOB_COUNT.load(Ordering::Relaxed));
+    let available_slots =
+        cf::AUTOMATED_MAX_CONCURRENT_JOBS.saturating_sub(ACTIVE_JOB_COUNT.load(Ordering::Relaxed));
     if available_slots == 0 {
         TICK_IN_FLIGHT.store(false, Ordering::SeqCst);
         return;
@@ -487,7 +532,10 @@ async fn process_job(
             Err(_) => return Ok(()),
         };
 
-        let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+        let config = data
+            .config_manager
+            .get_guild_config(&data.db, guild_id)
+            .await;
         let cf_config = match config.parse_content_filter_config() {
             Some(c) => c,
             None => return Ok(()),
@@ -513,7 +561,8 @@ async fn process_job(
         }
 
         let bypass_cooldown = job.force
-            && scanner::openai_cooldown_remaining() <= cf::AUTOMATED_FORCE_COOLDOWN_BYPASS_WINDOW_MS;
+            && scanner::openai_cooldown_remaining()
+                <= cf::AUTOMATED_FORCE_COOLDOWN_BYPASS_WINDOW_MS;
 
         let mut predictions = scanner::run_detectors(
             &data.http_client,
@@ -575,7 +624,10 @@ async fn process_job(
         .await
         .map_err(|e| e.to_string())?;
 
-        if adjust_scan_rate(&job.channel_id, now, prep.smoothed) && cf_config.config.verbosity == crate::lib::config::schema::ContentFilterVerbosity::Verbose {
+        if adjust_scan_rate(&job.channel_id, now, prep.smoothed)
+            && cf_config.config.verbosity
+                == crate::lib::config::schema::ContentFilterVerbosity::Verbose
+        {
             // Read the updated scan rate from state (post-adjustment), matching TS which passes
             // prep.state.scanRate (already updated by adjustScanRate).
             let new_rate = state::get(&job.channel_id)
@@ -596,7 +648,8 @@ async fn process_job(
 
 async fn handle_job_failure(job: &ScanJob, reason: &str, now: u64, data: &crate::Data) {
     let next_attempt = job.attempts + 1;
-    let is_retryable_error = is_transient_retryable_error(reason) || is_openai_rate_limit_error(reason);
+    let is_retryable_error =
+        is_transient_retryable_error(reason) || is_openai_rate_limit_error(reason);
     let is_openai_rate_limit = is_openai_rate_limit_error(reason);
 
     if should_drop_low_priority_job(job, reason) {
@@ -616,9 +669,8 @@ async fn handle_job_failure(job: &ScanJob, reason: &str, now: u64, data: &crate:
 
     if is_openai_rate_limit {
         let hinted_retry_after = get_retry_after_ms(reason).unwrap_or_else(|| {
-            (cf::AUTOMATED_RETRY_BASE_DELAY_MS
-                * 2u64.saturating_pow(job.attempts))
-            .min(cf::AUTOMATED_RETRY_MAX_DELAY_MS)
+            (cf::AUTOMATED_RETRY_BASE_DELAY_MS * 2u64.saturating_pow(job.attempts))
+                .min(cf::AUTOMATED_RETRY_MAX_DELAY_MS)
         });
         let min_retry_after = if job.force {
             cf::AUTOMATED_OPENAI_RATE_LIMIT_MIN_RETRY_MS_FORCED
@@ -642,10 +694,8 @@ async fn handle_job_failure(job: &ScanJob, reason: &str, now: u64, data: &crate:
         let window_ends_at = now + retry_after.max(1000);
         let previous_window = OPENAI_RATE_LIMIT_LOG_WINDOW_UNTIL.load(Ordering::Relaxed);
         let should_log = now >= previous_window;
-        OPENAI_RATE_LIMIT_LOG_WINDOW_UNTIL.store(
-            previous_window.max(window_ends_at),
-            Ordering::Relaxed,
-        );
+        OPENAI_RATE_LIMIT_LOG_WINDOW_UNTIL
+            .store(previous_window.max(window_ends_at), Ordering::Relaxed);
 
         if should_log {
             warn!(
@@ -831,7 +881,10 @@ async fn prepare_channel_for_scan(
         return None;
     }
 
-    let guild_id = message.guild_id.map(|id| id.to_string()).unwrap_or_default();
+    let guild_id = message
+        .guild_id
+        .map(|id| id.to_string())
+        .unwrap_or_default();
     let channel_id = message.channel_id.to_string();
     let is_prioritized = super::is_guild_prioritized(&guild_id);
 
@@ -843,9 +896,13 @@ async fn prepare_channel_for_scan(
     let mut false_positive_ratio = 0.0f64;
 
     let traffic = state_clone.ewma_mpm.max(1.0).round();
-    let window_ms = (cf::HEURISTIC_WINDOW_BASE_MS as f64 * (cf::HEURISTIC_BASE_SCAN_RATE as f64 / traffic))
+    let window_ms = (cf::HEURISTIC_WINDOW_BASE_MS as f64
+        * (cf::HEURISTIC_BASE_SCAN_RATE as f64 / traffic))
         .round()
-        .clamp(cf::HEURISTIC_WINDOW_MIN_MS as f64, cf::HEURISTIC_WINDOW_MAX_MS as f64);
+        .clamp(
+            cf::HEURISTIC_WINDOW_MIN_MS as f64,
+            cf::HEURISTIC_WINDOW_MAX_MS as f64,
+        );
     let window_start = chrono::DateTime::from_timestamp_millis(now as i64)
         .unwrap_or_else(chrono::Utc::now)
         - chrono::Duration::milliseconds(window_ms as i64);
@@ -876,7 +933,10 @@ async fn prepare_channel_for_scan(
         .user_scores
         .get(&message.author.id.to_string())
         .cloned()
-        .unwrap_or(crate::lib::content_filter::types::UserScoreEntry { score: 0.0, last_scan: 0 });
+        .unwrap_or(crate::lib::content_filter::types::UserScoreEntry {
+            score: 0.0,
+            last_scan: 0,
+        });
 
     if user_entry.score > 0.0 {
         user_entry.score *= decay;
@@ -903,37 +963,51 @@ async fn prepare_channel_for_scan(
         } else {
             let base_scan_rate = get_dynamic_base_scan_rate_for_state(&state_clone);
             let sampling_factor = risk_score.clamp(cf::HEURISTIC_MIN_SAMPLING_FACTOR, 1.0);
-            let probability = ((base_scan_rate / traffic_estimate.max(1.0)) * sampling_factor).min(1.0);
+            let probability =
+                ((base_scan_rate / traffic_estimate.max(1.0)) * sampling_factor).min(1.0);
             should_scan = rand::random::<f64>() < probability;
         }
     }
 
     if !should_scan && !force {
         // TS returns early here without mutating state — match that behavior.
-        return Some(PreparedScan { state: Some(state_clone), should_scan: false, smoothed, risk_score });
+        return Some(PreparedScan {
+            state: Some(state_clone),
+            should_scan: false,
+            smoothed,
+            risk_score,
+        });
     }
 
     state::update(&channel_id, Some(&guild_id), |s| {
         user_entry.last_scan = now;
-        s.user_scores.insert(message.author.id.to_string(), user_entry.clone());
+        s.user_scores
+            .insert(message.author.id.to_string(), user_entry.clone());
         s.scan_timestamps.push(now);
         s.false_positive_ratio = smoothed;
     });
 
-    if is_priority_user && config.verbosity != crate::lib::config::schema::ContentFilterVerbosity::Minimal {
+    if is_priority_user
+        && config.verbosity != crate::lib::config::schema::ContentFilterVerbosity::Minimal
+    {
         // Only send warning once per priority escalation event (deduplication matches TS behavior).
         let already_alerted = state::get(&channel_id)
-            .map(|s| s.priority_alerted_users.contains(&message.author.id.to_string()))
+            .map(|s| {
+                s.priority_alerted_users
+                    .contains(&message.author.id.to_string())
+            })
             .unwrap_or(false);
         if !already_alerted {
             state::update(&channel_id, Some(&guild_id), |s| {
-                s.priority_alerted_users.insert(message.author.id.to_string());
+                s.priority_alerted_users
+                    .insert(message.author.id.to_string());
             });
             send_priority_user_warning(ctx, message, config).await;
         }
     } else if !is_priority_user {
         state::update(&channel_id, Some(&guild_id), |s| {
-            s.priority_alerted_users.remove(&message.author.id.to_string());
+            s.priority_alerted_users
+                .remove(&message.author.id.to_string());
         });
     }
 
@@ -962,13 +1036,21 @@ fn apply_predictions_to_state(
         s.flagged_users.insert(author_id.to_string(), timestamps);
 
         let decay = compute_decay_factor(s, smoothed_false_positive);
-        let mut entry = s.user_scores.get(author_id).cloned().unwrap_or(crate::lib::content_filter::types::UserScoreEntry {
-            score: 0.0,
-            last_scan: now,
-        });
+        let mut entry = s.user_scores.get(author_id).cloned().unwrap_or(
+            crate::lib::content_filter::types::UserScoreEntry {
+                score: 0.0,
+                last_scan: now,
+            },
+        );
 
         let detector_weight = (1 + predictions.len()).min(3) as f64;
-        let severity = (predictions.iter().flat_map(|p| p.data.iter()).count().max(1) as f64 / 3.0).min(1.0);
+        let severity = (predictions
+            .iter()
+            .flat_map(|p| p.data.iter())
+            .count()
+            .max(1) as f64
+            / 3.0)
+            .min(1.0);
         let dynamic_weight = compute_dynamic_weight(detector_weight, severity, risk_score);
 
         entry.score = entry.score * decay + dynamic_weight;
@@ -985,7 +1067,9 @@ fn adjust_scan_rate(channel_id: &str, now: u64, smoothed_false_positive: f64) ->
 
         let dt_ms = now.saturating_sub(s.beta_last_update);
         if dt_ms > 0 {
-            let decay_factor = (-std::f64::consts::LN_2 * (dt_ms as f64 / cf::HEURISTIC_BETA_DECAY_HALF_LIFE_MS as f64)).exp();
+            let decay_factor = (-std::f64::consts::LN_2
+                * (dt_ms as f64 / cf::HEURISTIC_BETA_DECAY_HALF_LIFE_MS as f64))
+                .exp();
             s.beta_a = (s.beta_a * decay_factor).max(1.0);
             s.beta_b = (s.beta_b * decay_factor).max(1.0);
             s.beta_last_update = now;
@@ -1008,7 +1092,10 @@ fn adjust_scan_rate(channel_id: &str, now: u64, smoothed_false_positive: f64) ->
         kd = kd.clamp(cf::HEURISTIC_PID_KD_MIN, cf::HEURISTIC_PID_KD_MAX);
 
         // TS: Math.max(1, Math.round(STEP * (1 + (1 - Math.min(1, smoothedFalsePositive)))))
-        let max_step = (cf::HEURISTIC_RATE_INCREASE_STEP as f64 * (1.0 + (1.0 - smoothed_false_positive.min(1.0)))).round().max(1.0);
+        let max_step = (cf::HEURISTIC_RATE_INCREASE_STEP as f64
+            * (1.0 + (1.0 - smoothed_false_positive.min(1.0))))
+        .round()
+        .max(1.0);
 
         let base_rate = get_dynamic_base_scan_rate_for_state(s);
         let min_rate = base_rate.max(cf::HEURISTIC_MIN_SCAN_RATE as f64);
@@ -1042,8 +1129,13 @@ fn adjust_scan_rate(channel_id: &str, now: u64, smoothed_false_positive: f64) ->
         pid.last_update = now;
         set_pid_state(channel_id, pid);
 
-        if s.scan_rate > base_rate && now.saturating_sub(s.last_rate_increase) > cf::HEURISTIC_RATE_INCREASE_DURATION {
-            s.scan_rate = (s.scan_rate * cf::HEURISTIC_RATE_DECAY_A + base_rate * cf::HEURISTIC_RATE_DECAY_B).round().max(base_rate);
+        if s.scan_rate > base_rate
+            && now.saturating_sub(s.last_rate_increase) > cf::HEURISTIC_RATE_INCREASE_DURATION
+        {
+            s.scan_rate = (s.scan_rate * cf::HEURISTIC_RATE_DECAY_A
+                + base_rate * cf::HEURISTIC_RATE_DECAY_B)
+                .round()
+                .max(base_rate);
             s.last_rate_increase = now;
             s.alert_count = 0;
             changed = true;
@@ -1067,8 +1159,14 @@ fn adjust_scan_rate(channel_id: &str, now: u64, smoothed_false_positive: f64) ->
     should_log
 }
 
-fn cleanup_old_timestamps(state: &mut crate::lib::content_filter::types::ChannelScanState, now: u64, ttl: u64) {
-    state.scan_timestamps.retain(|ts| now.saturating_sub(*ts) < cf::HEURISTIC_SCAN_WINDOW);
+fn cleanup_old_timestamps(
+    state: &mut crate::lib::content_filter::types::ChannelScanState,
+    now: u64,
+    ttl: u64,
+) {
+    state
+        .scan_timestamps
+        .retain(|ts| now.saturating_sub(*ts) < cf::HEURISTIC_SCAN_WINDOW);
 
     state.flagged_users.retain(|_, timestamps| {
         timestamps.retain(|ts| now.saturating_sub(*ts) < cf::HEURISTIC_SCAN_WINDOW);
@@ -1097,7 +1195,10 @@ fn cleanup_old_timestamps(state: &mut crate::lib::content_filter::types::Channel
             .collect();
         candidates.sort_by_key(|(_, ts)| *ts);
         let target = (cf::HEURISTIC_USER_SCORES_MAX_SIZE as f64 * 0.9).floor() as usize;
-        for (key, _) in candidates.into_iter().take(state.user_scores.len().saturating_sub(target)) {
+        for (key, _) in candidates
+            .into_iter()
+            .take(state.user_scores.len().saturating_sub(target))
+        {
             state.user_scores.remove(&key);
         }
     }
@@ -1105,30 +1206,41 @@ fn cleanup_old_timestamps(state: &mut crate::lib::content_filter::types::Channel
 
 fn compute_dynamic_weight(detector_weight: f64, severity: f64, risk_score: f64) -> f64 {
     let weighted = detector_weight
-        * (cf::HEURISTIC_DYNAMIC_WEIGHT_BASE + severity * cf::HEURISTIC_DYNAMIC_WEIGHT_SEVERITY_MULT)
+        * (cf::HEURISTIC_DYNAMIC_WEIGHT_BASE
+            + severity * cf::HEURISTIC_DYNAMIC_WEIGHT_SEVERITY_MULT)
         * (1.0 + risk_score.min(1.0));
 
-    weighted.clamp(cf::HEURISTIC_DYNAMIC_WEIGHT_MIN, cf::HEURISTIC_DYNAMIC_WEIGHT_MAX)
+    weighted.clamp(
+        cf::HEURISTIC_DYNAMIC_WEIGHT_MIN,
+        cf::HEURISTIC_DYNAMIC_WEIGHT_MAX,
+    )
 }
 
-fn compute_decay_factor(state: &crate::lib::content_filter::types::ChannelScanState, smoothed_fp: f64) -> f64 {
+fn compute_decay_factor(
+    state: &crate::lib::content_filter::types::ChannelScanState,
+    smoothed_fp: f64,
+) -> f64 {
     let base = cf::HEURISTIC_DECAY_BASE;
     let fp_influence = (smoothed_fp * cf::HEURISTIC_DECAY_FP_INFLUENCE_FACTOR)
         .min(cf::HEURISTIC_DECAY_FP_INFLUENCE_MAX);
-    let alert_influence = (state.alert_count as f64 * cf::HEURISTIC_DECAY_ALERT_INFLUENCE_PER_ALERT)
+    let alert_influence = (state.alert_count as f64
+        * cf::HEURISTIC_DECAY_ALERT_INFLUENCE_PER_ALERT)
         .min(cf::HEURISTIC_DECAY_ALERT_INFLUENCE_MAX);
 
     (base - fp_influence - alert_influence).clamp(cf::HEURISTIC_DECAY_MIN, cf::HEURISTIC_DECAY_MAX)
 }
 
-fn compute_priority_threshold(state: &crate::lib::content_filter::types::ChannelScanState, smoothed_fp: f64) -> f64 {
+fn compute_priority_threshold(
+    state: &crate::lib::content_filter::types::ChannelScanState,
+    smoothed_fp: f64,
+) -> f64 {
     let base = cf::HEURISTIC_PRIORITY_USER_FLAG_THRESHOLD.max(1) as f64;
     let multiplier = 1.0
-        + (smoothed_fp * cf::HEURISTIC_PRIORITY_MULT_FACTOR)
-            .min(cf::HEURISTIC_PRIORITY_MULT_MAX);
+        + (smoothed_fp * cf::HEURISTIC_PRIORITY_MULT_FACTOR).min(cf::HEURISTIC_PRIORITY_MULT_MAX);
     let recent_alerts = state.scan_timestamps.len() as f64;
     // TS: Math.max(0, 1 - Math.min(0.5, recentAlerts / CAP))
-    let recent_influence = (1.0 - (recent_alerts / cf::HEURISTIC_RECENT_ALERTS_CAP).min(0.5)).max(0.0);
+    let recent_influence =
+        (1.0 - (recent_alerts / cf::HEURISTIC_RECENT_ALERTS_CAP).min(0.5)).max(0.0);
 
     (base * multiplier * recent_influence).max(1.0).ceil()
 }
@@ -1138,13 +1250,19 @@ fn beta_mean(state: &crate::lib::content_filter::types::ChannelScanState) -> f64
     mean.clamp(cf::HEURISTIC_BETA_MEAN_MIN, cf::HEURISTIC_BETA_MEAN_MAX)
 }
 
-fn get_dynamic_base_scan_rate_for_state(state: &crate::lib::content_filter::types::ChannelScanState) -> f64 {
+fn get_dynamic_base_scan_rate_for_state(
+    state: &crate::lib::content_filter::types::ChannelScanState,
+) -> f64 {
     let ewma = state.ewma_mpm;
     let beta = beta_mean(state);
     let raw = cf::HEURISTIC_K_TRAFFIC * ewma
         + cf::HEURISTIC_K_CONF * (1.0 - beta) * cf::HEURISTIC_BASE_SCAN_RATE as f64;
     // Match TS: `raw || HEURISTIC_BASE_SCAN_RATE` — fall back to base rate when raw rounds to 0.
-    let resolved = if raw.round() == 0.0 { cf::HEURISTIC_BASE_SCAN_RATE as f64 } else { raw.round() };
+    let resolved = if raw.round() == 0.0 {
+        cf::HEURISTIC_BASE_SCAN_RATE as f64
+    } else {
+        raw.round()
+    };
     resolved
         .max(cf::HEURISTIC_MIN_SCAN_RATE as f64)
         .min(cf::HEURISTIC_MAX_SCAN_RATE as f64)
@@ -1162,7 +1280,10 @@ fn estimate_adaptive_threshold(timestamps: &[u64], now: u64) -> u64 {
     for i in 0..cf::HEURISTIC_ADAPTIVE_P95_WINDOWS {
         let start = now.saturating_sub(((i + 1) as u64) * cf::HEURISTIC_SCAN_WINDOW);
         let end = now.saturating_sub(i as u64 * cf::HEURISTIC_SCAN_WINDOW);
-        let count = timestamps.iter().filter(|&&ts| ts > start && ts <= end).count() as u64;
+        let count = timestamps
+            .iter()
+            .filter(|&&ts| ts > start && ts <= end)
+            .count() as u64;
         let weight = alpha.powi(i as i32);
         *histogram.entry(count).or_insert(0.0) += weight;
         total_weight += weight;
@@ -1188,18 +1309,26 @@ fn estimate_adaptive_threshold(timestamps: &[u64], now: u64) -> u64 {
 fn schedule_next_scan(now: u64, scan_rate: f64, risk: f64, observed_traffic: f64) -> u64 {
     // TS: effectiveRate = Math.min(scanRate, observedTraffic ?? scanRate)
     let effective_rate = scan_rate.min(observed_traffic);
-    let msgs_per_minute = effective_rate.max(cf::HEURISTIC_MIN_SCAN_RATE as f64).round();
+    let msgs_per_minute = effective_rate
+        .max(cf::HEURISTIC_MIN_SCAN_RATE as f64)
+        .round();
     let base_interval = cf::HEURISTIC_SCAN_WINDOW as f64 / msgs_per_minute;
 
     let risk_clamped = risk.clamp(0.0, 1.0);
     let multiplier = cf::HEURISTIC_RISK_MULTIPLIER_MIN
-        + (1.0 - risk_clamped) * (cf::HEURISTIC_RISK_MULTIPLIER_MAX - cf::HEURISTIC_RISK_MULTIPLIER_MIN);
+        + (1.0 - risk_clamped)
+            * (cf::HEURISTIC_RISK_MULTIPLIER_MAX - cf::HEURISTIC_RISK_MULTIPLIER_MIN);
 
-    let jitter_max = (base_interval * cf::HEURISTIC_JITTER_PCT).min(1000.0).floor() as u64;
-    let jitter = if jitter_max > 0 { rand::random::<u64>() % jitter_max } else { 0 };
+    let jitter_max = (base_interval * cf::HEURISTIC_JITTER_PCT)
+        .min(1000.0)
+        .floor() as u64;
+    let jitter = if jitter_max > 0 {
+        rand::random::<u64>() % jitter_max
+    } else {
+        0
+    };
 
-    now + ((base_interval * multiplier).floor() as u64)
-        .max(cf::HEURISTIC_MIN_SCHEDULE_DELAY)
+    now + ((base_interval * multiplier).floor() as u64).max(cf::HEURISTIC_MIN_SCHEDULE_DELAY)
         + jitter
 }
 
@@ -1214,7 +1343,8 @@ struct PidState {
     last_update: u64,
 }
 
-static PID_STATE: LazyLock<Mutex<HashMap<String, PidState>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+static PID_STATE: LazyLock<Mutex<HashMap<String, PidState>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 fn get_pid_state(channel_id: &str) -> PidState {
     recover_lock(&PID_STATE)
@@ -1334,7 +1464,9 @@ async fn send_priority_user_warning(
     message: &serenity::Message,
     config: &crate::lib::config::schema::ContentFilterConfig,
 ) {
-    let Some(webhook_url) = &config.webhook_url else { return };
+    let Some(webhook_url) = &config.webhook_url else {
+        return;
+    };
 
     let embed = serenity::CreateEmbed::new()
         .color(0x23272a) // Colors.NotQuiteBlack
@@ -1346,7 +1478,9 @@ async fn send_priority_user_warning(
         .timestamp(serenity::Timestamp::now());
 
     if let Ok(webhook) = serenity::Webhook::from_url(ctx, webhook_url).await {
-        let _ = webhook.execute(ctx, false, serenity::ExecuteWebhook::new().embed(embed)).await;
+        let _ = webhook
+            .execute(ctx, false, serenity::ExecuteWebhook::new().embed(embed))
+            .await;
     }
 }
 
@@ -1356,12 +1490,16 @@ async fn send_scan_rate_change_log(
     config: &crate::lib::config::schema::ContentFilterConfig,
     new_rate: f64,
 ) {
-    let Some(webhook_url) = &config.webhook_url else { return };
+    let Some(webhook_url) = &config.webhook_url else {
+        return;
+    };
 
     let rate = new_rate.round() as u64;
     let embed = serenity::CreateEmbed::new()
         .color(0xFAA61A)
-        .author(serenity::CreateEmbedAuthor::new("Heuristic Scan: Scan Rate Update"))
+        .author(serenity::CreateEmbedAuthor::new(
+            "Heuristic Scan: Scan Rate Update",
+        ))
         .description(format!(
             "Scan rate for <#{}> is now {} message{} per minute.",
             message.channel_id,
@@ -1371,6 +1509,8 @@ async fn send_scan_rate_change_log(
         .timestamp(serenity::Timestamp::now());
 
     if let Ok(webhook) = serenity::Webhook::from_url(ctx, webhook_url).await {
-        let _ = webhook.execute(ctx, false, serenity::ExecuteWebhook::new().embed(embed)).await;
+        let _ = webhook
+            .execute(ctx, false, serenity::ExecuteWebhook::new().embed(embed))
+            .await;
     }
 }

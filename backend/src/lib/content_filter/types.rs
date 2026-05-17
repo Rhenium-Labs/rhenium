@@ -50,7 +50,11 @@ impl std::fmt::Display for Detector {
     EnumIter,
     DeriveActiveEnum,
 )]
-#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "ContentFilterStatus")]
+#[sea_orm(
+    rs_type = "String",
+    db_type = "Enum",
+    enum_name = "ContentFilterStatus"
+)]
 pub enum ContentFilterStatus {
     #[sea_orm(string_value = "Pending")]
     Pending,

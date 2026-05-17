@@ -8,8 +8,8 @@ use sea_orm::DatabaseConnection;
 use crate::lib::config::env::EnvConfig;
 use crate::lib::config::global::GlobalConfig;
 use crate::lib::config::manager::ConfigManager;
-use crate::lib::repository::messages::MessageManager;
 use crate::lib::kv::KvStore;
+use crate::lib::repository::messages::MessageManager;
 
 /// Shared application state accessible from all commands, events, and components.
 pub struct AppState {

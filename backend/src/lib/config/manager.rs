@@ -1,7 +1,7 @@
 use dashmap::DashMap;
 use poise::serenity_prelude::GuildId;
-use sea_orm::{DatabaseConnection, EntityTrait, Set};
 use sea_orm::sea_query::OnConflict;
+use sea_orm::{DatabaseConnection, EntityTrait, Set};
 use tracing::{error, info};
 
 use super::guild::GuildConfig;
@@ -60,21 +60,19 @@ impl ConfigManager {
             .one(db)
             .await
         {
-            Ok(Some(row)) => {
-                match serde_json::from_value::<RawGuildConfig>(row.config) {
-                    Ok(config) => return GuildConfig::new(guild_id, config),
-                    Err(e) => {
-                        error!("Failed to parse config for guild {guild_id}: {e}");
-                    }
+            Ok(Some(row)) => match serde_json::from_value::<RawGuildConfig>(row.config) {
+                Ok(config) => return GuildConfig::new(guild_id, config),
+                Err(e) => {
+                    error!("Failed to parse config for guild {guild_id}: {e}");
                 }
-            }
+            },
             Ok(None) => {
                 // Guild doesn't exist in DB, insert with default config.
                 let default_config = RawGuildConfig::default();
                 let config_json = serde_json::to_value(&default_config).unwrap_or_default();
 
                 let model = crate::lib::entities::guild::ActiveModel {
-                    id: Set(guild_id_str.into()),
+                    id: Set(guild_id_str),
                     config: Set(config_json),
                 };
 

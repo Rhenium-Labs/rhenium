@@ -102,7 +102,10 @@ pub async fn format_message_content(
 
     if let Some(sticker_id) = data.sticker_id {
         if let Ok(id) = sticker_id.parse::<u64>() {
-            if let Ok(sticker) = serenity::StickerId::new(id).to_sticker(Arc::clone(&http)).await {
+            if let Ok(sticker) = serenity::StickerId::new(id)
+                .to_sticker(Arc::clone(&http))
+                .await
+            {
                 if sticker.format_type == serenity::StickerFormatType::Lottie {
                     parts.push(format!("Lottie Sticker: {}", sticker.name));
                 } else if let Some(sticker_url) = sticker.image_url() {

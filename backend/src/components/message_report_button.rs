@@ -2,8 +2,8 @@ use poise::serenity_prelude as serenity;
 use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use tracing::warn;
 
-use crate::lib::config::schema::{LoggingEvent, UserPermission};
 use crate::Data;
+use crate::lib::config::schema::{LoggingEvent, UserPermission};
 use crate::utils::interaction as ia;
 
 /// Handles message report button clicks (resolve/disregard).
@@ -19,9 +19,17 @@ pub async fn handle(
         None => return,
     };
 
-    let config = data.config_manager.get_guild_config(&data.db, guild_id).await;
+    let config = data
+        .config_manager
+        .get_guild_config(&data.db, guild_id)
+        .await;
     if config.parse_reports_config().is_none() {
-        ia::respond_error(ctx, interaction, "Message reports have not been configured on this server.").await;
+        ia::respond_error(
+            ctx,
+            interaction,
+            "Message reports have not been configured on this server.",
+        )
+        .await;
         return;
     }
 
@@ -41,7 +49,12 @@ pub async fn handle(
         return;
     };
     if !config.has_permission(member, UserPermission::ReviewMessageReports) {
-        ia::followup_error(ctx, interaction, "You don't have permission to review message reports").await;
+        ia::followup_error(
+            ctx,
+            interaction,
+            "You don't have permission to review message reports",
+        )
+        .await;
         return;
     }
 
@@ -53,7 +66,12 @@ pub async fn handle(
         .flatten();
     let Some(report_row) = report_row else {
         let _ = interaction.message.delete(ctx).await;
-        ia::followup_error(ctx, interaction, "Message report could not be found. It may have already been deleted.").await;
+        ia::followup_error(
+            ctx,
+            interaction,
+            "Message report could not be found. It may have already been deleted.",
+        )
+        .await;
         return;
     };
 
@@ -64,10 +82,16 @@ pub async fn handle(
         let when = resolved_at
             .map(|dt| format!("<t:{}:F>", dt.and_utc().timestamp()))
             .unwrap_or_else(|| "an unknown time".to_string());
-        ia::followup_error(ctx, interaction, &format!(
-            "This report was resolved by {} on {}.",
-            crate::utils::user_mention_with_id(&resolved_by), when
-        )).await;
+        ia::followup_error(
+            ctx,
+            interaction,
+            &format!(
+                "This report was resolved by {} on {}.",
+                crate::utils::user_mention_with_id(&resolved_by),
+                when
+            ),
+        )
+        .await;
         return;
     }
 
@@ -75,7 +99,14 @@ pub async fn handle(
     let review_log_links = if config.can_log_event(LoggingEvent::MessageReportReviewed) {
         match reviewed_embeds.as_ref() {
             Some(embeds) => {
-                send_review_log_links(ctx, &config, guild_id, embeds, LoggingEvent::MessageReportReviewed).await
+                send_review_log_links(
+                    ctx,
+                    &config,
+                    guild_id,
+                    embeds,
+                    LoggingEvent::MessageReportReviewed,
+                )
+                .await
             }
             None => Vec::new(),
         }
@@ -123,10 +154,15 @@ pub async fn handle(
         format!("\n └ {}", review_log_links.join(", "))
     };
 
-    ia::followup_success(ctx, interaction, &format!(
-        "Successfully {} report - ID `{}`{}",
-        past_tense, interaction.message.id, formatted_logs
-    )).await;
+    ia::followup_success(
+        ctx,
+        interaction,
+        &format!(
+            "Successfully {} report - ID `{}`{}",
+            past_tense, interaction.message.id, formatted_logs
+        ),
+    )
+    .await;
 }
 
 fn build_reviewed_embeds(
@@ -134,7 +170,11 @@ fn build_reviewed_embeds(
     status: &str,
     color: u32,
 ) -> Option<Vec<serenity::CreateEmbed>> {
-    let embed_idx = if interaction.message.embeds.len() > 1 { 1 } else { 0 };
+    let embed_idx = if interaction.message.embeds.len() > 1 {
+        1
+    } else {
+        0
+    };
     let current_embed = interaction.message.embeds.get(embed_idx)?;
 
     let reviewed_embed = serenity::CreateEmbed::from(current_embed.clone())

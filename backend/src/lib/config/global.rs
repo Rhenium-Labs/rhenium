@@ -52,11 +52,16 @@ impl GlobalConfig {
             return Err(ConfigError::FileMissing(path.to_string()));
         }
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|source| ConfigError::FileRead { path: path.to_string(), source })?;
+        let content = std::fs::read_to_string(path).map_err(|source| ConfigError::FileRead {
+            path: path.to_string(),
+            source,
+        })?;
 
-        let config: GlobalConfig = serde_yaml::from_str(&content)
-            .map_err(|source| ConfigError::YamlParse { path: path.to_string(), source })?;
+        let config: GlobalConfig =
+            serde_yaml::from_str(&content).map_err(|source| ConfigError::YamlParse {
+                path: path.to_string(),
+                source,
+            })?;
 
         info!("Successfully loaded global configuration from {path}.");
         Ok(config)
