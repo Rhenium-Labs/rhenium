@@ -8,7 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub guild_id: String,
     pub patterns: Vec<String>,
-    pub user_blacklist: Vec<String>,
+    pub user_blacklist: Option<Vec<String>>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

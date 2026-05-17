@@ -1,5 +1,5 @@
 use poise::serenity_prelude as serenity;
-use sea_orm::sea_query::Expr;
+use sea_orm::sea_query::{Alias, Expr};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use tracing::{error, info};
 
@@ -89,7 +89,7 @@ async fn resolve_pending_reports(
     }
 
     MREntity::update_many()
-        .col_expr(MRCol::Status, Expr::value(ReportStatus::AutoResolved))
+        .col_expr(MRCol::Status, Expr::value(ReportStatus::AutoResolved).cast_as(Alias::new("\"ReportStatus\"")))
         .col_expr(MRCol::ResolvedBy, Expr::value(bot_id.clone()))
         .col_expr(
             MRCol::ResolvedAt,
@@ -325,7 +325,7 @@ async fn resolve_pending_ban_requests(
     }
 
     BREntity::update_many()
-        .col_expr(BRCol::Status, Expr::value(RequestStatus::AutoResolved))
+        .col_expr(BRCol::Status, Expr::value(RequestStatus::AutoResolved).cast_as(Alias::new("\"RequestStatus\"")))
         .col_expr(BRCol::ResolvedBy, Expr::value(bot_id.clone()))
         .col_expr(
             BRCol::ResolvedAt,

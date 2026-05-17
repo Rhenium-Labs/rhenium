@@ -99,7 +99,7 @@ pub async fn pattern_add(
             user_id: Set(user_id.clone()),
             guild_id: Set(guild_id.clone()),
             patterns: Set(vec![]),
-            user_blacklist: Set(vec![]),
+            user_blacklist: Set(Some(vec![])),
         };
         let _ = crate::lib::entities::highlight::Entity::insert(new_row)
             .on_conflict(
@@ -273,7 +273,7 @@ pub async fn channel_add(
         user_id: Set(user_id.clone()),
         guild_id: Set(guild_id.clone()),
         patterns: Set(vec![]),
-        user_blacklist: Set(vec![]),
+        user_blacklist: Set(Some(vec![])),
     };
     let _ = crate::lib::entities::highlight::Entity::insert(new_row)
         .on_conflict(
@@ -448,7 +448,7 @@ pub async fn blacklist_add(
         .await?;
 
     let (existing_patterns, mut user_blacklist) = if let Some(ref r) = row {
-        (r.patterns.clone(), r.user_blacklist.clone())
+        (r.patterns.clone(), r.user_blacklist.clone().unwrap_or_default())
     } else {
         (vec![], vec![])
     };
@@ -466,7 +466,7 @@ pub async fn blacklist_add(
         user_id: Set(user_id),
         guild_id: Set(guild_id),
         patterns: Set(existing_patterns),
-        user_blacklist: Set(user_blacklist),
+        user_blacklist: Set(Some(user_blacklist)),
     };
     crate::lib::entities::highlight::Entity::insert(new_row)
         .on_conflict(
@@ -508,7 +508,7 @@ pub async fn blacklist_remove(
         .await?;
 
     let user_blacklist = if let Some(ref r) = row {
-        r.user_blacklist.clone()
+        r.user_blacklist.clone().unwrap_or_default()
     } else {
         Vec::new()
     };
@@ -526,7 +526,7 @@ pub async fn blacklist_remove(
             .into_iter()
             .filter(|u| u != &target_id)
             .collect();
-        active.user_blacklist = Set(updated);
+        active.user_blacklist = Set(Some(updated));
         active.update(&data.db).await?;
     }
 
@@ -554,7 +554,7 @@ pub async fn blacklist_clear(ctx: Context<'_>) -> Result<(), Error> {
         .await?;
 
     let user_blacklist = if let Some(ref r) = row {
-        r.user_blacklist.clone()
+        r.user_blacklist.clone().unwrap_or_default()
     } else {
         Vec::new()
     };
@@ -566,7 +566,7 @@ pub async fn blacklist_clear(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     if let Some(mut active) = row.map(crate::lib::entities::highlight::ActiveModel::from) {
-        active.user_blacklist = Set(vec![]);
+        active.user_blacklist = Set(Some(vec![]));
         active.update(&data.db).await?;
     }
 
@@ -605,7 +605,7 @@ pub async fn list(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     let (patterns, blacklist) = match row {
-        Some(ref r) => (r.patterns.clone(), r.user_blacklist.clone()),
+        Some(ref r) => (r.patterns.clone(), r.user_blacklist.clone().unwrap_or_default()),
         None => (vec![], vec![]),
     };
 
@@ -823,7 +823,7 @@ pub async fn scan_message_for_highlights(
             continue;
         }
 
-        let user_blacklist = highlight.user_blacklist.clone();
+        let user_blacklist = highlight.user_blacklist.clone().unwrap_or_default();
 
         // Check blacklist.
         if user_blacklist.contains(&author_id_str) {

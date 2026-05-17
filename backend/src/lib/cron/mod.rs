@@ -6,7 +6,7 @@
 //! - Content filter alert cleanup
 //! - Channel state pruning
 
-use sea_orm::sea_query::Expr;
+use sea_orm::sea_query::{Alias, Expr};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::{error, info};
@@ -199,7 +199,7 @@ async fn auto_disregard_reports(data: &crate::Data, resolved_by: poise::serenity
         };
 
         match MREntity::update_many()
-            .col_expr(MRCol::Status, Expr::value(ReportStatus::Disregarded))
+            .col_expr(MRCol::Status, Expr::value(ReportStatus::Disregarded).cast_as(Alias::new("\"ReportStatus\"")))
             .col_expr(MRCol::ResolvedAt, Expr::value(now.naive_utc()))
             .col_expr(MRCol::ResolvedBy, Expr::value(resolved_by.to_string()))
             .filter(MRCol::GuildId.eq(guild_id.clone()))
