@@ -17,8 +17,8 @@ COPY packages/config ./packages/config
 # Install dependencies.
 RUN bun install
 
-# Compile dependencies.
-RUN bun run compile
+# Build dependencies.
+RUN bun run build
 
 # Build dashboard.
 WORKDIR /rhenium/dashboard
