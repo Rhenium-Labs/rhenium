@@ -546,36 +546,68 @@ async fn extract_single_frame(data: &[u8], _format: &str, timestamp: f64) -> Opt
 /// - `Ok(None)`       — OCR succeeded but the image had no readable text
 /// - `Err(())`        — OCR process failed (spawn error, timeout, non-zero exit)
 ///
-/// Callers must distinguish Ok(None) from Err(()) to avoid counting "no text found"
-/// as a frame failure, matching TS behaviour where only null (crash) increments frameFailures.
+/// Uses temp files instead of stdin because Tesseract's stdin support is unreliable
+/// across versions and Linux builds. Always re-encodes to PNG for a consistent format.
 pub async fn run_ocr(image_data: &[u8]) -> Result<Option<String>, ()> {
-    let mut child = Command::new("tesseract")
-        .args(["stdin", "stdout", "-l", "eng"])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|_| ())?;
+    let image_data = image_data.to_vec();
 
-    if let Some(mut stdin) = child.stdin.take() {
-        use tokio::io::AsyncWriteExt;
-        if stdin.write_all(image_data).await.is_err() {
+    // Re-encode to PNG and write to a temp file on a blocking thread.
+    let (input_path, output_base, output_txt) = tokio::task::spawn_blocking(move || {
+        let id = uuid::Uuid::new_v4();
+        let tmp = std::env::temp_dir();
+        let input = tmp.join(format!("rhenium_ocr_in_{id}.png"));
+        let output_base = tmp.join(format!("rhenium_ocr_out_{id}"));
+        let output_txt = tmp.join(format!("rhenium_ocr_out_{id}.txt"));
+
+        let img = image::load_from_memory(&image_data).map_err(|_| ())?;
+        let mut png = Vec::new();
+        img.write_to(
+            &mut std::io::Cursor::new(&mut png),
+            image::ImageFormat::Png,
+        )
+        .map_err(|_| ())?;
+        std::fs::write(&input, &png).map_err(|_| ())?;
+
+        Ok::<_, ()>((input, output_base, output_txt))
+    })
+    .await
+    .map_err(|_| ())??;
+
+    let status = match time::timeout(
+        OCR_PROCESS_TIMEOUT,
+        Command::new("tesseract")
+            .arg(&input_path)
+            .arg(&output_base)
+            .args(["-l", "eng"])
+            .stderr(Stdio::null())
+            .status(),
+    )
+    .await
+    {
+        Ok(Ok(s)) => s,
+        _ => {
+            let _ = tokio::fs::remove_file(&input_path).await;
             return Err(());
         }
-        drop(stdin);
-    }
-
-    let output = match time::timeout(OCR_PROCESS_TIMEOUT, child.wait_with_output()).await {
-        Ok(Ok(output)) => output,
-        _ => return Err(()),
     };
 
-    if output.status.success() {
-        let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        Ok(if text.is_empty() { None } else { Some(text) })
-    } else {
-        Err(())
+    let _ = tokio::fs::remove_file(&input_path).await;
+
+    if !status.success() {
+        let _ = tokio::fs::remove_file(&output_txt).await;
+        return Err(());
+    }
+
+    match tokio::fs::read_to_string(&output_txt).await {
+        Ok(text) => {
+            let _ = tokio::fs::remove_file(&output_txt).await;
+            let trimmed = text.trim().to_string();
+            Ok(if trimmed.is_empty() { None } else { Some(trimmed) })
+        }
+        Err(_) => {
+            let _ = tokio::fs::remove_file(&output_txt).await;
+            Err(())
+        }
     }
 }
 
