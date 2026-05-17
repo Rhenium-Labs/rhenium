@@ -31,7 +31,6 @@ RUN apt-get update \
     && chown -R rhenium:rhenium /app
 
 COPY --from=builder /app/target/release/rhenium /usr/local/bin/rhenium
-COPY cfg.global.yml ./cfg.global.yml
 
 ENV RUST_LOG=rhenium=info,serenity=warn
 ENV API_PORT=3000
