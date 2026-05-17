@@ -2,8 +2,8 @@ services:
      bot:
           container_name: rhenium_bot
           build:
-               context: ./backend
-               dockerfile: Dockerfile
+               context: .
+               dockerfile: backend/Dockerfile
           env_file:
                - ./backend/.env
           volumes:

@@ -8,8 +8,8 @@ RUN apt-get update \
         pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
+COPY backend/Cargo.toml backend/Cargo.lock ./
+COPY backend/src ./src
 
 RUN cargo build --release --locked
 
