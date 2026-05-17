@@ -1,11 +1,12 @@
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use axum::{Json, Router, routing::{post, delete}};
+use axum::{Json, Router, routing::{delete, post}};
 use poise::serenity_prelude::{self as serenity, ChannelId, GuildId};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
 use crate::api::auth::ApiState;
+use crate::error::ApiError;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -46,10 +47,15 @@ async fn create_webhook(
     State(state): State<ApiState>,
     Path(guild_id): Path<String>,
     Json(body): Json<CreateWebhookRequest>,
-) -> Result<Json<WebhookResponse>, StatusCode> {
-    let cid: u64 = body.channel_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+) -> Result<Json<WebhookResponse>, ApiError> {
+    let cid: u64 = body
+        .channel_id
+        .parse()
+        .map_err(|_| ApiError::BadRequest("Invalid channel ID".into()))?;
     let channel_id = ChannelId::new(cid);
-    let gid: u64 = guild_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+    let gid: u64 = guild_id
+        .parse()
+        .map_err(|_| ApiError::BadRequest("Invalid guild ID".into()))?;
     let guild_id_snowflake = GuildId::new(gid);
 
     // Fetch current bot user for name/avatar (matching TS: client.user.username / displayAvatarURL).
@@ -57,7 +63,7 @@ async fn create_webhook(
         .discord_http
         .get_current_user()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     let bot_name = bot_user.name.clone();
     let bot_avatar_url = bot_user.avatar_url();
@@ -78,7 +84,9 @@ async fn create_webhook(
             if let Some(existing_wh) = existing_wh {
                 // If it's already in the right channel, return as-is.
                 if existing_wh.channel_id == Some(channel_id) {
-                    let url = existing_wh.url().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    let url = existing_wh
+                        .url()
+                        .map_err(|e| ApiError::Internal(e.to_string()))?;
                     return Ok(Json(WebhookResponse { url }));
                 }
 
@@ -97,7 +105,9 @@ async fn create_webhook(
                     .await;
 
                 if let Ok(moved_wh) = moved {
-                    let url = moved_wh.url().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    let url = moved_wh
+                        .url()
+                        .map_err(|e| ApiError::Internal(e.to_string()))?;
                     return Ok(Json(WebhookResponse { url }));
                 }
                 // Fall through to create a new webhook if move fails.
@@ -117,9 +127,11 @@ async fn create_webhook(
         .discord_http
         .create_webhook(channel_id, &create_map, None)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| ApiError::Internal(e.to_string()))?;
 
-    let url = webhook.url().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let url = webhook
+        .url()
+        .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     Ok(Json(WebhookResponse { url }))
 }

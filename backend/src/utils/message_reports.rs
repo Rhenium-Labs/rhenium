@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
 use tracing::warn;
-use crate::config::guild::GuildConfig;
+use crate::lib::config::guild::GuildConfig;
 use crate::Data;
 
 static REPORT_TARGET_KV: LazyLock<RwLock<HashMap<String, serenity::Message>>> =
@@ -123,7 +123,7 @@ pub async fn upsert_report(
         .await
         .map_err(|_| "Failed to submit message report.".to_string())?;
 
-    use crate::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
+    use crate::lib::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
 
     if let Ok(Some(existing)) = MREntity::find()
         .filter(MRCol::GuildId.eq(guild_id_str.clone()))
@@ -229,7 +229,7 @@ pub async fn upsert_report(
 
         let mut new_additional = additional.clone();
         new_additional.push(reporter_id.clone());
-        let mut active: crate::entities::message_report::ActiveModel = existing.into();
+        let mut active: crate::lib::entities::message_report::ActiveModel = existing.into();
         active.additional_reporters = Set(new_additional);
         if let Err(err) = active.update(&data.db).await {
             warn!(report_id, reporter_id, "Failed to append additional message reporter: {err}");
@@ -386,7 +386,7 @@ pub async fn upsert_report(
 
         let reference_id = reference_message.as_ref().map(|m| m.id.to_string());
 
-        let model = crate::entities::message_report::ActiveModel {
+        let model = crate::lib::entities::message_report::ActiveModel {
             id: Set(log.id.to_string()),
             guild_id: Set(guild_id_str),
             message_id: Set(message_id),
@@ -403,7 +403,7 @@ pub async fn upsert_report(
             resolved_at: Set(None),
             resolved_by: Set(None),
         };
-        crate::entities::message_report::Entity::insert(model)
+        crate::lib::entities::message_report::Entity::insert(model)
             .exec(&data.db)
             .await
             .map_err(|_| "Failed to submit message report.".to_string())?;
@@ -463,7 +463,7 @@ pub async fn upsert_report(
 
     let reference_id = reference_message.as_ref().map(|m| m.id.to_string());
 
-    let model = crate::entities::message_report::ActiveModel {
+    let model = crate::lib::entities::message_report::ActiveModel {
         id: Set(log.id.to_string()),
         guild_id: Set(guild_id_str),
         message_id: Set(message_id),
@@ -480,7 +480,7 @@ pub async fn upsert_report(
         resolved_at: Set(None),
         resolved_by: Set(None),
     };
-    crate::entities::message_report::Entity::insert(model)
+    crate::lib::entities::message_report::Entity::insert(model)
         .exec(&data.db)
         .await
         .map_err(|_| "Failed to submit message report.".to_string())?;

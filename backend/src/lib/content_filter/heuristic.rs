@@ -108,7 +108,7 @@ fn prune_stale_entries() {
 /// Triggers a debounced heuristic scan for a channel.
 pub async fn trigger_scan(
     message: &poise::serenity_prelude::Message,
-    guild_config: &crate::config::guild::GuildConfig,
+    guild_config: &crate::lib::config::guild::GuildConfig,
     data: crate::Data,
     ctx: poise::serenity_prelude::Context,
 ) {
@@ -170,13 +170,13 @@ pub async fn trigger_scan(
             included: config
                 .channel_scoping
                 .iter()
-                .filter(|s| s.scoping_type == crate::config::schema::ChannelScopingType::Include)
+                .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Include)
                 .map(|s| s.channel_id.clone())
                 .collect(),
             excluded: config
                 .channel_scoping
                 .iter()
-                .filter(|s| s.scoping_type == crate::config::schema::ChannelScopingType::Exclude)
+                .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Exclude)
                 .map(|s| s.channel_id.clone())
                 .collect(),
         };
@@ -273,7 +273,7 @@ async fn execute_scan(
     guild_id: &str,
     data: &crate::Data,
     ctx: &poise::serenity_prelude::Context,
-    config: &crate::config::schema::ContentFilterConfig,
+    config: &crate::lib::config::schema::ContentFilterConfig,
 ) -> Result<(), String> {
     use super::automated;
 
@@ -424,8 +424,8 @@ struct HeuristicAggregate {
 }
 
 async fn calculate_heuristics(
-    reaction_messages: &[&crate::database::messages::SerializedMessage],
-    matching_messages: &[&crate::database::messages::SerializedMessage],
+    reaction_messages: &[&crate::lib::repository::messages::SerializedMessage],
+    matching_messages: &[&crate::lib::repository::messages::SerializedMessage],
     chat_rate_increased: bool,
     data: &crate::Data,
 ) -> HeuristicAggregate {
@@ -471,12 +471,12 @@ async fn calculate_heuristics(
 }
 
 fn collect_candidate_messages(
-    serialized_messages: &[crate::database::messages::SerializedMessage],
+    serialized_messages: &[crate::lib::repository::messages::SerializedMessage],
     heuristic: &HeuristicAggregate,
     dynamic_threshold: f64,
     traffic: usize,
-    reaction_messages: &[&crate::database::messages::SerializedMessage],
-    matching_messages: &[&crate::database::messages::SerializedMessage],
+    reaction_messages: &[&crate::lib::repository::messages::SerializedMessage],
+    matching_messages: &[&crate::lib::repository::messages::SerializedMessage],
 ) -> Vec<String> {
     let mut candidates: Vec<String> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
@@ -548,7 +548,7 @@ fn estimate_heuristic_risk(signal_count: usize, threshold: f64) -> f64 {
 }
 
 /// Detects if the recent message pace increased.
-fn calculate_chat_rate_increase(messages: &[crate::database::messages::SerializedMessage]) -> bool {
+fn calculate_chat_rate_increase(messages: &[crate::lib::repository::messages::SerializedMessage]) -> bool {
     let now = now_ms();
     let recent_start = now.saturating_sub(cf::MESSAGE_QUEUE_TIME_RANGE);
     let previous_start = now.saturating_sub(cf::MESSAGE_QUEUE_TIME_RANGE * 2);
@@ -568,7 +568,7 @@ fn calculate_chat_rate_increase(messages: &[crate::database::messages::Serialize
 }
 
 /// Finds reaction-like short messages.
-fn find_reaction_messages(messages: &[crate::database::messages::SerializedMessage]) -> Vec<&crate::database::messages::SerializedMessage> {
+fn find_reaction_messages(messages: &[crate::lib::repository::messages::SerializedMessage]) -> Vec<&crate::lib::repository::messages::SerializedMessage> {
     static REACTION_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
         regex::Regex::new(r"(?:^|\s)\p{Lu}{4,11}(?:$|\s)").expect("valid reaction regex")
     });
@@ -591,7 +591,7 @@ fn find_reaction_messages(messages: &[crate::database::messages::SerializedMessa
 }
 
 /// Finds near-duplicate adjacent messages from different users.
-fn find_matching_messages(messages: &[crate::database::messages::SerializedMessage]) -> Vec<&crate::database::messages::SerializedMessage> {
+fn find_matching_messages(messages: &[crate::lib::repository::messages::SerializedMessage]) -> Vec<&crate::lib::repository::messages::SerializedMessage> {
     let mut matching = Vec::new();
     for i in 0..messages.len().saturating_sub(1) {
         let current = &messages[i];

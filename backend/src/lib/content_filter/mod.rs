@@ -26,7 +26,7 @@ use sea_orm::{ColumnTrait, DbErr, EntityTrait, QueryFilter, Set};
 use sea_orm::sea_query::OnConflict;
 use tracing::warn;
 
-use crate::entities::content_filter_priority;
+use crate::lib::entities::content_filter_priority;
 
 /// In-memory set of manually prioritized guild IDs.
 static PRIORITIZED_GUILDS: LazyLock<DashSet<String>> = LazyLock::new(DashSet::new);
@@ -118,7 +118,7 @@ pub async fn scan_message(
     // Cache the message for content filter scanners.
     automated::cache_message(message);
 
-    let serialized = crate::database::messages::MessageManager::serialize(message, &ctx.cache);
+    let serialized = crate::lib::repository::messages::MessageManager::serialize(message, &ctx.cache);
 
     automated::enqueue_for_scan(
         ctx,

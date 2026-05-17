@@ -4,7 +4,7 @@ use poise::serenity_prelude as serenity;
 use serde_json::json;
 
 use super::types::{ContentPredictions, Detector};
-use crate::config::schema::{ContentFilterConfig, ContentFilterVerbosity};
+use crate::lib::config::schema::{ContentFilterConfig, ContentFilterVerbosity};
 
 /// Built alert payload ready for webhook dispatch.
 pub struct AlertPayload {

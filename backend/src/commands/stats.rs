@@ -48,7 +48,7 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     // Message count.
-    let message_count = crate::entities::message::Entity::find()
+    let message_count = crate::lib::entities::message::Entity::find()
         .count(&data.db)
         .await
         .unwrap_or(0) as i64;

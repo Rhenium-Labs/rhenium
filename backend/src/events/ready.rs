@@ -34,9 +34,9 @@ pub async fn handle(
     // 3) Start heuristic cleanup interval
     // 4) Start cron jobs
     // 5) Start report-message KV cleanup
-    crate::content_filter::load_prioritized_guilds(&data.db).await;
-    crate::content_filter::start_automated_scanner(data.clone(), ctx.clone());
-    crate::content_filter::heuristic::start_cleanup_interval();
-    crate::cron::start(data.clone(), ctx.clone());
+    crate::lib::content_filter::load_prioritized_guilds(&data.db).await;
+    crate::lib::content_filter::start_automated_scanner(data.clone(), ctx.clone());
+    crate::lib::content_filter::heuristic::start_cleanup_interval();
+    crate::lib::cron::start(data.clone(), ctx.clone());
     crate::utils::message_reports::start_kv_cleanup_job();
 }

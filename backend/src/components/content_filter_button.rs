@@ -144,7 +144,7 @@ async fn handle_delete(
                 let _ = crate::utils::content_filter::update_alert_del_status(
                     &data.db,
                     alert_id,
-                    crate::content_filter::types::ContentFilterStatus::Deleted,
+                    crate::lib::content_filter::types::ContentFilterStatus::Deleted,
                 )
                 .await;
             }
@@ -166,7 +166,7 @@ async fn handle_delete(
                     let _ = crate::utils::content_filter::update_alert_del_status(
                         &data.db,
                         alert_id,
-                        crate::content_filter::types::ContentFilterStatus::Deleted,
+                        crate::lib::content_filter::types::ContentFilterStatus::Deleted,
                     )
                     .await;
                 }
@@ -306,7 +306,7 @@ async fn handle_resolve(
     if let Some(alert) = alert.as_ref() {
         let new_status = crate::utils::content_filter::handle_alert_mod_status(
             alert.mod_status,
-            crate::content_filter::types::ContentFilterStatus::Resolved,
+            crate::lib::content_filter::types::ContentFilterStatus::Resolved,
         );
         let _ = crate::utils::content_filter::update_alert_mod_status(
             &data.db,
@@ -355,7 +355,7 @@ async fn handle_false_positive(
     if let Some(alert) = alert.as_ref() {
         let new_status = crate::utils::content_filter::handle_alert_mod_status(
             alert.mod_status,
-            crate::content_filter::types::ContentFilterStatus::False,
+            crate::lib::content_filter::types::ContentFilterStatus::False,
         );
         let _ = crate::utils::content_filter::update_alert_mod_status(
             &data.db,
@@ -366,7 +366,7 @@ async fn handle_false_positive(
     }
 
     // Feed back to the automated scanner for ML learning.
-    crate::content_filter::automated::handle_moderator_feedback(channel_id_str, true);
+    crate::lib::content_filter::automated::handle_moderator_feedback(channel_id_str, true);
 
     update_submission_message(
         interaction,

@@ -1,13 +1,11 @@
+#![allow(special_module_name)]
+
 mod api;
+mod error;
 mod commands;
 mod components;
-mod config;
-mod content_filter;
-mod cron;
-mod database;
-mod entities;
 mod events;
-mod kv;
+mod lib;
 mod state;
 mod utils;
 
@@ -21,11 +19,11 @@ use poise::serenity_prelude as serenity;
 use sea_orm::ConnectOptions;
 use tracing::{error, info};
 
-use crate::config::env::EnvConfig;
-use crate::config::global::GlobalConfig;
-use crate::config::manager::ConfigManager;
-use crate::database::messages::MessageManager;
-use crate::kv::KvStore;
+use crate::lib::config::env::EnvConfig;
+use crate::lib::config::global::GlobalConfig;
+use crate::lib::config::manager::ConfigManager;
+use crate::lib::repository::messages::MessageManager;
+use crate::lib::kv::KvStore;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

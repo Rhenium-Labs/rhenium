@@ -5,7 +5,7 @@ use tracing::{error, warn};
 use urlencoding::encode;
 
 use crate::Data;
-use crate::config::schema::{LoggingEvent, UserPermission};
+use crate::lib::config::schema::{LoggingEvent, UserPermission};
 use crate::utils::interaction as ia;
 
 /// Handles ban request button clicks (accept/deny/disregard).
@@ -79,7 +79,7 @@ pub async fn process_ban_request(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
     data: &Data,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     action: &str,
     review_reason: Option<&str>,
 ) {
@@ -90,7 +90,7 @@ pub async fn process_ban_request(
     };
 
     // Fetch ban request.
-    let request = match crate::entities::ban_request::Entity::find_by_id(message_id.clone()).one(&data.db).await {
+    let request = match crate::lib::entities::ban_request::Entity::find_by_id(message_id.clone()).one(&data.db).await {
         Ok(Some(r)) => r,
         _ => {
             let _ = interaction.message.delete(ctx).await;
@@ -140,8 +140,8 @@ pub async fn process_ban_request(
             }
 
             // Update DB.
-            let mut active: crate::entities::ban_request::ActiveModel = request.clone().into();
-            active.status = Set(crate::entities::ban_request::RequestStatus::Disregarded);
+            let mut active: crate::lib::entities::ban_request::ActiveModel = request.clone().into();
+            active.status = Set(crate::lib::entities::ban_request::RequestStatus::Disregarded);
             active.resolved_by = Set(Some(interaction.user.id.to_string()));
             active.resolved_at = Set(Some(chrono::Utc::now().naive_utc()));
             active.expires_at = Set(None);
@@ -216,8 +216,8 @@ pub async fn process_ban_request(
             }
 
             // Mark as accepted BEFORE banning to avoid GuildBanAdd duplicate.
-            let mut active: crate::entities::ban_request::ActiveModel = request.clone().into();
-            active.status = Set(crate::entities::ban_request::RequestStatus::Accepted);
+            let mut active: crate::lib::entities::ban_request::ActiveModel = request.clone().into();
+            active.status = Set(crate::lib::entities::ban_request::RequestStatus::Accepted);
             active.resolved_by = Set(Some(interaction.user.id.to_string()));
             active.resolved_at = Set(Some(chrono::Utc::now().naive_utc()));
             if let Err(err) = active.update(&data.db).await {
@@ -239,18 +239,18 @@ pub async fn process_ban_request(
                 Ok(_) => {
                     // Insert temp ban if has expiry.
                     if let Some(exp) = request.expires_at {
-                        let model = crate::entities::temporary_ban::ActiveModel {
+                        let model = crate::lib::entities::temporary_ban::ActiveModel {
                             guild_id: Set(guild_id.to_string()),
                             target_id: Set(target_id.clone()),
                             expires_at: Set(exp),
                         };
-                        if let Err(err) = crate::entities::temporary_ban::Entity::insert(model)
+                        if let Err(err) = crate::lib::entities::temporary_ban::Entity::insert(model)
                             .on_conflict(
                                 OnConflict::columns([
-                                    crate::entities::temporary_ban::Column::GuildId,
-                                    crate::entities::temporary_ban::Column::TargetId,
+                                    crate::lib::entities::temporary_ban::Column::GuildId,
+                                    crate::lib::entities::temporary_ban::Column::TargetId,
                                 ])
-                                .update_column(crate::entities::temporary_ban::Column::ExpiresAt)
+                                .update_column(crate::lib::entities::temporary_ban::Column::ExpiresAt)
                                 .to_owned()
                             )
                             .exec(&data.db).await
@@ -277,14 +277,14 @@ pub async fn process_ban_request(
                     let db = data.db.clone();
                     let request_id = message_id.clone();
                     tokio::spawn(async move {
-                        let mut active = crate::entities::ban_request::ActiveModel {
+                        let mut active = crate::lib::entities::ban_request::ActiveModel {
                             id: Set(request_id.clone()),
                             ..Default::default()
                         };
-                        active.status = Set(crate::entities::ban_request::RequestStatus::Pending);
+                        active.status = Set(crate::lib::entities::ban_request::RequestStatus::Pending);
                         active.resolved_by = Set(None);
                         active.resolved_at = Set(None);
-                        if let Err(err) = crate::entities::ban_request::Entity::update(active).exec(&db).await {
+                        if let Err(err) = crate::lib::entities::ban_request::Entity::update(active).exec(&db).await {
                             warn!(request_id = %request_id, "Failed to revert ban request status after failed ban: {err}");
                         }
                     });
@@ -318,8 +318,8 @@ pub async fn process_ban_request(
                 }
             }
 
-            let mut active: crate::entities::ban_request::ActiveModel = request.clone().into();
-            active.status = Set(crate::entities::ban_request::RequestStatus::Denied);
+            let mut active: crate::lib::entities::ban_request::ActiveModel = request.clone().into();
+            active.status = Set(crate::lib::entities::ban_request::RequestStatus::Denied);
             active.resolved_by = Set(Some(interaction.user.id.to_string()));
             active.resolved_at = Set(Some(chrono::Utc::now().naive_utc()));
             if let Err(err) = active.update(&data.db).await {
@@ -346,7 +346,7 @@ pub async fn process_ban_request(
 async fn spawn_review_log_then_delete(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     action: &str,
     review_reason: Option<&str>,
 ) {
@@ -371,9 +371,9 @@ async fn spawn_review_log_then_delete(
 
 async fn spawn_notify_ban_request_result(
     ctx: &serenity::Context,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     action: &str,
-    request: &crate::entities::ban_request::Model,
+    request: &crate::lib::entities::ban_request::Model,
     review_reason: Option<&str>,
 ) {
     if !config.can_log_event(LoggingEvent::BanRequestResult) {
@@ -463,7 +463,7 @@ async fn ban_user_with_seconds(
 async fn log_ban_request_reviewed(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     action: &str,
     review_reason: Option<&str>,
 ) {

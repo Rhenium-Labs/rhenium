@@ -2,7 +2,7 @@ use poise::serenity_prelude as serenity;
 use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use tracing::warn;
 
-use crate::config::schema::{LoggingEvent, UserPermission};
+use crate::lib::config::schema::{LoggingEvent, UserPermission};
 use crate::Data;
 use crate::utils::interaction as ia;
 
@@ -46,7 +46,7 @@ pub async fn handle(
     }
 
     let report_id = interaction.message.id.to_string();
-    let report_row = crate::entities::message_report::Entity::find_by_id(report_id.clone())
+    let report_row = crate::lib::entities::message_report::Entity::find_by_id(report_id.clone())
         .one(&data.db)
         .await
         .ok()
@@ -105,11 +105,11 @@ pub async fn handle(
     }
 
     let new_status = if custom_id == "message-report-resolve" {
-        crate::entities::message_report::ReportStatus::Resolved
+        crate::lib::entities::message_report::ReportStatus::Resolved
     } else {
-        crate::entities::message_report::ReportStatus::Disregarded
+        crate::lib::entities::message_report::ReportStatus::Disregarded
     };
-    let mut active: crate::entities::message_report::ActiveModel = report_row.into();
+    let mut active: crate::lib::entities::message_report::ActiveModel = report_row.into();
     active.status = Set(new_status);
     active.resolved_by = Set(Some(interaction.user.id.to_string()));
     active.resolved_at = Set(Some(chrono::Utc::now().naive_utc()));
@@ -164,7 +164,7 @@ fn build_reviewed_embeds(
 
 async fn send_review_log_links(
     ctx: &serenity::Context,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     guild_id: serenity::GuildId,
     embeds: &[serenity::CreateEmbed],
     event: LoggingEvent,

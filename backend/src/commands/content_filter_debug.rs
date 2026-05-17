@@ -56,8 +56,8 @@ pub async fn content_filter_debug(
 
 async fn overview(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
     let cache = ctx.serenity_context().cache.as_ref();
-    let diagnostics = crate::content_filter::automated::get_diagnostics(Some(
-        crate::content_filter::automated::DiagnosticsFilters {
+    let diagnostics = crate::lib::content_filter::automated::get_diagnostics(Some(
+        crate::lib::content_filter::automated::DiagnosticsFilters {
             guild_id: if guild_id.is_empty() {
                 None
             } else {
@@ -67,7 +67,7 @@ async fn overview(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
         },
     ));
     let queue = diagnostics.queue;
-    let heuristic = crate::content_filter::heuristic::diagnostics();
+    let heuristic = crate::lib::content_filter::heuristic::diagnostics();
     let states = diagnostics.states;
 
     let state_lines = if states.is_empty() {
@@ -78,7 +78,7 @@ async fn overview(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
             .take(6)
             .enumerate()
             .map(|(idx, state)| {
-                let queue_depth = crate::content_filter::scheduler::queue_depth_for_channel(&state.channel_id);
+                let queue_depth = crate::lib::content_filter::scheduler::queue_depth_for_channel(&state.channel_id);
                 let channel_display = format_channel_display(ctx, &state.channel_id);
 
                 format!(
@@ -154,8 +154,8 @@ async fn overview(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
 }
 
 async fn channel(ctx: Context<'_>, channel_id: &str) -> Result<(), Error> {
-    let diagnostics = crate::content_filter::automated::get_diagnostics(Some(
-        crate::content_filter::automated::DiagnosticsFilters {
+    let diagnostics = crate::lib::content_filter::automated::get_diagnostics(Some(
+        crate::lib::content_filter::automated::DiagnosticsFilters {
             guild_id: None,
             channel_id: Some(channel_id.to_string()),
         },
@@ -198,8 +198,8 @@ async fn channel(ctx: Context<'_>, channel_id: &str) -> Result<(), Error> {
 }
 
 async fn queue(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
-    let diagnostics = crate::content_filter::automated::get_diagnostics(Some(
-        crate::content_filter::automated::DiagnosticsFilters {
+    let diagnostics = crate::lib::content_filter::automated::get_diagnostics(Some(
+        crate::lib::content_filter::automated::DiagnosticsFilters {
             guild_id: if guild_id.is_empty() {
                 None
             } else {
@@ -232,7 +232,7 @@ async fn queue(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
 }
 
 async fn dead_letters(ctx: Context<'_>, limit: usize) -> Result<(), Error> {
-    let diagnostics = crate::content_filter::automated::get_diagnostics(None);
+    let diagnostics = crate::lib::content_filter::automated::get_diagnostics(None);
     let dead_total = diagnostics.dead_letters.total_recorded;
     let entries = diagnostics
         .recent_dead_letters
@@ -339,7 +339,7 @@ async fn prioritize(
 
     match action {
         "list" => {
-            let prioritized = crate::content_filter::get_prioritized_guilds();
+            let prioritized = crate::lib::content_filter::get_prioritized_guilds();
             if prioritized.is_empty() {
                 ctx.say("No guilds are manually prioritized for content-filter scanning right now.").await?;
             } else {
@@ -348,7 +348,7 @@ async fn prioritize(
             }
         }
         "on" | "enable" | "add" => {
-            crate::content_filter::set_guild_priority(&data.db, guild_id, true).await;
+            crate::lib::content_filter::set_guild_priority(&data.db, guild_id, true).await;
             if guild_id == default_guild_id {
                 ctx.say("Enabled manual CF prioritization for this guild. New messages will be scanned more aggressively.")
                     .await?;
@@ -358,7 +358,7 @@ async fn prioritize(
             }
         }
         "off" | "disable" | "remove" | "clear" => {
-            crate::content_filter::set_guild_priority(&data.db, guild_id, false).await;
+            crate::lib::content_filter::set_guild_priority(&data.db, guild_id, false).await;
             if guild_id == default_guild_id {
                 ctx.say("Disabled manual CF prioritization for this guild.").await?;
             } else {
@@ -367,7 +367,7 @@ async fn prioritize(
             }
         }
         "status" => {
-            let is_prioritized = crate::content_filter::is_guild_prioritized(guild_id);
+            let is_prioritized = crate::lib::content_filter::is_guild_prioritized(guild_id);
             let status = if is_prioritized { "enabled" } else { "disabled" };
             if guild_id == default_guild_id {
                 ctx.say(format!(

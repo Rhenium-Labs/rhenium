@@ -73,8 +73,8 @@ pub async fn mutes_add(
     };
 
     // Hardcoded limit of 10 quick mutes per user.
-    use crate::entities::quick_mute::Column;
-    let count = crate::entities::quick_mute::Entity::find()
+    use crate::lib::entities::quick_mute::Column;
+    let count = crate::lib::entities::quick_mute::Entity::find()
         .filter(Column::UserId.eq(user_id.clone()))
         .filter(Column::GuildId.eq(guild_id.clone()))
         .count(&data.db)
@@ -91,7 +91,7 @@ pub async fn mutes_add(
     let emoji_id = validated_emoji.identifier();
 
     // Check if already exists.
-    let exists = crate::entities::quick_mute::Entity::find()
+    let exists = crate::lib::entities::quick_mute::Entity::find()
         .filter(Column::UserId.eq(user_id.clone()))
         .filter(Column::GuildId.eq(guild_id.clone()))
         .filter(Column::Reaction.eq(emoji_id.clone()))
@@ -120,7 +120,7 @@ pub async fn mutes_add(
     }
 
     // Insert.
-    crate::entities::quick_mute::Entity::insert(crate::entities::quick_mute::ActiveModel {
+    crate::lib::entities::quick_mute::Entity::insert(crate::lib::entities::quick_mute::ActiveModel {
         user_id: Set(user_id.into()),
         guild_id: Set(guild_id.into()),
         reaction: Set(emoji_id.into()),
@@ -162,8 +162,8 @@ pub async fn mutes_remove(
     };
     let emoji_id = validated_emoji.identifier();
 
-    use crate::entities::quick_mute::Column;
-    let result = crate::entities::quick_mute::Entity::delete_many()
+    use crate::lib::entities::quick_mute::Column;
+    let result = crate::lib::entities::quick_mute::Entity::delete_many()
         .filter(Column::UserId.eq(user_id))
         .filter(Column::GuildId.eq(guild_id))
         .filter(Column::Reaction.eq(emoji_id))
@@ -192,8 +192,8 @@ pub async fn mutes_list(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = guild_id_obj.to_string();
     let user_id = ctx.author().id.to_string();
 
-    use crate::entities::quick_mute::Column;
-    let rows = crate::entities::quick_mute::Entity::find()
+    use crate::lib::entities::quick_mute::Column;
+    let rows = crate::lib::entities::quick_mute::Entity::find()
         .filter(Column::UserId.eq(user_id))
         .filter(Column::GuildId.eq(guild_id))
         .all(&data.db)
@@ -256,8 +256,8 @@ pub async fn mutes_clear(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = guild_id_obj.to_string();
     let user_id = ctx.author().id.to_string();
 
-    use crate::entities::quick_mute::Column;
-    let result = crate::entities::quick_mute::Entity::delete_many()
+    use crate::lib::entities::quick_mute::Column;
+    let result = crate::lib::entities::quick_mute::Entity::delete_many()
         .filter(Column::UserId.eq(user_id))
         .filter(Column::GuildId.eq(guild_id))
         .exec(&data.db)
@@ -300,8 +300,8 @@ pub async fn purges_add(
         return reply_error(ctx, "Quick purges have not been configured on this server.").await;
     };
 
-    use crate::entities::quick_purge::Column;
-    let count = crate::entities::quick_purge::Entity::find()
+    use crate::lib::entities::quick_purge::Column;
+    let count = crate::lib::entities::quick_purge::Entity::find()
         .filter(Column::UserId.eq(user_id.clone()))
         .filter(Column::GuildId.eq(guild_id.clone()))
         .count(&data.db)
@@ -318,7 +318,7 @@ pub async fn purges_add(
     let emoji_id = validated_emoji.identifier();
 
     // Check if already exists.
-    let exists = crate::entities::quick_purge::Entity::find()
+    let exists = crate::lib::entities::quick_purge::Entity::find()
         .filter(Column::UserId.eq(user_id.clone()))
         .filter(Column::GuildId.eq(guild_id.clone()))
         .filter(Column::Reaction.eq(emoji_id.clone()))
@@ -336,7 +336,7 @@ pub async fn purges_add(
         )).await;
     }
 
-    crate::entities::quick_purge::Entity::insert(crate::entities::quick_purge::ActiveModel {
+    crate::lib::entities::quick_purge::Entity::insert(crate::lib::entities::quick_purge::ActiveModel {
         user_id: Set(user_id.into()),
         guild_id: Set(guild_id.into()),
         reaction: Set(emoji_id.into()),
@@ -371,8 +371,8 @@ pub async fn purges_remove(
     };
     let emoji_id = validated_emoji.identifier();
 
-    use crate::entities::quick_purge::Column;
-    let result = crate::entities::quick_purge::Entity::delete_many()
+    use crate::lib::entities::quick_purge::Column;
+    let result = crate::lib::entities::quick_purge::Entity::delete_many()
         .filter(Column::UserId.eq(user_id))
         .filter(Column::GuildId.eq(guild_id))
         .filter(Column::Reaction.eq(emoji_id))
@@ -401,8 +401,8 @@ pub async fn purges_list(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = guild_id_obj.to_string();
     let user_id = ctx.author().id.to_string();
 
-    use crate::entities::quick_purge::Column;
-    let rows = crate::entities::quick_purge::Entity::find()
+    use crate::lib::entities::quick_purge::Column;
+    let rows = crate::lib::entities::quick_purge::Entity::find()
         .filter(Column::UserId.eq(user_id))
         .filter(Column::GuildId.eq(guild_id))
         .all(&data.db)
@@ -457,8 +457,8 @@ pub async fn purges_clear(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = guild_id_obj.to_string();
     let user_id = ctx.author().id.to_string();
 
-    use crate::entities::quick_purge::Column;
-    let result = crate::entities::quick_purge::Entity::delete_many()
+    use crate::lib::entities::quick_purge::Column;
+    let result = crate::lib::entities::quick_purge::Entity::delete_many()
         .filter(Column::UserId.eq(user_id))
         .filter(Column::GuildId.eq(guild_id))
         .exec(&data.db)

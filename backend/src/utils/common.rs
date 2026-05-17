@@ -245,7 +245,7 @@ pub fn channel_in_scope_resolved(
 /// Check whitelist status from KV or database.
 pub async fn is_guild_whitelisted(
     db: &sea_orm::DatabaseConnection,
-    kv: &crate::kv::KvStore,
+    kv: &crate::lib::kv::KvStore,
     guild_id: &str,
 ) -> bool {
     use sea_orm::EntityTrait;
@@ -257,7 +257,7 @@ pub async fn is_guild_whitelisted(
     }
 
     // Cache miss: check database.
-    let exists = crate::entities::whitelist::Entity::find_by_id(guild_id)
+    let exists = crate::lib::entities::whitelist::Entity::find_by_id(guild_id)
         .one(db)
         .await
         .ok()

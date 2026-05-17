@@ -1,6 +1,6 @@
 use sea_orm::entity::prelude::*;
 
-use crate::content_filter::types::{ContentFilterStatus, Detector};
+use crate::lib::content_filter::types::{ContentFilterStatus, Detector};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "ContentFilterAlert")]

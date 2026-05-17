@@ -84,15 +84,15 @@ pub async fn handle(
     let guild_id_str2 = guild_id_str.clone();
 
     let (pending_result, resolved_result) = tokio::join!(
-        crate::entities::message_report::Entity::find()
-            .filter(crate::entities::message_report::Column::AuthorId.eq(user_id_str))
-            .filter(crate::entities::message_report::Column::GuildId.eq(guild_id_str.clone()))
-            .filter(crate::entities::message_report::Column::Status.eq(crate::entities::message_report::ReportStatus::Pending))
+        crate::lib::entities::message_report::Entity::find()
+            .filter(crate::lib::entities::message_report::Column::AuthorId.eq(user_id_str))
+            .filter(crate::lib::entities::message_report::Column::GuildId.eq(guild_id_str.clone()))
+            .filter(crate::lib::entities::message_report::Column::Status.eq(crate::lib::entities::message_report::ReportStatus::Pending))
             .count(&data.db),
-        crate::entities::message_report::Entity::find()
-            .filter(crate::entities::message_report::Column::AuthorId.eq(user_id_str2))
-            .filter(crate::entities::message_report::Column::GuildId.eq(guild_id_str2))
-            .filter(crate::entities::message_report::Column::Status.ne(crate::entities::message_report::ReportStatus::Pending))
+        crate::lib::entities::message_report::Entity::find()
+            .filter(crate::lib::entities::message_report::Column::AuthorId.eq(user_id_str2))
+            .filter(crate::lib::entities::message_report::Column::GuildId.eq(guild_id_str2))
+            .filter(crate::lib::entities::message_report::Column::Status.ne(crate::lib::entities::message_report::ReportStatus::Pending))
             .count(&data.db),
     );
 

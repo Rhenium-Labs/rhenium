@@ -16,7 +16,7 @@ use super::routes;
 pub async fn start(
     state: Arc<AppState>,
     ctx: serenity::Context,
-) -> anyhow::Result<()> {
+) -> std::io::Result<()> {
     let port = state.env.api_port;
     let dashboard_origin = state.env.dashboard_origin.clone();
 

@@ -1,6 +1,7 @@
-use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 use tracing::info;
+
+use crate::error::ConfigError;
 
 /// Global configuration loaded from `cfg.global.yml`.
 #[derive(Debug, Clone, Deserialize)]
@@ -46,16 +47,16 @@ fn default_ttl() -> u64 {
 
 impl GlobalConfig {
     /// Loads the global configuration from a YAML file.
-    pub fn load(path: &str) -> Result<Self> {
+    pub fn load(path: &str) -> Result<Self, ConfigError> {
         if !std::path::Path::new(path).exists() {
-            bail!("Global configuration file ({path}) is missing.");
+            return Err(ConfigError::FileMissing(path.to_string()));
         }
 
-        let content =
-            std::fs::read_to_string(path).with_context(|| format!("Failed to read {path}"))?;
+        let content = std::fs::read_to_string(path)
+            .map_err(|source| ConfigError::FileRead { path: path.to_string(), source })?;
 
-        let config: GlobalConfig =
-            serde_yaml::from_str(&content).with_context(|| format!("Failed to parse {path}"))?;
+        let config: GlobalConfig = serde_yaml::from_str(&content)
+            .map_err(|source| ConfigError::YamlParse { path: path.to_string(), source })?;
 
         info!("Successfully loaded global configuration from {path}.");
         Ok(config)

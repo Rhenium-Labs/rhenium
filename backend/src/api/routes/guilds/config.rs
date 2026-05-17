@@ -1,10 +1,10 @@
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::{Json, Router, routing::post};
 use poise::serenity_prelude::GuildId;
 use serde::Serialize;
 
 use crate::api::auth::ApiState;
+use crate::error::ApiError;
 
 #[derive(Debug, Serialize)]
 pub struct InvalidateResult {
@@ -17,8 +17,10 @@ pub struct InvalidateResult {
 async fn invalidate_config(
     State(state): State<ApiState>,
     Path(guild_id): Path<String>,
-) -> Result<Json<InvalidateResult>, StatusCode> {
-    let gid: u64 = guild_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+) -> Result<Json<InvalidateResult>, ApiError> {
+    let gid: u64 = guild_id
+        .parse()
+        .map_err(|_| ApiError::BadRequest("Invalid guild ID".into()))?;
     let guild_id = GuildId::new(gid);
 
     state.app.config_manager.reload(&state.app.db, guild_id).await;

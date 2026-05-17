@@ -3,7 +3,7 @@ use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use tracing::warn;
 
 use crate::Data;
-use crate::config::schema::UserPermission;
+use crate::lib::config::schema::UserPermission;
 use crate::utils::interaction as ia;
 
 /// Handles ban request deny modal submissions.
@@ -66,7 +66,7 @@ pub async fn handle(
     }
 
     // Fetch the ban request.
-    let request = match crate::entities::ban_request::Entity::find_by_id(request_id.clone())
+    let request = match crate::lib::entities::ban_request::Entity::find_by_id(request_id.clone())
         .one(&data.db)
         .await
     {
@@ -118,8 +118,8 @@ pub async fn handle(
     }
 
     // Update DB.
-    let mut active: crate::entities::ban_request::ActiveModel = request.clone().into();
-    active.status = Set(crate::entities::ban_request::RequestStatus::Denied);
+    let mut active: crate::lib::entities::ban_request::ActiveModel = request.clone().into();
+    active.status = Set(crate::lib::entities::ban_request::RequestStatus::Denied);
     active.resolved_by = Set(Some(modal.user.id.to_string()));
     active.resolved_at = Set(Some(chrono::Utc::now().naive_utc()));
     if let Err(err) = active.update(&data.db).await {
@@ -133,7 +133,7 @@ pub async fn handle(
         let message = message.clone();
         let review_reason = review_reason.clone();
         tokio::spawn(async move {
-            if config.can_log_event(crate::config::schema::LoggingEvent::BanRequestReviewed) {
+            if config.can_log_event(crate::lib::config::schema::LoggingEvent::BanRequestReviewed) {
                 if let Some(current_embed) = message.embeds.first() {
                     let mut embed = serenity::CreateEmbed::from(current_embed.clone())
                         .color(0xED4245)
@@ -154,7 +154,7 @@ pub async fn handle(
                     config
                         .log(
                             ctx.http.as_ref(),
-                            crate::config::schema::LoggingEvent::BanRequestReviewed,
+                            crate::lib::config::schema::LoggingEvent::BanRequestReviewed,
                             serenity::ExecuteWebhook::new().embed(embed),
                         )
                         .await;
@@ -165,7 +165,7 @@ pub async fn handle(
         });
     }
 
-    if config.can_log_event(crate::config::schema::LoggingEvent::BanRequestResult) {
+    if config.can_log_event(crate::lib::config::schema::LoggingEvent::BanRequestResult) {
         let requested_by = request.requested_by.clone();
         let reason_suffix = review_reason
             .as_deref()
@@ -183,7 +183,7 @@ pub async fn handle(
             config
                 .log(
                     ctx.http.as_ref(),
-                    crate::config::schema::LoggingEvent::BanRequestResult,
+                    crate::lib::config::schema::LoggingEvent::BanRequestResult,
                     serenity::ExecuteWebhook::new()
                         .content(content)
                         .allowed_mentions(

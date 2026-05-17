@@ -120,8 +120,8 @@ async fn cleanup_old_messages(data: &crate::Data) {
     let threshold = chrono::DateTime::from_timestamp_millis(threshold_ms)
         .unwrap_or(chrono::Utc::now());
 
-    match crate::entities::message::Entity::delete_many()
-        .filter(crate::entities::message::Column::CreatedAt.lte(threshold.naive_utc()))
+    match crate::lib::entities::message::Entity::delete_many()
+        .filter(crate::lib::entities::message::Column::CreatedAt.lte(threshold.naive_utc()))
         .exec(&data.db)
         .await
     {
@@ -140,7 +140,7 @@ async fn auto_disregard_reports(
     data: &crate::Data,
     resolved_by: poise::serenity_prelude::UserId,
 ) {
-    use crate::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
+    use crate::lib::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
 
     // Fetch all pending reports, deduplicate guild IDs in memory.
     let pending = match MREntity::find()

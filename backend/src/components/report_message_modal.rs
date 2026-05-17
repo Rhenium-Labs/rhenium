@@ -71,7 +71,7 @@ async fn handle_report_with_message(
     ctx: &serenity::Context,
     modal: &serenity::ModalInteraction,
     data: &Data,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     message: serenity::Message,
     report_reason: String,
 ) {

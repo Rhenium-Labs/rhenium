@@ -1,10 +1,10 @@
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::{Json, Router, routing::get};
 use poise::serenity_prelude::{ChannelType, GuildId};
 use serde::Serialize;
 
 use crate::api::auth::ApiState;
+use crate::error::ApiError;
 
 /// Channel info returned by the API.
 #[derive(Debug, Serialize)]
@@ -22,8 +22,10 @@ pub struct ChannelInfo {
 async fn get_channels(
     State(state): State<ApiState>,
     Path(guild_id): Path<String>,
-) -> Result<Json<Vec<ChannelInfo>>, StatusCode> {
-    let gid: u64 = guild_id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
+) -> Result<Json<Vec<ChannelInfo>>, ApiError> {
+    let gid: u64 = guild_id
+        .parse()
+        .map_err(|_| ApiError::BadRequest("Invalid guild ID".into()))?;
     let guild_id = GuildId::new(gid);
 
     let guild = state.cache.guild(guild_id);

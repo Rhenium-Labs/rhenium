@@ -17,7 +17,7 @@ fn recent_entries() -> MutexGuard<'static, Vec<DeadLetterEntry>> {
 }
 
 /// Records a permanently failed scan job in memory and KV storage.
-pub async fn record(kv: &crate::kv::KvStore, job: &ScanJob, reason: &str, err: Option<&str>) {
+pub async fn record(kv: &crate::lib::kv::KvStore, job: &ScanJob, reason: &str, err: Option<&str>) {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()

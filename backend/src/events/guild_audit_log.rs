@@ -55,11 +55,11 @@ pub async fn handle(
         }
     };
 
-    let active = crate::entities::guild::ActiveModel {
+    let active = crate::lib::entities::guild::ActiveModel {
         id: Set(guild_id.to_string()),
         config: Set(config_json),
     };
-    if let Err(e) = crate::entities::guild::Entity::update(active).exec(&data.db).await {
+    if let Err(e) = crate::lib::entities::guild::Entity::update(active).exec(&data.db).await {
         error!(
             "Failed to persist webhook cleanup for guild {} and webhook {}: {e}",
             guild_id, target_webhook_id

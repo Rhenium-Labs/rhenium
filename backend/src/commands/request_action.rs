@@ -79,10 +79,10 @@ pub async fn ban(
     }
 
     // Check for existing pending request.
-    let pending_exists = crate::entities::ban_request::Entity::find()
-        .filter(crate::entities::ban_request::Column::GuildId.eq(guild_id_str.clone()))
-        .filter(crate::entities::ban_request::Column::TargetId.eq(target_id.to_string()))
-        .filter(crate::entities::ban_request::Column::Status.eq(crate::entities::ban_request::RequestStatus::Pending))
+    let pending_exists = crate::lib::entities::ban_request::Entity::find()
+        .filter(crate::lib::entities::ban_request::Column::GuildId.eq(guild_id_str.clone()))
+        .filter(crate::lib::entities::ban_request::Column::TargetId.eq(target_id.to_string()))
+        .filter(crate::lib::entities::ban_request::Column::Status.eq(crate::lib::entities::ban_request::RequestStatus::Pending))
         .one(&data.db)
         .await?
         .is_some();
@@ -239,7 +239,7 @@ pub async fn ban(
     }
 
     // Insert into database.
-    let model = crate::entities::ban_request::ActiveModel {
+    let model = crate::lib::entities::ban_request::ActiveModel {
         id: Set(log_msg.id.to_string()),
         guild_id: Set(guild_id_str),
         target_id: Set(target_id.to_string()),
@@ -249,7 +249,7 @@ pub async fn ban(
         expires_at: Set(expires_at.map(|dt| dt.naive_utc())),
         ..Default::default()
     };
-    crate::entities::ban_request::Entity::insert(model).exec(&data.db).await?;
+    crate::lib::entities::ban_request::Entity::insert(model).exec(&data.db).await?;
 
     ctx.say(format!("Successfully submitted a ban request for <@{}> - ID `{}`.", target.id, log_msg.id)).await?;
     Ok(())

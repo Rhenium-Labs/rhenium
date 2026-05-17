@@ -1,9 +1,9 @@
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
-use crate::config::schema::{ContentFilterConfig, DetectorMode};
-use crate::content_filter::types::ContentFilterStatus;
-use crate::database::messages::SerializedMessage;
-use crate::entities::{content_filter_alert, content_filter_log};
+use crate::lib::config::schema::{ContentFilterConfig, DetectorMode};
+use crate::lib::content_filter::types::ContentFilterStatus;
+use crate::lib::repository::messages::SerializedMessage;
+use crate::lib::entities::{content_filter_alert, content_filter_log};
 use crate::utils::constants::cf;
 
 /// Computes the risk score for a message based on its properties.

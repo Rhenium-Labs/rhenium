@@ -73,7 +73,7 @@ async fn whitelist_create(ctx: Context<'_>, guild_id: &str) -> Result<(), Error>
     let data = ctx.data();
 
     // Check if already whitelisted.
-    let exists = crate::entities::whitelist::Entity::find_by_id(guild_id)
+    let exists = crate::lib::entities::whitelist::Entity::find_by_id(guild_id)
         .one(&data.db)
         .await?
         .is_some();
@@ -91,7 +91,7 @@ async fn whitelist_create(ctx: Context<'_>, guild_id: &str) -> Result<(), Error>
     }
 
     // Insert.
-    crate::entities::whitelist::Entity::insert(crate::entities::whitelist::ActiveModel {
+    crate::lib::entities::whitelist::Entity::insert(crate::lib::entities::whitelist::ActiveModel {
         id: Set(guild_id.to_string()),
         ..Default::default()
     })
@@ -116,7 +116,7 @@ async fn whitelist_create(ctx: Context<'_>, guild_id: &str) -> Result<(), Error>
 async fn whitelist_delete(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> {
     let data = ctx.data();
 
-    let exists = crate::entities::whitelist::Entity::find_by_id(guild_id)
+    let exists = crate::lib::entities::whitelist::Entity::find_by_id(guild_id)
         .one(&data.db)
         .await?
         .is_some();
@@ -129,7 +129,7 @@ async fn whitelist_delete(ctx: Context<'_>, guild_id: &str) -> Result<(), Error>
         return Ok(());
     }
 
-    crate::entities::whitelist::Entity::delete_by_id(guild_id)
+    crate::lib::entities::whitelist::Entity::delete_by_id(guild_id)
         .exec(&data.db)
         .await?;
 
@@ -172,7 +172,7 @@ async fn whitelist_check(ctx: Context<'_>, guild_id: &str) -> Result<(), Error> 
 async fn whitelist_list(ctx: Context<'_>) -> Result<(), Error> {
     let data = ctx.data();
 
-    let rows = crate::entities::whitelist::Entity::find()
+    let rows = crate::lib::entities::whitelist::Entity::find()
         .all(&data.db)
         .await?;
 

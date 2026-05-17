@@ -2,8 +2,8 @@ use poise::serenity_prelude::{self as serenity, ButtonStyle, CreateActionRow, Cr
 use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseBackend, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set, Statement, TryGetable};
 use sea_orm::sea_query::OnConflict;
 
-use crate::config::guild::GuildConfig;
-use crate::config::schema::RawGuildConfig;
+use crate::lib::config::guild::GuildConfig;
+use crate::lib::config::schema::RawGuildConfig;
 use crate::{Context, Data, Error};
 
 /// Send an ephemeral red-embed error response, matching the TS `{ error: "..." }` pattern.
@@ -184,7 +184,7 @@ pub async fn build_search_page(
     let page = page.max(1);
     let offset = (page - 1) * 5;
 
-    use crate::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
+    use crate::lib::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
 
     let mut base_query = MREntity::find()
         .filter(MRCol::GuildId.eq(guild_id.clone()))
@@ -438,14 +438,14 @@ async fn persist_config(
     config: &RawGuildConfig,
 ) -> Result<(), Error> {
     let config_json = serde_json::to_value(config)?;
-    let model = crate::entities::guild::ActiveModel {
+    let model = crate::lib::entities::guild::ActiveModel {
         id: Set(guild_id.to_string()),
         config: Set(config_json),
     };
-    crate::entities::guild::Entity::insert(model)
+    crate::lib::entities::guild::Entity::insert(model)
         .on_conflict(
-            OnConflict::column(crate::entities::guild::Column::Id)
-                .update_column(crate::entities::guild::Column::Config)
+            OnConflict::column(crate::lib::entities::guild::Column::Id)
+                .update_column(crate::lib::entities::guild::Column::Config)
                 .to_owned(),
         )
         .exec(&data.db)

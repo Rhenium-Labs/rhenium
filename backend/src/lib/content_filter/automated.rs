@@ -13,8 +13,8 @@ use tracing::{error, info, warn};
 
 use super::{dead_letter, scheduler, scanner, state};
 use super::types::{ContentPredictionData, ContentPredictions, ScanJob, ScanSource};
-use crate::config::guild::GuildConfig;
-use crate::database::messages::SerializedMessage;
+use crate::lib::config::guild::GuildConfig;
+use crate::lib::repository::messages::SerializedMessage;
 use crate::utils::{constants::cf, content_filter as cf_utils};
 
 const MAX_RETRIES: u32 = 3;
@@ -316,7 +316,7 @@ pub async fn enqueue_for_scan(
 pub async fn enqueue_heuristic_candidate(
     ctx: &serenity::Context,
     message: &serenity::Message,
-    config: &crate::config::schema::ContentFilterConfig,
+    config: &crate::lib::config::schema::ContentFilterConfig,
     signals: Vec<String>,
     risk: f64,
 ) {
@@ -575,7 +575,7 @@ async fn process_job(
         .await
         .map_err(|e| e.to_string())?;
 
-        if adjust_scan_rate(&job.channel_id, now, prep.smoothed) && cf_config.config.verbosity == crate::config::schema::ContentFilterVerbosity::Verbose {
+        if adjust_scan_rate(&job.channel_id, now, prep.smoothed) && cf_config.config.verbosity == crate::lib::config::schema::ContentFilterVerbosity::Verbose {
             // Read the updated scan rate from state (post-adjustment), matching TS which passes
             // prep.state.scanRate (already updated by adjustScanRate).
             let new_rate = state::get(&job.channel_id)
@@ -808,7 +808,7 @@ async fn resolve_message(job: &ScanJob, ctx: &serenity::Context) -> Option<seren
 }
 
 struct PreparedScan {
-    state: Option<crate::content_filter::types::ChannelScanState>,
+    state: Option<crate::lib::content_filter::types::ChannelScanState>,
     should_scan: bool,
     smoothed: f64,
     risk_score: f64,
@@ -818,7 +818,7 @@ async fn prepare_channel_for_scan(
     db: &sea_orm::DatabaseConnection,
     ctx: &serenity::Context,
     message: &serenity::Message,
-    config: &crate::config::schema::ContentFilterConfig,
+    config: &crate::lib::config::schema::ContentFilterConfig,
     now: u64,
     risk_override: Option<f64>,
     force: bool,
@@ -876,7 +876,7 @@ async fn prepare_channel_for_scan(
         .user_scores
         .get(&message.author.id.to_string())
         .cloned()
-        .unwrap_or(crate::content_filter::types::UserScoreEntry { score: 0.0, last_scan: 0 });
+        .unwrap_or(crate::lib::content_filter::types::UserScoreEntry { score: 0.0, last_scan: 0 });
 
     if user_entry.score > 0.0 {
         user_entry.score *= decay;
@@ -920,7 +920,7 @@ async fn prepare_channel_for_scan(
         s.false_positive_ratio = smoothed;
     });
 
-    if is_priority_user && config.verbosity != crate::config::schema::ContentFilterVerbosity::Minimal {
+    if is_priority_user && config.verbosity != crate::lib::config::schema::ContentFilterVerbosity::Minimal {
         // Only send warning once per priority escalation event (deduplication matches TS behavior).
         let already_alerted = state::get(&channel_id)
             .map(|s| s.priority_alerted_users.contains(&message.author.id.to_string()))
@@ -962,7 +962,7 @@ fn apply_predictions_to_state(
         s.flagged_users.insert(author_id.to_string(), timestamps);
 
         let decay = compute_decay_factor(s, smoothed_false_positive);
-        let mut entry = s.user_scores.get(author_id).cloned().unwrap_or(crate::content_filter::types::UserScoreEntry {
+        let mut entry = s.user_scores.get(author_id).cloned().unwrap_or(crate::lib::content_filter::types::UserScoreEntry {
             score: 0.0,
             last_scan: now,
         });
@@ -1067,7 +1067,7 @@ fn adjust_scan_rate(channel_id: &str, now: u64, smoothed_false_positive: f64) ->
     should_log
 }
 
-fn cleanup_old_timestamps(state: &mut crate::content_filter::types::ChannelScanState, now: u64, ttl: u64) {
+fn cleanup_old_timestamps(state: &mut crate::lib::content_filter::types::ChannelScanState, now: u64, ttl: u64) {
     state.scan_timestamps.retain(|ts| now.saturating_sub(*ts) < cf::HEURISTIC_SCAN_WINDOW);
 
     state.flagged_users.retain(|_, timestamps| {
@@ -1111,7 +1111,7 @@ fn compute_dynamic_weight(detector_weight: f64, severity: f64, risk_score: f64) 
     weighted.clamp(cf::HEURISTIC_DYNAMIC_WEIGHT_MIN, cf::HEURISTIC_DYNAMIC_WEIGHT_MAX)
 }
 
-fn compute_decay_factor(state: &crate::content_filter::types::ChannelScanState, smoothed_fp: f64) -> f64 {
+fn compute_decay_factor(state: &crate::lib::content_filter::types::ChannelScanState, smoothed_fp: f64) -> f64 {
     let base = cf::HEURISTIC_DECAY_BASE;
     let fp_influence = (smoothed_fp * cf::HEURISTIC_DECAY_FP_INFLUENCE_FACTOR)
         .min(cf::HEURISTIC_DECAY_FP_INFLUENCE_MAX);
@@ -1121,7 +1121,7 @@ fn compute_decay_factor(state: &crate::content_filter::types::ChannelScanState, 
     (base - fp_influence - alert_influence).clamp(cf::HEURISTIC_DECAY_MIN, cf::HEURISTIC_DECAY_MAX)
 }
 
-fn compute_priority_threshold(state: &crate::content_filter::types::ChannelScanState, smoothed_fp: f64) -> f64 {
+fn compute_priority_threshold(state: &crate::lib::content_filter::types::ChannelScanState, smoothed_fp: f64) -> f64 {
     let base = cf::HEURISTIC_PRIORITY_USER_FLAG_THRESHOLD.max(1) as f64;
     let multiplier = 1.0
         + (smoothed_fp * cf::HEURISTIC_PRIORITY_MULT_FACTOR)
@@ -1133,12 +1133,12 @@ fn compute_priority_threshold(state: &crate::content_filter::types::ChannelScanS
     (base * multiplier * recent_influence).max(1.0).ceil()
 }
 
-fn beta_mean(state: &crate::content_filter::types::ChannelScanState) -> f64 {
+fn beta_mean(state: &crate::lib::content_filter::types::ChannelScanState) -> f64 {
     let mean = state.beta_a / (state.beta_a + state.beta_b);
     mean.clamp(cf::HEURISTIC_BETA_MEAN_MIN, cf::HEURISTIC_BETA_MEAN_MAX)
 }
 
-fn get_dynamic_base_scan_rate_for_state(state: &crate::content_filter::types::ChannelScanState) -> f64 {
+fn get_dynamic_base_scan_rate_for_state(state: &crate::lib::content_filter::types::ChannelScanState) -> f64 {
     let ewma = state.ewma_mpm;
     let beta = beta_mean(state);
     let raw = cf::HEURISTIC_K_TRAFFIC * ewma
@@ -1234,7 +1234,7 @@ fn set_pid_state(channel_id: &str, pid: PidState) {
 async fn is_channel_in_scope(
     ctx: &serenity::Context,
     message: &serenity::Message,
-    config: &crate::config::schema::ContentFilterConfig,
+    config: &crate::lib::config::schema::ContentFilterConfig,
 ) -> bool {
     if config.channel_scoping.is_empty() {
         return true;
@@ -1285,13 +1285,13 @@ async fn is_channel_in_scope(
         included: config
             .channel_scoping
             .iter()
-            .filter(|s| s.scoping_type == crate::config::schema::ChannelScopingType::Include)
+            .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Include)
             .map(|s| s.channel_id.clone())
             .collect(),
         excluded: config
             .channel_scoping
             .iter()
-            .filter(|s| s.scoping_type == crate::config::schema::ChannelScopingType::Exclude)
+            .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Exclude)
             .map(|s| s.channel_id.clone())
             .collect(),
     };
@@ -1307,7 +1307,7 @@ async fn is_channel_in_scope(
 async fn is_immune_author(
     ctx: &serenity::Context,
     message: &serenity::Message,
-    config: &crate::config::schema::ContentFilterConfig,
+    config: &crate::lib::config::schema::ContentFilterConfig,
 ) -> bool {
     let _ = ctx;
     if config.immune_roles.is_empty() {
@@ -1332,7 +1332,7 @@ async fn is_immune_author(
 async fn send_priority_user_warning(
     ctx: &serenity::Context,
     message: &serenity::Message,
-    config: &crate::config::schema::ContentFilterConfig,
+    config: &crate::lib::config::schema::ContentFilterConfig,
 ) {
     let Some(webhook_url) = &config.webhook_url else { return };
 
@@ -1353,7 +1353,7 @@ async fn send_priority_user_warning(
 async fn send_scan_rate_change_log(
     ctx: &serenity::Context,
     message: &serenity::Message,
-    config: &crate::config::schema::ContentFilterConfig,
+    config: &crate::lib::config::schema::ContentFilterConfig,
     new_rate: f64,
 ) {
     let Some(webhook_url) = &config.webhook_url else { return };

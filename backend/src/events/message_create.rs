@@ -43,7 +43,7 @@ pub async fn handle(
     );
 
     if is_whitelisted {
-        let cf_fut = crate::content_filter::scan_message(ctx, data, new_message, guild_id);
+        let cf_fut = crate::lib::content_filter::scan_message(ctx, data, new_message, guild_id);
         let _ = tokio::join!(queue_fut, highlight_fut, cf_fut);
     } else {
         let _ = tokio::join!(queue_fut, highlight_fut);

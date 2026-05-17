@@ -3,7 +3,7 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use sea_orm::sea_query::Expr;
 use tracing::{error, info};
 
-use crate::config::schema::LoggingEvent;
+use crate::lib::config::schema::LoggingEvent;
 use crate::Data;
 
 /// Maximum age for Discord bulk delete in milliseconds (14 days).
@@ -45,7 +45,7 @@ pub async fn handle(
 /// Resolves pending message reports for a banned user.
 async fn resolve_pending_reports(
     ctx: &serenity::Context,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     guild_id: &str,
     user_id: &str,
     banned_user: &serenity::User,
@@ -61,7 +61,7 @@ async fn resolve_pending_reports(
         (bot_user.id.to_string(), bot_user.name.clone(), bot_user.face())
     };
 
-    use crate::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
+    use crate::lib::entities::message_report::{Column as MRCol, Entity as MREntity, ReportStatus};
 
     // Select pending reports first, then bulk-update, so we have the data for logging.
     let results = MREntity::find()
@@ -258,7 +258,7 @@ async fn resolve_pending_reports(
 /// Resolves pending ban requests for a banned user.
 async fn resolve_pending_ban_requests(
     ctx: &serenity::Context,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     guild_id: &str,
     user_id: &str,
     banned_user: &serenity::User,
@@ -277,7 +277,7 @@ async fn resolve_pending_ban_requests(
         (bot_user.id.to_string(), bot_user.name.clone())
     };
 
-    use crate::entities::ban_request::{Column as BRCol, Entity as BREntity, RequestStatus};
+    use crate::lib::entities::ban_request::{Column as BRCol, Entity as BREntity, RequestStatus};
 
     let results = BREntity::find()
         .filter(BRCol::TargetId.eq(user_id))

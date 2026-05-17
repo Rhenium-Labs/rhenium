@@ -146,7 +146,7 @@ impl MessageManager {
     }
 
     /// Converts a Message entity model to a SerializedMessage.
-    fn from_model(model: crate::entities::message::Model) -> SerializedMessage {
+    fn from_model(model: crate::lib::entities::message::Model) -> SerializedMessage {
         SerializedMessage {
             id: model.id,
             guild_id: model.guild_id,
@@ -167,7 +167,7 @@ impl MessageManager {
             return Some(msg);
         }
 
-        let model = crate::entities::message::Entity::find_by_id(id)
+        let model = crate::lib::entities::message::Entity::find_by_id(id)
             .one(db)
             .await
             .map_err(|err| warn!(message_id = id, "Failed to fetch message from database: {err}"))
@@ -199,8 +199,8 @@ impl MessageManager {
         }
 
         let mut out = cached;
-        match crate::entities::message::Entity::find()
-            .filter(crate::entities::message::Column::Id.is_in(missing))
+        match crate::lib::entities::message::Entity::find()
+            .filter(crate::lib::entities::message::Column::Id.is_in(missing))
             .all(db)
             .await
         {
@@ -301,10 +301,10 @@ impl MessageManager {
             .collect();
 
         let mut map: HashMap<String, SerializedMessage> = HashMap::new();
-        match crate::entities::message::Entity::find()
-            .filter(crate::entities::message::Column::ChannelId.eq(channel_id))
-            .filter(crate::entities::message::Column::Deleted.eq(false))
-            .order_by_desc(crate::entities::message::Column::CreatedAt)
+        match crate::lib::entities::message::Entity::find()
+            .filter(crate::lib::entities::message::Column::ChannelId.eq(channel_id))
+            .filter(crate::lib::entities::message::Column::Deleted.eq(false))
+            .order_by_desc(crate::lib::entities::message::Column::CreatedAt)
             .limit(limit as u64)
             .all(db)
             .await

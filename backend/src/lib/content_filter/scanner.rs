@@ -11,8 +11,8 @@ use tracing::warn;
 
 use super::alert::{self, MessageAlertData};
 use super::types::{ChannelScanState, ContentFilterStatus, ContentPredictionData, ContentPredictions, Detector, PreAlertActionsResult};
-use crate::entities::{content_filter_alert, content_filter_log};
-use crate::config::schema::{ContentFilterConfig, DetectorMode};
+use crate::lib::entities::{content_filter_alert, content_filter_log};
+use crate::lib::config::schema::{ContentFilterConfig, DetectorMode};
 use crate::utils::constants::cf;
 
 const NSFW_MIN_SCORE_ADJUSTMENT: f64 = -0.12;
@@ -840,7 +840,7 @@ pub async fn run_detectors(
 
         detector_tasks.push(tokio::spawn(async move {
             let result: Result<Option<ContentPredictions>, String> = match detector {
-                crate::config::schema::Detector::Text => {
+                crate::lib::config::schema::Detector::Text => {
                     scan_text(
                         &http_client,
                         &api_key,
@@ -852,7 +852,7 @@ pub async fn run_detectors(
                     )
                     .await
                 }
-                crate::config::schema::Detector::Nsfw => {
+                crate::lib::config::schema::Detector::Nsfw => {
                     scan_nsfw(
                         &http_client,
                         &api_key,
@@ -864,7 +864,7 @@ pub async fn run_detectors(
                     )
                     .await
                 }
-                crate::config::schema::Detector::Ocr => {
+                crate::lib::config::schema::Detector::Ocr => {
                     scan_ocr(&http_client, &ctx, &message, &config).await
                 }
             };
@@ -886,7 +886,7 @@ pub async fn run_detectors(
             Ok(Some(predictions)) => all_predictions.push(predictions),
             Ok(None) => {}
             Err(e) => {
-                if matches!(detector, crate::config::schema::Detector::Ocr) {
+                if matches!(detector, crate::lib::config::schema::Detector::Ocr) {
                     warn!(
                         "CF OCR detector unavailable for message {}; skipping OCR this scan: {}",
                         message.id,

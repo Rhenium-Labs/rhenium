@@ -1,9 +1,9 @@
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::{Json, Router, routing::get};
 use serde::Serialize;
 
 use crate::api::auth::ApiState;
+use crate::error::ApiError;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,7 +15,7 @@ pub struct DeveloperVerifyResult {
 async fn verify_developer(
     State(state): State<ApiState>,
     Path(user_id): Path<String>,
-) -> Result<Json<DeveloperVerifyResult>, StatusCode> {
+) -> Result<Json<DeveloperVerifyResult>, ApiError> {
     let is_developer = state.app.global_config.is_developer(&user_id);
     Ok(Json(DeveloperVerifyResult { is_developer }))
 }

@@ -113,14 +113,14 @@ async fn handle_quick_mute(
     ctx: &serenity::Context,
     reaction: &serenity::Reaction,
     data: &Data,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     guild_id_str: &str,
     reactor_id_str: &str,
     emoji_id: &str,
     guild_id: serenity::GuildId,
     reactor_id: serenity::UserId,
 ) {
-    use crate::config::schema::{LoggingEvent, UserPermission};
+    use crate::lib::config::schema::{LoggingEvent, UserPermission};
 
     let quick_mute_config = match config.parse_quick_mutes_config() {
         Some(cfg) => cfg,
@@ -128,10 +128,10 @@ async fn handle_quick_mute(
     };
 
     // Check if this reaction matches a configured quick mute.
-    let qm = match crate::entities::quick_mute::Entity::find()
-        .filter(crate::entities::quick_mute::Column::UserId.eq(reactor_id_str))
-        .filter(crate::entities::quick_mute::Column::GuildId.eq(guild_id_str))
-        .filter(crate::entities::quick_mute::Column::Reaction.eq(emoji_id))
+    let qm = match crate::lib::entities::quick_mute::Entity::find()
+        .filter(crate::lib::entities::quick_mute::Column::UserId.eq(reactor_id_str))
+        .filter(crate::lib::entities::quick_mute::Column::GuildId.eq(guild_id_str))
+        .filter(crate::lib::entities::quick_mute::Column::Reaction.eq(emoji_id))
         .one(&data.db)
         .await
     {
@@ -175,11 +175,11 @@ async fn handle_quick_mute(
     // Channel scoping check.
     let parsed_scoping = crate::utils::ChannelScoping {
         included: quick_mute_config.channel_scoping.iter()
-            .filter(|s| s.scoping_type == crate::config::schema::ChannelScopingType::Include)
+            .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Include)
             .map(|s| s.channel_id.clone())
             .collect(),
         excluded: quick_mute_config.channel_scoping.iter()
-            .filter(|s| s.scoping_type == crate::config::schema::ChannelScopingType::Exclude)
+            .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Exclude)
             .map(|s| s.channel_id.clone())
             .collect(),
     };
@@ -418,14 +418,14 @@ async fn handle_quick_purge(
     ctx: &serenity::Context,
     reaction: &serenity::Reaction,
     data: &Data,
-    config: &crate::config::guild::GuildConfig,
+    config: &crate::lib::config::guild::GuildConfig,
     guild_id_str: &str,
     reactor_id_str: &str,
     emoji_id: &str,
     guild_id: serenity::GuildId,
     reactor_id: serenity::UserId,
 ) {
-    use crate::config::schema::{LoggingEvent, UserPermission};
+    use crate::lib::config::schema::{LoggingEvent, UserPermission};
 
     let quick_purge_config = match config.parse_quick_purges_config() {
         Some(cfg) => cfg,
@@ -433,10 +433,10 @@ async fn handle_quick_purge(
     };
 
     // Check if this reaction matches a configured quick purge.
-    let qp = match crate::entities::quick_purge::Entity::find()
-        .filter(crate::entities::quick_purge::Column::UserId.eq(reactor_id_str))
-        .filter(crate::entities::quick_purge::Column::GuildId.eq(guild_id_str))
-        .filter(crate::entities::quick_purge::Column::Reaction.eq(emoji_id))
+    let qp = match crate::lib::entities::quick_purge::Entity::find()
+        .filter(crate::lib::entities::quick_purge::Column::UserId.eq(reactor_id_str))
+        .filter(crate::lib::entities::quick_purge::Column::GuildId.eq(guild_id_str))
+        .filter(crate::lib::entities::quick_purge::Column::Reaction.eq(emoji_id))
         .one(&data.db)
         .await
     {
@@ -480,11 +480,11 @@ async fn handle_quick_purge(
     // Channel scoping check.
     let parsed_scoping = crate::utils::ChannelScoping {
         included: quick_purge_config.channel_scoping.iter()
-            .filter(|s| s.scoping_type == crate::config::schema::ChannelScopingType::Include)
+            .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Include)
             .map(|s| s.channel_id.clone())
             .collect(),
         excluded: quick_purge_config.channel_scoping.iter()
-            .filter(|s| s.scoping_type == crate::config::schema::ChannelScopingType::Exclude)
+            .filter(|s| s.scoping_type == crate::lib::config::schema::ChannelScopingType::Exclude)
             .map(|s| s.channel_id.clone())
             .collect(),
     };
@@ -865,16 +865,16 @@ async fn fetch_purgeable_message_ids(
     let cached_set: HashSet<String> = cached.into_iter().collect();
 
     use sea_orm::{QueryOrder, QuerySelect};
-    let mut db_query = crate::entities::message::Entity::find()
-        .filter(crate::entities::message::Column::ChannelId.eq(channel_id.to_string()))
-        .filter(crate::entities::message::Column::AuthorId.eq(target_id.to_string()))
-        .filter(crate::entities::message::Column::Deleted.eq(false))
-        .order_by_desc(crate::entities::message::Column::CreatedAt)
+    let mut db_query = crate::lib::entities::message::Entity::find()
+        .filter(crate::lib::entities::message::Column::ChannelId.eq(channel_id.to_string()))
+        .filter(crate::lib::entities::message::Column::AuthorId.eq(target_id.to_string()))
+        .filter(crate::lib::entities::message::Column::Deleted.eq(false))
+        .order_by_desc(crate::lib::entities::message::Column::CreatedAt)
         .limit(remaining as u64);
 
     if !cached_set.is_empty() {
         db_query = db_query.filter(
-            crate::entities::message::Column::Id.is_not_in(cached_set.iter().cloned().collect::<Vec<_>>())
+            crate::lib::entities::message::Column::Id.is_not_in(cached_set.iter().cloned().collect::<Vec<_>>())
         );
     }
 
@@ -900,7 +900,7 @@ fn snowflake_to_timestamp_ms(id: serenity::MessageId) -> i64 {
 async fn build_message_log_entries(
     ctx: &serenity::Context,
     data: &Data,
-    messages: &[crate::database::messages::SerializedMessage],
+    messages: &[crate::lib::repository::messages::SerializedMessage],
 ) -> Vec<String> {
     if messages.is_empty() {
         return Vec::new();
@@ -973,7 +973,7 @@ async fn build_message_log_entries(
 
 async fn format_message_log_entry(
     _ctx: &serenity::Context,
-    message: &crate::database::messages::SerializedMessage,
+    message: &crate::lib::repository::messages::SerializedMessage,
     author_name: &str,
 ) -> String {
     let timestamp = message

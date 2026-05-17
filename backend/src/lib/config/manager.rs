@@ -56,7 +56,7 @@ impl ConfigManager {
         let guild_id_str = guild_id.to_string();
 
         // Try to fetch existing config.
-        match crate::entities::guild::Entity::find_by_id(guild_id_str.clone())
+        match crate::lib::entities::guild::Entity::find_by_id(guild_id_str.clone())
             .one(db)
             .await
         {
@@ -73,14 +73,14 @@ impl ConfigManager {
                 let default_config = RawGuildConfig::default();
                 let config_json = serde_json::to_value(&default_config).unwrap_or_default();
 
-                let model = crate::entities::guild::ActiveModel {
+                let model = crate::lib::entities::guild::ActiveModel {
                     id: Set(guild_id_str.into()),
                     config: Set(config_json),
                 };
 
-                let _ = crate::entities::guild::Entity::insert(model)
+                let _ = crate::lib::entities::guild::Entity::insert(model)
                     .on_conflict(
-                        OnConflict::column(crate::entities::guild::Column::Id)
+                        OnConflict::column(crate::lib::entities::guild::Column::Id)
                             .do_nothing()
                             .to_owned(),
                     )

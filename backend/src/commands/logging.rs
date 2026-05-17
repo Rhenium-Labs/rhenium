@@ -2,7 +2,7 @@ use poise::serenity_prelude::{self as serenity, CreateEmbed};
 use sea_orm::{EntityTrait, Set};
 use sea_orm::sea_query::OnConflict;
 
-use crate::config::schema::{LoggingEvent, LoggingWebhook, RawGuildConfig};
+use crate::lib::config::schema::{LoggingEvent, LoggingWebhook, RawGuildConfig};
 use crate::{Context, Data, Error};
 
 /// Manage logging webhooks and webhook event subscriptions.
@@ -481,14 +481,14 @@ async fn persist_config(
     config: &RawGuildConfig,
 ) -> Result<(), Error> {
     let config_json = serde_json::to_value(config)?;
-    let model = crate::entities::guild::ActiveModel {
+    let model = crate::lib::entities::guild::ActiveModel {
         id: Set(guild_id.to_string()),
         config: Set(config_json),
     };
-    crate::entities::guild::Entity::insert(model)
+    crate::lib::entities::guild::Entity::insert(model)
         .on_conflict(
-            OnConflict::column(crate::entities::guild::Column::Id)
-                .update_column(crate::entities::guild::Column::Config)
+            OnConflict::column(crate::lib::entities::guild::Column::Id)
+                .update_column(crate::lib::entities::guild::Column::Config)
                 .to_owned(),
         )
         .exec(&data.db)

@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, bail};
+use crate::error::ConfigError;
 
 /// Validated environment configuration.
 #[derive(Debug, Clone)]
@@ -21,7 +21,7 @@ pub struct EnvConfig {
 
 impl EnvConfig {
     /// Loads and validates environment variables.
-    pub fn load() -> Result<Self> {
+    pub fn load() -> Result<Self, ConfigError> {
         let bot_token = required_env("BOT_TOKEN")?;
         let pg_url = required_env("PG_URL")?;
         let sentry_dsn = required_env("SENTRY_DSN")?;
@@ -29,18 +29,21 @@ impl EnvConfig {
         let api_secret = required_env("API_SECRET")?;
 
         if api_secret.len() < 32 {
-            bail!("API_SECRET must be at least 32 characters");
+            return Err(ConfigError::Validation(
+                "API_SECRET must be at least 32 characters".into(),
+            ));
         }
 
-        // Validate PG_URL format.
         if !pg_url.starts_with("postgres://") && !pg_url.starts_with("postgresql://") {
-            bail!("PG_URL must be a valid PostgreSQL connection URL");
+            return Err(ConfigError::Validation(
+                "PG_URL must be a valid PostgreSQL connection URL".into(),
+            ));
         }
 
         let api_port: u16 = std::env::var("API_PORT")
             .unwrap_or_else(|_| "3000".to_string())
             .parse()
-            .context("API_PORT must be a valid port number")?;
+            .map_err(|_| ConfigError::Validation("API_PORT must be a valid port number".into()))?;
 
         let dashboard_origin = std::env::var("DASHBOARD_ORIGIN")
             .unwrap_or_else(|_| "http://localhost:5173".to_string());
@@ -57,11 +60,11 @@ impl EnvConfig {
     }
 }
 
-/// Retrieves a required environment variable, returning an error if it's missing or empty.
-fn required_env(key: &str) -> Result<String> {
-    let value = std::env::var(key).with_context(|| format!("Missing required env var: {key}"))?;
+fn required_env(key: &str) -> Result<String, ConfigError> {
+    let value =
+        std::env::var(key).map_err(|_| ConfigError::MissingEnvVar(key.to_string()))?;
     if value.is_empty() {
-        bail!("Environment variable {key} must not be empty");
+        return Err(ConfigError::EmptyEnvVar(key.to_string()));
     }
     Ok(value)
 }
