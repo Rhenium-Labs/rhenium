@@ -56,26 +56,19 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
         .await
         .unwrap_or(0) as i64;
 
-    // Memory: private data / virtual / resident — read from /proc/self/status (Linux only).
+    // RSS (Resident Set Size) — physical RAM the process is actually using.
     let memory_info = {
         let status = tokio::fs::read_to_string("/proc/self/status")
             .await
             .unwrap_or_default();
-        let parse_kb = |prefix: &str| -> u64 {
-            status
-                .lines()
-                .find(|l| l.starts_with(prefix))
-                .and_then(|l| l.split_whitespace().nth(1))
-                .and_then(|v| v.parse::<u64>().ok())
-                .map(|kb| kb / 1024)
-                .unwrap_or(0)
-        };
-        format!(
-            "{} MB / {} MB / {} MB",
-            parse_kb("VmData:"),
-            parse_kb("VmSize:"),
-            parse_kb("VmRSS:"),
-        )
+        let rss_mb = status
+            .lines()
+            .find(|l| l.starts_with("VmRSS:"))
+            .and_then(|l| l.split_whitespace().nth(1))
+            .and_then(|v| v.parse::<u64>().ok())
+            .map(|kb| kb / 1024)
+            .unwrap_or(0);
+        format!("{rss_mb} MB")
     };
 
     // Heartbeat/ping.
