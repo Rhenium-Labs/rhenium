@@ -56,60 +56,26 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
         .await
         .unwrap_or(0) as i64;
 
-    // Memory info mirroring TS `${heapUsed} MB / ${heapTotal} MB / ${rss} MB`.
-    // Rust has no JS heap equivalent, so report process-private / committed / resident memory.
+    // Memory: private data / virtual / resident — read from /proc/self/status (Linux only).
     let memory_info = {
-        #[cfg(target_os = "linux")]
-        {
-            let status = tokio::fs::read_to_string("/proc/self/status")
-                .await
-                .unwrap_or_default();
-            let parse_kb = |prefix: &str| -> u64 {
-                status
-                    .lines()
-                    .find(|l| l.starts_with(prefix))
-                    .and_then(|l| l.split_whitespace().nth(1))
-                    .and_then(|v| v.parse::<u64>().ok())
-                    .map(|kb| kb / 1024)
-                    .unwrap_or(0)
-            };
-            let vm_data = parse_kb("VmData:");
-            let vm_size = parse_kb("VmSize:");
-            let vm_rss = parse_kb("VmRSS:");
-            format!("{vm_data} MB / {vm_size} MB / {vm_rss} MB")
-        }
-        #[cfg(target_os = "windows")]
-        {
-            use std::mem::{size_of, zeroed};
-            use windows_sys::Win32::System::ProcessStatus::{
-                GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS_EX,
-            };
-            use windows_sys::Win32::System::Threading::GetCurrentProcess;
-
-            let mut counters: PROCESS_MEMORY_COUNTERS_EX = unsafe { zeroed() };
-            counters.cb = size_of::<PROCESS_MEMORY_COUNTERS_EX>() as u32;
-
-            let ok = unsafe {
-                GetProcessMemoryInfo(
-                    GetCurrentProcess(),
-                    &mut counters as *mut PROCESS_MEMORY_COUNTERS_EX as *mut _,
-                    counters.cb,
-                )
-            };
-
-            if ok != 0 {
-                let private_mb = counters.PrivateUsage / 1024 / 1024;
-                let committed_mb = counters.PagefileUsage / 1024 / 1024;
-                let resident_mb = counters.WorkingSetSize / 1024 / 1024;
-                format!("{private_mb} MB / {committed_mb} MB / {resident_mb} MB")
-            } else {
-                "N/A / N/A / N/A".to_string()
-            }
-        }
-        #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-        {
-            "N/A / N/A / N/A".to_string()
-        }
+        let status = tokio::fs::read_to_string("/proc/self/status")
+            .await
+            .unwrap_or_default();
+        let parse_kb = |prefix: &str| -> u64 {
+            status
+                .lines()
+                .find(|l| l.starts_with(prefix))
+                .and_then(|l| l.split_whitespace().nth(1))
+                .and_then(|v| v.parse::<u64>().ok())
+                .map(|kb| kb / 1024)
+                .unwrap_or(0)
+        };
+        format!(
+            "{} MB / {} MB / {} MB",
+            parse_kb("VmData:"),
+            parse_kb("VmSize:"),
+            parse_kb("VmRSS:"),
+        )
     };
 
     // Heartbeat/ping.

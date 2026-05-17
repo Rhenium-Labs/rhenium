@@ -76,9 +76,6 @@ scopeguard = "1"
 urlencoding = "2.1.3"
 rhai = "1.24.0"
 
-[target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_System_ProcessStatus", "Win32_System_Threading"] }
-
 [profile.release]
 opt-level = 3
 lto = true
