@@ -573,19 +573,26 @@ pub async fn run_ocr(image_data: &[u8]) -> Result<Option<String>, ()> {
     .await
     .map_err(|_| ())??;
 
-    let status = match time::timeout(
+    let output = match time::timeout(
         OCR_PROCESS_TIMEOUT,
         Command::new("tesseract")
             .arg(&input_path)
             .arg(&output_base)
             .args(["-l", "eng"])
-            .stderr(Stdio::null())
-            .status(),
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .output(),
     )
     .await
     {
-        Ok(Ok(s)) => s,
-        _ => {
+        Ok(Ok(o)) => o,
+        Ok(Err(e)) => {
+            warn!("OCR: failed to spawn tesseract: {e}");
+            let _ = tokio::fs::remove_file(&input_path).await;
+            return Err(());
+        }
+        Err(_) => {
+            warn!("OCR: tesseract timed out");
             let _ = tokio::fs::remove_file(&input_path).await;
             return Err(());
         }
@@ -593,7 +600,9 @@ pub async fn run_ocr(image_data: &[u8]) -> Result<Option<String>, ()> {
 
     let _ = tokio::fs::remove_file(&input_path).await;
 
-    if !status.success() {
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        warn!("OCR: tesseract exited {:?}: {}", output.status.code(), stderr.trim());
         let _ = tokio::fs::remove_file(&output_txt).await;
         return Err(());
     }
