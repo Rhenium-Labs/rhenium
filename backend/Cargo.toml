@@ -78,6 +78,5 @@ rhai = "1.24.0"
 
 [profile.release]
 opt-level = 3
-lto = true
-codegen-units = 1
+lto = "thin"
 strip = true

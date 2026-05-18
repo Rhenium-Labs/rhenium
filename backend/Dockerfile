@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM rust:1.94-bookworm AS builder
 
 WORKDIR /app
@@ -9,16 +10,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/Cargo.toml backend/Cargo.lock ./
-
-# Build dependencies with a stub binary.
-# This layer is cached until Cargo.toml or Cargo.lock changes —
-# so a source-only change skips straight to the final cargo build.
-RUN mkdir -p src && echo 'fn main() {}' > src/main.rs \
-    && cargo build --release --locked \
-    && rm -f target/release/deps/rhenium*
-
 COPY backend/src ./src
-RUN cargo build --release --locked
+
+# Cache mounts survive layer invalidation — the cargo registry and compiled
+# dependency artifacts persist across deploys, so only changed crates rebuild.
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/app/target \
+    cargo build --release --locked \
+    && cp target/release/rhenium /app/rhenium
 
 FROM debian:bookworm-slim AS runtime
 
@@ -37,7 +37,7 @@ RUN apt-get update \
     && mkdir -p /app/.cache/kv \
     && chown -R rhenium:rhenium /app
 
-COPY --from=builder /app/target/release/rhenium /usr/local/bin/rhenium
+COPY --from=builder /app/rhenium /usr/local/bin/rhenium
 
 ENV RUST_LOG=rhenium=info,serenity=warn
 ENV API_PORT=3000
