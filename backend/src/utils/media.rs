@@ -2,6 +2,7 @@ use base64::Engine;
 use image::GenericImageView;
 use regex::Regex;
 use std::process::Stdio;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::process::Command;
 use tokio::time;
@@ -9,6 +10,16 @@ use tracing::warn;
 
 const MEDIA_PROCESS_TIMEOUT: Duration = Duration::from_secs(15);
 const OCR_PROCESS_TIMEOUT: Duration = Duration::from_secs(20);
+const OCR_MAX_CONCURRENCY: usize = 2;
+
+static OCR_IN_FLIGHT: AtomicUsize = AtomicUsize::new(0);
+
+struct OcrSlotGuard;
+impl Drop for OcrSlotGuard {
+    fn drop(&mut self) {
+        OCR_IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
+    }
+}
 
 /// Supported file extensions for media processing.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -549,6 +560,15 @@ async fn extract_single_frame(data: &[u8], _format: &str, timestamp: f64) -> Opt
 /// Uses temp files instead of stdin because Tesseract's stdin support is unreliable
 /// across versions and Linux builds. Always re-encodes to PNG for a consistent format.
 pub async fn run_ocr(image_data: &[u8]) -> Result<Option<String>, ()> {
+    // Reject immediately if too many Tesseract processes are already running to
+    // avoid CPU starvation when the scanner queue is deep.
+    let in_flight = OCR_IN_FLIGHT.fetch_add(1, Ordering::Relaxed);
+    if in_flight >= OCR_MAX_CONCURRENCY {
+        OCR_IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
+        return Err(());
+    }
+    let _guard = OcrSlotGuard;
+
     let image_data = image_data.to_vec();
 
     // Re-encode to PNG and write to a temp file on a blocking thread.
