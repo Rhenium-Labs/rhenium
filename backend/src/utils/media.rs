@@ -10,7 +10,7 @@ use tracing::warn;
 
 const MEDIA_PROCESS_TIMEOUT: Duration = Duration::from_secs(15);
 const OCR_PROCESS_TIMEOUT: Duration = Duration::from_secs(20);
-const OCR_MAX_CONCURRENCY: usize = 2;
+const OCR_MAX_CONCURRENCY: usize = crate::utils::constants::cf::AUTOMATED_MAX_CONCURRENT_JOBS;
 
 static OCR_IN_FLIGHT: AtomicUsize = AtomicUsize::new(0);
 
