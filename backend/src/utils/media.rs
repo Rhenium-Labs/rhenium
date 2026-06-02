@@ -581,11 +581,8 @@ pub async fn run_ocr(image_data: &[u8]) -> Result<Option<String>, ()> {
 
         let img = image::load_from_memory(&image_data).map_err(|_| ())?;
         let mut png = Vec::new();
-        img.write_to(
-            &mut std::io::Cursor::new(&mut png),
-            image::ImageFormat::Png,
-        )
-        .map_err(|_| ())?;
+        img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .map_err(|_| ())?;
         std::fs::write(&input, &png).map_err(|_| ())?;
 
         Ok::<_, ()>((input, output_base, output_txt))
@@ -628,7 +625,11 @@ pub async fn run_ocr(image_data: &[u8]) -> Result<Option<String>, ()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        warn!("OCR: tesseract exited {:?}: {}", output.status.code(), stderr.trim());
+        warn!(
+            "OCR: tesseract exited {:?}: {}",
+            output.status.code(),
+            stderr.trim()
+        );
         let _ = tokio::fs::remove_file(&output_txt).await;
         return Err(());
     }
@@ -637,7 +638,11 @@ pub async fn run_ocr(image_data: &[u8]) -> Result<Option<String>, ()> {
         Ok(text) => {
             let _ = tokio::fs::remove_file(&output_txt).await;
             let trimmed = text.trim().to_string();
-            Ok(if trimmed.is_empty() { None } else { Some(trimmed) })
+            Ok(if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed)
+            })
         }
         Err(_) => {
             let _ = tokio::fs::remove_file(&output_txt).await;

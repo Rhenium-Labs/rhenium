@@ -17,8 +17,8 @@ use std::time::Duration;
 use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
 use sea_orm::ConnectOptions;
+use serenity::cache::Settings as CacheSettings;
 use tracing::{error, info};
-use serenity::{cache::Settings as CacheSettings};
 
 use crate::lib::config::env::EnvConfig;
 use crate::lib::config::global::GlobalConfig;

@@ -753,7 +753,6 @@ async fn execute_purge(
         };
     }
 
-    let mut deleted = 0u32;
     let mut failed = 0u32;
     let all_ids = message_ids.clone();
 
@@ -782,9 +781,9 @@ async fn execute_purge(
             .await
             .is_ok()
         {
-            (1, 0)
+            (vec![trigger_message_id], 0)
         } else {
-            (0, 1)
+            (Vec::new(), 1)
         }
     };
 
@@ -794,7 +793,9 @@ async fn execute_purge(
         individual_delete_messages(ctx, channel_id, &individual),
     );
 
-    deleted += trigger_result.0 + bulk_result.0 + individual_result.0;
+    let mut deleted_ids = trigger_result.0;
+    deleted_ids.extend(bulk_result.0);
+    deleted_ids.extend(individual_result.0);
     failed += trigger_result.1 + bulk_result.1 + individual_result.1;
 
     let deleted_messages = match serialized_messages_task.await {
@@ -803,9 +804,10 @@ async fn execute_purge(
     };
     data.message_manager.remove_exclusions(&all_ids).await;
 
-    let entries = build_message_log_entries(ctx, data, &deleted_messages).await;
+    let entries = build_message_log_entries(ctx, data, &deleted_messages, &deleted_ids).await;
     let joined = entries.join("\n\n");
     let log_url = crate::utils::hastebin(&joined, "js").await;
+    let deleted = deleted_ids.len() as u32;
 
     QuickPurgeResult {
         ok: deleted > 0,
@@ -825,8 +827,8 @@ async fn bulk_delete_messages(
     ctx: &serenity::Context,
     channel_id: serenity::ChannelId,
     message_ids: &[serenity::MessageId],
-) -> (u32, u32) {
-    let mut deleted = 0u32;
+) -> (Vec<serenity::MessageId>, u32) {
+    let mut deleted = Vec::new();
     let mut failed = 0u32;
 
     for chunk in message_ids.chunks(BULK_DELETE_LIMIT) {
@@ -835,10 +837,10 @@ async fn bulk_delete_messages(
         }
 
         match channel_id.delete_messages(ctx, chunk).await {
-            Ok(_) => deleted += chunk.len() as u32,
+            Ok(_) => deleted.extend_from_slice(chunk),
             Err(_) => {
                 let result = individual_delete_messages(ctx, channel_id, chunk).await;
-                deleted += result.0;
+                deleted.extend(result.0);
                 failed += result.1;
             }
         }
@@ -851,8 +853,8 @@ async fn individual_delete_messages(
     ctx: &serenity::Context,
     channel_id: serenity::ChannelId,
     message_ids: &[serenity::MessageId],
-) -> (u32, u32) {
-    let mut deleted = 0u32;
+) -> (Vec<serenity::MessageId>, u32) {
+    let mut deleted = Vec::new();
     let mut failed = 0u32;
 
     for (idx, batch) in message_ids.chunks(MAX_CONCURRENT_DELETIONS).enumerate() {
@@ -861,13 +863,18 @@ async fn individual_delete_messages(
         for id in batch {
             let ctx = ctx.clone();
             let message_id = *id;
-            join_set
-                .spawn(async move { channel_id.delete_message(&ctx, message_id).await.is_ok() });
+            join_set.spawn(async move {
+                channel_id
+                    .delete_message(&ctx, message_id)
+                    .await
+                    .ok()
+                    .map(|_| message_id)
+            });
         }
 
         while let Some(result) = join_set.join_next().await {
             match result {
-                Ok(true) => deleted += 1,
+                Ok(Some(message_id)) => deleted.push(message_id),
                 _ => failed += 1,
             }
         }
@@ -980,8 +987,9 @@ async fn build_message_log_entries(
     ctx: &serenity::Context,
     data: &Data,
     messages: &[crate::lib::repository::messages::SerializedMessage],
+    deleted_ids: &[serenity::MessageId],
 ) -> Vec<String> {
-    if messages.is_empty() {
+    if messages.is_empty() && deleted_ids.is_empty() {
         return Vec::new();
     }
 
@@ -1027,6 +1035,7 @@ async fn build_message_log_entries(
 
     let mut sorted = messages.to_vec();
     sorted.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+    let logged_ids: HashSet<String> = sorted.iter().map(|msg| msg.id.clone()).collect();
 
     let mut entries = Vec::with_capacity(sorted.len());
     for msg in sorted {
@@ -1049,6 +1058,19 @@ async fn build_message_log_entries(
         }
         entries.push(main);
     }
+
+    entries.extend(
+        deleted_ids
+            .iter()
+            .map(|id| id.to_string())
+            .filter(|id| !logged_ids.contains(id))
+            .map(|id| {
+                format!(
+                    "[{}] [unknown timestamp] @unknown user (unknown author) - Message content unavailable.",
+                    id
+                )
+            }),
+    );
 
     entries
 }

@@ -448,7 +448,10 @@ pub async fn blacklist_add(
         .await?;
 
     let (existing_patterns, mut user_blacklist) = if let Some(ref r) = row {
-        (r.patterns.clone(), r.user_blacklist.clone().unwrap_or_default())
+        (
+            r.patterns.clone(),
+            r.user_blacklist.clone().unwrap_or_default(),
+        )
     } else {
         (vec![], vec![])
     };
@@ -605,7 +608,10 @@ pub async fn list(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     let (patterns, blacklist) = match row {
-        Some(ref r) => (r.patterns.clone(), r.user_blacklist.clone().unwrap_or_default()),
+        Some(ref r) => (
+            r.patterns.clone(),
+            r.user_blacklist.clone().unwrap_or_default(),
+        ),
         None => (vec![], vec![]),
     };
 
