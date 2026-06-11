@@ -145,7 +145,7 @@ export const POST: RequestHandler = async ({ request, params, locals, url }) => 
 	let webhookUrl = currentConfig.message_reports.webhook_url;
 	let webhookChannel = currentConfig.message_reports.webhook_channel;
 
-	if (payload.channelId && payload.channelId !== webhookChannel) {
+	if (payload.channelId) {
 		try {
 			const result = await BotApi.createWebhook({
 				userId: access.session.userId,

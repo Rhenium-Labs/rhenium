@@ -61,7 +61,7 @@ async fn create_webhook(
         .map_err(|_| ApiError::BadRequest("Invalid guild ID".into()))?;
     let guild_id_snowflake = GuildId::new(gid);
 
-    // Fetch current bot user for name/avatar (matching TS: client.user.username / displayAvatarURL).
+    // Fetch current bot user for the webhook name.
     let bot_user = state
         .discord_http
         .get_current_user()
@@ -69,11 +69,10 @@ async fn create_webhook(
         .map_err(|e| ApiError::Internal(e.to_string()))?;
 
     let bot_name = bot_user.name.clone();
-    let bot_avatar_url = bot_user.avatar_url();
 
     // If an existing webhook URL is provided, try to move it.
     if let Some(existing_url) = &body.existing_url {
-        if let Some((existing_id, existing_token)) = parse_webhook_url(existing_url) {
+        if let Some((existing_id, _existing_token)) = parse_webhook_url(existing_url) {
             let webhook_id = serenity::WebhookId::new(existing_id);
             // Try fetching the guild's webhooks to verify the webhook still exists.
             let guild_webhooks = state
@@ -93,38 +92,47 @@ async fn create_webhook(
                     return Ok(Json(WebhookResponse { url }));
                 }
 
-                // Move the webhook to the new channel.
-                let mut edit_map = serde_json::json!({
+                // Move the webhook to the new channel. Discord only supports channel moves
+                // through the bot-authenticated edit endpoint, not the token endpoint.
+                let edit_map = serde_json::json!({
                     "channel_id": channel_id.to_string(),
                     "name": bot_name,
                 });
-                if let Some(avatar) = &bot_avatar_url {
-                    edit_map["avatar"] = serde_json::Value::String(avatar.clone());
-                }
 
-                let moved = state
+                match state
                     .discord_http
-                    .edit_webhook_with_token(webhook_id, &existing_token, &edit_map, None)
-                    .await;
-
-                if let Ok(moved_wh) = moved {
-                    let url = moved_wh
-                        .url()
-                        .map_err(|e| ApiError::Internal(e.to_string()))?;
-                    return Ok(Json(WebhookResponse { url }));
+                    .edit_webhook(webhook_id, &edit_map, None)
+                    .await
+                {
+                    Ok(moved_wh) => {
+                        if moved_wh.channel_id != Some(channel_id) {
+                            warn!(
+                                "Webhook {} edit completed but remained in {:?}; expected {}",
+                                webhook_id, moved_wh.channel_id, channel_id
+                            );
+                        } else {
+                            let url = moved_wh
+                                .url()
+                                .map_err(|e| ApiError::Internal(e.to_string()))?;
+                            return Ok(Json(WebhookResponse { url }));
+                        }
+                    }
+                    Err(e) => {
+                        warn!(
+                            "Webhook move failed for {} in guild {}: {e}",
+                            webhook_id, guild_id
+                        );
+                    }
                 }
                 // Fall through to create a new webhook if move fails.
             }
         }
     }
 
-    // Create a new webhook in the target channel with the bot's name and avatar.
-    let mut create_map = serde_json::json!({
+    // Create a new webhook in the target channel with the bot's name.
+    let create_map = serde_json::json!({
         "name": bot_name,
     });
-    if let Some(avatar) = &bot_avatar_url {
-        create_map["avatar"] = serde_json::Value::String(avatar.clone());
-    }
 
     let webhook = state
         .discord_http

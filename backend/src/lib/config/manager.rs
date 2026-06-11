@@ -37,10 +37,6 @@ impl ConfigManager {
 
     /// Reloads a guild's configuration from the database.
     pub async fn reload(&self, db: &DatabaseConnection, guild_id: GuildId) {
-        if !self.cache.contains_key(&guild_id) {
-            return;
-        }
-
         let config = self.compute(db, guild_id).await;
         self.cache.insert(guild_id, config);
         info!("Reloaded config for guild {guild_id}");
