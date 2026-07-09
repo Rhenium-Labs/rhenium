@@ -5,18 +5,18 @@
     "": {
       "name": "rhenium",
       "dependencies": {
-        "@trpc/client": "^11.16.0",
-        "@trpc/server": "^11.16.0",
-        "dotenv": "^17.4.1",
-        "kysely": "^0.28.15",
+        "@trpc/client": "^11.17.0",
+        "@trpc/server": "^11.17.0",
+        "dotenv": "^17.4.2",
+        "kysely": "^0.29.0",
         "kysely-postgres-js": "^3.0.0",
         "postgres": "^3.4.9",
         "prettier-plugin-svelte": "^3.5.1",
-        "prettier-plugin-tailwindcss": "^0.7.2",
-        "prisma": "^7.7.0",
+        "prettier-plugin-tailwindcss": "^0.7.4",
+        "prisma": "^7.8.0",
         "prisma-kysely": "^3.1.0",
         "superjson": "^2.2.6",
-        "zod": "^4.3.6",
+        "zod": "^4.4.2",
         "zod-validation-error": "^5.0.0",
       },
       "devDependencies": {
@@ -878,7 +878,7 @@
 
     "kleur": ["kleur@4.1.5", "", {}, "sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ=="],
 
-    "kysely": ["kysely@0.28.16", "", {}, "sha512-3i5pmOiZvMDj00qhrIVbH0AnioVTx22DMP7Vn5At4yJO46iy+FM8Y/g61ltenLVSo3fiO8h8Q3QOFgf/gQ72ww=="],
+    "kysely": ["kysely@0.29.3", "", {}, "sha512-VHtBdW6XB/pgoTSqraM3UAa2rYoYdNXqnNPpX+8XXP+cwYbVEFuAp3HyPt1vpNfU9l7Y2kpUrA9QDPsy8uUqOQ=="],
 
     "kysely-postgres-js": ["kysely-postgres-js@3.0.0", "", { "peerDependencies": { "kysely": ">= 0.24.0 < 1", "postgres": "^3.4.0" }, "optionalPeers": ["postgres"] }, "sha512-o2t/xNSYJQDW6rVGGFPXKmZ0BEz2dGn66c2B+cO/k9ZNcU2qPWPycQPQ+B+P2MBXbKYq0xV9BZmFIvkUrmFWAQ=="],
 

@@ -35,7 +35,7 @@
 		"@trpc/client": "^11.17.0",
 		"@trpc/server": "^11.17.0",
 		"dotenv": "^17.4.2",
-		"kysely": "^0.28.16",
+		"kysely": "^0.29.0",
 		"kysely-postgres-js": "^3.0.0",
 		"postgres": "^3.4.9",
 		"prettier-plugin-svelte": "^3.5.1",
