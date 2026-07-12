@@ -46,13 +46,21 @@ async function loadServers(
 	}
 
 	if (isDeveloper) {
-		for (const guildId of botGuildIds) {
-			if (serversById.has(guildId)) continue;
+		// Developers can also see bot guilds they aren't a member of.
+		const developerGuildIds = [...botGuildIds].filter(id => !serversById.has(id));
 
+		const developerGuilds = await Promise.all(
+			developerGuildIds.map(async guildId => ({
+				guildId,
+				guildInfo: await DiscordUtils.getGuildInfo(guildId, userId)
+			}))
+		);
+
+		for (const { guildId, guildInfo } of developerGuilds) {
 			serversById.set(guildId, {
 				id: guildId,
-				name: `Server ${guildId}`,
-				icon: "",
+				name: guildInfo?.name ?? `Server ${guildId}`,
+				icon: DiscordUtils.generateGuildIconURL(guildId, guildInfo?.icon ?? null, 96),
 				hasBot: true,
 				developerOnly: true
 			});

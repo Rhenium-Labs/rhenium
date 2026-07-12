@@ -10,6 +10,8 @@ import { REST } from "@discordjs/rest";
 import { DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET } from "$env/static/private";
 import { DISCORD_API_BASE, DISCORD_OAUTH_SCOPES } from "$lib";
 import { PUBLIC_BASE_URL } from "$env/static/public";
+import type { GuildInfo } from "@repo/trpc";
+import { createBotClient } from "./TRPC";
 
 import KeyValueStore, { CACHE_TTL } from "./KVStore";
 
@@ -105,6 +107,29 @@ export default class DiscordUtils {
 
 		KeyValueStore.set(kvKey, guilds, CACHE_TTL.USER_GUILDS);
 		return guilds;
+	}
+
+	/**
+	 * Retrieves basic metadata (name, icon) for a guild from the bot, with caching to reduce tRPC calls.
+	 *
+	 * @param guildId The ID of the guild to retrieve.
+	 * @param userId The ID of the user making the request, used for permission checks.
+	 * @returns The guild's metadata, or null if the query fails.
+	 */
+
+	static async getGuildInfo(guildId: string, userId: string): Promise<GuildInfo | null> {
+		const kvKey = `guild_info:${guildId}`;
+
+		const cached = KeyValueStore.get<GuildInfo>(kvKey);
+		if (cached) return cached;
+
+		const trpc = createBotClient(guildId, userId);
+		const guildInfo = await trpc.guild.info.query({ guildId }).catch(() => null);
+
+		if (!guildInfo) return null;
+
+		KeyValueStore.set(kvKey, guildInfo, CACHE_TTL.GUILD_DATA);
+		return guildInfo;
 	}
 
 	/**
