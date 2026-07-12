@@ -1,5 +1,10 @@
 import { ChannelType, TextChannel, NewsChannel, parseWebhookURL, Routes } from "discord.js";
-import { createAppRouter, type ChannelInfo, type RoleInfo } from "@repo/trpc/router";
+import {
+	createAppRouter,
+	type ChannelInfo,
+	type GuildInfo,
+	type RoleInfo
+} from "@repo/trpc/router";
 
 import { client } from "#root/index.js";
 import ConfigManager from "#config/ConfigManager.js";
@@ -136,6 +141,18 @@ export const appRouter = createAppRouter({
 		return void client.rest
 			.delete(Routes.webhook(data.id, data.token))
 			.catch(error => Logger.warn(`Webhook deletion failed. URL: ${webhookUrl}`, error));
+	},
+
+	getGuildInfo(guildId: string): GuildInfo {
+		const guild = client.guilds.cache.get(guildId);
+
+		if (!guild) throw new Error("Guild not found.");
+
+		return {
+			id: guild.id,
+			name: guild.name,
+			icon: guild.icon
+		};
 	}
 });
 
