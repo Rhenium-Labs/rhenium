@@ -63,6 +63,10 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 
 		const contentFilterWhitelisted = await isGuildContentFilterWhitelisted(guild.id);
 
+		// Developers can view guilds they aren't a member of — fetch metadata from the bot.
+		const guildInfo =
+			userGuild ?? (await DiscordUtils.getGuildInfo(guild.id, session.userId));
+
 		return {
 			session: {
 				userId: session.userId,
@@ -72,10 +76,8 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 			},
 			guild: {
 				id: guild.id,
-				name: userGuild?.name ?? `Server ${guild.id}`,
-				icon: userGuild
-					? DiscordUtils.generateGuildIconURL(userGuild.id, userGuild.icon, 256)
-					: "",
+				name: guildInfo?.name ?? `Server ${guild.id}`,
+				icon: DiscordUtils.generateGuildIconURL(guild.id, guildInfo?.icon ?? null, 256),
 				config: guild.config,
 				contentFilterWhitelisted
 			}

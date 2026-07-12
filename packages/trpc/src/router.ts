@@ -32,6 +32,14 @@ export interface RoleInfo {
 	managed: boolean;
 }
 
+/** Basic guild metadata sent to the dashboard. */
+export interface GuildInfo {
+	id: string;
+	name: string;
+	/** The raw icon hash, or null if the guild has no custom icon. */
+	icon: string | null;
+}
+
 /**
  * Creates the app router with the provided guild data resolvers.
  * This factory pattern lets the bot inject its Discord client at runtime.
@@ -48,6 +56,7 @@ export function createAppRouter(resolvers: {
 		existingUrl?: string
 	) => Promise<{ url: string }>;
 	deleteWebhook: (guildId: string, webhookUrl: string) => Promise<void>;
+	getGuildInfo: (guildId: string) => GuildInfo;
 }) {
 	return router({
 		/** Health check — no auth needed. */
@@ -64,6 +73,16 @@ export function createAppRouter(resolvers: {
 		}),
 
 		guild: router({
+			/** Fetch basic metadata (name, icon) for a guild. */
+			info: authedProcedure.input(guildInput).query(async ({ input, ctx }) => {
+				// Verify the requesting user is actually in this guild.
+				const isMember = await resolvers.verifyMember(input.guildId, ctx.userId);
+				if (!isMember) {
+					throw new Error("You do not have access to this guild.");
+				}
+				return resolvers.getGuildInfo(input.guildId);
+			}),
+
 			/** Fetch all channels for a guild. */
 			channels: authedProcedure.input(guildInput).query(async ({ input, ctx }) => {
 				// Verify the requesting user is actually in this guild.
