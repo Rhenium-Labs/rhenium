@@ -37,7 +37,7 @@
 		"dotenv": "^17.4.2",
 		"kysely": "^0.28.17",
 		"kysely-postgres-js": "^3.0.0",
-		"postgres": "^3.4.9",
+		"postgres": "^4.0.0",
 		"prettier-plugin-svelte": "^3.5.2",
 		"prettier-plugin-tailwindcss": "^0.7.4",
 		"prisma": "^7.8.0",
