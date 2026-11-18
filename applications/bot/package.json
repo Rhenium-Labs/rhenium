@@ -14,7 +14,7 @@
 		"@repo/config": "workspace:*",
 		"@repo/db": "workspace:*",
 		"@repo/trpc": "workspace:*",
-		"@sapphire/discord-utilities": "^4.0.0",
+		"@sapphire/discord-utilities": "^5.0.0",
 		"@sapphire/lexure": "^1.1.12",
 		"@sapphire/pieces": "^4.4.1",
 		"@sapphire/result": "^2.8.0",
