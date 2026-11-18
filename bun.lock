@@ -36,7 +36,7 @@
         "@sapphire/discord-utilities": "^4.0.0",
         "@sapphire/lexure": "^1.1.12",
         "@sapphire/pieces": "^4.4.1",
-        "@sapphire/result": "^2.8.0",
+        "@sapphire/result": "^3.0.0",
         "@sapphire/utilities": "^3.18.2",
         "@sentry/cli": "^3.2.2",
         "@sentry/node": "^10.40.0",
@@ -546,7 +546,7 @@
 
     "@sapphire/pieces": ["@sapphire/pieces@4.4.1", "", { "dependencies": { "@discordjs/collection": "^2.1.1", "@sapphire/utilities": "^3.18.2", "tslib": "^2.8.1" } }, "sha512-2v49P++RzHGb23bdjSa9u7flkdvhrq94IUO9PneY538TILN5QiMxfaXVK+pDR2YR7jpQYBy9APwtFDes2Svykg=="],
 
-    "@sapphire/result": ["@sapphire/result@2.8.0", "", {}, "sha512-693yWouX+hR9uJm1Jgq0uSSjbSD3UrblMaxiuGbHPjSwzLCSZTcm0h3kvdVhq3o/yl4+oeAWW3hiaJ0TELuRJQ=="],
+    "@sapphire/result": ["@sapphire/result@3.0.0", "", {}, "sha512-HIK0PwBYfM26CewxqAi61SI710HiRzEpYL9K1WPDKGyVyWrqm0rC2CDJUeSZQhXwTNaCqfLMvz5lvnyv+5wW+g=="],
 
     "@sapphire/shapeshift": ["@sapphire/shapeshift@4.0.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "lodash": "^4.17.21" } }, "sha512-d9dUmWVA7MMiKobL3VpLF8P2aeanRTu6ypG2OIaEv/ZHH/SUQ2iHOVyi5wAPjQ+HmnMuL0whK9ez8I/raWbtIg=="],
 
@@ -1211,6 +1211,8 @@
     "@prisma/internals/@prisma/get-platform": ["@prisma/get-platform@7.4.2", "", { "dependencies": { "@prisma/debug": "7.4.2" } }, "sha512-UTnChXRwiauzl/8wT4hhe7Xmixja9WE28oCnGpBtRejaHhvekx5kudr3R4Y9mLSA0kqGnAMeyTiKwDVMjaEVsw=="],
 
     "@rollup/plugin-commonjs/is-reference": ["is-reference@1.2.1", "", { "dependencies": { "@types/estree": "*" } }, "sha512-U82MsXXiFIrjCK4otLT+o2NA2Cd2g5MLoOVXUZjIOhLurrRxpEXzI8O0KZHr3IjLvlAH1kTPYSuqer5T9ZVBKQ=="],
+
+    "@sapphire/lexure/@sapphire/result": ["@sapphire/result@2.8.0", "", {}, "sha512-693yWouX+hR9uJm1Jgq0uSSjbSD3UrblMaxiuGbHPjSwzLCSZTcm0h3kvdVhq3o/yl4+oeAWW3hiaJ0TELuRJQ=="],
 
     "@tailwindcss/node/lightningcss": ["lightningcss@1.31.1", "", { "dependencies": { "detect-libc": "^2.0.3" }, "optionalDependencies": { "lightningcss-android-arm64": "1.31.1", "lightningcss-darwin-arm64": "1.31.1", "lightningcss-darwin-x64": "1.31.1", "lightningcss-freebsd-x64": "1.31.1", "lightningcss-linux-arm-gnueabihf": "1.31.1", "lightningcss-linux-arm64-gnu": "1.31.1", "lightningcss-linux-arm64-musl": "1.31.1", "lightningcss-linux-x64-gnu": "1.31.1", "lightningcss-linux-x64-musl": "1.31.1", "lightningcss-win32-arm64-msvc": "1.31.1", "lightningcss-win32-x64-msvc": "1.31.1" } }, "sha512-l51N2r93WmGUye3WuFoN5k10zyvrVs0qfKBhyC5ogUQ6Ew6JUSswh78mbSO+IU3nTWsyOArqPCcShdQSadghBQ=="],
 
